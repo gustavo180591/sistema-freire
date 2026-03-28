@@ -30,6 +30,7 @@ enum AuditAction {
   LOGOUT
   DOWNLOAD
   BLOCKED_ATTEMPT
+  EXPORT
 }
 
 model User {
@@ -174,6 +175,7 @@ model Teacher {
 
   user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   commissions CommissionTeacher[]
+  payslips    Payslip[]
 
   @@index([lastName, firstName])
   @@map("teachers")
@@ -468,4 +470,29 @@ model Scholarship {
 
   @@index([studentId, active])
   @@map("scholarships")
+}
+
+enum PayslipStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+model Payslip {
+  id          String        @id @default(cuid())
+  teacherId   String
+  periodMonth Int
+  periodYear  Int
+  amount      Decimal       @db.Decimal(12, 2)
+  status      PayslipStatus @default(PENDING)
+  fileUrl     String?
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+
+  @@unique([teacherId, periodMonth, periodYear])
+  @@index([teacherId, periodYear, periodMonth])
+  @@map("payslips")
 }

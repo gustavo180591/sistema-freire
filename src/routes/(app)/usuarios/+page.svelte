@@ -1,29 +1,7 @@
 <script lang="ts">
-	type UserRow = {
-		id: string;
-		fullName: string;
-		email: string;
-		role: string;
-		status: 'Activo' | 'Inactivo';
-	};
+	let { data } = $props();
 
-	const users: UserRow[] = [
-		{
-			id: '1',
-			fullName: 'María Gómez',
-			email: 'maria@paulofreire.edu.ar',
-			role: 'SECRETARIA',
-			status: 'Activo'
-		},
-		{
-			id: '2',
-			fullName: 'Juan Pérez',
-			email: 'juan@paulofreire.edu.ar',
-			role: 'DOCENTE',
-			status: 'Activo'
-		}
-	];
-
+	const users = $derived(data.users);
 	let search = $state('');
 
 	const filtered = $derived(

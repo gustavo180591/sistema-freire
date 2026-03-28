@@ -1,32 +1,35 @@
 <script lang="ts">
+	import type { PageData } from './$types';
+	let { data }: { data: PageData } = $props();
+
 	type MetricCard = {
 		title: string;
-		value: string;
+		value: string | number;
 		description: string;
 	};
 
-	const metrics: MetricCard[] = [
+	let metrics = $derived([
 		{
 			title: 'Alumnos activos',
-			value: '1,284',
+			value: data.metrics.activeStudents,
 			description: 'Inscripciones activas en el período vigente'
 		},
 		{
 			title: 'Con deuda',
-			value: '93',
+			value: data.metrics.blockedStudentsCount,
 			description: 'Alumnos con bloqueo financiero potencial'
 		},
 		{
 			title: 'Riesgo académico',
-			value: '47',
+			value: data.metrics.attendanceRiskCount,
 			description: 'Regularidad baja o asistencia crítica'
 		},
 		{
-			title: 'Actas pendientes',
-			value: '12',
-			description: 'Mesas y cierres administrativos por revisar'
+			title: 'Comisiones activas',
+			value: data.metrics.activeCommissions,
+			description: 'Cursos y materias en dictado'
 		}
-	];
+	]);
 
 	const quickAccess = [
 		{ label: 'Usuarios', href: '/usuarios' },
@@ -70,19 +73,19 @@
 				<div class="rounded-2xl border border-slate-800 bg-slate-950 p-4">
 					<p class="font-medium">Bloqueos por deuda</p>
 					<p class="mt-1 text-sm text-slate-400">
-						93 alumnos no pueden inscribirse a mesas ni cursadas por saldo pendiente.
+						{data.metrics.blockedStudentsCount} alumnos no pueden inscribirse a mesas ni cursadas por saldo pendiente.
 					</p>
 				</div>
 				<div class="rounded-2xl border border-slate-800 bg-slate-950 p-4">
 					<p class="font-medium">Asistencia crítica</p>
 					<p class="mt-1 text-sm text-slate-400">
-						47 alumnos están por debajo del mínimo de regularidad configurado.
+						{data.metrics.attendanceRiskCount} alumnos están por debajo del mínimo de regularidad configurado.
 					</p>
 				</div>
 				<div class="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-					<p class="font-medium">Recibos pendientes</p>
+					<p class="font-medium">Actas pendientes</p>
 					<p class="mt-1 text-sm text-slate-400">
-						Existen 8 recibos docentes pendientes de publicación y firma.
+						Existen {data.metrics.pendingExamRecords} actas de mesas pendientes de confirmar y cargar.
 					</p>
 				</div>
 			</div>

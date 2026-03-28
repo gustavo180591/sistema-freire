@@ -3,6 +3,7 @@ import { AuditAction } from '@prisma/client';
 import type { RequestHandler } from './$types';
 import { auditLog } from '$lib/server/audit';
 import { getPayslipById } from '$lib/server/services/payroll/payslip.service';
+import { requireRoleOrOwnership } from '$lib/server/auth/authorization';
 
 export const GET: RequestHandler = async ({ params, locals }) => {
     const payslip = await getPayslipById(params.id);
@@ -11,12 +12,14 @@ export const GET: RequestHandler = async ({ params, locals }) => {
         throw error(404, 'Recibo no encontrado');
     }
 
-    const isTeacher = locals.user?.role === 'TEACHER';
-    const canAccess = !isTeacher || payslip.teacher.userId === locals.user?.id;
-
-    if (!canAccess) {
-        throw error(403, 'No tienes permisos para descargar este recibo');
-    }
+    // ACL híbrido:
+    // - DIRECTOR / FINANZAS acceden por rol
+    // - DOCENTE accede solo si es dueño
+    requireRoleOrOwnership(
+        locals.user,
+        ['DIRECTOR', 'FINANZAS'],
+        payslip.teacher.userId
+    );
 
     if (!payslip.fileUrl) {
         throw error(404, 'El PDF del recibo no está disponible');

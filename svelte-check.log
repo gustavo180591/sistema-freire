@@ -1,0 +1,161 @@
+Loading svelte-check in workspace: /home/gustavo/sistema-freire
+Getting Svelte diagnostics...
+
+/home/gustavo/sistema-freire/src/routes/(app)/carreras/nueva/+page.svelte:40:5
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+			<div>
+				<label class="mb-2 block text-sm font-medium text-slate-300">Código</label>
+				<input
+
+/home/gustavo/sistema-freire/src/routes/(app)/carreras/nueva/+page.svelte:53:5
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+			<div>
+				<label class="mb-2 block text-sm font-medium text-slate-300">Estado inicial</label>
+				<select
+
+/home/gustavo/sistema-freire/src/routes/(app)/carreras/nueva/+page.svelte:66:4
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+		<div>
+			<label class="mb-2 block text-sm font-medium text-slate-300">Nombre de la carrera</label>
+			<input
+
+/home/gustavo/sistema-freire/src/routes/(app)/carreras/nueva/+page.svelte:76:4
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+		<div>
+			<label class="mb-2 block text-sm font-medium text-slate-300">Descripción</label>
+			<textarea
+
+/home/gustavo/sistema-freire/src/routes/(app)/comisiones/nueva/+page.svelte:31:5
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+			<div>
+				<label class="mb-2 block text-sm font-medium text-slate-300">Nombre de comisión</label>
+				<input
+
+/home/gustavo/sistema-freire/src/routes/(app)/comisiones/nueva/+page.svelte:41:5
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+			<div>
+				<label class="mb-2 block text-sm font-medium text-slate-300">Cupo máximo</label>
+				<input
+
+/home/gustavo/sistema-freire/src/routes/(app)/comisiones/nueva/+page.svelte:53:5
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+			<div>
+				<label class="mb-2 block text-sm font-medium text-slate-300">Materia</label>
+				<select
+
+/home/gustavo/sistema-freire/src/routes/(app)/comisiones/nueva/+page.svelte:67:5
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+			<div>
+				<label class="mb-2 block text-sm font-medium text-slate-300">Período académico</label>
+				<select
+
+/home/gustavo/sistema-freire/src/routes/(app)/comisiones/nueva/+page.svelte:81:5
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+			<div>
+				<label class="mb-2 block text-sm font-medium text-slate-300">Estado inicial</label>
+				<select
+
+/home/gustavo/sistema-freire/src/routes/(app)/finanzas/pagos/nuevo/+page.svelte:32:5
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+			<div>
+				<label class="mb-2 block text-sm font-medium text-slate-300">Alumno</label>
+				<select
+
+/home/gustavo/sistema-freire/src/routes/(app)/finanzas/pagos/nuevo/+page.svelte:46:5
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+			<div>
+				<label class="mb-2 block text-sm font-medium text-slate-300">Importe</label>
+				<input
+
+/home/gustavo/sistema-freire/src/routes/(app)/finanzas/pagos/nuevo/+page.svelte:59:5
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+			<div>
+				<label class="mb-2 block text-sm font-medium text-slate-300">Método</label>
+				<select
+
+/home/gustavo/sistema-freire/src/routes/(app)/finanzas/pagos/nuevo/+page.svelte:74:5
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+			<div>
+				<label class="mb-2 block text-sm font-medium text-slate-300">Referencia</label>
+				<input
+
+/home/gustavo/sistema-freire/src/routes/(app)/finanzas/pagos/nuevo/+page.svelte:85:4
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+		<div>
+			<label class="mb-2 block text-sm font-medium text-slate-300">Observaciones</label>
+			<textarea
+
+/home/gustavo/sistema-freire/src/routes/(app)/usuarios/nuevo/+page.svelte:21:5
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+			<div>
+				<label class="mb-2 block text-sm font-medium text-slate-300">Tipo de usuario</label>
+				<select
+
+/home/gustavo/sistema-freire/src/routes/(app)/usuarios/nuevo/+page.svelte:36:5
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+			<div>
+				<label class="mb-2 block text-sm font-medium text-slate-300">Correo institucional</label>
+				<input
+
+/home/gustavo/sistema-freire/src/routes/(app)/usuarios/nuevo/+page.svelte:45:5
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+			<div>
+				<label class="mb-2 block text-sm font-medium text-slate-300">Nombre</label>
+				<input
+
+/home/gustavo/sistema-freire/src/routes/(app)/usuarios/nuevo/+page.svelte:53:5
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+			<div>
+				<label class="mb-2 block text-sm font-medium text-slate-300">Apellido</label>
+				<input
+
+/home/gustavo/sistema-freire/src/routes/(app)/usuarios/nuevo/+page.svelte:61:5
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+			<div>
+				<label class="mb-2 block text-sm font-medium text-slate-300">DNI</label>
+				<input
+
+/home/gustavo/sistema-freire/src/routes/(app)/usuarios/nuevo/+page.svelte:69:5
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+			<div>
+				<label class="mb-2 block text-sm font-medium text-slate-300">Carrera</label>
+				<select
+
+/home/gustavo/sistema-freire/src/routes/(auth)/login/+page.svelte:58:7
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+					<div>
+						<label class="mb-2 block text-sm font-medium text-slate-300">
+							Correo institucional
+						</label>
+						<input
+
+/home/gustavo/sistema-freire/src/routes/(auth)/login/+page.svelte:72:7
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+					<div>
+						<label class="mb-2 block text-sm font-medium text-slate-300"> Contraseña </label>
+						<input
+
+====================================
+svelte-check found 0 errors and 22 warnings in 5 files

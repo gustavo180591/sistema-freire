@@ -6,6 +6,7 @@
 	let active = $state('true');
 
 	let { data } = $props();
+
 	const subjects = $derived(data?.subjects ?? []);
 	const terms = $derived(data?.terms ?? []);
 </script>

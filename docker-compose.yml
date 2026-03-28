@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: freire_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: sistema-freire
+      POSTGRES_USER: freire
+      POSTGRES_PASSWORD: Freire123
+    ports:
+      - "5437:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U freire -d sistema-freire"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: freire_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  frontend:
+    build:
+      context: ./apps/web
+    container_name: freire_frontend
+    restart: always
+    ports:
+      - "3002:5173"
+    environment:
+      - DATABASE_URL=postgresql://freire:Freire123@postgres:5432/sistema-freire
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:

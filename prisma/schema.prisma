@@ -1,0 +1,361 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum RoleCode {
+  SUPERADMIN
+  DIRECTOR
+  SECRETARIA
+  DOCENTE
+  ALUMNO
+  FINANZAS
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  DOWNLOAD
+  BLOCKED_ATTEMPT
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  student   Student?
+  teacher   Teacher?
+  roles     UserRole[]
+  sessions  Session[]
+  auditLogs AuditLog[]
+
+  @@index([lastName, firstName])
+  @@map("users")
+}
+
+model Role {
+  id    String     @id @default(cuid())
+  code  RoleCode   @unique
+  name  String
+  users UserRole[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model Career {
+  students   Student[]
+  studyPlans StudyPlan[]
+  id         String      @id @default(cuid())
+  code       String      @unique
+  name       String
+  active     Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@map("careers")
+}
+
+model AuditLog {
+  id          String      @id @default(cuid())
+  userId      String?
+  action      AuditAction
+  entityType  String
+  entityId    String?
+  description String
+  metadata    Json?
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  GRADUATED
+  SUSPENDED
+}
+
+enum EnrollmentStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+  CANCELLED
+}
+
+model Student {
+  careerId          String
+  attendanceEntries AttendanceEntry[]
+  grades            Grade[]
+  subjectStatuses   StudentSubjectStatus[]
+  id                String                 @id @default(cuid())
+  userId            String                 @unique
+  dni               String                 @unique
+  firstName         String
+  lastName          String
+  status            StudentStatus          @default(ACTIVE)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  career      Career       @relation(fields: [careerId], references: [id], onDelete: Restrict)
+  enrollments Enrollment[]
+
+  @@index([lastName, firstName])
+  @@map("students")
+}
+
+model Teacher {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  dni       String   @unique
+  firstName String
+  lastName  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  commissions CommissionTeacher[]
+
+  @@index([lastName, firstName])
+  @@map("teachers")
+}
+
+model Subject {
+  planLinks      PlanSubject[]
+  statuses       StudentSubjectStatus[]
+  correlativesTo SubjectCorrelative[]   @relation("subject_main")
+  requiredBy     SubjectCorrelative[]   @relation("subject_required")
+  id             String                 @id @default(cuid())
+  code           String                 @unique
+  name           String
+  yearLevel      Int
+  active         Boolean                @default(true)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  commissions Commission[]
+
+  @@index([name])
+  @@map("subjects")
+}
+
+model AcademicTerm {
+  id        String   @id @default(cuid())
+  name      String
+  year      Int
+  startDate DateTime
+  endDate   DateTime
+  active    Boolean  @default(true)
+
+  commissions Commission[]
+
+  @@unique([year, name])
+  @@map("academic_terms")
+}
+
+model Commission {
+  attendanceDays AttendanceRecord[]
+  grades         Grade[]
+  id             String             @id @default(cuid())
+  subjectId      String
+  termId         String
+  name           String
+  capacity       Int?
+  active         Boolean            @default(true)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  subject     Subject             @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  term        AcademicTerm        @relation(fields: [termId], references: [id], onDelete: Restrict)
+  teachers    CommissionTeacher[]
+  enrollments Enrollment[]
+
+  @@unique([subjectId, termId, name])
+  @@index([termId])
+  @@map("commissions")
+}
+
+model CommissionTeacher {
+  commissionId String
+  teacherId    String
+
+  commission Commission @relation(fields: [commissionId], references: [id], onDelete: Cascade)
+  teacher    Teacher    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@id([commissionId, teacherId])
+  @@map("commission_teachers")
+}
+
+model Enrollment {
+  id           String           @id @default(cuid())
+  studentId    String
+  commissionId String
+  status       EnrollmentStatus @default(PENDING)
+  enrolledAt   DateTime         @default(now())
+
+  student    Student    @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  commission Commission @relation(fields: [commissionId], references: [id], onDelete: Restrict)
+
+  @@unique([studentId, commissionId])
+  @@index([commissionId, status])
+  @@map("enrollments")
+}
+
+enum RegularityStatus {
+  REGULAR
+  LIBRE
+}
+
+model SubjectCorrelative {
+  subjectId         String
+  requiredSubjectId String
+
+  subject         Subject @relation("subject_main", fields: [subjectId], references: [id], onDelete: Cascade)
+  requiredSubject Subject @relation("subject_required", fields: [requiredSubjectId], references: [id], onDelete: Restrict)
+
+  @@id([subjectId, requiredSubjectId])
+  @@map("subject_correlatives")
+}
+
+model AttendanceRecord {
+  id              String   @id @default(cuid())
+  commissionId    String
+  classDate       DateTime
+  createdByUserId String
+  createdAt       DateTime @default(now())
+
+  commission Commission        @relation(fields: [commissionId], references: [id], onDelete: Restrict)
+  entries    AttendanceEntry[]
+
+  @@unique([commissionId, classDate])
+  @@map("attendance_records")
+}
+
+model AttendanceEntry {
+  id           String  @id @default(cuid())
+  attendanceId String
+  studentId    String
+  present      Boolean
+  notes        String?
+
+  attendance AttendanceRecord @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  student    Student          @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
+  @@unique([attendanceId, studentId])
+  @@index([studentId])
+  @@map("attendance_entries")
+}
+
+model Grade {
+  id              String   @id @default(cuid())
+  commissionId    String
+  studentId       String
+  value           Decimal  @db.Decimal(5, 2)
+  gradeType       String
+  gradedAt        DateTime @default(now())
+  createdByUserId String
+
+  commission Commission @relation(fields: [commissionId], references: [id], onDelete: Restrict)
+  student    Student    @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
+  @@index([studentId, commissionId])
+  @@map("grades")
+}
+
+model StudentSubjectStatus {
+  id                String           @id @default(cuid())
+  studentId         String
+  subjectId         String
+  attendancePercent Decimal          @default(0) @db.Decimal(5, 2)
+  regularityStatus  RegularityStatus @default(LIBRE)
+  approved          Boolean          @default(false)
+  updatedAt         DateTime         @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+
+  @@unique([studentId, subjectId])
+  @@index([studentId, regularityStatus])
+  @@map("student_subject_status")
+}
+
+model StudyPlan {
+  id        String   @id @default(cuid())
+  careerId  String
+  name      String
+  version   String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  career   Career        @relation(fields: [careerId], references: [id], onDelete: Restrict)
+  subjects PlanSubject[]
+
+  @@unique([careerId, version])
+  @@map("study_plans")
+}
+
+model PlanSubject {
+  planId    String
+  subjectId String
+  sortOrder Int
+
+  plan    StudyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  subject Subject   @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+
+  @@id([planId, subjectId])
+  @@map("plan_subjects")
+}

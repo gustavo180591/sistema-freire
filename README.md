@@ -1,44 +1,36 @@
-# sv
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
-
-## Creating a project
-
-If you're seeing this, you've probably already done this step. Congrats!
-
-```sh
-# create a new project
 npx sv create my-app
-```
 
-To recreate this project with the same configuration:
+Tailwind CSS 4
+npx sv add tailwindcss
+npm i @tailwindcss/forms @tailwindcss/typography
 
-```sh
-# recreate this project
-npx sv@0.13.0 create --template minimal --types ts --add prettier eslint vitest="usages:unit,component" playwright tailwindcss="plugins:typography,forms" sveltekit-adapter="adapter:auto" --install npm sistema-freire
-```
+Validación de datos
+npm i zod
+npm i zod-form-data
 
-## Developing
+ORM y base de datos
+npm i -D prisma@6
+npm i @prisma/client@6
+npx prisma init
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Auth (si tu sistema tendrá login)
+npm i @auth/sveltekit
 
-```sh
-npm run dev
+Testing
+npm i -D vitest
+npx playwright install
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+Calidad de código
+npm i -D eslint prettier husky lint-staged
+npm i -D @commitlint/cli @commitlint/config-conventional
 
-## Building
+Variables de entorno
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/app"
 
-To create a production version of your app:
 
-```sh
-npm run build
-```
 
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
-# sistema-freire
-# sistema-freire
+docker-compose up -d
+docker-compose up --build -d
+docker-compose ps
+docker-compose logs -f

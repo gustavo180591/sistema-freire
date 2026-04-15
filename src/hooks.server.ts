@@ -8,7 +8,7 @@ const routePermissions: Record<string, string[]> = {
     '/carreras': ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA'],
     '/comisiones': ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'DOCENTE'],
     '/finanzas': ['SUPERADMIN', 'FINANZAS', 'DIRECTOR'],
-    '/recibos': ['DOCENTE', 'FINANZAS', 'DIRECTOR'],
+    '/recibos': ['SUPERADMIN', 'DOCENTE', 'FINANZAS', 'DIRECTOR'],
     '/reportes': ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'FINANZAS']
 };
 

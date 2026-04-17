@@ -9,7 +9,7 @@
 
 	// Filtrar estudiantes según búsqueda
 	const filteredStudents = $derived(
-		data.students.filter(student => {
+		data.students.filter((student: Student) => {
 			if (!searchQuery.trim()) return true;
 			const query = searchQuery.toLowerCase();
 			const fullName = `${student.lastName} ${student.firstName}`.toLowerCase();
@@ -89,19 +89,19 @@
 		</div>
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
 			<div class="text-2xl font-bold text-green-400">
-				{data.students.filter(s => s.status === 'ACTIVE').length}
+				{data.students.filter((s: Student) => s.status === 'ACTIVE').length}
 			</div>
 			<div class="text-sm text-slate-400">Activos</div>
 		</div>
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
 			<div class="text-2xl font-bold text-blue-400">
-				{data.students.filter(s => s.isBecado).length}
+				{data.students.filter((s: Student) => s.isBecado).length}
 			</div>
 			<div class="text-sm text-slate-400">Becados</div>
 		</div>
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
 			<div class="text-2xl font-bold text-orange-400">
-				{data.students.filter(s => s.isRecursante).length}
+				{data.students.filter((s: Student) => s.isRecursante).length}
 			</div>
 			<div class="text-sm text-slate-400">Recursantes</div>
 		</div>
@@ -182,6 +182,16 @@
 							</td>
 							<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
 								<div class="flex items-center justify-end space-x-2">
+									<a
+										href="/alumnos/{student.id}"
+										class="text-emerald-400 hover:text-emerald-300 transition-colors"
+										aria-label="Ver alumno"
+									>
+										<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+										</svg>
+									</a>
 									<button
 										onclick={() => editingStudent = student}
 										class="text-blue-400 hover:text-blue-300 transition-colors"

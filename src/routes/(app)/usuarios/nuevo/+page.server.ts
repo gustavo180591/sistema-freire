@@ -97,9 +97,7 @@ export const actions = {
 							dni,
 							firstName,
 							lastName,
-							careerId,
-							isBecado,
-							isRecursante
+							careerId
 						}
 					});
 				}

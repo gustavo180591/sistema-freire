@@ -295,6 +295,7 @@
 									type="radio"
 									value="normal"
 									checked={!editingStudent.isBecado && !editingStudent.isRecursante}
+									onchange={() => { editingStudent!.isBecado = false; editingStudent!.isRecursante = false; }}
 									class="h-4 w-4 border-slate-600 bg-slate-950 text-blue-600 focus:ring-blue-500 focus:ring-2"
 								/>
 								<label for="alumnoNormal" class="text-sm text-slate-300">
@@ -308,6 +309,7 @@
 									type="radio"
 									value="becado"
 									checked={editingStudent.isBecado}
+									onchange={() => { editingStudent!.isBecado = true; editingStudent!.isRecursante = false; }}
 									class="h-4 w-4 border-slate-600 bg-slate-950 text-blue-600 focus:ring-blue-500 focus:ring-2"
 								/>
 								<label for="alumnoBecado" class="text-sm text-slate-300">
@@ -321,6 +323,7 @@
 									type="radio"
 									value="recursante"
 									checked={editingStudent.isRecursante}
+									onchange={() => { editingStudent!.isBecado = false; editingStudent!.isRecursante = true; }}
 									class="h-4 w-4 border-slate-600 bg-slate-950 text-blue-600 focus:ring-blue-500 focus:ring-2"
 								/>
 								<label for="alumnoRecursante" class="text-sm text-slate-300">

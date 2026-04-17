@@ -29,12 +29,18 @@ export const actions: Actions = {
 					}
 				});
 
-				// Actualizar alumno (sin campos isBecado/isRecursante temporalmente)
+				// Calcular flags según tipo
+				const isBecado = alumnoType === 'becado';
+				const isRecursante = alumnoType === 'recursante';
+
+				// Actualizar alumno
 				await tx.student.update({
 					where: { id },
 					data: {
 						firstName,
-						lastName
+						lastName,
+						isBecado,
+						isRecursante
 					}
 				});
 			});

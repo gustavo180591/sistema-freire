@@ -18,11 +18,33 @@
 	let isScrolled = $state(false);
 	let userMenuOpen = $state(false);
 
-	// Links de navegación
-	const navLinks = [
-		{ label: 'Inicio', href: '/' },
-		{ label: 'Contacto', href: '/contacto' }
+	// Links de navegación con sus permisos requeridos
+	const navLinksConfig = [
+		{ label: 'Inicio', href: '/', requiredRoles: [] }, // Todos pueden ver
+		{ label: 'Dashboard', href: '/dashboard', requiredRoles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'] },
+		{ label: 'Usuarios', href: '/usuarios', requiredRoles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'] },
+		{ label: 'Carreras', href: '/carreras', requiredRoles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'] },
+		{ label: 'Comisiones', href: '/comisiones', requiredRoles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE'] },
+		{ label: 'Materias', href: '/materias', requiredRoles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE'] },
+		{ label: 'Finanzas', href: '/finanzas', requiredRoles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS'] },
+		{ label: 'Recibos', href: '/recibos', requiredRoles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE', 'FINANZAS'] },
+		{ label: 'Reportes', href: '/reportes', requiredRoles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS'] },
+		{ label: 'Alumnos', href: '/alumnos', requiredRoles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS', 'ALUMNO'] },
+		{ label: 'Mi Perfil', href: '/alumno', requiredRoles: ['ALUMNO'] },
+		{ label: 'Contacto', href: '/contacto', requiredRoles: [] } // Todos pueden ver
 	];
+
+	// Filtrar enlaces según los roles del usuario
+	const navLinks = $derived(
+		navLinksConfig.filter(link => {
+			// Si no requiere roles, mostrar a todos
+			if (link.requiredRoles.length === 0) return true;
+			// Si el usuario no está autenticado, no mostrar enlaces que requieren roles
+			if (!user) return false;
+			// Mostrar si el usuario tiene al menos uno de los roles requeridos
+			return link.requiredRoles.some(role => user.roles.includes(role));
+		})
+	);
 
 	// Logo
 	const logoPath = '/logo.png';

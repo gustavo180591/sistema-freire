@@ -20,6 +20,7 @@ enum RoleCode {
   DOCENTE
   ALUMNO
   FINANZAS
+  APODERADO
 }
 
 enum AuditAction {

@@ -9,7 +9,8 @@ const ROLES: { code: RoleCode; name: string }[] = [
 	{ code: 'SECRETARIA', name: 'Secretaría' },
 	{ code: 'DOCENTE', name: 'Docente' },
 	{ code: 'ALUMNO', name: 'Alumno' },
-	{ code: 'FINANZAS', name: 'Finanzas' }
+	{ code: 'FINANZAS', name: 'Finanzas' },
+	{ code: 'APODERADO', name: 'Apoderado' }
 ];
 
 async function main() {

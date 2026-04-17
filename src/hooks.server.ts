@@ -2,17 +2,20 @@ import type { Handle } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/db/prisma';
 
+// Roles con acceso total al sistema institucional
+const FULL_ACCESS_ROLES = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'];
+
 const routePermissions: Record<string, string[]> = {
-	'/dashboard': ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA'],
-	'/usuarios': ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA'],
-	'/carreras': ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA'],
-	'/comisiones': ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'DOCENTE'],
-	'/materias': ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'DOCENTE'],
-	'/finanzas': ['SUPERADMIN', 'FINANZAS', 'DIRECTOR'],
-	'/recibos': ['SUPERADMIN', 'DOCENTE', 'FINANZAS', 'DIRECTOR'],
-	'/reportes': ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'FINANZAS'],
+	'/dashboard': FULL_ACCESS_ROLES,
+	'/usuarios': FULL_ACCESS_ROLES,
+	'/carreras': FULL_ACCESS_ROLES,
+	'/comisiones': [...FULL_ACCESS_ROLES, 'DOCENTE'],
+	'/materias': [...FULL_ACCESS_ROLES, 'DOCENTE'],
+	'/finanzas': [...FULL_ACCESS_ROLES, 'FINANZAS'],
+	'/recibos': [...FULL_ACCESS_ROLES, 'DOCENTE', 'FINANZAS'],
+	'/reportes': [...FULL_ACCESS_ROLES, 'FINANZAS'],
 	'/alumno': ['ALUMNO'], // Solo alumnos
-	'/alumnos': ['ALUMNO', 'SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'FINANZAS'] // Alumnos ven los propios, admins todos
+	'/alumnos': ['ALUMNO', ...FULL_ACCESS_ROLES, 'FINANZAS'] // Alumnos ven propios, institucionales ven todos
 };
 
 export const handle: Handle = async ({ event, resolve }) => {

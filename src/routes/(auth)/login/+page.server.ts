@@ -52,7 +52,7 @@ export const actions = {
 		const roles = user.roles.map(r => r.role.code);
 		let redirectUrl = '/';
 
-		if (roles.some((r) => ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA'].includes(r))) {
+		if (roles.some((r) => ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'].includes(r))) {
 			redirectUrl = '/dashboard';
 		} else if (roles.includes('DOCENTE')) {
 			redirectUrl = '/comisiones';

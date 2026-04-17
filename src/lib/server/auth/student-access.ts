@@ -10,13 +10,14 @@ export async function requireStudentAccess(
         throw error(401, 'No autenticado');
     }
 
-    // Acceso global institucional
+    // Acceso global institucional (incluye APODERADO con acceso total)
     if (
         hasRole(user, [
             'SUPERADMIN',
             'DIRECTOR',
             'SECRETARIA',
-            'FINANZAS'
+            'FINANZAS',
+            'APODERADO'
         ])
     ) {
         return;

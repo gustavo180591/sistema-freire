@@ -1,5 +1,14 @@
 <script lang="ts">
+	import type { PageData, ActionData } from './$types';
+	import { enhance } from '$app/forms';
+
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 	let userType = $state('ALUMNO');
+	let loading = $state(false);
+
+	const emailLabel = $derived(
+		userType === 'ALUMNO' ? 'Correo' : 'Correo institucional'
+	);
 </script>
 
 <svelte:head>
@@ -15,11 +24,28 @@
 		</p>
 	</div>
 
-	<form method="POST" class="space-y-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
+	{#if form?.error}
+		<div class="rounded-2xl border border-red-800 bg-red-950/50 p-4 text-red-200">
+			{form.error}
+		</div>
+	{/if}
+
+	<form
+		method="POST"
+		class="space-y-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-8"
+		use:enhance={() => {
+			loading = true;
+			return async ({ update }) => {
+				loading = false;
+				await update();
+			};
+		}}
+	>
 		<div class="grid gap-6 md:grid-cols-2">
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Tipo de usuario</label>
+				<label for="type" class="mb-2 block text-sm font-medium text-slate-300">Tipo de usuario</label>
 				<select
+					id="type"
 					bind:value={userType}
 					name="type"
 					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
@@ -33,8 +59,9 @@
 			</div>
 
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Correo institucional</label>
+				<label for="email" class="mb-2 block text-sm font-medium text-slate-300">{emailLabel}</label>
 				<input
+					id="email"
 					name="email"
 					type="email"
 					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
@@ -42,36 +69,43 @@
 			</div>
 
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Nombre</label>
+				<label for="firstName" class="mb-2 block text-sm font-medium text-slate-300">Nombre</label>
 				<input
+					id="firstName"
 					name="firstName"
 					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 				/>
 			</div>
 
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Apellido</label>
+				<label for="lastName" class="mb-2 block text-sm font-medium text-slate-300">Apellido</label>
 				<input
+					id="lastName"
 					name="lastName"
 					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 				/>
 			</div>
 
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">DNI</label>
+				<label for="dni" class="mb-2 block text-sm font-medium text-slate-300">DNI</label>
 				<input
+					id="dni"
 					name="dni"
 					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 				/>
 			</div>
 
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Carrera</label>
+				<label for="careerId" class="mb-2 block text-sm font-medium text-slate-300">Carrera</label>
 				<select
+					id="careerId"
 					name="careerId"
 					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 				>
 					<option value="">Seleccionar carrera</option>
+					{#each data.careers as career}
+						<option value={career.id}>{career.name}</option>
+					{/each}
 				</select>
 			</div>
 		</div>
@@ -84,9 +118,10 @@
 		<div class="flex justify-end">
 			<button
 				type="submit"
-				class="rounded-2xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.02]"
+				disabled={loading}
+				class="rounded-2xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.02] disabled:opacity-50"
 			>
-				Crear usuario
+				{loading ? 'Creando...' : 'Crear usuario'}
 			</button>
 		</div>
 	</form>

@@ -59,7 +59,7 @@ export const actions = {
 		} else if (roles.includes('FINANZAS')) {
 			redirectUrl = '/finanzas';
 		} else if (roles.includes('ALUMNO')) {
-			redirectUrl = `/alumnos/${user.id}/historial`; // o donde corresponda para alumnos
+			redirectUrl = '/alumno';
 		}
 
 		throw redirect(303, redirectUrl);

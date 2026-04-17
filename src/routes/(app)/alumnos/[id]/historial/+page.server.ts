@@ -1,11 +1,12 @@
 import type { PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { requireStudentAccess } from '$lib/server/auth/student-access';
+import { error } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
     await requireStudentAccess(locals.user, params.id);
 
-    const student = await prisma.student.findUniqueOrThrow({
+    const student = await prisma.student.findUnique({
         where: { id: params.id },
         include: {
             career: true,
@@ -17,6 +18,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
             studentCharges: true
         }
     });
+
+    if (!student) {
+        throw error(404, 'Alumno no encontrado');
+    }
 
     return {
         student: {

@@ -10,7 +10,9 @@ const routePermissions: Record<string, string[]> = {
 	'/materias': ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'DOCENTE'],
 	'/finanzas': ['SUPERADMIN', 'FINANZAS', 'DIRECTOR'],
 	'/recibos': ['SUPERADMIN', 'DOCENTE', 'FINANZAS', 'DIRECTOR'],
-	'/reportes': ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'FINANZAS']
+	'/reportes': ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'FINANZAS'],
+	'/alumno': ['ALUMNO'], // Solo alumnos
+	'/alumnos': ['ALUMNO', 'SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'FINANZAS'] // Alumnos ven los propios, admins todos
 };
 
 export const handle: Handle = async ({ event, resolve }) => {

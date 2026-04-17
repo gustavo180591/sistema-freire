@@ -5,6 +5,21 @@
 	let { data }: { data: PageData } = $props();
 	let editingStudent = $state<Student | null>(null);
 	let deletingStudent = $state<Student | null>(null);
+	let searchQuery = $state('');
+
+	// Filtrar estudiantes según búsqueda
+	const filteredStudents = $derived(
+		data.students.filter(student => {
+			if (!searchQuery.trim()) return true;
+			const query = searchQuery.toLowerCase();
+			const fullName = `${student.lastName} ${student.firstName}`.toLowerCase();
+			return (
+				fullName.includes(query) ||
+				student.email.toLowerCase().includes(query) ||
+				student.dni.toLowerCase().includes(query)
+			);
+		})
+	);
 
 	interface Student {
 		id: string;
@@ -92,6 +107,16 @@
 		</div>
 	</div>
 
+	<!-- Filtro de búsqueda -->
+	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+		<input
+			type="text"
+			placeholder="Buscar por nombre, email o DNI"
+			bind:value={searchQuery}
+			class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 placeholder-slate-500 transition outline-none focus:border-slate-500"
+		/>
+	</div>
+
 	<!-- Tabla de Alumnos -->
 	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 overflow-hidden">
 		<div class="overflow-x-auto">
@@ -122,7 +147,14 @@
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-slate-800">
-					{#each data.students as student}
+					{#if filteredStudents.length === 0}
+						<tr>
+							<td colspan="7" class="px-6 py-8 text-center text-sm text-slate-400">
+								No se encontraron alumnos que coincidan con "{searchQuery}"
+							</td>
+						</tr>
+					{:else}
+						{#each filteredStudents as student}
 						<tr class="hover:bg-slate-800/30 transition-colors">
 							<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
 								{student.dni}
@@ -171,7 +203,8 @@
 								</div>
 							</td>
 						</tr>
-					{/each}
+						{/each}
+					{/if}
 				</tbody>
 			</table>
 		</div>

@@ -54,7 +54,7 @@
 				style:animation-delay="{item.delay}ms"
 			>
 				<div class="relative z-10 flex items-start space-x-4">
-					<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/25 transition-all duration-300 group-hover:scale-110 group-hover:shadow-blue-500/40">
+					<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/25 transition-all duration-300 group-hover:scale-110 group-hover:shadow-blue-500/40">
 						{#if item.icon === 'map-pin'}
 							<svg
 								class="h-6 w-6 text-white"
@@ -128,7 +128,7 @@
 						</p>
 					</div>
 				</div>
-				<div class="absolute -right-16 -top-16 h-32 w-32 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 blur-2xl transition-all duration-500 group-hover:scale-150"></div>
+				<div class="absolute -right-16 -top-16 h-32 w-32 rounded-full bg-linear-to-br from-blue-500/20 to-purple-500/20 blur-2xl transition-all duration-500 group-hover:scale-150"></div>
 			</div>
 		{/each}
 	</div>

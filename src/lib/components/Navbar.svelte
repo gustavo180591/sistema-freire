@@ -116,7 +116,7 @@
 					>
 						{link.label}
 						<span
-							class="absolute -bottom-1 left-0 h-0.5 w-0 bg-gradient-to-r from-blue-500 to-purple-600 transition-all duration-300 group-hover:w-full"
+							class="absolute -bottom-1 left-0 h-0.5 w-0 bg-linear-to-r from-blue-500 to-purple-600 transition-all duration-300 group-hover:w-full"
 						></span>
 					</a>
 				{/each}
@@ -134,7 +134,7 @@
 						>
 							<div class="relative">
 								<div
-									class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-blue-500 text-sm font-semibold text-white ring-2 ring-slate-200 dark:ring-slate-800"
+									class="flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-green-400 to-blue-500 text-sm font-semibold text-white ring-2 ring-slate-200 dark:ring-slate-800"
 								>
 									{user.firstName[0]}{user.lastName[0]}
 								</div>
@@ -189,7 +189,7 @@
 					<!-- CTA Button -->
 					<a
 						href="/login"
-						class="rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition hover:scale-105 hover:shadow-blue-500/40"
+						class="rounded-lg bg-linear-to-r from-blue-500 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition hover:scale-105 hover:shadow-blue-500/40"
 					>
 						Iniciar sesión
 					</a>
@@ -248,7 +248,7 @@
 						<!-- User Avatar Mobile -->
 						<div class="flex items-center space-x-3 px-4 py-3">
 							<div
-								class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-blue-500 text-sm font-semibold text-white ring-2 ring-slate-200 dark:ring-slate-800"
+								class="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-green-400 to-blue-500 text-sm font-semibold text-white ring-2 ring-slate-200 dark:ring-slate-800"
 							>
 								{user.firstName[0]}{user.lastName[0]}
 							</div>
@@ -264,7 +264,7 @@
 						<a
 							href="/login"
 							onclick={() => (mobileMenuOpen = false)}
-							class="block w-full rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition hover:scale-105"
+							class="block w-full rounded-lg bg-linear-to-r from-blue-500 to-purple-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition hover:scale-105"
 						>
 							Iniciar sesión
 						</a>

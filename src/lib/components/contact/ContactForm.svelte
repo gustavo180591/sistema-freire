@@ -29,8 +29,8 @@
 
 <div class="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur-xl p-8 shadow-2xl shadow-blue-500/10 animate-fade-in hover:shadow-blue-500/20 transition-shadow duration-500">
 	<!-- Decorative background elements -->
-	<div class="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-gradient-to-br from-blue-500/10 to-purple-500/10 blur-3xl animate-pulse"></div>
-	<div class="absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-gradient-to-br from-purple-500/10 to-blue-500/10 blur-3xl animate-pulse" style:animation-delay="1s"></div>
+	<div class="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-linear-to-br from-blue-500/10 to-purple-500/10 blur-3xl animate-pulse"></div>
+	<div class="absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-linear-to-br from-purple-500/10 to-blue-500/10 blur-3xl animate-pulse" style:animation-delay="1s"></div>
 	<div class="absolute top-0 right-0 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl animate-pulse" style:animation-delay="0.5s"></div>
 
 	<div class="relative z-10">
@@ -80,7 +80,7 @@
 								: 'border-slate-600 hover:border-slate-500'}"
 						/>
 						<div
-							class="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/0 to-purple-500/0 transition-all duration-300 peer-focus:from-blue-500/10 peer-focus:to-purple-500/10"
+							class="absolute inset-0 rounded-xl bg-linear-to-r from-blue-500/0 to-purple-500/0 transition-all duration-300 peer-focus:from-blue-500/10 peer-focus:to-purple-500/10"
 						></div>
 					</div>
 					{#if errors.name}
@@ -109,7 +109,7 @@
 								: 'border-slate-600 hover:border-slate-500'}"
 						/>
 						<div
-							class="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/0 to-purple-500/0 transition-all duration-300 peer-focus:from-blue-500/10 peer-focus:to-purple-500/10"
+							class="absolute inset-0 rounded-xl bg-linear-to-r from-blue-500/0 to-purple-500/0 transition-all duration-300 peer-focus:from-blue-500/10 peer-focus:to-purple-500/10"
 						></div>
 					</div>
 					{#if errors.email}
@@ -138,7 +138,7 @@
 							: 'border-slate-600 hover:border-slate-500'}"
 					/>
 					<div
-						class="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/0 to-purple-500/0 transition-all duration-300 peer-focus:from-blue-500/10 peer-focus:to-purple-500/10"
+						class="absolute inset-0 rounded-xl bg-linear-to-r from-blue-500/0 to-purple-500/0 transition-all duration-300 peer-focus:from-blue-500/10 peer-focus:to-purple-500/10"
 					></div>
 				</div>
 				{#if errors.phone}
@@ -167,7 +167,7 @@
 								: 'border-slate-600 hover:border-slate-500'}"
 						></textarea>
 					<div
-						class="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/0 to-purple-500/0 transition-all duration-300 peer-focus:from-blue-500/10 peer-focus:to-purple-500/10"
+						class="absolute inset-0 rounded-xl bg-linear-to-r from-blue-500/0 to-purple-500/0 transition-all duration-300 peer-focus:from-blue-500/10 peer-focus:to-purple-500/10"
 					></div>
 				</div>
 				{#if errors.message}

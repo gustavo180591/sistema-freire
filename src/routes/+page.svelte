@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { page } from '$app/stores';
+
 	const modules = [
 		'Gestión Académica',
 		'Inscripciones',
@@ -33,12 +35,14 @@
 			</p>
 
 			<div class="mt-8 flex flex-wrap gap-4">
-				<a
-					href="/login"
-					class="rounded-2xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.02]"
-				>
-					Ingresar al sistema
-				</a>
+				{#if !$page.data.user}
+					<a
+						href="/login"
+						class="rounded-2xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.02]"
+					>
+						Ingresar al sistema
+					</a>
+				{/if}
 
 				<a
 					href="/dashboard"

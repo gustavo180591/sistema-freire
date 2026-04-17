@@ -1,0 +1,48 @@
+import type { PageServerLoad } from './$types';
+import { prisma } from '$lib/server/db/prisma';
+
+export const load: PageServerLoad = async () => {
+	// Obtener todos los alumnos con sus datos relacionados
+	const students = await prisma.student.findMany({
+		include: {
+			user: {
+				select: {
+					id: true,
+					email: true,
+					firstName: true,
+					lastName: true,
+					status: true,
+					createdAt: true
+				}
+			},
+			career: {
+				select: {
+					id: true,
+					name: true
+				}
+			}
+		},
+		orderBy: {
+			user: {
+				lastName: 'asc'
+			}
+		}
+	});
+
+	return {
+		students: students.map(student => ({
+			id: student.id,
+			userId: student.userId,
+			dni: student.dni,
+			firstName: student.firstName,
+			lastName: student.lastName,
+			email: student.user.email,
+			career: student.career.name,
+			careerId: student.career.id,
+			status: student.user.status,
+			isBecado: false, // Temporalmente false hasta resolver sincronización
+			isRecursante: false, // Temporalmente false hasta resolver sincronización
+			createdAt: student.user.createdAt
+		}))
+	};
+};

@@ -12,9 +12,7 @@
 </script>
 
 <!-- Definir tipo ActionData local para incluir success -->
-<script context="module" lang="ts">
-	import type { ActionData } from './$types';
-
+<script module lang="ts">
 	declare module './$types' {
 		interface ActionData {
 			success?: string;

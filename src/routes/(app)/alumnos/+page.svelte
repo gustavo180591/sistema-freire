@@ -47,12 +47,23 @@
 </svelte:head>
 
 <div class="mx-auto max-w-7xl space-y-8">
-	<div>
-		<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Gestión Académica</p>
-		<h1 class="text-3xl font-bold tracking-tight">Alumnos</h1>
-		<p class="mt-2 text-sm text-slate-400">
-			Administración completa del alumnado del instituto.
-		</p>
+	<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+		<div>
+			<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Gestión Académica</p>
+			<h1 class="text-3xl font-bold tracking-tight">Alumnos</h1>
+			<p class="mt-2 text-sm text-slate-400">
+				Administración completa del alumnado del instituto.
+			</p>
+		</div>
+		<a
+			href="/usuarios/nuevo"
+			class="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.02]"
+		>
+			<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+			</svg>
+			Agregar Alumno
+		</a>
 	</div>
 
 	<!-- Estadísticas -->

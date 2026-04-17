@@ -29,7 +29,7 @@
 		{ label: 'Finanzas', href: '/finanzas', requiredRoles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS'] },
 		{ label: 'Recibos', href: '/recibos', requiredRoles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE', 'FINANZAS'] },
 		{ label: 'Reportes', href: '/reportes', requiredRoles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS'] },
-		{ label: 'Alumnos', href: '/alumnos', requiredRoles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS', 'ALUMNO'] },
+		{ label: 'Alumnos', href: '/alumnos', requiredRoles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS'] },
 		{ label: 'Mi Perfil', href: '/alumno', requiredRoles: ['ALUMNO','SUPERADMIN'] },
 		{ label: 'Contacto', href: '/contacto', requiredRoles: [] } // Todos pueden 
 	];

@@ -11,15 +11,6 @@
 	);
 </script>
 
-<!-- Definir tipo ActionData local para incluir success -->
-<script module lang="ts">
-	declare module './$types' {
-		interface ActionData {
-			success?: string;
-		}
-	}
-</script>
-
 <svelte:head>
 	<title>Nuevo usuario | Paulo Freire</title>
 </svelte:head>

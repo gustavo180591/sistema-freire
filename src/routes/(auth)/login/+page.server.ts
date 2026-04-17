@@ -49,7 +49,7 @@ export const actions = {
 			maxAge: 60 * 60 * 24 * 30 // 30 días
 		});
 
-		const roles = user.roles.map((r) => r.role.code);
+		const roles = user.roles.map(r => r.role.code);
 		let redirectUrl = '/';
 
 		if (roles.some((r) => ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA'].includes(r))) {

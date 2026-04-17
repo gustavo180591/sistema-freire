@@ -5,16 +5,16 @@ import type { Actions } from './$types';
 export const actions: Actions = {
 	default: async ({ request }) => {
 		const formData = await request.formData();
-
+		
 		const code = formData.get('code');
 		const name = formData.get('name');
 		const activeStr = formData.get('active');
 		// Note: description is in the form but our prisma schema doesn't have a description field for Career yet
-
+		
 		if (!code || typeof code !== 'string') {
 			return fail(400, { error: 'El código es requerido' });
 		}
-
+		
 		if (!name || typeof name !== 'string') {
 			return fail(400, { error: 'El nombre es requerido' });
 		}

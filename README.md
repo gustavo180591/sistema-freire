@@ -1,3 +1,4 @@
+
 npx sv create my-app
 
 Tailwind CSS 4
@@ -27,21 +28,9 @@ npm i -D @commitlint/cli @commitlint/config-conventional
 Variables de entorno
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/app"
 
+
+
 docker-compose up -d
 docker-compose up --build -d
 docker-compose ps
 docker-compose logs -f
-
-armar el schema.prisma con los modelos necesarios
-
-npx prisma migrate dev --name init
-Cuando hacés cambios en el schema, ejecuta:
-npx prisma migrate dev --name <nombre_del_migration>
-👉 siempre cambiá el nombre según lo que hiciste:
-
-add-products
-add-stock
-add-suppliers
-
-Generar cliente manualmente
-npx prisma generate

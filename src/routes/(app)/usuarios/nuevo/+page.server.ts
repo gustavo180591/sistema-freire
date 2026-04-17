@@ -15,7 +15,7 @@ export const actions = {
 		}
 
 		console.log('Registrando nuevo usuario:', { type, email, firstName, lastName, dni });
-
+		
 		// TODO: Guardar en la base de datos con Prisma y enviar mail con la contraseña inicial
 
 		// Tras crear el usuario, lo redirigimos al listado

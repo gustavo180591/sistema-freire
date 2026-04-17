@@ -8,10 +8,10 @@ services:
       - .:/app
       - /app/node_modules
     ports:
-      - "5173:5173" 
+      - '5173:5173'
     environment:
       # Sobrescribimos "localhost:5437" por el nombre del servicio de la bd ("db") y puerto interno
-      DATABASE_URL: "postgresql://freire:Freire123@db:5432/sistema-freire"
+      DATABASE_URL: 'postgresql://freire:Freire123@db:5432/sistema-freire'
     # Instalamos y levantamos el ambiente con soporte para red externa (0.0.0.0)
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     depends_on:
@@ -30,11 +30,11 @@ services:
       POSTGRES_PASSWORD: Freire123
       POSTGRES_DB: sistema-freire
     ports:
-      - "5437:5432"
+      - '5437:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U freire -d sistema-freire"]
+      test: ['CMD-SHELL', 'pg_isready -U freire -d sistema-freire']
       interval: 10s
       timeout: 5s
       retries: 5

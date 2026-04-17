@@ -73,7 +73,8 @@
 				<div class="rounded-2xl border border-slate-800 bg-slate-950 p-4">
 					<p class="font-medium">Bloqueos por deuda</p>
 					<p class="mt-1 text-sm text-slate-400">
-						{data.metrics.blockedStudentsCount} alumnos no pueden inscribirse a mesas ni cursadas por saldo pendiente.
+						{data.metrics.blockedStudentsCount} alumnos no pueden inscribirse a mesas ni cursadas por
+						saldo pendiente.
 					</p>
 				</div>
 				<div class="rounded-2xl border border-slate-800 bg-slate-950 p-4">

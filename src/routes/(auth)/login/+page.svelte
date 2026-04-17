@@ -55,10 +55,11 @@
 
 				<form method="POST" class="mt-8 space-y-5">
 					<div>
-						<label class="mb-2 block text-sm font-medium text-slate-300">
+						<label for="email" class="mb-2 block text-sm font-medium text-slate-300">
 							Correo institucional
 						</label>
 						<input
+							id="email"
 							bind:value={email}
 							name="email"
 							type="email"
@@ -69,8 +70,11 @@
 					</div>
 
 					<div>
-						<label class="mb-2 block text-sm font-medium text-slate-300"> Contraseña </label>
+						<label for="password" class="mb-2 block text-sm font-medium text-slate-300">
+							Contraseña
+						</label>
 						<input
+							id="password"
 							bind:value={password}
 							name="password"
 							type={showPassword ? 'text' : 'password'}

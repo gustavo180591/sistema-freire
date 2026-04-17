@@ -23,7 +23,7 @@ export const load: PageServerLoad = async () => {
 	return { careers };
 };
 
-export const actions = {
+export const actions: Actions = {
 	default: async ({ request }) => {
 		const data = await request.formData();
 		const email = data.get('email')?.toString();
@@ -52,8 +52,22 @@ export const actions = {
 				return fail(400, { error: 'El correo ya está registrado', exists: true });
 			}
 
-			// Generar contraseña temporal
-			const tempPassword = Math.random().toString(36).slice(-8);
+			// Verificar si el DNI ya existe (para alumnos y docentes)
+			if (type === 'ALUMNO' || type === 'DOCENTE') {
+				const existingDni = await prisma.student.findUnique({
+					where: { dni }
+				}).catch(() => null) || 
+				await prisma.teacher.findUnique({
+					where: { dni }
+				}).catch(() => null);
+
+				if (existingDni) {
+					return fail(400, { error: 'El DNI ya está registrado', exists: true });
+				}
+			}
+
+			// Usar contraseña temporal por defecto
+			const tempPassword = '12345678';
 			const passwordHash = await bcrypt.hash(tempPassword, 10);
 
 			// Buscar el rol
@@ -121,7 +135,7 @@ export const actions = {
 
 			// TODO: Enviar email con la contraseña temporal
 
-			redirect(303, '/usuarios');
+			return { success: `Usuario creado exitosamente. ID: ${result.id}, Contraseña temporal: 12345678` };
 		} catch (error) {
 			console.error('Error al crear usuario:', error);
 			const message = error instanceof Error ? error.message : 'Error al crear el usuario';

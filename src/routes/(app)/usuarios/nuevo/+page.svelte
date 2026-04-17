@@ -11,6 +11,17 @@
 	);
 </script>
 
+<!-- Definir tipo ActionData local para incluir success -->
+<script context="module" lang="ts">
+	import type { ActionData } from './$types';
+
+	declare module './$types' {
+		interface ActionData {
+			success?: string;
+		}
+	}
+</script>
+
 <svelte:head>
 	<title>Nuevo usuario | Paulo Freire</title>
 </svelte:head>
@@ -27,6 +38,12 @@
 	{#if form?.error}
 		<div class="rounded-2xl border border-red-800 bg-red-950/50 p-4 text-red-200">
 			{form.error}
+		</div>
+	{/if}
+
+	{#if form?.success}
+		<div class="rounded-2xl border border-green-800 bg-green-950/50 p-4 text-green-200">
+			{form.success}
 		</div>
 	{/if}
 

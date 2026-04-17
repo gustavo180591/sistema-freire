@@ -32,6 +32,8 @@ export const actions = {
 		const type = data.get('type')?.toString();
 		const dni = data.get('dni')?.toString();
 		const careerId = data.get('careerId')?.toString();
+		const isBecado = data.get('isBecado') === 'on';
+		const isRecursante = data.get('isRecursante') === 'on';
 
 		if (!email || !firstName || !lastName || !dni || !type) {
 			return fail(400, { error: 'Por favor completá los datos esenciales', missing: true });
@@ -92,7 +94,9 @@ export const actions = {
 							dni,
 							firstName,
 							lastName,
-							careerId
+							careerId,
+							isBecado,
+							isRecursante
 						}
 					});
 				}

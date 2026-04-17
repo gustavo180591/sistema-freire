@@ -110,6 +110,31 @@
 					{/each}
 				</select>
 			</div>
+
+			<div class="space-y-3">
+				<div class="flex items-center space-x-3">
+					<input
+						id="isBecado"
+						name="isBecado"
+						type="checkbox"
+						class="h-4 w-4 rounded border-slate-600 bg-slate-950 text-blue-600 focus:ring-blue-500 focus:ring-2"
+					/>
+					<label for="isBecado" class="text-sm font-medium text-slate-300">
+						Alumno Becado
+					</label>
+				</div>
+				<div class="flex items-center space-x-3">
+					<input
+						id="isRecursante"
+						name="isRecursante"
+						type="checkbox"
+						class="h-4 w-4 rounded border-slate-600 bg-slate-950 text-blue-600 focus:ring-blue-500 focus:ring-2"
+					/>
+					<label for="isRecursante" class="text-sm font-medium text-slate-300">
+						Alumno Recursante
+					</label>
+				</div>
+			</div>
 		{/if}
 		</div>
 

@@ -151,6 +151,8 @@ model Student {
   firstName         String
   lastName          String
   status            StudentStatus          @default(ACTIVE)
+  isBecado          Boolean                @default(false)
+  isRecursante      Boolean                @default(false)
   createdAt         DateTime               @default(now())
   updatedAt         DateTime               @updatedAt
 

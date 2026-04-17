@@ -341,13 +341,14 @@ model StudentSubjectStatus {
 }
 
 model StudyPlan {
-  id        String   @id @default(cuid())
-  careerId  String
-  name      String
-  version   String
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(cuid())
+  careerId      String
+  name          String
+  version       String
+  durationYears Int      @default(4)
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   career   Career        @relation(fields: [careerId], references: [id], onDelete: Restrict)
   subjects PlanSubject[]

@@ -14,7 +14,11 @@
 		"format": "prettier --write .",
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
-		"test:e2e": "playwright test"
+		"test:e2e": "playwright test",
+		"db:seed": "tsx prisma/seed.ts"
+	},
+	"prisma": {
+		"seed": "tsx prisma/seed.ts"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "^20.5.0",

@@ -55,6 +55,7 @@
 					<option value="SECRETARIA">Secretaría</option>
 					<option value="FINANZAS">Finanzas</option>
 					<option value="DIRECTOR">Dirección</option>
+					<option value="APODERADO">Apoderado</option>
 				</select>
 			</div>
 
@@ -95,6 +96,7 @@
 				/>
 			</div>
 
+			{#if userType === 'ALUMNO'}
 			<div>
 				<label for="careerId" class="mb-2 block text-sm font-medium text-slate-300">Carrera</label>
 				<select
@@ -108,6 +110,7 @@
 					{/each}
 				</select>
 			</div>
+		{/if}
 		</div>
 
 		<div class="rounded-2xl border border-slate-800 bg-slate-950 p-5 text-sm text-slate-400">

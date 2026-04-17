@@ -6,13 +6,13 @@ async function main() {
 	console.log('Seeding roles...');
 
 	const roles = [
-		{ code: RoleCode.SUPERADMIN, name: 'Super Administrador', description: 'Acceso total al sistema' },
-		{ code: RoleCode.DIRECTOR, name: 'Director', description: 'Dirección institucional' },
-		{ code: RoleCode.SECRETARIA, name: 'Secretaría', description: 'Gestión administrativa' },
-		{ code: RoleCode.DOCENTE, name: 'Docente', description: 'Personal docente' },
-		{ code: RoleCode.ALUMNO, name: 'Alumno', description: 'Estudiante' },
-		{ code: RoleCode.FINANZAS, name: 'Finanzas', description: 'Gestión financiera' },
-		{ code: RoleCode.APODERADO, name: 'Apoderado', description: 'Padre o tutor' }
+		{ code: RoleCode.SUPERADMIN, name: 'Super Administrador' },
+		{ code: RoleCode.DIRECTOR, name: 'Director' },
+		{ code: RoleCode.SECRETARIA, name: 'Secretaría' },
+		{ code: RoleCode.DOCENTE, name: 'Docente' },
+		{ code: RoleCode.ALUMNO, name: 'Alumno' },
+		{ code: RoleCode.FINANZAS, name: 'Finanzas' },
+		{ code: RoleCode.APODERADO, name: 'Apoderado' }
 	];
 
 	for (const role of roles) {

@@ -2,13 +2,34 @@
 	import { page } from '$app/stores';
 
 	const modules = [
-		'Gestión Académica',
-		'Inscripciones',
-		'Asistencia',
-		'Finanzas',
-		'Recibos Docentes',
-		'Auditoría',
-		'Reportes Oficiales'
+		{
+			name: 'Gestión Académica',
+			description: 'Administración de carreras, materias, planes de estudio y estados académicos de los alumnos.'
+		},
+		{
+			name: 'Inscripciones',
+			description: 'Gestión de comisiones, cátedras y inscripciones de alumnos por ciclo lectivo.'
+		},
+		{
+			name: 'Asistencia',
+			description: 'Control de presencias, registros de clase y seguimiento de asistencia por comisión.'
+		},
+		{
+			name: 'Finanzas',
+			description: 'Cobro de cuotas, gestión de pagos, becas y reportes financieros del instituto.'
+		},
+		{
+			name: 'Recibos Docentes',
+			description: 'Liquidación de haberes, generación de recibos y control de pagos al personal.'
+		},
+		{
+			name: 'Auditoría',
+			description: 'Registro de acciones, seguimiento de cambios y trazabilidad de operaciones.'
+		},
+		{
+			name: 'Reportes Oficiales',
+			description: 'Generación de reportes estadísticos y documentación para organismos rectores.'
+		}
 	];
 </script>
 
@@ -56,9 +77,9 @@
 		<div class="mt-16 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
 			{#each modules as module}
 				<div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-					<h2 class="text-lg font-semibold">{module}</h2>
+					<h2 class="text-lg font-semibold">{module.name}</h2>
 					<p class="mt-2 text-sm text-slate-400">
-						Módulo preparado para integrarse al ecosistema institucional.
+						{module.description}
 					</p>
 				</div>
 			{/each}

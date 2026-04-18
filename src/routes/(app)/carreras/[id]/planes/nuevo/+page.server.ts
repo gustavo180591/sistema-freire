@@ -1,6 +1,7 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const career = await prisma.career.findUnique({
@@ -84,11 +85,47 @@ export const actions: Actions = {
 
 			throw redirect(303, `/carreras/${params.id}`);
 		} catch (e) {
+			console.error('Error creating study plan - Full error:', e);
+			
+			// Handle Prisma specific errors
+			if (e instanceof PrismaClientKnownRequestError) {
+				console.error('Prisma error code:', e.code);
+				console.error('Prisma meta:', e.meta);
+				
+				if (e.code === 'P2002') {
+					return {
+						success: false,
+						errors: {
+							version: 'Ya existe un plan con esta versión para la carrera.'
+						}
+					};
+				}
+				if (e.code === 'P2003') {
+					return {
+						success: false,
+						errors: {
+							general: 'Error de referencia: la carrera no existe.'
+						}
+					};
+				}
+				// Default Prisma error handler
+				return {
+					success: false,
+					errors: {
+						general: `Error de base de datos (${e.code}): ${e.message}`
+					}
+				};
+			}
+			
 			if (e instanceof Error) {
-				console.error('Error creating study plan:', e);
 				if (e.message.includes('redirect')) {
 					throw e;
 				}
+				// Log detailed error info
+				console.error('Error name:', e.name);
+				console.error('Error message:', e.message);
+				console.error('Error stack:', e.stack);
+				
 				return {
 					success: false,
 					errors: {

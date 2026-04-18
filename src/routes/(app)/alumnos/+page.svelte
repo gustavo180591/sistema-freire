@@ -36,6 +36,14 @@
 		createdAt: Date;
 	}
 
+	interface FilterData {
+		careerId: string;
+		careerName: string | null;
+	}
+
+	// Type assertion for filter data
+	const filter = $derived((data as { filter?: FilterData | null }).filter ?? null);
+
 	function getStatusColor(status: string) {
 		return status === 'ACTIVE' ? 'text-green-400' : 'text-red-400';
 	}
@@ -64,11 +72,34 @@
 <div class="mx-auto max-w-7xl space-y-8">
 	<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 		<div>
-			<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Gestión Académica</p>
-			<h1 class="text-3xl font-bold tracking-tight">Alumnos</h1>
-			<p class="mt-2 text-sm text-slate-400">
-				Administración completa del alumnado del instituto.
+			<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">
+				{#if filter}
+					<a href="/carreras/{filter.careerId}" class="hover:text-slate-300 transition">{filter.careerName}</a>
+				{:else}
+					Gestión Académica
+				{/if}
 			</p>
+			<h1 class="text-3xl font-bold tracking-tight">
+				{#if filter}
+					Alumnos de {filter.careerName}
+				{:else}
+					Alumnos
+				{/if}
+			</h1>
+			<p class="mt-2 text-sm text-slate-400">
+				{#if filter}
+					Mostrando alumnos inscriptos en esta carrera.
+				{:else}
+					Administración completa del alumnado del instituto.
+				{/if}
+			</p>
+			{#if filter}
+				<div class="mt-2">
+					<a href="/alumnos" class="text-sm text-blue-400 hover:text-blue-300 transition">
+						← Ver todos los alumnos
+					</a>
+				</div>
+			{/if}
 		</div>
 		<a
 			href="/usuarios/nuevo"

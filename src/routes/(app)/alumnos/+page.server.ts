@@ -1,8 +1,14 @@
 import { prisma } from '$lib/server/db/prisma';
 import type { Prisma } from '@prisma/client';
+import type { PageServerLoad } from './$types';
 
-export async function load() {
+export const load: PageServerLoad = async ({ url }) => {
+	const careerId = url.searchParams.get('carrera');
+	
+	const where = careerId ? { careerId } : {};
+	
 	const students = await prisma.student.findMany({
+		where,
 		include: {
 			user: true,
 			career: true
@@ -17,6 +23,12 @@ export async function load() {
 		include: { user: true; career: true };
 	}>;
 
+	// Get career name if filtering by career
+	let careerName = null;
+	if (careerId && students.length > 0) {
+		careerName = students[0].career.name;
+	}
+	
 	return {
 		students: students.map((s: StudentWithRelations) => ({
 			id: s.id,
@@ -31,6 +43,7 @@ export async function load() {
 			isBecado: s.isBecado,
 			isRecursante: s.isRecursante,
 			createdAt: s.createdAt
-		}))
+		})),
+		filter: careerId ? { careerId, careerName } : null
 	};
 }

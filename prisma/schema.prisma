@@ -423,6 +423,7 @@ enum RoleCode {
   ALUMNO
   FINANZAS
   APODERADO
+  PRECEPTOR
 }
 
 enum AuditAction {

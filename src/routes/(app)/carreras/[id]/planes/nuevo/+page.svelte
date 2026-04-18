@@ -1,6 +1,18 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	let { data, form } = $props();
+	import type { PageData } from './$types';
+	
+	interface FormData {
+		success?: boolean;
+		errors?: {
+			general?: string;
+			name?: string[];
+			version?: string[];
+			durationYears?: string[];
+		};
+	}
+	
+	let { data, form }: { data: PageData; form?: FormData } = $props();
 
 	const errors = $derived(form?.errors ?? {});
 	const success = $derived(form?.success ?? true);
@@ -46,10 +58,11 @@
 
 			<div class="grid gap-4 md:grid-cols-2">
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">
+					<label for="name" class="mb-2 block text-sm font-medium text-slate-300">
 						Nombre del plan <span class="text-red-400">*</span>
 					</label>
 					<input
+						id="name"
 						name="name"
 						type="text"
 						required
@@ -62,10 +75,11 @@
 				</div>
 
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">
+					<label for="version" class="mb-2 block text-sm font-medium text-slate-300">
 						Versión <span class="text-red-400">*</span>
 					</label>
 					<input
+						id="version"
 						name="version"
 						type="text"
 						required
@@ -78,10 +92,11 @@
 				</div>
 
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">
+					<label for="durationYears" class="mb-2 block text-sm font-medium text-slate-300">
 						Duración (años) <span class="text-red-400">*</span>
 					</label>
 					<input
+						id="durationYears"
 						name="durationYears"
 						type="number"
 						min="1"

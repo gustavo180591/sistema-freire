@@ -15,7 +15,8 @@
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright test",
-		"db:seed": "tsx prisma/seed.ts"
+		"db:seed": "tsx prisma/seed.ts",
+		"db:seed:alumnos-tipos": "tsx prisma/seed-alumnos-tipos.ts"
 	},
 	"prisma": {
 		"seed": "tsx prisma/seed.ts"

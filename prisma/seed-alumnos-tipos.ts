@@ -32,32 +32,84 @@ async function main() {
 
     const defaultPassword = await bcrypt.hash('password123', 10);
 
+    // Nombres para generar alumnos variados
+    const nombres = ['Juan', 'María', 'Carlos', 'Ana', 'Luis', 'Laura', 'Pedro', 'Sofía', 'Diego', 'Valentina', 'Martín', 'Lucía'];
+    const apellidos = ['Pérez', 'González', 'Rodríguez', 'Fernández', 'López', 'Martínez', 'García', 'Sánchez', 'Torres', 'Ramírez', 'Flores', 'Rivera'];
+
     for (const career of careers) {
         console.log(`\n🎓 Procesando carrera: ${career.name} (${career.code})`);
 
-        // Crear 3 tipos de alumnos para esta carrera
-        const tiposAlumno = [
-            { 
-                tipo: 'Normal', 
-                isBecado: false, 
-                isRecursante: false,
-                firstName: 'Juan',
-                lastName: 'Pérez'
-            },
-            { 
-                tipo: 'Becado', 
-                isBecado: true, 
-                isRecursante: false,
-                firstName: 'María',
-                lastName: 'González'
-            },
-            { 
-                tipo: 'Recursante', 
-                isBecado: false, 
-                isRecursante: true,
-                firstName: 'Carlos',
-                lastName: 'Rodríguez'
+        // Crear al menos un alumno por año (1-4)
+        for (let year = 1; year <= 4; year++) {
+            const nombreIndex = (year - 1) % nombres.length;
+            const apellidoIndex = (year - 1) % apellidos.length;
+            
+            const tipoAlumno = {
+                tipo: year === 1 ? 'Normal' : year === 2 ? 'Becado' : year === 3 ? 'Recursante' : 'Normal',
+                isBecado: year === 2,
+                isRecursante: year === 3,
+                firstName: nombres[nombreIndex],
+                lastName: apellidos[apellidoIndex],
+                year: year
+            };
+
+            const email = `${tipoAlumno.firstName.toLowerCase()}.${tipoAlumno.lastName.toLowerCase()}.year${year}.${career.code.toLowerCase()}@instituto.edu`.replace(/[^a-z0-9.@]/g, '');
+            const dni = `${Math.floor(10000000 + Math.random() * 90000000)}`;
+
+            try {
+                // Verificar si ya existe un usuario con este email
+                const existingUser = await prisma.user.findUnique({
+                    where: { email }
+                });
+
+                if (existingUser) {
+                    console.log(`  ⚠️  Alumno año ${year} ya existe: ${email}`);
+                    continue;
+                }
+
+                // Crear usuario
+                const user = await prisma.user.create({
+                    data: {
+                        email,
+                        passwordHash: defaultPassword,
+                        firstName: tipoAlumno.firstName,
+                        lastName: tipoAlumno.lastName,
+                        status: 'ACTIVE',
+                        roles: {
+                            create: {
+                                roleId: alumnoRole.id
+                            }
+                        }
+                    }
+                });
+
+                // Crear estudiante
+                const student = await prisma.student.create({
+                    data: {
+                        userId: user.id,
+                        dni,
+                        firstName: tipoAlumno.firstName,
+                        lastName: tipoAlumno.lastName,
+                        careerId: career.id,
+                        currentYear: tipoAlumno.year,
+                        isBecado: tipoAlumno.isBecado,
+                        isRecursante: tipoAlumno.isRecursante,
+                        status: 'ACTIVE'
+                    }
+                });
+
+                console.log(`  ✅ Año ${year}: ${tipoAlumno.firstName} ${tipoAlumno.lastName} (${tipoAlumno.tipo}) - DNI: ${dni}`);
+            } catch (error) {
+                console.error(`  ❌ Error creando alumno año ${year}:`, error);
             }
+        }
+
+        // También crear los 3 tipos especiales adicionales si no existen
+        console.log(`  📌 Creando tipos adicionales...`);
+        const tiposAlumno = [
+            { tipo: 'Normal Extra', isBecado: false, isRecursante: false, firstName: 'Extra', lastName: 'Normal' },
+            { tipo: 'Becado Extra', isBecado: true, isRecursante: false, firstName: 'Extra', lastName: 'Becado' },
+            { tipo: 'Recursante Extra', isBecado: false, isRecursante: true, firstName: 'Extra', lastName: 'Recursante' }
         ];
 
         for (const tipo of tiposAlumno) {
@@ -105,9 +157,9 @@ async function main() {
                     }
                 });
 
-                console.log(`  ✅ Alumno ${tipo.tipo} creado: ${tipo.firstName} ${tipo.lastName} (DNI: ${dni})`);
+                console.log(`     ${tipo.tipo}: ${tipo.firstName} ${tipo.lastName} (Año 1)`);
             } catch (error) {
-                console.error(`  ❌ Error creando alumno ${tipo.tipo}:`, error);
+                console.error(`     ❌ Error creando ${tipo.tipo}:`, error);
             }
         }
     }
@@ -116,8 +168,9 @@ async function main() {
     console.log('\n📋 Resumen:');
     console.log(`   • Rol PRECEPTOR creado/verificado`);
     console.log(`   • ${careers.length} carreras procesadas`);
-    console.log(`   • Hasta 3 alumnos por carrera (Normal, Becado, Recursante)`);
-    console.log(`\n🔑 Contraseña por defecto para todos los alumnos: password123`);
+    console.log(`   • 4+ alumnos por carrera (1 por año + 3 tipos)`);
+    console.log(`   • Campo currentYear agregado a Student`);
+    console.log(`\n🔑 Contraseña por defecto: password123`);
 }
 
 main()

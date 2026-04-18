@@ -105,6 +105,7 @@ model Student {
   createdAt         DateTime               @default(now())
   updatedAt         DateTime               @updatedAt
   careerId          String
+  currentYear       Int                    @default(1)
   isBecado          Boolean                @default(false)
   isRecursante      Boolean                @default(false)
   attendanceEntries AttendanceEntry[]

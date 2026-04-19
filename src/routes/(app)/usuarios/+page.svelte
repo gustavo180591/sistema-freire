@@ -186,11 +186,11 @@
 
 	<!-- Modal de Edición -->
 	{#if editingUser}
-		<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onclick={() => editingUser = null}>
-			<div class="relative mx-4 max-w-md w-full rounded-2xl bg-slate-900 border border-slate-800 p-6" onclick={(e) => e.stopPropagation()}>
+		<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" role="button" tabindex="0" onclick={() => editingUser = null} onkeydown={(e) => e.key === 'Escape' && (editingUser = null)}>
+			<div class="relative mx-4 max-w-md w-full rounded-2xl bg-slate-900 border border-slate-800 p-6" role="dialog" aria-modal="true" tabindex="0" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
 				<div class="flex items-center justify-between mb-4">
 					<h3 class="text-lg font-semibold text-white">Editar Usuario</h3>
-					<button onclick={() => editingUser = null} class="text-slate-400 hover:text-slate-300 transition-colors">
+					<button type="button" aria-label="Cerrar modal" onclick={() => editingUser = null} class="text-slate-400 hover:text-slate-300 transition-colors">
 						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
 						</svg>
@@ -199,8 +199,9 @@
 				<form method="POST" action="/usuarios/{editingUser.id}/editar" use:enhance>
 					<div class="space-y-4">
 						<div>
-							<label class="block text-sm font-medium text-slate-300 mb-2">Nombre</label>
+							<label for="firstName" class="block text-sm font-medium text-slate-300 mb-2">Nombre</label>
 							<input
+								id="firstName"
 								type="text"
 								name="firstName"
 								value={editingUser.fullName.split(' ')[0]}
@@ -209,8 +210,9 @@
 							/>
 						</div>
 						<div>
-							<label class="block text-sm font-medium text-slate-300 mb-2">Apellido</label>
+							<label for="lastName" class="block text-sm font-medium text-slate-300 mb-2">Apellido</label>
 							<input
+								id="lastName"
 								type="text"
 								name="lastName"
 								value={editingUser.fullName.split(' ')[1]}
@@ -219,8 +221,9 @@
 							/>
 						</div>
 						<div>
-							<label class="block text-sm font-medium text-slate-300 mb-2">Email</label>
+							<label for="email" class="block text-sm font-medium text-slate-300 mb-2">Email</label>
 							<input
+								id="email"
 								type="email"
 								name="email"
 								value={editingUser.email}
@@ -229,8 +232,9 @@
 							/>
 						</div>
 						<div>
-							<label class="block text-sm font-medium text-slate-300 mb-2">Rol</label>
+							<label for="role" class="block text-sm font-medium text-slate-300 mb-2">Rol</label>
 							<select
+								id="role"
 								name="role"
 								value={editingUser.role}
 								required
@@ -247,8 +251,9 @@
 							</select>
 						</div>
 						<div>
-							<label class="block text-sm font-medium text-slate-300 mb-2">Estado</label>
+							<label for="status" class="block text-sm font-medium text-slate-300 mb-2">Estado</label>
 							<select
+								id="status"
 								name="status"
 								value={editingUser.status === 'Activo' ? 'ACTIVE' : 'INACTIVE'}
 								required
@@ -281,11 +286,11 @@
 
 	<!-- Modal de Eliminación -->
 	{#if deletingUser}
-		<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onclick={() => deletingUser = null}>
-			<div class="relative mx-4 max-w-md w-full rounded-2xl bg-slate-900 border border-slate-800 p-6" onclick={(e) => e.stopPropagation()}>
+		<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" role="button" tabindex="0" onclick={() => deletingUser = null} onkeydown={(e) => e.key === 'Escape' && (deletingUser = null)}>
+			<div class="relative mx-4 max-w-md w-full rounded-2xl bg-slate-900 border border-slate-800 p-6" role="dialog" aria-modal="true" tabindex="0" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
 				<div class="flex items-center justify-between mb-4">
 					<h3 class="text-lg font-semibold text-white">Eliminar Usuario</h3>
-					<button onclick={() => deletingUser = null} class="text-slate-400 hover:text-slate-300 transition-colors">
+					<button type="button" aria-label="Cerrar modal" onclick={() => deletingUser = null} class="text-slate-400 hover:text-slate-300 transition-colors">
 						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
 						</svg>

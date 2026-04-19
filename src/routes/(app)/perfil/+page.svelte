@@ -8,24 +8,24 @@
 	<title>Mi Perfil | Paulo Freire</title>
 </svelte:head>
 
-<div class="mx-auto max-w-4xl space-y-8 p-6">
+<div class="mx-auto max-w-4xl space-y-6 md:space-y-8 p-4 md:p-6">
 	<!-- Header -->
-	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
-		<div class="flex items-start justify-between">
-			<div class="flex items-center gap-4">
-				<div class="flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-purple-600 text-xl font-bold text-white shadow-lg">
+	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-4 md:p-8">
+		<div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+			<div class="flex items-center gap-3 md:gap-4">
+				<div class="flex h-12 w-12 md:h-16 md:w-16 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-purple-600 text-lg md:text-xl font-bold text-white shadow-lg shrink-0">
 					{data.user.firstName[0]}{data.user.lastName[0]}
 				</div>
-				<div>
-					<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">{data.user.roles.join(', ')}</p>
-					<h1 class="mt-1 text-3xl font-bold">{data.user.fullName}</h1>
-					<p class="mt-1 text-slate-400">{data.user.email}</p>
+				<div class="min-w-0">
+					<p class="text-xs md:text-sm tracking-[0.2em] text-slate-400 uppercase truncate">{data.user.roles.join(', ')}</p>
+					<h1 class="mt-1 text-xl md:text-3xl font-bold truncate">{data.user.fullName}</h1>
+					<p class="mt-1 text-sm text-slate-400 truncate">{data.user.email}</p>
 				</div>
 			</div>
-			<div class="text-right">
-				<p class="text-sm text-slate-400">Estado</p>
-				<div class="mt-1 inline-flex items-center gap-2 rounded-full bg-emerald-950/50 px-4 py-1.5 text-sm text-emerald-400">
-					<span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+			<div class="md:text-right">
+				<p class="text-xs md:text-sm text-slate-400">Estado</p>
+				<div class="mt-1 inline-flex items-center gap-2 rounded-full bg-emerald-950/50 px-3 md:px-4 py-1 md:py-1.5 text-xs md:text-sm text-emerald-400">
+					<span class="h-1.5 w-1.5 md:h-2 md:w-2 rounded-full bg-emerald-400"></span>
 					{data.user.status}
 				</div>
 			</div>
@@ -33,23 +33,23 @@
 	</div>
 
 	<!-- Información Personal -->
-	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-		<h2 class="mb-6 text-xl font-semibold">Información Personal</h2>
-		<div class="grid gap-6 md:grid-cols-2">
+	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-4 md:p-6">
+		<h2 class="mb-4 md:mb-6 text-lg md:text-xl font-semibold">Información Personal</h2>
+		<div class="grid gap-4 md:gap-6 md:grid-cols-2">
 			<div>
-				<label class="block text-sm font-medium text-slate-400 mb-2">Nombre</label>
+				<p class="text-sm font-medium text-slate-400 mb-2">Nombre</p>
 				<p class="text-white">{data.user.firstName}</p>
 			</div>
 			<div>
-				<label class="block text-sm font-medium text-slate-400 mb-2">Apellido</label>
+				<p class="text-sm font-medium text-slate-400 mb-2">Apellido</p>
 				<p class="text-white">{data.user.lastName}</p>
 			</div>
 			<div>
-				<label class="block text-sm font-medium text-slate-400 mb-2">Email</label>
+				<p class="text-sm font-medium text-slate-400 mb-2">Email</p>
 				<p class="text-white">{data.user.email}</p>
 			</div>
 			<div>
-				<label class="block text-sm font-medium text-slate-400 mb-2">Roles</label>
+				<p class="text-sm font-medium text-slate-400 mb-2">Roles</p>
 				<div class="flex flex-wrap gap-2">
 					{#each data.user.roles as role}
 						<span class="inline-flex rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1 text-xs">
@@ -62,9 +62,9 @@
 	</div>
 
 	<!-- Accesos Rápidos -->
-	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-		<h2 class="mb-6 text-xl font-semibold">Accesos Rápidos</h2>
-		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-4 md:p-6">
+		<h2 class="mb-4 md:mb-6 text-lg md:text-xl font-semibold">Accesos Rápidos</h2>
+		<div class="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
 			<a href="/usuarios" class="group rounded-2xl border border-slate-800 bg-slate-800/50 p-4 transition hover:border-slate-700">
 				<div class="flex items-center gap-3">
 					<div class="rounded-xl bg-blue-950/50 p-2">

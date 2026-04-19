@@ -121,7 +121,7 @@
 
 								<!-- Menu Items -->
 								<div class="p-2">
-									<a href={profileUrl()} class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all">
+									<a href={profileUrl()} onclick={() => userMenuOpen = false} class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all">
 										<svg class="h-4 w-4 text-slate-400 group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
 										</svg>

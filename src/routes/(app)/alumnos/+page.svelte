@@ -150,33 +150,29 @@
 	</div>
 
 	<!-- Tabla de Alumnos -->
-	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 overflow-hidden">
-		<div class="overflow-x-auto">
-			<table class="w-full">
+	<div class="rounded-3xl border border-slate-800 bg-slate-900/70">
+		<table class="w-full table-fixed">
 				<thead class="bg-slate-800/50">
 					<tr>
-						<th class="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+						<th class="w-24 px-3 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
 							DNI
 						</th>
-						<th class="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+						<th class="w-40 px-3 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
 							Apellido y Nombre
 						</th>
-						<th class="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-							Email
-						</th>
-						<th class="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+						<th class="w-56 px-3 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider truncate">
 							Carrera
 						</th>
-						<th class="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+						<th class="w-12 px-3 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
 							Año
 						</th>
-						<th class="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+						<th class="w-20 px-3 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
 							Tipo
 						</th>
-						<th class="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+						<th class="w-16 px-3 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
 							Estado
 						</th>
-						<th class="px-6 py-4 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
+						<th class="w-24 px-3 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
 							Acciones
 						</th>
 					</tr>
@@ -184,41 +180,38 @@
 				<tbody class="divide-y divide-slate-800">
 					{#if filteredStudents.length === 0}
 						<tr>
-							<td colspan="7" class="px-6 py-8 text-center text-sm text-slate-400">
+							<td colspan="7" class="px-3 py-8 text-center text-sm text-slate-400">
 								No se encontraron alumnos que coincidan con "{searchQuery}"
 							</td>
 						</tr>
 					{:else}
 						{#each filteredStudents as student}
 						<tr class="hover:bg-slate-800/30 transition-colors">
-							<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
+							<td class="px-3 py-3 whitespace-nowrap text-sm text-slate-300">
 								{student.dni}
 							</td>
-							<td class="px-6 py-4 whitespace-nowrap">
-								<div class="text-sm font-medium text-white">
+							<td class="px-3 py-3 whitespace-nowrap">
+								<div class="text-sm font-medium text-white truncate">
 									{student.lastName}, {student.firstName}
 								</div>
 							</td>
-							<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
-								{student.email}
-							</td>
-							<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
+							<td class="px-3 py-3 whitespace-nowrap text-sm text-slate-300 truncate" title={student.career}>
 								{student.career}
 							</td>
-							<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
+							<td class="px-3 py-3 whitespace-nowrap text-sm text-slate-300">
 								{student.currentYear || 'En curso'}
 							</td>
-							<td class="px-6 py-4 whitespace-nowrap text-sm">
+							<td class="px-3 py-3 whitespace-nowrap text-sm">
 								<span class={getStudentTypeColor(student)}>
 									{getStudentType(student)}
 								</span>
 							</td>
-							<td class="px-6 py-4 whitespace-nowrap text-sm">
+							<td class="px-3 py-3 whitespace-nowrap text-sm">
 								<span class={getStatusColor(student.status)}>
 									{getStatusText(student.status)}
 								</span>
 							</td>
-							<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+							<td class="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
 								<div class="flex items-center justify-end space-x-2">
 									<a
 										href="/alumnos/{student.id}"
@@ -255,7 +248,6 @@
 					{/if}
 				</tbody>
 			</table>
-		</div>
 	</div>
 
 	<!-- Modal de Edición -->

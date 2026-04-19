@@ -9,7 +9,7 @@
 
 	// Filtrar estudiantes según búsqueda
 	const filteredStudents = $derived(
-		data.students.filter((student: Student) => {
+		data.students.filter((student: any) => {
 			if (!searchQuery.trim()) return true;
 			const query = searchQuery.toLowerCase();
 			const fullName = `${student.lastName} ${student.firstName}`.toLowerCase();
@@ -33,6 +33,7 @@
 		status: string;
 		isBecado: boolean;
 		isRecursante: boolean;
+		currentYear: number;
 		createdAt: Date;
 	}
 
@@ -167,6 +168,9 @@
 							Carrera
 						</th>
 						<th class="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+							Año
+						</th>
+						<th class="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
 							Tipo
 						</th>
 						<th class="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
@@ -200,6 +204,9 @@
 							</td>
 							<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
 								{student.career}
+							</td>
+							<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
+								{student.currentYear || 'En curso'}
 							</td>
 							<td class="px-6 py-4 whitespace-nowrap text-sm">
 								<span class={getStudentTypeColor(student)}>
@@ -371,6 +378,26 @@
 									Recursante
 								</label>
 							</div>
+						</div>
+					</div>
+
+					<!-- Sección de restablecimiento de contraseña -->
+					<div class="border-t border-slate-800 pt-6">
+						<div class="mb-4">
+							<h3 class="text-lg font-semibold text-white mb-1">Restablecer Contraseña</h3>
+							<p class="text-sm text-slate-400">Dejar en blanco si no deseas cambiar la contraseña.</p>
+						</div>
+						<div>
+							<label for="newPassword" class="mb-2 block text-sm font-medium text-slate-300">
+								Nueva Contraseña
+							</label>
+							<input
+								id="newPassword"
+								type="password"
+								name="newPassword"
+								placeholder="Ingresar nueva contraseña"
+								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+							/>
 						</div>
 					</div>
 

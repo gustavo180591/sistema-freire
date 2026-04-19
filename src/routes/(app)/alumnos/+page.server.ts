@@ -42,6 +42,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			status: s.status,
 			isBecado: s.isBecado,
 			isRecursante: s.isRecursante,
+			currentYear: s.currentYear,
 			createdAt: s.createdAt
 		})),
 		filter: careerId ? { careerId, careerName } : null

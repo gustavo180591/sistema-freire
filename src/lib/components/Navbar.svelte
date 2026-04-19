@@ -97,20 +97,39 @@
 						</button>
 
 						{#if userMenuOpen}
-							<div class="absolute right-0 top-full mt-2 w-56 rounded-xl border border-slate-800 bg-slate-900 shadow-xl">
-								<div class="p-3">
-									<div class="px-3 py-2 border-b border-slate-800 mb-2">
-										<p class="text-sm font-medium text-white">{user.firstName} {user.lastName}</p>
-										<p class="text-xs text-slate-400">{user.email}</p>
+							<div class="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-slate-700/50 bg-slate-900/95 backdrop-blur-sm shadow-2xl shadow-black/20 overflow-hidden">
+								<!-- User Info Header -->
+								<div class="bg-gradient-to-br from-slate-800 to-slate-900 p-4">
+									<div class="flex items-center gap-3">
+										<div class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white shadow-lg">
+											{user.firstName[0]}{user.lastName[0]}
+										</div>
+										<div class="min-w-0">
+											<p class="text-sm font-semibold text-white truncate">{user.firstName} {user.lastName}</p>
+											<p class="text-xs text-slate-400 truncate">{user.email}</p>
+										</div>
 									</div>
-									<a href="/alumno" class="block rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition">
-										Mi Perfil
+								</div>
+
+								<!-- Menu Items -->
+								<div class="p-2">
+									<a href="/alumno" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all">
+										<svg class="h-4 w-4 text-slate-400 group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+										</svg>
+										<span>Mi Perfil</span>
 									</a>
+
+									<div class="my-1.5 border-t border-slate-800"></div>
+
 									<button
 										onclick={logout}
-										class="w-full text-left rounded-lg px-3 py-2 text-sm text-red-400 hover:bg-red-950/30 transition"
+										class="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-400 hover:bg-red-950/20 transition-all"
 									>
-										Cerrar sesión
+										<svg class="h-4 w-4 text-red-400/70 group-hover:text-red-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+										</svg>
+										<span>Cerrar sesión</span>
 									</button>
 								</div>
 							</div>

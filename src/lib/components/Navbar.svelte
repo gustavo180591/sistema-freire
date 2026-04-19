@@ -99,9 +99,9 @@
 						{#if userMenuOpen}
 							<div class="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-slate-700/50 bg-slate-900/95 backdrop-blur-sm shadow-2xl shadow-black/20 overflow-hidden">
 								<!-- User Info Header -->
-								<div class="bg-gradient-to-br from-slate-800 to-slate-900 p-4">
+								<div class="bg-linear-to-br from-slate-800 to-slate-900 p-4">
 									<div class="flex items-center gap-3">
-										<div class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white shadow-lg">
+										<div class="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white shadow-lg">
 											{user.firstName[0]}{user.lastName[0]}
 										</div>
 										<div class="min-w-0">

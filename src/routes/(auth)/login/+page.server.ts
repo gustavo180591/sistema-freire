@@ -1,7 +1,11 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
+import { AuditAction } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCK_DURATION_MINUTES = 30;
 
 export const actions = {
 	default: async ({ request, cookies }) => {
@@ -22,6 +26,41 @@ export const actions = {
 			return fail(400, { error: 'Credenciales inválidas', incorrect: true });
 		}
 
+		// Verificar si la cuenta está bloqueada
+		const now = new Date();
+		if (user.lockedUntil && user.lockedUntil > now) {
+			const minutesLeft = Math.ceil((user.lockedUntil.getTime() - now.getTime()) / 60000);
+			
+			// Registrar intento bloqueado
+			await prisma.auditLog.create({
+				data: {
+					action: AuditAction.BLOCKED_ATTEMPT,
+					entityType: 'User',
+					entityId: user.id,
+					description: `Intento de login bloqueado. Cuenta bloqueada por ${minutesLeft} minutos más.`,
+					userId: user.id
+				}
+			});
+			
+			return fail(403, { 
+				error: `Cuenta temporalmente bloqueada. Intente nuevamente en ${minutesLeft} minutos.`,
+				locked: true,
+				minutesLeft
+			});
+		}
+
+		// Si pasó el tiempo de bloqueo, limpiar el bloqueo
+		if (user.lockedUntil && user.lockedUntil <= now) {
+			await prisma.user.update({
+				where: { id: user.id },
+				data: {
+					failedLoginAttempts: 0,
+					lockedUntil: null,
+					lastFailedAttempt: null
+				}
+			});
+		}
+
 		if (user.status !== 'ACTIVE') {
 			return fail(403, { error: 'El usuario se encuentra inactivo o bloqueado' });
 		}
@@ -29,7 +68,58 @@ export const actions = {
 		const validPassword = await bcrypt.compare(password, user.passwordHash);
 
 		if (!validPassword) {
-			return fail(400, { error: 'Credenciales inválidas', incorrect: true });
+			// Incrementar contador de intentos fallidos
+			const newAttempts = (user.failedLoginAttempts || 0) + 1;
+			const shouldLock = newAttempts >= MAX_FAILED_ATTEMPTS;
+			
+			await prisma.user.update({
+				where: { id: user.id },
+				data: {
+					failedLoginAttempts: newAttempts,
+					lastFailedAttempt: now,
+					lockedUntil: shouldLock 
+						? new Date(now.getTime() + LOCK_DURATION_MINUTES * 60000)
+						: user.lockedUntil
+				}
+			});
+
+			// Registrar intento fallido
+			await prisma.auditLog.create({
+				data: {
+					action: AuditAction.LOGIN,
+					entityType: 'User',
+					entityId: user.id,
+					description: `Intento de login fallido #${newAttempts}`,
+					userId: user.id
+				}
+			});
+
+			// Mensaje diferente si es el intento que bloquea
+			if (shouldLock) {
+				return fail(403, { 
+					error: `Demasiados intentos fallidos. Cuenta bloqueada por ${LOCK_DURATION_MINUTES} minutos.`,
+					locked: true,
+					minutesLeft: LOCK_DURATION_MINUTES
+				});
+			}
+
+			return fail(400, { 
+				error: 'Credenciales inválidas', 
+				incorrect: true,
+				attemptsLeft: MAX_FAILED_ATTEMPTS - newAttempts
+			});
+		}
+
+		// Login exitoso - limpiar contador de intentos
+		if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+			await prisma.user.update({
+				where: { id: user.id },
+				data: {
+					failedLoginAttempts: 0,
+					lockedUntil: null,
+					lastFailedAttempt: null
+				}
+			});
 		}
 
 		const token = crypto.randomUUID();

@@ -24,6 +24,11 @@ model User {
   student      Student?
   teacher      Teacher?
   roles        UserRole[]
+  
+  // Bloqueo por intentos fallidos
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  lastFailedAttempt   DateTime?
 
   @@index([lastName, firstName])
   @@map("users")

@@ -1,4 +1,6 @@
 <script lang="ts">
+	let { form } = $props();
+	
 	let email = $state('');
 	let password = $state('');
 	let showPassword = $state(false);
@@ -53,6 +55,22 @@
 					<p class="mt-2 text-sm text-slate-400">Ingresá tus credenciales institucionales.</p>
 				</div>
 
+				{#if form?.error}
+					<div class="mt-4 rounded-xl border p-4 text-sm {form?.locked ? 'border-red-800 bg-red-950/30 text-red-400' : 'border-red-800 bg-red-950/30 text-red-400'}">
+						<div class="flex items-center gap-2">
+							<svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+							</svg>
+							<div>
+								<p class="font-medium">{form.error}</p>
+								{#if form?.attemptsLeft !== undefined && form.attemptsLeft > 0}
+									<p class="text-xs mt-1">Te quedan {form.attemptsLeft} intentos antes del bloqueo.</p>
+								{/if}
+							</div>
+						</div>
+					</div>
+				{/if}
+
 				<form method="POST" class="mt-8 space-y-5">
 					<div>
 						<label for="email" class="mb-2 block text-sm font-medium text-slate-300">
@@ -65,7 +83,7 @@
 							type="email"
 							autocomplete="email"
 							placeholder="nombre@instituto.edu.ar"
-							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+							class="w-full rounded-2xl border {form?.error ? 'border-red-600' : 'border-slate-700'} bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 						/>
 					</div>
 
@@ -95,9 +113,10 @@
 
 					<button
 						type="submit"
-						class="w-full rounded-2xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.01]"
+						disabled={form?.locked}
+						class="w-full rounded-2xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed"
 					>
-						Ingresar al sistema
+						{form?.locked ? `Bloqueado (${form.minutesLeft} min)` : 'Ingresar al sistema'}
 					</button>
 				</form>
 

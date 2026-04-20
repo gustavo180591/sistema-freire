@@ -22,15 +22,36 @@
 <div class="space-y-8">
 	<!-- Header -->
 	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
-		<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Legajo digital</p>
-		<h1 class="mt-2 text-4xl font-bold tracking-tight">
-			{student.fullName}
-		</h1>
-		<p class="mt-3 text-sm text-slate-400">
-			DNI: {student.dni} · {student.career}
-		</p>
-		<div class="mt-4 inline-flex rounded-full border border-slate-700 px-4 py-2 text-sm">
-			{student.status}
+		<div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+			<div>
+				<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Legajo digital</p>
+				<h1 class="mt-2 text-4xl font-bold tracking-tight">
+					{student.fullName}
+				</h1>
+				<p class="mt-3 text-sm text-slate-400">
+					DNI: {student.dni} · {student.career}
+				</p>
+				<div class="mt-4 inline-flex rounded-full border border-slate-700 px-4 py-2 text-sm">
+					{student.status}
+				</div>
+			</div>
+			<div class="flex flex-wrap gap-2">
+				<a
+					href="/alumnos/{student.id}/documentos"
+					class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500"
+				>
+					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+					</svg>
+					Documentos
+				</a>
+				<a
+					href="/alumnos"
+					class="inline-flex items-center gap-2 rounded-xl border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+				>
+					← Volver a alumnos
+				</a>
+			</div>
 		</div>
 	</section>
 

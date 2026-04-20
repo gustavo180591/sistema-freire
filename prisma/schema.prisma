@@ -438,6 +438,24 @@ enum AuditAction {
   EXPORT
 }
 
+// Permisos granulares por entidad (CRUD)
+model Permission {
+  id           String   @id @default(cuid())
+  roleCode     RoleCode
+  entity       String   // Ej: 'USER', 'STUDENT', 'CAREER', etc.
+  canCreate    Boolean  @default(false)
+  canRead      Boolean  @default(true)
+  canUpdate    Boolean  @default(false)
+  canDelete    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([roleCode, entity])
+  @@index([roleCode])
+  @@index([entity])
+  @@map("permissions")
+}
+
 enum StudentStatus {
   ACTIVE
   INACTIVE

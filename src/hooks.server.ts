@@ -16,7 +16,8 @@ const routePermissions: Record<string, string[]> = {
 	'/finanzas': [...FULL_ACCESS_ROLES, 'FINANZAS'],
 	'/recibos': [...FULL_ACCESS_ROLES, 'DOCENTE', 'FINANZAS'],
 	'/reportes': [...FULL_ACCESS_ROLES, 'FINANZAS'],
-	'/auditoria': ['SUPERADMIN', 'DIRECTOR'] // Solo admins pueden ver auditoría
+	'/auditoria': ['SUPERADMIN', 'DIRECTOR'], // Solo admins pueden ver auditoría
+	'/permisos': ['SUPERADMIN'] // Solo SUPERADMIN puede gestionar permisos
 };
 
 export const handle: Handle = async ({ event, resolve }) => {

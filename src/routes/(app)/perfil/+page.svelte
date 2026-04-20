@@ -1,7 +1,49 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form?: any } = $props();
+
+	// Estados del 2FA
+	let setupMode = $state(false);
+	let verifying = $state(false);
+	let disabling = $state(false);
+	let qrCode = $state<string | null>(null);
+	let secret = $state<string | null>(null);
+	let verifyCode = $state('');
+	let disableCode = $state('');
+
+	// Manejar resultado del setup
+	$effect(() => {
+		if (form?.success && form?.qrCode) {
+			qrCode = form.qrCode;
+			secret = form.secret;
+			setupMode = true;
+		}
+	});
+
+	function handleVerify() {
+		return async ({ result }: { result: any }) => {
+			if (result.type === 'success') {
+				await invalidateAll();
+				setupMode = false;
+				qrCode = null;
+				secret = null;
+				verifyCode = '';
+			}
+		};
+	}
+
+	function handleDisable() {
+		return async ({ result }: { result: any }) => {
+			if (result.type === 'success') {
+				await invalidateAll();
+				disabling = false;
+				disableCode = '';
+			}
+		};
+	}
 </script>
 
 <svelte:head>
@@ -149,5 +191,166 @@
 				</div>
 			</a>
 		</div>
+	</div>
+
+	<!-- Seguridad - 2FA -->
+	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-4 md:p-6">
+		<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 md:mb-6">
+			<div class="flex items-center gap-3">
+				<div class="rounded-xl bg-indigo-950/50 p-2">
+					<svg class="h-5 w-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+					</svg>
+				</div>
+				<h2 class="text-lg md:text-xl font-semibold">Autenticación de Dos Factores (2FA)</h2>
+			</div>
+			{#if data.user.totpEnabled}
+				<span class="inline-flex items-center gap-2 rounded-full bg-emerald-950/50 px-3 py-1.5 text-sm text-emerald-400 shrink-0">
+					<span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+					Activado
+				</span>
+			{:else}
+				<span class="inline-flex items-center gap-2 rounded-full bg-slate-800 px-3 py-1.5 text-sm text-slate-400 shrink-0">
+					<span class="h-2 w-2 rounded-full bg-slate-500"></span>
+					Desactivado
+				</span>
+			{/if}
+		</div>
+
+		{#if form?.error}
+			<div class="mb-4 rounded-xl border border-red-800 bg-red-950/30 p-4 text-sm text-red-400">
+				✗ {form.error}
+			</div>
+		{/if}
+
+		{#if form?.success && form?.message}
+			<div class="mb-4 rounded-xl border border-emerald-800 bg-emerald-950/30 p-4 text-sm text-emerald-400">
+				✓ {form.message}
+			</div>
+		{/if}
+
+		{#if !data.user.totpEnabled && !setupMode}
+			<!-- Setup inicial -->
+			<div class="space-y-4">
+				<p class="text-sm text-slate-400">
+					El 2FA agrega una capa extra de seguridad. Requerirá un código de 6 dígitos de tu app autenticadora
+					(Google Authenticator, Authy, etc.) al iniciar sesión.
+				</p>
+				<form method="POST" action="?/setup2FA" use:enhance>
+					<button
+						type="submit"
+						class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500"
+					>
+						Activar 2FA
+					</button>
+				</form>
+			</div>
+		{/if}
+
+		{#if setupMode}
+			<!-- Mostrar QR y verificar -->
+			<div class="space-y-6">
+				<div class="rounded-2xl border border-slate-700 bg-slate-800/50 p-4 md:p-6">
+					<p class="mb-4 text-sm text-slate-300">
+						1. Escaneá este código QR con tu app autenticadora (Google Authenticator, Authy, Microsoft Authenticator):
+					</p>
+					
+					{#if qrCode}
+						<div class="flex justify-center mb-4">
+							<img src={qrCode} alt="QR Code 2FA" class="h-48 w-48 md:h-56 md:w-56 rounded-xl" />
+						</div>
+					{/if}
+
+					{#if secret}
+						<div class="text-center mb-4">
+							<p class="text-xs text-slate-500 mb-2">O ingresá manualmente este código:</p>
+							<code class="inline-block rounded-lg bg-slate-900 px-3 py-2 text-sm font-mono text-slate-300">
+								{secret.match(/.{1,4}/g)?.join(' ')}
+							</code>
+						</div>
+					{/if}
+				</div>
+
+				<div class="rounded-2xl border border-slate-700 bg-slate-800/50 p-4 md:p-6">
+					<p class="mb-4 text-sm text-slate-300">
+						2. Ingresá el código de 6 dígitos generado por tu app para verificar:
+					</p>
+					
+					<form method="POST" action="?/verify2FA" use:enhance={handleVerify} class="flex flex-col sm:flex-row gap-3">
+						<input
+							type="text"
+							name="code"
+							bind:value={verifyCode}
+							placeholder="000000"
+							maxlength="6"
+							class="w-full sm:w-32 rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-center text-lg font-mono tracking-widest transition outline-none focus:border-indigo-500"
+						/>
+						<button
+							type="submit"
+							disabled={verifyCode.length !== 6}
+							class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+						>
+							Verificar y Activar
+						</button>
+						<button
+							type="button"
+							onclick={() => { setupMode = false; qrCode = null; secret = null; }}
+							class="rounded-xl border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-700"
+						>
+							Cancelar
+						</button>
+					</form>
+				</div>
+			</div>
+		{/if}
+
+		{#if data.user.totpEnabled}
+			<!-- 2FA Activado - opciones -->
+			<div class="space-y-4">
+				<p class="text-sm text-slate-400">
+					El 2FA está activado. Cada vez que inicies sesión, deberás ingresar un código de 6 dígitos
+					de tu app autenticadora.
+				</p>
+				
+				{#if !disabling}
+					<button
+						onclick={() => disabling = true}
+						class="rounded-xl border border-red-800 bg-red-950/30 px-4 py-2 text-sm font-medium text-red-400 transition hover:bg-red-950/50"
+					>
+						Desactivar 2FA
+					</button>
+				{:else}
+					<div class="rounded-2xl border border-slate-700 bg-slate-800/50 p-4">
+						<p class="mb-3 text-sm text-slate-300">
+							Para desactivar, ingresá un código válido de tu app autenticadora:
+						</p>
+						<form method="POST" action="?/disable2FA" use:enhance={handleDisable} class="flex flex-col sm:flex-row gap-3">
+							<input
+								type="text"
+								name="code"
+								bind:value={disableCode}
+								placeholder="000000"
+								maxlength="6"
+								class="w-full sm:w-32 rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-center text-lg font-mono tracking-widest transition outline-none focus:border-indigo-500"
+							/>
+							<button
+								type="submit"
+								disabled={disableCode.length !== 6}
+								class="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+							>
+								Confirmar Desactivación
+							</button>
+							<button
+								type="button"
+								onclick={() => { disabling = false; disableCode = ''; }}
+								class="rounded-xl border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-700"
+							>
+								Cancelar
+							</button>
+						</form>
+					</div>
+				{/if}
+			</div>
+		{/if}
 	</div>
 </div>

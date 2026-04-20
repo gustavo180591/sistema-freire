@@ -24,7 +24,8 @@ export const handle: Handle = async ({ event, resolve }) => {
     const token = event.cookies.get('session');
 
     if (!token) {
-        if (event.url.pathname.startsWith('/login')) {
+        // Permitir acceso a rutas de autenticación sin sesión
+        if (event.url.pathname.startsWith('/login') || event.url.pathname.startsWith('/verify-2fa')) {
             return resolve(event);
         }
 

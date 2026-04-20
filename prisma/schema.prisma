@@ -29,6 +29,11 @@ model User {
   failedLoginAttempts Int       @default(0)
   lockedUntil         DateTime?
   lastFailedAttempt   DateTime?
+  
+  // 2FA TOTP
+  totpSecret  String?   // Secreto para generar códigos (encriptado)
+  totpEnabled Boolean   @default(false)
+  totpVerified Boolean  @default(false) // Verificado tras setup inicial
 
   @@index([lastName, firstName])
   @@map("users")

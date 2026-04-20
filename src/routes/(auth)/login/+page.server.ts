@@ -122,6 +122,19 @@ export const actions = {
 			});
 		}
 
+		// Verificar si tiene 2FA habilitado
+		if (user.totpEnabled) {
+			// Guardar cookie temporal para flujo de 2FA
+			cookies.set('pending_2fa', user.id, {
+				path: '/',
+				httpOnly: true,
+				sameSite: 'lax',
+				maxAge: 60 * 5 // 5 minutos para completar 2FA
+			});
+			throw redirect(303, '/verify-2fa');
+		}
+
+		// Crear sesión directamente (sin 2FA)
 		const token = crypto.randomUUID();
 
 		await prisma.session.create({

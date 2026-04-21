@@ -26,6 +26,8 @@ model User {
   roles        UserRole[]
   uploadedDocs StudentDocument[] @relation("UploadedBy")
   verifiedDocs StudentDocument[] @relation("VerifiedBy")
+  createdFollowUps StudentFollowUp[] @relation("FollowUpCreator")
+  resolvedFollowUps StudentFollowUp[] @relation("FollowUpResolver")
 
   // Bloqueo por intentos fallidos
   failedLoginAttempts Int       @default(0)
@@ -128,6 +130,7 @@ model Student {
   studentCharges    StudentCharge[]
   subjectStatuses   StudentSubjectStatus[]
   documents         StudentDocument[]
+  followUps         StudentFollowUp[]
   career            Career                 @relation(fields: [careerId], references: [id])
   user              User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -541,4 +544,38 @@ model StudentDocument {
 
   @@index([studentId, type])
   @@map("student_documents")
+}
+
+enum FollowUpType {
+  INTERVIEW
+  OBSERVATION
+  WARNING
+  MEETING
+  INCIDENT
+  ACHIEVEMENT
+  NOTE
+}
+
+model StudentFollowUp {
+  id          String       @id @default(cuid())
+  studentId   String
+  type        FollowUpType
+  title       String
+  description String
+  date        DateTime     @default(now())
+  createdBy   String
+  isAlert     Boolean      @default(false)  // Destacar como alerta/importante
+  isResolved  Boolean      @default(false)   // Para alertas: ya fue resuelta
+  resolvedAt  DateTime?
+  resolvedBy  String?
+  attachments String?      // URLs de archivos adjuntos separados por coma
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  student     Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  creator     User         @relation("FollowUpCreator", fields: [createdBy], references: [id])
+  resolver    User?        @relation("FollowUpResolver", fields: [resolvedBy], references: [id])
+
+  @@index([studentId, date])
+  @@index([studentId, type])
+  @@map("student_followups")
 }

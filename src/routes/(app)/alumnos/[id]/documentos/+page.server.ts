@@ -2,7 +2,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { auditLog } from '$lib/server/audit';
-import { hasPermission } from '$lib/server/auth/permissions-granular';
+import { checkPermission } from '$lib/server/auth/permissions-granular';
 import { mkdir, writeFile, unlink } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
@@ -22,7 +22,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	if (!user) throw redirect(303, '/login');
 
 	// Verificar permiso de lectura
-	const canRead = await hasPermission(user.id, 'STUDENT', 'read');
+	const canRead = await checkPermission(user, 'STUDENT', 'read');
 	if (!canRead) {
 		throw error(403, 'No tenés permiso para ver documentos');
 	}
@@ -72,8 +72,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			notes: d.notes
 		})),
 		documentTypeLabels: DOCUMENT_TYPE_LABELS,
-		canUpload: await hasPermission(user.id, 'STUDENT', 'update'),
-		canVerify: await hasPermission(user.id, 'STUDENT', 'update')
+		canUpload: await checkPermission(user, 'STUDENT', 'update'),
+		canVerify: await checkPermission(user, 'STUDENT', 'update')
 	};
 };
 
@@ -83,7 +83,7 @@ export const actions: Actions = {
 		const user = locals.user;
 		if (!user) return fail(401, { error: 'No autenticado' });
 
-		const canUpdate = await hasPermission(user.id, 'STUDENT', 'update');
+		const canUpdate = await checkPermission(user, 'STUDENT', 'update');
 		if (!canUpdate) {
 			return fail(403, { error: 'No tenés permiso para subir documentos' });
 		}
@@ -128,7 +128,7 @@ export const actions: Actions = {
 		const doc = await prisma.studentDocument.create({
 			data: {
 				studentId,
-				type,
+				type: type as import('@prisma/client').DocumentType,
 				name,
 				fileUrl: filePath,
 				fileSize: file.size,
@@ -158,7 +158,7 @@ export const actions: Actions = {
 		const user = locals.user;
 		if (!user) return fail(401, { error: 'No autenticado' });
 
-		const canUpdate = await hasPermission(user.id, 'STUDENT', 'update');
+		const canUpdate = await checkPermission(user, 'STUDENT', 'update');
 		if (!canUpdate) {
 			return fail(403, { error: 'No tenés permiso para verificar documentos' });
 		}
@@ -207,7 +207,7 @@ export const actions: Actions = {
 		const user = locals.user;
 		if (!user) return fail(401, { error: 'No autenticado' });
 
-		const canDelete = await hasPermission(user.id, 'STUDENT', 'delete');
+		const canDelete = await checkPermission(user, 'STUDENT', 'delete');
 		if (!canDelete) {
 			return fail(403, { error: 'No tenés permiso para eliminar documentos' });
 		}

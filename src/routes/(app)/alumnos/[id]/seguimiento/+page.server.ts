@@ -2,7 +2,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { auditLog } from '$lib/server/audit';
-import { hasPermission } from '$lib/server/auth/permissions-granular';
+import { checkPermission } from '$lib/server/auth/permissions-granular';
 
 const FOLLOW_UP_TYPE_LABELS: Record<string, string> = {
 	INTERVIEW: 'Entrevista',
@@ -29,7 +29,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	if (!user) throw redirect(303, '/login');
 
 	// Verificar permiso de lectura
-	const canRead = await hasPermission(user.id, 'STUDENT', 'read');
+	const canRead = await checkPermission(user, 'STUDENT', 'read');
 	if (!canRead) {
 		throw error(403, 'No tenés permiso para ver seguimientos');
 	}
@@ -92,8 +92,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			lastFollowUp
 		},
 		typeLabels: FOLLOW_UP_TYPE_LABELS,
-		canCreate: await hasPermission(user.id, 'STUDENT', 'update'),
-		canResolve: await hasPermission(user.id, 'STUDENT', 'update')
+		canCreate: await checkPermission(user, 'STUDENT', 'update'),
+		canResolve: await checkPermission(user, 'STUDENT', 'update')
 	};
 };
 
@@ -103,7 +103,7 @@ export const actions: Actions = {
 		const user = locals.user;
 		if (!user) return fail(401, { error: 'No autenticado' });
 
-		const canUpdate = await hasPermission(user.id, 'STUDENT', 'update');
+		const canUpdate = await checkPermission(user, 'STUDENT', 'update');
 		if (!canUpdate) {
 			return fail(403, { error: 'No tenés permiso para crear seguimientos' });
 		}
@@ -141,7 +141,7 @@ export const actions: Actions = {
 		const followUp = await prisma.studentFollowUp.create({
 			data: {
 				studentId,
-				type,
+				type: type as import('@prisma/client').FollowUpType,
 				title,
 				description,
 				date,
@@ -170,7 +170,7 @@ export const actions: Actions = {
 		const user = locals.user;
 		if (!user) return fail(401, { error: 'No autenticado' });
 
-		const canUpdate = await hasPermission(user.id, 'STUDENT', 'update');
+		const canUpdate = await checkPermission(user, 'STUDENT', 'update');
 		if (!canUpdate) {
 			return fail(403, { error: 'No tenés permiso para resolver alertas' });
 		}
@@ -226,7 +226,7 @@ export const actions: Actions = {
 		const user = locals.user;
 		if (!user) return fail(401, { error: 'No autenticado' });
 
-		const canDelete = await hasPermission(user.id, 'STUDENT', 'delete');
+		const canDelete = await checkPermission(user, 'STUDENT', 'delete');
 		if (!canDelete) {
 			return fail(403, { error: 'No tenés permiso para eliminar seguimientos' });
 		}

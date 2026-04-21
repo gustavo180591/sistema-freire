@@ -194,6 +194,15 @@ export async function seedDefaultPermissions() {
     { roleCode: 'DOCENTE', entity: 'COMMISSION', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
     { roleCode: 'DOCENTE', entity: 'PAYSLIP', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
 
+    // PRECEPTOR - Puede gestionar alumnos, inscripciones y ver comisiones (similar a SECRETARIA pero sin finanzas)
+    { roleCode: 'PRECEPTOR', entity: 'USER', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+    { roleCode: 'PRECEPTOR', entity: 'STUDENT', canCreate: true, canRead: true, canUpdate: true, canDelete: false },
+    { roleCode: 'PRECEPTOR', entity: 'TEACHER', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+    { roleCode: 'PRECEPTOR', entity: 'CAREER', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+    { roleCode: 'PRECEPTOR', entity: 'SUBJECT', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+    { roleCode: 'PRECEPTOR', entity: 'COMMISSION', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+    { roleCode: 'PRECEPTOR', entity: 'ENROLLMENT', canCreate: true, canRead: true, canUpdate: true, canDelete: false },
+
     // ALUMNO - Solo ver sus datos
     { roleCode: 'ALUMNO', entity: 'STUDENT', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
   ];

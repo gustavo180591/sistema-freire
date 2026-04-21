@@ -10,6 +10,7 @@ async function main() {
 		{ code: RoleCode.DIRECTOR, name: 'Director' },
 		{ code: RoleCode.SECRETARIA, name: 'Secretaría' },
 		{ code: RoleCode.DOCENTE, name: 'Docente' },
+		{ code: RoleCode.PRECEPTOR, name: 'Preceptor' },
 		{ code: RoleCode.ALUMNO, name: 'Alumno' },
 		{ code: RoleCode.FINANZAS, name: 'Finanzas' },
 		{ code: RoleCode.APODERADO, name: 'Apoderado' }

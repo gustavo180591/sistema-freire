@@ -28,3 +28,6 @@ test-results
 
 # Admin scripts
 create-admin.js
+prisma/seed-superadmin.ts
+prisma/*.seed.ts
+*.seed-credentials.ts

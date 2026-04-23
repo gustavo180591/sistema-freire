@@ -208,15 +208,20 @@ export async function seedDefaultPermissions() {
   ];
 
   for (const perm of defaultPermissions) {
+    const { roleCode, entity, ...permissions } = perm;
     await prisma.permission.upsert({
       where: {
         roleCode_entity: {
-          roleCode: perm.roleCode as any,
-          entity: perm.entity as Entity
+          roleCode: roleCode as any,
+          entity: entity as Entity
         }
       },
-      update: perm,
-      create: perm
+      update: permissions,
+      create: {
+        roleCode: roleCode as any,
+        entity: entity as Entity,
+        ...permissions
+      }
     });
   }
 }

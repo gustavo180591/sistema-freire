@@ -102,9 +102,8 @@ export const actions: Actions = {
         }
 
         try {
-            await prisma.subjectCorrelative.update({
-                where: { id: correlativeId },
-                data: { isActive: false }
+            await prisma.subjectCorrelative.delete({
+                where: { id: correlativeId }
             });
             return { success: true };
         } catch (e) {

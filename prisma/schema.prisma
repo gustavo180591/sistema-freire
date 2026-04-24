@@ -79,15 +79,21 @@ model Session {
 }
 
 model Career {
-  id         String      @id @default(cuid())
-  code       String      @unique
-  name       String
-  active     Boolean     @default(true)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  students   Student[]
-  studyPlans StudyPlan[]
+  id              String         @id @default(cuid())
+  code            String         @unique
+  name            String
+  trainingField   TrainingField  // Campo de formación
+  resolution      String?        // Resolución ministerial
+  durationYears   Int            @default(4)
+  active          Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  students        Student[]
+  studyPlans      StudyPlan[]
+  careerSubjects  CareerSubject[] // Materias específicas de esta carrera
+  subjectCorrelatives SubjectCorrelative[] // Correlativas específicas de carrera
 
+  @@index([trainingField, active])
   @@map("careers")
 }
 
@@ -155,20 +161,42 @@ model Teacher {
 }
 
 model Subject {
-  id             String                 @id @default(cuid())
-  code           String                 @unique
-  name           String
-  yearLevel      Int
-  active         Boolean                @default(true)
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
-  commissions    Commission[]
-  planLinks      PlanSubject[]
-  statuses       StudentSubjectStatus[]
-  requiredBy     SubjectCorrelative[]   @relation("subject_required")
-  correlativesTo SubjectCorrelative[]   @relation("subject_main")
+  id               String              @id @default(cuid())
+  code             String              @unique
+  name             String
+  
+  // Clasificación curricular
+  subjectType      SubjectType         // COMMON, CAREER_SPECIFIC, EDI
+  trainingField    TrainingField       // GENERAL, ESPECIFICA, PRACTICA, EDI
+  yearLevel        Int                 // Año académico (1-4)
+  
+  // Modalidad de acreditación
+  accreditationMode AccreditationMode @default(EXAMEN_FINAL)
+  
+  // Metadatos académicos
+  hoursPerWeek     Int?                // Horas cátedra semanales
+  isElective       Boolean             @default(false)
+  isRemedial       Boolean             @default(false) // Para recursantes
+  description      String?
+  
+  // Control
+  active           Boolean             @default(true)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
 
-  @@index([name])
+  // Relaciones
+  careerSubjects   CareerSubject[]     // Carreras donde se dicta
+  commissions      Commission[]
+  planSubjects     PlanSubject[]
+  statuses         StudentSubjectStatus[]
+  
+  // Correlatividades
+  correlatives     SubjectCorrelative[] @relation("subject_correlatives")
+  requiredBy       SubjectCorrelative[] @relation("subject_required")
+
+  @@index([subjectType, yearLevel])
+  @@index([trainingField, yearLevel])
+  @@index([code, active])
   @@map("subjects")
 }
 
@@ -231,13 +259,48 @@ model Enrollment {
 }
 
 model SubjectCorrelative {
-  subjectId         String
-  requiredSubjectId String
-  requiredSubject   Subject @relation("subject_required", fields: [requiredSubjectId], references: [id])
-  subject           Subject @relation("subject_main", fields: [subjectId], references: [id], onDelete: Cascade)
+  id                String           @id @default(cuid())
+  subjectId         String           // Materia que tiene la correlativa
+  requiredSubjectId String           // Materia requerida
+  correlativeType   CorrelativeType  // Tipo de correlatividad
+  
+  // Opcional: solo para ciertas carreras (null = todas)
+  careerId          String?
+  
+  isActive          Boolean          @default(true)
+  notes             String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
-  @@id([subjectId, requiredSubjectId])
+  // Relaciones
+  subject           Subject          @relation("subject_correlatives", fields: [subjectId], references: [id], onDelete: Cascade)
+  requiredSubject   Subject          @relation("subject_required", fields: [requiredSubjectId], references: [id], onDelete: Cascade)
+  career            Career?          @relation(fields: [careerId], references: [id])
+
+  @@unique([subjectId, requiredSubjectId, careerId])
+  @@index([subjectId, correlativeType])
+  @@index([requiredSubjectId])
   @@map("subject_correlatives")
+}
+
+// Relación N:M entre Carrera y Materia (materias específicas)
+model CareerSubject {
+  id          String    @id @default(cuid())
+  careerId    String
+  subjectId   String
+  isMandatory Boolean   @default(true) // Obligatoria u optativa
+  yearLevel   Int       // Año específico en esta carrera
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  career      Career    @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  subject     Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([careerId, subjectId])
+  @@index([careerId, yearLevel])
+  @@index([subjectId])
+  @@map("career_subjects")
 }
 
 model AttendanceRecord {
@@ -303,6 +366,7 @@ model StudyPlan {
   careerId      String
   name          String
   version       String
+  isDefault     Boolean       @default(false)
   active        Boolean       @default(true)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -496,6 +560,36 @@ enum ChargeStatus {
   PARTIAL
   PAID
   CANCELLED
+}
+
+// ======================================================
+// CURRICULAR MODEL ENUMS
+// ======================================================
+
+enum TrainingField {
+  GENERAL        // Formación General
+  ESPECIFICA   // Formación Específica
+  PRACTICA     // Prácticas Profesionalizantes
+  EDI          // Espacios de Definición Institucional
+}
+
+enum SubjectType {
+  COMMON         // Común a todas las carreras
+  CAREER_SPECIFIC // Específica de una carrera
+  EDI            // Parte de Formación General pero identificable como EDI
+}
+
+enum CorrelativeType {
+  REGULAR        // Para cursar regular
+  APROBADO       // Para cursar (requiere aprobación final)
+  LIBRE          // Para cursar libre
+  EQUIVALENCIA   // Equivalencia con otra materia
+}
+
+enum AccreditationMode {
+  PROMOCIONAL           // Promoción directa
+  EXAMEN_FINAL          // Requiere final
+  PROMOCIONAL_SIN_FINAL // Promoción + final obligatorio
 }
 
 enum PaymentMethod {

@@ -11,23 +11,37 @@ export const load: PageServerLoad = async ({ params }) => {
             studyPlans: {
                 orderBy: {
                     version: 'desc'
+                }
+            },
+            careerSubjects: {
+                where: {
+                    isMandatory: true
                 },
                 include: {
-                    subjects: {
+                    subject: {
                         include: {
-                            subject: {
-                                select: {
-                                    id: true,
-                                    code: true,
-                                    name: true,
-                                    yearLevel: true
+                            correlatives: {
+                                where: {
+                                    OR: [
+                                        { careerId: null },
+                                        { careerId: params.id }
+                                    ]
+                                },
+                                include: {
+                                    requiredSubject: {
+                                        select: {
+                                            id: true,
+                                            code: true,
+                                            name: true
+                                        }
+                                    }
                                 }
                             }
-                        },
-                        orderBy: {
-                            sortOrder: 'asc'
                         }
                     }
+                },
+                orderBy: {
+                    yearLevel: 'asc'
                 }
             }
         }
@@ -38,35 +52,36 @@ export const load: PageServerLoad = async ({ params }) => {
     }
 
     // Agrupar materias por año
-    const plansWithSubjectsByYear = career.studyPlans.map((plan) => {
-        const subjectsByYear: Record<number, typeof plan.subjects> = {};
-        
-        plan.subjects.forEach((ps) => {
-            const year = ps.subject.yearLevel;
-            if (!subjectsByYear[year]) {
-                subjectsByYear[year] = [];
-            }
-            subjectsByYear[year].push(ps);
-        });
-
-        return {
-            id: plan.id,
-            name: plan.name,
-            version: plan.version,
-            active: plan.active,
-            durationYears: plan.durationYears,
-            subjectsByYear,
-            totalSubjects: plan.subjects.length
-        };
+    const subjectsByYear: Record<number, typeof career.careerSubjects> = {};
+    
+    career.careerSubjects.forEach((cs) => {
+        const year = cs.yearLevel;
+        if (!subjectsByYear[year]) {
+            subjectsByYear[year] = [];
+        }
+        subjectsByYear[year].push(cs);
     });
+
+    // Calcular totales
+    const totalSubjects = career.careerSubjects.length;
+    const totalCorrelatives = career.careerSubjects.reduce(
+        (acc, cs) => acc + cs.subject.correlatives.length, 
+        0
+    );
 
     return {
         career: {
             id: career.id,
             code: career.code,
             name: career.name,
+            trainingField: career.trainingField,
+            resolution: career.resolution,
+            durationYears: career.durationYears,
             active: career.active
         },
-        plans: plansWithSubjectsByYear
+        subjectsByYear,
+        totalSubjects,
+        totalCorrelatives,
+        plans: career.studyPlans
     };
 };

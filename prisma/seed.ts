@@ -1,6 +1,11 @@
 import { PrismaClient, RoleCode } from '@prisma/client';
+import { createHash } from 'crypto';
 
 const prisma = new PrismaClient();
+
+function hashPassword(password: string): string {
+  return createHash('sha256').update(password).digest('hex');
+}
 
 async function main() {
 	console.log('Seeding roles...');
@@ -23,6 +28,30 @@ async function main() {
 			create: role
 		});
 		console.log(`Role ${role.code} created/updated`);
+	}
+
+	// Crear usuario admin si no existe
+	console.log('Seeding admin user...');
+	const superAdminRole = await prisma.role.findFirst({ where: { name: 'SUPERADMIN' } });
+	if (superAdminRole) {
+		const existingUser = await prisma.user.findUnique({
+			where: { email: 'gustavo.faccendini@gmail.com' }
+		});
+		if (!existingUser) {
+			const passwordHash = hashPassword('$Gustavo1805');
+			await prisma.user.create({
+				data: {
+					email: 'gustavo.faccendini@gmail.com',
+					passwordHash,
+					firstName: 'Gustavo',
+					lastName: 'Faccendini',
+					roles: { create: [{ role: { connect: { id: superAdminRole.id } } }] }
+				}
+			});
+			console.log('Admin user created/updated');
+		} else {
+			console.log('Admin user already exists');
+		}
 	}
 
 	console.log('Seeding completed!');

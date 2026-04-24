@@ -1,0 +1,949 @@
+{
+  "carreras": [
+    {
+      "code": "LENGUA_LITERATURA",
+      "name": "Profesorado de Lengua y Literatura",
+      "resolution": "Res. ME N° 1234/2024",
+      "durationYears": 4
+    },
+    {
+      "code": "MATEMATICA",
+      "name": "Profesorado de Matemática",
+      "resolution": "Res. ME N° 1235/2024",
+      "durationYears": 4
+    }
+  ],
+  "plan": {
+    "version": "2024-01",
+    "isDefault": true
+  },
+  "materias": [
+    {
+      "code": "TOLE101",
+      "name": "Taller de Oralidad, Lectura y Escritura (T.O.L.E.)",
+      "subjectType": "COMMON",
+      "trainingField": "GENERAL",
+      "yearLevel": 1,
+      "accreditationMode": "EXAMEN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "PED101",
+      "name": "Pedagogía",
+      "subjectType": "COMMON",
+      "trainingField": "GENERAL",
+      "yearLevel": 1,
+      "accreditationMode": "EXAMEN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "TIC101",
+      "name": "TIC",
+      "subjectType": "COMMON",
+      "trainingField": "GENERAL",
+      "yearLevel": 1,
+      "accreditationMode": "EXAMEN_FINAL",
+      "hoursPerWeek": 3,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "DID101",
+      "name": "Didáctica General",
+      "subjectType": "COMMON",
+      "trainingField": "GENERAL",
+      "yearLevel": 1,
+      "accreditationMode": "EXAMEN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "PRA101",
+      "name": "Práctica I",
+      "subjectType": "COMMON",
+      "trainingField": "PRACTICA",
+      "yearLevel": 1,
+      "accreditationMode": "PROMOCIONAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "EDI101",
+      "name": "EDI I: Taller de Ciudadanía",
+      "subjectType": "EDI",
+      "trainingField": "GENERAL",
+      "yearLevel": 1,
+      "accreditationMode": "PROMOCIONAL",
+      "hoursPerWeek": 2,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "FIL101",
+      "name": "Filosofía",
+      "subjectType": "COMMON",
+      "trainingField": "GENERAL",
+      "yearLevel": 1,
+      "accreditationMode": "PROMOCIONAL",
+      "hoursPerWeek": 3,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "TAL101",
+      "name": "Teoría y Análisis Literarios",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 1,
+      "accreditationMode": "EXAMEN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "HAL101",
+      "name": "Historia del Arte y la Literatura",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 1,
+      "accreditationMode": "EXAMEN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "LITJ101",
+      "name": "Literatura para Jóvenes",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 1,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "GRAI101",
+      "name": "Gramática I",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 1,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "ALGI101",
+      "name": "Álgebra I",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 1,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 5,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "GEOI101",
+      "name": "Geometría I",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 1,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 5,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "TRP101",
+      "name": "Taller de Resolución de Problemas",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 1,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 3,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "FIL201",
+      "name": "Filosofía",
+      "subjectType": "COMMON",
+      "trainingField": "GENERAL",
+      "yearLevel": 2,
+      "accreditationMode": "EXAMEN_FINAL",
+      "hoursPerWeek": 3,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "PSI201",
+      "name": "Psicología Educacional",
+      "subjectType": "COMMON",
+      "trainingField": "GENERAL",
+      "yearLevel": 2,
+      "accreditationMode": "EXAMEN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "SUE201",
+      "name": "Sujetos de la Educación Secundaria",
+      "subjectType": "COMMON",
+      "trainingField": "GENERAL",
+      "yearLevel": 2,
+      "accreditationMode": "EXAMEN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "PRA201",
+      "name": "Práctica II",
+      "subjectType": "COMMON",
+      "trainingField": "PRACTICA",
+      "yearLevel": 2,
+      "accreditationMode": "PROMOCIONAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "EDI201",
+      "name": "EDI II: Taller de Expresión Corporal y Uso Apropiado de la Voz",
+      "subjectType": "EDI",
+      "trainingField": "GENERAL",
+      "yearLevel": 2,
+      "accreditationMode": "PROMOCIONAL",
+      "hoursPerWeek": 2,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "TEO201",
+      "name": "Teoría y Análisis Literarios",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 2,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "HIA201",
+      "name": "Historia del Arte y la Literatura",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 2,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 3,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "SEM201",
+      "name": "Semiótica y Análisis del Discurso",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 2,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 3,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "LIT_ESP201",
+      "name": "Literatura Española",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 2,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 3,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "GRAII201",
+      "name": "Gramática II",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 2,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "ALGII201",
+      "name": "Álgebra II",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 2,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 5,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "GEOII201",
+      "name": "Geometría II",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 2,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 5,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "ANAI201",
+      "name": "Análisis Matemático I",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 2,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 5,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "DIDMAT201",
+      "name": "Didáctica de la Matemática I",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 2,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 3,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "TICMAT201",
+      "name": "TIC en la Enseñanza de la Matemática",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 2,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 2,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "HIS301",
+      "name": "Historia y Política de la Educación Argentina",
+      "subjectType": "COMMON",
+      "trainingField": "GENERAL",
+      "yearLevel": 3,
+      "accreditationMode": "EXAMEN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "SOC301",
+      "name": "Sociología de la Educación",
+      "subjectType": "COMMON",
+      "trainingField": "GENERAL",
+      "yearLevel": 3,
+      "accreditationMode": "EXAMEN_FINAL",
+      "hoursPerWeek": 3,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "ESI301",
+      "name": "Educación Sexual Integral",
+      "subjectType": "COMMON",
+      "trainingField": "GENERAL",
+      "yearLevel": 3,
+      "accreditationMode": "EXAMEN_FINAL",
+      "hoursPerWeek": 2,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "PRA301",
+      "name": "Práctica III",
+      "subjectType": "COMMON",
+      "trainingField": "PRACTICA",
+      "yearLevel": 3,
+      "accreditationMode": "PROMOCIONAL",
+      "hoursPerWeek": 6,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "EDI301",
+      "name": "EDI III: Derecho Laboral Docente y Seguridad Social",
+      "subjectType": "EDI",
+      "trainingField": "GENERAL",
+      "yearLevel": 3,
+      "accreditationMode": "PROMOCIONAL",
+      "hoursPerWeek": 2,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "DIDLEN301",
+      "name": "Didáctica de la Lengua y la Literatura I",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 3,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "LENGL301",
+      "name": "Lengua y Literatura Grecolatina",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 3,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 3,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "LINI301",
+      "name": "Lingüística I",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 3,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "LITARG301",
+      "name": "Literatura Argentina I",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 3,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 3,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "LITLAT301",
+      "name": "Literatura Latinoamericana",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 3,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 3,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "ALGIII301",
+      "name": "Álgebra III",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 3,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 5,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "ANAII301",
+      "name": "Análisis Matemático II",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 3,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 5,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "EST301",
+      "name": "Estadística y Probabilidad",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 3,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "GEOIII301",
+      "name": "Geometría III",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 3,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "DIDMATII301",
+      "name": "Didáctica de la Matemática II",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 3,
+      "accreditationMode": "PROMOCIONAL",
+      "hoursPerWeek": 4,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "MATFIN301",
+      "name": "Matemática Financiera",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 3,
+      "accreditationMode": "PROMOCIONAL",
+      "hoursPerWeek": 3,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "MATAPP301",
+      "name": "Matemática Aplicada",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 3,
+      "accreditationMode": "PROMOCIONAL",
+      "hoursPerWeek": 3,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "DIDLENII301",
+      "name": "Didáctica de la Lengua y la Literatura II",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 3,
+      "accreditationMode": "EXAMEN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "FEC401",
+      "name": "Formación Ética y Ciudadana",
+      "subjectType": "COMMON",
+      "trainingField": "GENERAL",
+      "yearLevel": 4,
+      "accreditationMode": "EXAMEN_FINAL",
+      "hoursPerWeek": 2,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "RES401",
+      "name": "Residencia Pedagógica",
+      "subjectType": "COMMON",
+      "trainingField": "PRACTICA",
+      "yearLevel": 4,
+      "accreditationMode": "PROMOCIONAL",
+      "hoursPerWeek": 12,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "EDI401",
+      "name": "EDI IV: Investigación - Acción",
+      "subjectType": "EDI",
+      "trainingField": "GENERAL",
+      "yearLevel": 4,
+      "accreditationMode": "PROMOCIONAL",
+      "hoursPerWeek": 3,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    },
+    {
+      "code": "DIDLENII401",
+      "name": "Didáctica de la Lengua y la Literatura II",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 4,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "LINII401",
+      "name": "Lingüística II",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 4,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "LITARGII401",
+      "name": "Literatura Argentina II",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 4,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 3,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "LITUNI401",
+      "name": "Literatura Universal",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 4,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 3,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "MATFIN401",
+      "name": "Matemática Financiera",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 4,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 3,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "MATAPP401",
+      "name": "Matemática Aplicada",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 4,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "METNUM401",
+      "name": "Métodos Numéricos",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 4,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 3,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "HISMAT401",
+      "name": "Historia y Fundamentos de la Matemática",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 4,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 3,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "SEMDID401",
+      "name": "Seminario de Didáctica de la Matemática",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 4,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 3,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "ANAIII401",
+      "name": "Análisis Matemático III",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 4,
+      "accreditationMode": "PROMOCIONAL_SIN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "METNUM401",
+      "name": "Métodos Numéricos",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 4,
+      "accreditationMode": "PROMOCIONAL",
+      "hoursPerWeek": 3,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "HISFUND401",
+      "name": "Historia y Fundamentos de la Matemática",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 4,
+      "accreditationMode": "EXAMEN_FINAL",
+      "hoursPerWeek": 3,
+      "careers": ["MATEMATICA"]
+    },
+    {
+      "code": "LINGII401",
+      "name": "Lingüística II",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 4,
+      "accreditationMode": "EXAMEN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "LITARGII401",
+      "name": "Literatura Argentina II",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 4,
+      "accreditationMode": "EXAMEN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "LITUNI401",
+      "name": "Literatura Universal",
+      "subjectType": "CAREER_SPECIFIC",
+      "trainingField": "ESPECIFICA",
+      "yearLevel": 4,
+      "accreditationMode": "EXAMEN_FINAL",
+      "hoursPerWeek": 4,
+      "careers": ["LENGUA_LITERATURA"]
+    },
+    {
+      "code": "ESI401",
+      "name": "Educación Sexual Integral",
+      "subjectType": "COMMON",
+      "trainingField": "GENERAL",
+      "yearLevel": 4,
+      "accreditationMode": "PROMOCIONAL",
+      "hoursPerWeek": 2,
+      "careers": ["LENGUA_LITERATURA", "MATEMATICA"]
+    }
+  ],
+  "correlativas": [
+    {
+      "subjectCode": "LITJ101",
+      "requiredCodes": ["TOLE101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "GRAI101",
+      "requiredCodes": ["TOLE101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "ALGI101",
+      "requiredCodes": ["TOLE101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "GEOI101",
+      "requiredCodes": ["TOLE101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "TRP101",
+      "requiredCodes": ["TOLE101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "PED101",
+      "requiredCodes": ["TOLE101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "TIC101",
+      "requiredCodes": ["TOLE101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "DID101",
+      "requiredCodes": ["TOLE101", "PED101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "PRA101",
+      "requiredCodes": ["TOLE101", "PED101", "DID101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "EDI101",
+      "requiredCodes": [],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "FIL201",
+      "requiredCodes": ["PED101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "PSI201",
+      "requiredCodes": ["PED101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "SUE201",
+      "requiredCodes": ["PSI201"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "PRA201",
+      "requiredCodes": ["PRA101", "PSI201", "DID101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "EDI201",
+      "requiredCodes": ["EDI101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "TEO201",
+      "requiredCodes": ["LITJ101", "FIL201"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "HIA201",
+      "requiredCodes": ["LITJ101", "FIL201"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "SEM201",
+      "requiredCodes": ["GRAI101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "LIT_ESP201",
+      "requiredCodes": ["LITJ101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "GRAII201",
+      "requiredCodes": ["GRAI101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "ALGII201",
+      "requiredCodes": ["ALGI101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "GEOII201",
+      "requiredCodes": ["GEOI101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "ANAI201",
+      "requiredCodes": ["ALGI101", "GEOI101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "DIDMAT201",
+      "requiredCodes": ["ALGI101", "GEOI101", "DID101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "TICMAT201",
+      "requiredCodes": ["TIC101", "ALGI101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "HIS301",
+      "requiredCodes": ["SUE201", "FIL201"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "SOC301",
+      "requiredCodes": ["HIS301"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "ESI301",
+      "requiredCodes": ["PSI201", "SUE201"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "PRA301",
+      "requiredCodes": ["PRA201", "SOC301", "HIS301"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "EDI301",
+      "requiredCodes": ["EDI201"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "DIDLEN301",
+      "requiredCodes": ["GRAII201", "SEM201", "DID101"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "LENGL301",
+      "requiredCodes": ["LIT_ESP201"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "LINI301",
+      "requiredCodes": ["GRAII201", "SEM201"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "LITARG301",
+      "requiredCodes": ["LIT_ESP201"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "LITLAT301",
+      "requiredCodes": ["LIT_ESP201", "HIA201"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "ALGIII301",
+      "requiredCodes": ["ALGII201"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "ANAII301",
+      "requiredCodes": ["ANAI201"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "EST301",
+      "requiredCodes": ["ANAI201"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "GEOIII301",
+      "requiredCodes": ["GEOII201"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "DIDMATII301",
+      "requiredCodes": ["DIDMAT201", "ANAI201"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "FEC401",
+      "requiredCodes": ["HIS301", "SOC301"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "RES401",
+      "requiredCodes": ["PRA301", "DIDLEN301", "DIDMATII301"],
+      "type": "APROBADO"
+    },
+    {
+      "subjectCode": "EDI401",
+      "requiredCodes": ["EDI301"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "DIDLENII401",
+      "requiredCodes": ["DIDLEN301", "LINI301"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "LINII401",
+      "requiredCodes": ["LINI301"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "LITARGII401",
+      "requiredCodes": ["LITARG301", "LITLAT301"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "LITUNI401",
+      "requiredCodes": ["LITLAT301", "LENGL301"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "MATFIN401",
+      "requiredCodes": ["ANAII301"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "MATAPP401",
+      "requiredCodes": ["ANAII301", "GEOIII301"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "METNUM401",
+      "requiredCodes": ["ANAII301"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "HISMAT401",
+      "requiredCodes": ["ALGIII301", "ANAII301"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "SEMDID401",
+      "requiredCodes": ["DIDMATII301", "HISMAT401"],
+      "type": "REGULAR"
+    },
+    {
+      "subjectCode": "ANAIII401",
+      "requiredCodes": ["ANAII301", "ALGIII301"],
+      "type": "REGULAR"
+    }
+  ]
+}

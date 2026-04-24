@@ -28,6 +28,32 @@
     ];
     
     let activeTab = $state('general');
+    
+    // Labels y colores para correlativas
+    const correlativeTypeLabels: Record<string, string> = {
+        REGULAR: 'Para cursar regular',
+        APROBADO: 'Requiere aprobación final',
+        LIBRE: 'Para cursar libre',
+        EQUIVALENCIA: 'Equivalencia'
+    };
+    
+    const correlativeTypeColors: Record<string, string> = {
+        REGULAR: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+        APROBADO: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+        LIBRE: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+        EQUIVALENCIA: 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+    };
+    
+    // Contadores por tipo
+    const correlativesRegularCount = $derived(
+        subject.correlatives.filter((c: { correlativeType: string }) => c.correlativeType === 'REGULAR').length
+    );
+    const correlativesAprobadoCursarCount = $derived(
+        subject.correlatives.filter((c: { correlativeType: string }) => c.correlativeType === 'APROBADO').length
+    );
+    const correlativesAprobadoAprobarCount = $derived(
+        subject.correlatives.filter((c: { correlativeType: string }) => c.correlativeType === 'LIBRE' || c.correlativeType === 'EQUIVALENCIA').length
+    );
 </script>
 
 <svelte:head>
@@ -78,6 +104,12 @@
             onclick={() => activeTab = 'general'}
         >
             Información General
+        </button>
+        <button 
+            class="px-4 py-3 text-sm font-medium transition {activeTab === 'regimen' ? 'border-b-2 border-white text-white' : 'text-slate-400 hover:text-slate-300'}"
+            onclick={() => activeTab = 'regimen'}
+        >
+            Régimen de Correlatividades ({subject.correlatives.length})
         </button>
         <button 
             class="px-4 py-3 text-sm font-medium transition {activeTab === 'careers' ? 'border-b-2 border-white text-white' : 'text-slate-400 hover:text-slate-300'}"
@@ -186,28 +218,6 @@
                         </select>
                     </div>
                     
-                    <!-- Horas -->
-                    <div class="space-y-2">
-                        <label for="hoursPerWeek" class="text-sm font-medium text-slate-300">Horas Semanales</label>
-                        <input 
-                            id="hoursPerWeek"
-                            type="number" 
-                            name="hoursPerWeek" 
-                            value={subject.hoursPerWeek || ''}
-                            class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
-                        />
-                    </div>
-                    
-                    <!-- Descripción -->
-                    <div class="space-y-2 md:col-span-2">
-                        <label for="description" class="text-sm font-medium text-slate-300">Descripción</label>
-                        <textarea 
-                            id="description"
-                            name="description" 
-                            rows="3"
-                            class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
-                        >{subject.description || ''}</textarea>
-                    </div>
                 </div>
                 
                 <div class="mt-6 flex justify-end gap-3">
@@ -225,6 +235,99 @@
                     </button>
                 </div>
             </form>
+        </section>
+    {/if}
+    
+    <!-- Tab: Régimen de Correlatividades -->
+    {#if activeTab === 'regimen'}
+        <section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+            <h2 class="mb-4 text-xl font-bold">Régimen de Correlatividades</h2>
+            
+            <!-- Tabla de resumen -->
+            <div class="mb-6 overflow-hidden rounded-2xl border border-slate-800">
+                <table class="w-full text-left">
+                    <thead class="border-b border-slate-800 bg-slate-900">
+                        <tr class="border-b border-slate-700">
+                            <th rowspan="2" class="px-4 py-3 text-sm font-semibold border-r border-slate-700">Materia</th>
+                            <th colspan="2" class="px-4 py-2 text-sm font-semibold text-center border-r border-slate-700">Para cursar deberá</th>
+                            <th rowspan="2" class="px-4 py-3 text-sm font-semibold text-center">Para aprobar deberá<br/>haber Aprobado</th>
+                        </tr>
+                        <tr>
+                            <th class="px-4 py-2 text-xs font-semibold text-center border-r border-slate-700">haber Regularizado</th>
+                            <th class="px-4 py-2 text-xs font-semibold text-center border-r border-slate-700">haber Aprobado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {#if subject.correlatives.length > 0}
+                            {#each subject.correlatives as corr}
+                                <tr class="border-b border-slate-800 last:border-none hover:bg-slate-800/50">
+                                    <td class="px-4 py-4">
+                                        <a href="/materias/{corr.requiredSubject.id}" class="font-medium hover:text-blue-400 transition">
+                                            {corr.requiredSubject.name}
+                                        </a>
+                                        <p class="text-xs text-slate-400">{corr.requiredSubject.code}</p>
+                                    </td>
+                                    <td class="px-4 py-4 text-center">
+                                        {#if corr.correlativeType === 'REGULAR'}
+                                            <span class="text-emerald-400">✓</span>
+                                        {:else}
+                                            <span class="text-slate-600">-</span>
+                                        {/if}
+                                    </td>
+                                    <td class="px-4 py-4 text-center">
+                                        {#if corr.correlativeType === 'APROBADO'}
+                                            <span class="text-blue-400">✓</span>
+                                        {:else}
+                                            <span class="text-slate-600">-</span>
+                                        {/if}
+                                    </td>
+                                    <td class="px-4 py-4 text-center">
+                                        {#if corr.correlativeType === 'LIBRE' || corr.correlativeType === 'EQUIVALENCIA'}
+                                            <span class="text-purple-400">✓</span>
+                                        {:else}
+                                            <span class="text-slate-600">-</span>
+                                        {/if}
+                                    </td>
+                                </tr>
+                            {/each}
+                        {:else}
+                            <tr>
+                                <td colspan="4" class="px-4 py-8 text-center text-slate-400">
+                                    Esta materia no tiene correlativas definidas.
+                                </td>
+                            </tr>
+                        {/if}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Resumen en cards -->
+            <div class="grid gap-4 md:grid-cols-3">
+                <div class="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+                    <p class="text-sm text-slate-400">Para cursar regular</p>
+                    <h3 class="mt-2 text-2xl font-bold text-emerald-400">{correlativesRegularCount}</h3>
+                    <p class="text-xs text-slate-500">Haber regularizado</p>
+                </div>
+                <div class="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+                    <p class="text-sm text-slate-400">Para cursar (con final)</p>
+                    <h3 class="mt-2 text-2xl font-bold text-blue-400">{correlativesAprobadoCursarCount}</h3>
+                    <p class="text-xs text-slate-500">Haber aprobado</p>
+                </div>
+                <div class="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+                    <p class="text-sm text-slate-400">Para aprobar esta</p>
+                    <h3 class="mt-2 text-2xl font-bold text-purple-400">{correlativesAprobadoAprobarCount}</h3>
+                    <p class="text-xs text-slate-500">Haber aprobado otras</p>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end">
+                <a 
+                    href="/materias/{subject.id}/correlativas"
+                    class="rounded-xl bg-blue-500 px-6 py-3 text-sm font-medium text-white hover:bg-blue-600 transition"
+                >
+                    Gestionar Correlativas
+                </a>
+            </div>
         </section>
     {/if}
     

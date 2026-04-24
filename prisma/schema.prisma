@@ -580,10 +580,11 @@ enum SubjectType {
 }
 
 enum CorrelativeType {
-  REGULAR        // Para cursar regular
-  APROBADO       // Para cursar (requiere aprobación final)
-  LIBRE          // Para cursar libre
-  EQUIVALENCIA   // Equivalencia con otra materia
+  REGULAR          // Para cursar regular
+  APROBADO         // Para cursar (requiere aprobación final)
+  LIBRE            // Para cursar libre
+  EQUIVALENCIA     // Equivalencia con otra materia
+  APROBADO_APROBAR // Para aprobar deberá haber aprobado
 }
 
 enum AccreditationMode {

@@ -32,12 +32,21 @@ export const load: PageServerLoad = async ({ params }) => {
         throw redirect(302, '/materias');
     }
 
-    // Get all subjects that can be correlatives (same or lower year)
+    // Get all careers for this subject
+    const careers = subject.careerSubjects.map(cs => cs.career);
+    const careerIds = careers.map(c => c.id);
+
+    // Get all subjects that can be correlatives (same or lower year, same careers)
     const availableSubjects = await prisma.subject.findMany({
         where: {
             yearLevel: { lte: subject.yearLevel },
             id: { not: subject.id },
-            active: true
+            active: true,
+            careerSubjects: {
+                some: {
+                    careerId: { in: careerIds }
+                }
+            }
         },
         include: {
             careerSubjects: {
@@ -49,9 +58,6 @@ export const load: PageServerLoad = async ({ params }) => {
             { code: 'asc' }
         ]
     });
-
-    // Get all careers for this subject
-    const careers = subject.careerSubjects.map(cs => cs.career);
 
     return {
         subject,

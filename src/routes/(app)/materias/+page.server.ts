@@ -69,6 +69,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		name: subject.name,
 		subjectType: subject.subjectType,
 		trainingField: subject.trainingField,
+		accreditationMode: subject.accreditationMode,
 		yearLevel: subject.yearLevel,
 		hoursPerWeek: subject.hoursPerWeek,
 		isElective: subject.isElective,
@@ -76,6 +77,15 @@ export const load: PageServerLoad = async ({ url }) => {
 		active: subject.active,
 		careers: subject.careerSubjects.map(cs => cs.career),
 		correlativesCount: subject.correlatives.length,
+		correlativesRegular: subject.correlatives
+			.filter(c => c.correlativeType === 'REGULAR')
+			.map(c => c.requiredSubject.name),
+		correlativesAprobadoCursar: subject.correlatives
+			.filter(c => c.correlativeType === 'APROBADO')
+			.map(c => c.requiredSubject.name),
+		correlativesAprobadoAprobar: subject.correlatives
+			.filter(c => c.correlativeType === 'APROBADO_APROBAR')
+			.map(c => c.requiredSubject.name),
 		commissionsCount: subject._count.commissions
 	}));
 

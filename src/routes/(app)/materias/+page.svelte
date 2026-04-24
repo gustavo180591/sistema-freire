@@ -40,6 +40,12 @@
 		PRACTICA: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
 		EDI: 'bg-purple-500/20 text-purple-300 border-purple-500/30'
 	};
+
+	const accreditationModeLabels: Record<string, string> = {
+		PROMOCIONAL: 'Promocional',
+		EXAMEN_FINAL: 'Examen Final',
+		PROMOCIONAL_SIN_FINAL: 'Prom. sin Final'
+	};
 </script>
 
 <svelte:head>
@@ -180,14 +186,24 @@
 				<div class="mt-6 overflow-hidden rounded-2xl border border-slate-800">
 					<table class="w-full text-left">
 						<thead class="border-b border-slate-800 bg-slate-900">
+							<!-- Row 1: Main headers with colspans -->
+							<tr class="border-b border-slate-700">
+								<th rowspan="3" class="px-4 py-4 text-sm font-semibold border-r border-slate-700">Código</th>
+								<th rowspan="3" class="px-4 py-4 text-sm font-semibold border-r border-slate-700">Materia</th>
+								<th rowspan="3" class="px-4 py-4 text-sm font-semibold border-r border-slate-700">Modalidad de Acreditación</th>
+								<th colspan="3" class="px-4 py-2 text-sm font-semibold text-center border-r border-slate-700">Régimen de Correlatividades</th>
+								<th rowspan="3" class="px-4 py-4 text-sm font-semibold border-r border-slate-700">Carreras</th>
+								<th rowspan="3" class="px-4 py-4 text-right text-sm font-semibold">Acciones</th>
+							</tr>
+							<!-- Row 2: Second level grouping -->
+							<tr class="border-b border-slate-700">
+								<th colspan="2" class="px-4 py-2 text-sm font-semibold text-center border-r border-slate-700">Para cursar deberá</th>
+								<th rowspan="2" class="px-4 py-2 text-sm font-semibold text-center border-r border-slate-700">Para aprobar deberá<br/>haber Aprobado</th>
+							</tr>
+							<!-- Row 3: Individual columns -->
 							<tr>
-								<th class="px-4 py-4 text-sm font-semibold">Código</th>
-								<th class="px-4 py-4 text-sm font-semibold">Materia</th>
-								<th class="px-4 py-4 text-sm font-semibold">Campo</th>
-								<th class="px-4 py-4 text-sm font-semibold">Hs/Sem</th>
-								<th class="px-4 py-4 text-sm font-semibold">Carreras</th>
-								<th class="px-4 py-4 text-sm font-semibold">Corr.</th>
-								<th class="px-4 py-4 text-right text-sm font-semibold">Acciones</th>
+								<th class="px-4 py-2 text-xs font-semibold text-center border-r border-slate-700">haber<br/>Regularizado</th>
+								<th class="px-4 py-2 text-xs font-semibold text-center border-r border-slate-700">haber<br/>Aprobado</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -201,13 +217,37 @@
 										{/if}
 									</td>
 									<td class="px-4 py-4">
-										<span class="rounded-full border px-2 py-1 text-xs {trainingFieldColors[subject.trainingField]}">
-											{trainingFieldLabels[subject.trainingField]}
+										<span class="text-xs text-slate-300">
+											{accreditationModeLabels[subject.accreditationMode] || subject.accreditationMode}
 										</span>
 									</td>
 									<td class="px-4 py-4 text-center">
-										{subject.hoursPerWeek || '-'}
-									</td>
+									{#if subject.correlativesRegular.length > 0}
+										<span class="rounded-full bg-emerald-500/20 text-emerald-300 px-2 py-1 text-xs">
+											{subject.correlativesRegular.join(', ')}
+										</span>
+									{:else}
+										<span class="text-slate-500">-</span>
+									{/if}
+								</td>
+									<td class="px-4 py-4 text-center">
+									{#if subject.correlativesAprobadoCursar.length > 0}
+										<span class="rounded-full bg-blue-500/20 text-blue-300 px-2 py-1 text-xs">
+											{subject.correlativesAprobadoCursar.join(', ')}
+										</span>
+									{:else}
+										<span class="text-slate-500">-</span>
+									{/if}
+								</td>
+									<td class="px-4 py-4 text-center">
+									{#if subject.correlativesAprobadoAprobar.length > 0}
+										<span class="rounded-full bg-purple-500/20 text-purple-300 px-2 py-1 text-xs">
+											{subject.correlativesAprobadoAprobar.join(', ')}
+										</span>
+									{:else}
+										<span class="text-slate-500">-</span>
+									{/if}
+								</td>
 									<td class="px-4 py-4">
 										{#if subject.careers.length > 0}
 											<div class="flex flex-wrap gap-1">
@@ -220,15 +260,6 @@
 											</div>
 										{:else}
 											<span class="text-xs text-slate-500">Todas</span>
-										{/if}
-									</td>
-									<td class="px-4 py-4 text-center">
-										{#if subject.correlativesCount > 0}
-											<span class="rounded-full bg-blue-500/20 text-blue-300 px-2 py-1 text-xs">
-												{subject.correlativesCount}
-											</span>
-										{:else}
-											<span class="text-slate-500">-</span>
 										{/if}
 									</td>
 									<td class="px-4 py-4 text-right">

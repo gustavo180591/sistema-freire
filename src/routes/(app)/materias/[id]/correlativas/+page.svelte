@@ -11,14 +11,16 @@
         REGULAR: 'Para cursar regular',
         APROBADO: 'Requiere aprobación final',
         LIBRE: 'Para cursar libre',
-        EQUIVALENCIA: 'Equivalencia'
+        EQUIVALENCIA: 'Equivalencia',
+        APROBADO_APROBAR: 'Para aprobar deberá'
     };
     
     const correlativeTypeColors: Record<string, string> = {
         REGULAR: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
         APROBADO: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
         LIBRE: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-        EQUIVALENCIA: 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+        EQUIVALENCIA: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+        APROBADO_APROBAR: 'bg-rose-500/20 text-rose-300 border-rose-500/30'
     };
     
     const trainingFieldColors: Record<string, string> = {
@@ -27,6 +29,26 @@
         PRACTICA: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
         EDI: 'bg-purple-500/20 text-purple-300 border-purple-500/30'
     };
+    
+    // Contadores de correlativas por tipo
+    const regularCount = $derived(
+        subject.correlatives.filter((c: { correlativeType: string }) => c.correlativeType === 'REGULAR').length
+    );
+    const aprobadoCursarCount = $derived(
+        subject.correlatives.filter((c: { correlativeType: string }) => c.correlativeType === 'APROBADO').length
+    );
+    const aprobadoAprobarCount = $derived(
+        subject.correlatives.filter((c: { correlativeType: string }) => c.correlativeType === 'APROBADO_APROBAR').length
+    );
+    
+    // Búsqueda de materias
+    let searchTerm = $state('');
+    const filteredSubjects = $derived(
+        availableSubjects.filter((s: { name: string; code: string }) => 
+            s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            s.code.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+    );
 </script>
 
 <svelte:head>
@@ -70,41 +92,99 @@
         </div>
     {/if}
     
-    <!-- Correlativas Actuales -->
+    <!-- Régimen de Correlatividades -->
     <section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-        <h2 class="mb-4 text-xl font-bold">Materias que requiere esta correlativa</h2>
+        <h2 class="mb-4 text-xl font-bold">Régimen de Correlatividades</h2>
         
-        {#if subject.correlatives.length > 0}
-            <div class="space-y-3">
-                {#each subject.correlatives as corr}
-                    <div class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-800/50 p-4">
-                        <div class="flex items-center gap-4">
-                            <div>
-                                <p class="font-medium">{corr.requiredSubject.name}</p>
-                                <p class="text-sm text-slate-400">{corr.requiredSubject.code} • Año {corr.requiredSubject.yearLevel}</p>
-                            </div>
-                            <span class="rounded-full border px-3 py-1 text-xs {correlativeTypeColors[corr.correlativeType]}">
-                                {correlativeTypeLabels[corr.correlativeType]}
-                            </span>
-                            {#if corr.career}
-                                <span class="text-xs text-slate-400">Solo para: {corr.career.code}</span>
-                            {/if}
-                        </div>
-                        <form method="POST" action="?/removeCorrelative" use:enhance>
-                            <input type="hidden" name="correlativeId" value={corr.id} />
-                            <button 
-                                type="submit"
-                                class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400 hover:bg-red-500/20"
-                            >
-                                Eliminar
-                            </button>
-                        </form>
-                    </div>
-                {/each}
+        <!-- Tabla de correlativas -->
+        <div class="mb-6 overflow-hidden rounded-2xl border border-slate-800">
+            <table class="w-full text-left">
+                <thead class="border-b border-slate-800 bg-slate-900">
+                    <tr class="border-b border-slate-700">
+                        <th rowspan="2" class="px-4 py-3 text-sm font-semibold border-r border-slate-700">Materia Requerida</th>
+                        <th colspan="2" class="px-4 py-2 text-sm font-semibold text-center border-r border-slate-700">Para cursar deberá</th>
+                        <th rowspan="2" class="px-4 py-3 text-sm font-semibold text-center border-r border-slate-700">Para aprobar deberá<br/>haber Aprobado</th>
+                        <th rowspan="2" class="px-4 py-3 text-center text-sm font-semibold">Acción</th>
+                    </tr>
+                    <tr>
+                        <th class="px-4 py-2 text-xs font-semibold text-center border-r border-slate-700">haber Regularizado</th>
+                        <th class="px-4 py-2 text-xs font-semibold text-center border-r border-slate-700">haber Aprobado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {#if subject.correlatives.length > 0}
+                        {#each subject.correlatives as corr}
+                            <tr class="border-b border-slate-800 last:border-none hover:bg-slate-800/50">
+                                <td class="px-4 py-4 border-r border-slate-700">
+                                    <p class="font-medium">{corr.requiredSubject.name}</p>
+                                    <p class="text-sm text-slate-400">{corr.requiredSubject.code} • Año {corr.requiredSubject.yearLevel}</p>
+                                    {#if corr.career}
+                                        <p class="text-xs text-slate-500 mt-1">Solo: {corr.career.code}</p>
+                                    {/if}
+                                </td>
+                                <td class="px-4 py-4 text-center border-r border-slate-700">
+                                    {#if corr.correlativeType === 'REGULAR'}
+                                        <span class="text-emerald-400 text-lg">✓</span>
+                                    {:else}
+                                        <span class="text-slate-600">-</span>
+                                    {/if}
+                                </td>
+                                <td class="px-4 py-4 text-center border-r border-slate-700">
+                                    {#if corr.correlativeType === 'APROBADO'}
+                                        <span class="text-blue-400 text-lg">✓</span>
+                                    {:else}
+                                        <span class="text-slate-600">-</span>
+                                    {/if}
+                                </td>
+                                <td class="px-4 py-4 text-center border-r border-slate-700">
+                                    {#if corr.correlativeType === 'APROBADO_APROBAR'}
+                                        <span class="text-rose-400 text-lg">✓</span>
+                                    {:else}
+                                        <span class="text-slate-600">-</span>
+                                    {/if}
+                                </td>
+                                <td class="px-4 py-4 text-center">
+                                    <form method="POST" action="?/removeCorrelative" use:enhance>
+                                        <input type="hidden" name="correlativeId" value={corr.id} />
+                                        <button 
+                                            type="submit"
+                                            class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400 hover:bg-red-500/20"
+                                        >
+                                            Eliminar
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {/each}
+                    {:else}
+                        <tr>
+                            <td colspan="5" class="px-4 py-8 text-center text-slate-400">
+                                Esta materia no tiene correlativas definidas.
+                            </td>
+                        </tr>
+                    {/if}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Resumen en cards -->
+        <div class="grid gap-4 md:grid-cols-3">
+            <div class="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+                <p class="text-sm text-slate-400">Para cursar regular</p>
+                <h3 class="mt-2 text-2xl font-bold text-emerald-400">{regularCount}</h3>
+                <p class="text-xs text-slate-500">Haber regularizado</p>
             </div>
-        {:else}
-            <p class="text-slate-400">Esta materia no tiene correlativas definidas.</p>
-        {/if}
+            <div class="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+                <p class="text-sm text-slate-400">Para cursar (con final)</p>
+                <h3 class="mt-2 text-2xl font-bold text-blue-400">{aprobadoCursarCount}</h3>
+                <p class="text-xs text-slate-500">Haber aprobado</p>
+            </div>
+            <div class="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+                <p class="text-sm text-slate-400">Para aprobar esta</p>
+                <h3 class="mt-2 text-2xl font-bold text-purple-400">{aprobadoAprobarCount}</h3>
+                <p class="text-xs text-slate-500">Haber aprobado otras</p>
+            </div>
+        </div>
     </section>
     
     <!-- Materias que la requieren -->
@@ -140,6 +220,15 @@
                 <!-- Materia Requerida -->
                 <div class="space-y-2 md:col-span-2">
                     <label for="requiredSubjectId" class="text-sm font-medium text-slate-300">Materia Requerida</label>
+                    
+                    <!-- Buscador -->
+                    <input
+                        type="text"
+                        placeholder="Buscar materia por nombre o código..."
+                        bind:value={searchTerm}
+                        class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
+                    />
+                    
                     <select 
                         id="requiredSubjectId"
                         name="requiredSubjectId" 
@@ -147,7 +236,7 @@
                         required
                     >
                         <option value="">Seleccionar materia...</option>
-                        {#each availableSubjects as subj}
+                        {#each filteredSubjects as subj}
                             <option value={subj.id}>
                                 {subj.yearLevel}° Año • {subj.code} - {subj.name}
                                 {#if subj.careerSubjects.length > 0}
@@ -158,6 +247,9 @@
                             </option>
                         {/each}
                     </select>
+                    {#if searchTerm && filteredSubjects.length === 0}
+                        <p class="text-xs text-slate-400">No se encontraron materias con "{searchTerm}"</p>
+                    {/if}
                 </div>
                 
                 <!-- Tipo de Correlativa -->
@@ -169,10 +261,17 @@
                         class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
                         required
                     >
-                        <option value="REGULAR">Para cursar regular</option>
-                        <option value="APROBADO">Requiere aprobación final</option>
-                        <option value="LIBRE">Para cursar libre</option>
-                        <option value="EQUIVALENCIA">Equivalencia</option>
+                        <optgroup label="Para cursar deberá">
+                            <option value="REGULAR">haber Regularizado</option>
+                            <option value="APROBADO">haber Aprobado</option>
+                            <option value="LIBRE">haber Regularizado (curso libre)</option>
+                        </optgroup>
+                        <optgroup label="Para aprobar deberá">
+                            <option value="APROBADO_APROBAR">haber Aprobado</option>
+                        </optgroup>
+                        <optgroup label="Equivalencias">
+                            <option value="EQUIVALENCIA">Equivalencia con otra materia</option>
+                        </optgroup>
                     </select>
                 </div>
                 

@@ -242,14 +242,30 @@
                                 <p class="text-xs text-slate-400">{subject.code}</p>
                             </td>
                             <td 
-                                class="border border-slate-400 px-4 py-3 text-center text-sm text-white cursor-pointer hover:bg-slate-700/50 transition"
+                                role="button"
+                                tabindex="0"
+                                class="border border-slate-400 px-4 py-3 text-center text-sm text-white cursor-pointer hover:bg-slate-700/50 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 onclick={() => openModal(subject)}
+                                onkeydown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        openModal(subject);
+                                    }
+                                }}
                             >
                                 {accreditationModeLabels[subject.accreditationMode] || subject.accreditationMode}
                             </td>
                             <td 
-                                class="border border-slate-400 px-4 py-3 text-center text-sm text-white cursor-pointer hover:bg-slate-700/50 transition"
+                                role="button"
+                                tabindex="0"
+                                class="border border-slate-400 px-4 py-3 text-center text-sm text-white cursor-pointer hover:bg-slate-700/50 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 onclick={() => openCorrelativesModal(subject, 'REGULAR')}
+                                onkeydown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        openCorrelativesModal(subject, 'REGULAR');
+                                    }
+                                }}
                             >
                                 {#if subject.correlativesRegular.length > 0}
                                     {subject.correlativesRegular.join(', ')}
@@ -258,8 +274,16 @@
                                 {/if}
                             </td>
                             <td 
-                                class="border border-slate-400 px-4 py-3 text-center text-sm text-white cursor-pointer hover:bg-slate-700/50 transition"
+                                role="button"
+                                tabindex="0"
+                                class="border border-slate-400 px-4 py-3 text-center text-sm text-white cursor-pointer hover:bg-slate-700/50 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 onclick={() => openCorrelativesModal(subject, 'APROBADO')}
+                                onkeydown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        openCorrelativesModal(subject, 'APROBADO');
+                                    }
+                                }}
                             >
                                 {#if subject.correlativesAprobadoCursar.length > 0}
                                     {subject.correlativesAprobadoCursar.join(', ')}
@@ -268,8 +292,16 @@
                                 {/if}
                             </td>
                             <td 
-                                class="border border-slate-400 px-4 py-3 text-center text-sm text-white cursor-pointer hover:bg-slate-700/50 transition"
+                                role="button"
+                                tabindex="0"
+                                class="border border-slate-400 px-4 py-3 text-center text-sm text-white cursor-pointer hover:bg-slate-700/50 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 onclick={() => openCorrelativesModal(subject, 'APROBADO_APROBAR')}
+                                onkeydown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        openCorrelativesModal(subject, 'APROBADO_APROBAR');
+                                    }
+                                }}
                             >
                                 {#if subject.correlativesAprobadoAprobar.length > 0}
                                     {subject.correlativesAprobadoAprobar.join(', ')}
@@ -312,8 +344,20 @@
 
 <!-- Modal for editing accreditation mode -->
 {#if modalOpen && editingSubject}
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onclick={closeModal}>
-        <div class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-md mx-4" onclick={(e) => e.stopPropagation()}>
+    <div 
+        role="button"
+        tabindex="0"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        onclick={closeModal}
+        onkeydown={(e) => {
+            if (e.key === 'Escape') closeModal();
+        }}
+    >
+        <div 
+            role="document"
+            class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-md mx-4"
+            onclick={(e) => e.stopPropagation()}
+        >
             <h2 class="mb-4 text-xl font-bold text-white">Editar Modalidad de Acreditación</h2>
             
             <p class="mb-4 text-slate-400">
@@ -379,8 +423,20 @@
 
 <!-- Modal for adding correlatives -->
 {#if correlativesModalOpen && correlativesEditingSubject}
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onclick={closeCorrelativesModal}>
-        <div class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto" onclick={(e) => e.stopPropagation()}>
+    <div 
+        role="button"
+        tabindex="0"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        onclick={closeCorrelativesModal}
+        onkeydown={(e) => {
+            if (e.key === 'Escape') closeCorrelativesModal();
+        }}
+    >
+        <div 
+            role="document"
+            class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto"
+            onclick={(e) => e.stopPropagation()}
+        >
             <h2 class="mb-4 text-xl font-bold text-white">Agregar Correlativa</h2>
             
             <p class="mb-4 text-slate-400">
@@ -497,8 +553,20 @@
 
 <!-- Create Subject Modal -->
 {#if createModalOpen}
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onclick={closeAllModals}>
-        <div class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto" onclick={(e) => e.stopPropagation()}>
+    <div 
+        role="button"
+        tabindex="0"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        onclick={closeAllModals}
+        onkeydown={(e) => {
+            if (e.key === 'Escape') closeAllModals();
+        }}
+    >
+        <div 
+            role="document"
+            class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto"
+            onclick={(e) => e.stopPropagation()}
+        >
             <h2 class="mb-4 text-xl font-bold text-white">Nueva Materia</h2>
             
             {#if form?.error}
@@ -633,8 +701,20 @@
 
 <!-- Edit Subject Modal -->
 {#if editModalOpen && crudSubject}
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onclick={closeAllModals}>
-        <div class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto" onclick={(e) => e.stopPropagation()}>
+    <div 
+        role="button"
+        tabindex="0"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        onclick={closeAllModals}
+        onkeydown={(e) => {
+            if (e.key === 'Escape') closeAllModals();
+        }}
+    >
+        <div 
+            role="document"
+            class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto"
+            onclick={(e) => e.stopPropagation()}
+        >
             <h2 class="mb-4 text-xl font-bold text-white">Editar Materia</h2>
             
             <p class="mb-4 text-slate-400">
@@ -731,8 +811,20 @@
 
 <!-- Delete Confirmation Modal -->
 {#if deleteModalOpen && crudSubject}
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onclick={closeAllModals}>
-        <div class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-md mx-4" onclick={(e) => e.stopPropagation()}>
+    <div 
+        role="button"
+        tabindex="0"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        onclick={closeAllModals}
+        onkeydown={(e) => {
+            if (e.key === 'Escape') closeAllModals();
+        }}
+    >
+        <div 
+            role="document"
+            class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-md mx-4"
+            onclick={(e) => e.stopPropagation()}
+        >
             <h2 class="mb-4 text-xl font-bold text-white">Eliminar Materia</h2>
             
             <p class="mb-4 text-slate-400">
@@ -780,8 +872,20 @@
 
 <!-- View Subject Details Modal -->
 {#if viewModalOpen && crudSubject}
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onclick={closeAllModals}>
-        <div class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto" onclick={(e) => e.stopPropagation()}>
+    <div 
+        role="button"
+        tabindex="0"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        onclick={closeAllModals}
+        onkeydown={(e) => {
+            if (e.key === 'Escape') closeAllModals();
+        }}
+    >
+        <div 
+            role="document"
+            class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto"
+            onclick={(e) => e.stopPropagation()}
+        >
             <h2 class="mb-4 text-xl font-bold text-white">Detalles de Materia</h2>
             
             <div class="space-y-4">
@@ -863,8 +967,20 @@
 
 <!-- Edit Correlatives Modal -->
 {#if editCorrelativesModalOpen && editCorrelativesSubject}
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onclick={closeAllModals}>
-        <div class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto" onclick={(e) => e.stopPropagation()}>
+    <div 
+        role="button"
+        tabindex="0"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        onclick={closeAllModals}
+        onkeydown={(e) => {
+            if (e.key === 'Escape') closeAllModals();
+        }}
+    >
+        <div 
+            role="document"
+            class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto"
+            onclick={(e) => e.stopPropagation()}
+        >
             <h2 class="mb-2 text-xl font-bold text-white">Editar Correlativas</h2>
             <p class="mb-4 text-slate-400">{editCorrelativesSubject.name} ({editCorrelativesSubject.code})</p>
             

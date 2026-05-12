@@ -387,9 +387,41 @@
                 {correlativesEditingSubject.name} ({correlativesEditingSubject.code})
             </p>
             
-            <p class="mb-4 text-sm text-slate-300">
-                Tipo: {correlativesType === 'REGULAR' ? 'Para cursar deberá haber Regularizado' : correlativesType === 'APROBADO' ? 'Para cursar deberá haber Aprobado' : 'Para aprobar deberá haber Aprobado'}
-            </p>
+            <div class="mb-4">
+                <h3 class="block text-sm font-medium text-slate-300 mb-3">Tipo de Correlativa</h3>
+                <div class="space-y-2">
+                    <label class="flex items-center cursor-pointer rounded-lg border border-slate-700 bg-slate-800/50 p-3 hover:bg-slate-800 transition">
+                        <input 
+                            type="radio" 
+                            name="correlativeType" 
+                            value="REGULAR" 
+                            bind:group={correlativesType}
+                            class="mr-3 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900"
+                        />
+                        <span class="text-white text-sm">Para cursar deberá haber Regularizado</span>
+                    </label>
+                    <label class="flex items-center cursor-pointer rounded-lg border border-slate-700 bg-slate-800/50 p-3 hover:bg-slate-800 transition">
+                        <input 
+                            type="radio" 
+                            name="correlativeType" 
+                            value="APROBADO" 
+                            bind:group={correlativesType}
+                            class="mr-3 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900"
+                        />
+                        <span class="text-white text-sm">Para cursar deberá haber Aprobado</span>
+                    </label>
+                    <label class="flex items-center cursor-pointer rounded-lg border border-slate-700 bg-slate-800/50 p-3 hover:bg-slate-800 transition">
+                        <input 
+                            type="radio" 
+                            name="correlativeType" 
+                            value="APROBADO_APROBAR" 
+                            bind:group={correlativesType}
+                            class="mr-3 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900"
+                        />
+                        <span class="text-white text-sm">Para aprobar deberá haber Aprobado</span>
+                    </label>
+                </div>
+            </div>
             
             {#if form?.error}
                 <div class="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-red-400">

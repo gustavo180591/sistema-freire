@@ -353,6 +353,8 @@
             if (e.key === 'Escape') closeModal();
         }}
     >
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <div 
             role="document"
             class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-md mx-4"
@@ -432,6 +434,8 @@
             if (e.key === 'Escape') closeCorrelativesModal();
         }}
     >
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <div 
             role="document"
             class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto"
@@ -562,6 +566,8 @@
             if (e.key === 'Escape') closeAllModals();
         }}
     >
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <div 
             role="document"
             class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto"
@@ -710,6 +716,8 @@
             if (e.key === 'Escape') closeAllModals();
         }}
     >
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <div 
             role="document"
             class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto"
@@ -820,6 +828,8 @@
             if (e.key === 'Escape') closeAllModals();
         }}
     >
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <div 
             role="document"
             class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-md mx-4"
@@ -881,6 +891,8 @@
             if (e.key === 'Escape') closeAllModals();
         }}
     >
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <div 
             role="document"
             class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto"
@@ -976,6 +988,8 @@
             if (e.key === 'Escape') closeAllModals();
         }}
     >
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <div 
             role="document"
             class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto"

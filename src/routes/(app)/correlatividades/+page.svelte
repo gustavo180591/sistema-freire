@@ -72,7 +72,7 @@
     
     const filteredCareerSubjects = $derived(() => {
         if (!correlativesEditingSubject) return [];
-        
+
         // Get correlatives names only for the current type being added
         let existingCorrelativesOfType: string[] = [];
         if (correlativesType === 'REGULAR') {
@@ -82,19 +82,23 @@
         } else if (correlativesType === 'APROBADO_APROBAR') {
             existingCorrelativesOfType = correlativesEditingSubject.correlativesAprobadoAprobar;
         }
-        
+
         const existingCorrelativesSet = new Set(existingCorrelativesOfType);
-        
+
         const searchLower = correlativesSearch.toLowerCase();
-        
-        // Only show subjects from the same careers as the editing subject
-        return correlativesEditingSubject.careers.map(career => ({
+
+        // Use selected career filter if available, otherwise use all careers of the editing subject
+        const careersToFilter = selectedCareerId
+            ? careers.filter(c => c.id === selectedCareerId)
+            : correlativesEditingSubject.careers;
+
+        return careersToFilter.map(career => ({
             career,
-            subjects: subjects.filter(s => 
-                s.careers.some(c => c.id === career.id) && 
+            subjects: subjects.filter(s =>
+                s.careers.some(c => c.id === career.id) &&
                 s.id !== correlativesEditingSubject?.id &&
                 !existingCorrelativesSet.has(s.name) &&
-                (s.name.toLowerCase().includes(searchLower) || 
+                (s.name.toLowerCase().includes(searchLower) ||
                  s.code.toLowerCase().includes(searchLower))
             )
         })).filter(group => group.subjects.length > 0);

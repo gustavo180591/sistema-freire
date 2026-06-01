@@ -126,6 +126,7 @@ export const actions: Actions = {
 					const highSchool = data.get('highSchool')?.toString();
 					const highSchoolYear = data.get('highSchoolYear')?.toString() ? parseInt(data.get('highSchoolYear')?.toString() || '0') : null;
 					const instituteYear = data.get('instituteYear')?.toString() ? parseInt(data.get('instituteYear')?.toString() || '0') : null;
+					const currentYear = data.get('currentYear')?.toString() ? parseInt(data.get('currentYear')?.toString() || '1') : 1;
 					const familyContactName = data.get('familyContactName')?.toString();
 					const familyContactPhone = data.get('familyContactPhone')?.toString();
 					const familyRelationship = data.get('familyRelationship')?.toString();
@@ -146,6 +147,7 @@ export const actions: Actions = {
 							firstName,
 							lastName,
 							careerId,
+							currentYear,
 							birthDate: birthDate ? new Date(birthDate) : null,
 							bloodType: bloodType || null,
 							phone: phone || null,

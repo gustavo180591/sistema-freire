@@ -199,6 +199,19 @@
 							{/each}
 						</select>
 					</div>
+					<div>
+						<label for="currentYear" class="mb-2 block text-sm font-medium text-slate-300">Año de Carrera</label>
+						<select
+							id="currentYear"
+							name="currentYear"
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						>
+							<option value="1">1° Año</option>
+							<option value="2">2° Año</option>
+							<option value="3">3° Año</option>
+							<option value="4">4° Año</option>
+						</select>
+					</div>
 				</div>
 
 				<!-- Contacto Familiar -->

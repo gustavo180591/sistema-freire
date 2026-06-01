@@ -174,6 +174,14 @@ export const actions: Actions = {
 					});
 				}
 
+				// Si es PRECEPTOR, capturar localidad (se puede usar para futuras funcionalidades)
+				if (type === 'PRECEPTOR') {
+					const locality = data.get('locality')?.toString();
+					// Por ahora, la localidad del preceptor no se guarda en ningún campo específico
+					// Se podría agregar un campo al modelo User o crear un modelo Preceptor en el futuro
+					// Para referencia, la localidad seleccionada es: {locality}
+				}
+
 				return user;
 			});
 

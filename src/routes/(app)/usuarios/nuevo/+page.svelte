@@ -103,7 +103,7 @@
 				/>
 			</div>
 
-			{#if userType === 'ALUMNO'}
+			{#if userType === 'ALUMNO' || userType === 'PRECEPTOR'}
 			<!-- Localidad -->
 			<div>
 				<label for="locality" class="mb-2 block text-sm font-medium text-slate-300">Localidad</label>
@@ -116,9 +116,30 @@
 					<option value="ALEM">Leandro N. Alem</option>
 					<option value="CAPIOVI">Capiovi</option>
 				</select>
-				<p class="mt-1 text-xs text-slate-500">El ID del alumno se generará con el prefijo según la localidad (A para Alem, C para Capiovi)</p>
+				<p class="mt-1 text-xs text-slate-500">
+					{#if userType === 'ALUMNO'}
+						El ID del alumno se generará con el prefijo según la localidad (A para Alem, C para Capiovi)
+					{:else}
+						Selecciona la localidad del preceptor
+					{/if}
+				</p>
 			</div>
+			{/if}
 
+			{#if userType === 'PRECEPTOR'}
+			<!-- Teléfono -->
+			<div>
+				<label for="phone" class="mb-2 block text-sm font-medium text-slate-300">Teléfono</label>
+				<input
+					id="phone"
+					name="phone"
+					type="tel"
+					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+				/>
+			</div>
+			{/if}
+
+			{#if userType === 'ALUMNO'}
 			<!-- Datos Personales -->
 			<div class="space-y-6">
 				<div class="grid gap-6 md:grid-cols-2">
@@ -236,10 +257,10 @@
 						/>
 					</div>
 					<div>
-						<label for="locality" class="mb-2 block text-sm font-medium text-slate-300">Localidad</label>
+						<label for="postalCode" class="mb-2 block text-sm font-medium text-slate-300">Código Postal</label>
 						<input
-							id="locality"
-							name="locality"
+							id="postalCode"
+							name="postalCode"
 							type="text"
 							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 						/>

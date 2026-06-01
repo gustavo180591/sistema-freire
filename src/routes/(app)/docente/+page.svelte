@@ -25,7 +25,16 @@
 			<h1 class="text-3xl font-bold text-white mb-2">
 				Bienvenido, Prof. {data.teacher.lastName} {data.teacher.firstName}
 			</h1>
-			<p class="text-slate-400">Panel de control docente</p>
+			{#if data.commissions.length > 0}
+				<p class="text-slate-400">
+					Docente de <span class="font-semibold text-white">{data.commissions[0].subject}</span>
+					{#if data.commissions.length > 1}
+						<span class="text-slate-500"> y {data.commissions.length - 1} más</span>
+					{/if}
+				</p>
+			{:else}
+				<p class="text-slate-400">Panel de control docente</p>
+			{/if}
 		</div>
 
 		<!-- Stats Cards -->

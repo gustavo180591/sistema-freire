@@ -2,6 +2,8 @@ import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { requireRole } from '$lib/server/auth/authorization';
+import { auditLog } from '$lib/server/audit';
+import { AuditAction } from '@prisma/client';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	requireRole(locals.user, ['PRECEPTOR']);
@@ -61,6 +63,17 @@ export const actions: Actions = {
 		}
 
 		try {
+			// Obtener datos del estudiante para auditoría
+			const student = await prisma.student.findUnique({
+				where: { id: studentId },
+				include: { user: true }
+			});
+
+			const commission = await prisma.commission.findUnique({
+				where: { id: commissionId },
+				include: { subject: true }
+			});
+
 			await prisma.grade.create({
 				data: {
 					studentId,
@@ -69,6 +82,15 @@ export const actions: Actions = {
 					gradeType: evaluationType || 'PARCIAL',
 					createdByUserId: locals.user!.id
 				}
+			});
+
+			// Registrar en auditoría
+			await auditLog({
+				userId: locals.user!.id,
+				action: AuditAction.CREATE,
+				entityType: 'GRADE',
+				entityId: studentId,
+				description: `Carga de calificación: ${grade} para ${student?.firstName} ${student?.lastName} en ${commission?.subject.name} (${evaluationType || 'PARCIAL'})`
 			});
 
 			return { success: 'Calificación registrada exitosamente' };

@@ -2,6 +2,8 @@ import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { requireRole } from '$lib/server/auth/authorization';
+import { auditLog } from '$lib/server/audit';
+import { AuditAction } from '@prisma/client';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	requireRole(locals.user, ['PRECEPTOR']);
@@ -84,11 +86,37 @@ export const actions: Actions = {
 		}
 
 		try {
+			// Obtener datos de la entrada para auditoría
+			const entry = await prisma.attendanceEntry.findUnique({
+				where: { id: entryId },
+				include: {
+					student: {
+						include: { user: true }
+					},
+					attendance: {
+						include: {
+							commission: {
+								include: { subject: true }
+							}
+						}
+					}
+				}
+			});
+
 			await prisma.attendanceEntry.update({
 				where: { id: entryId },
 				data: {
 					notes: justification
 				}
+			});
+
+			// Registrar en auditoría
+			await auditLog({
+				userId: locals.user!.id,
+				action: AuditAction.UPDATE,
+				entityType: 'ATTENDANCE_ENTRY',
+				entityId: entryId,
+				description: `Justificación de inasistencia: ${entry?.student.firstName} ${entry?.student.lastName} en ${entry?.attendance.commission.subject.name} el ${entry?.attendance.classDate.toLocaleDateString()}`
 			});
 
 			return { success: 'Justificación registrada exitosamente' };

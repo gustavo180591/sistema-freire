@@ -2,6 +2,8 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import bcrypt from 'bcryptjs';
+import { auditLog } from '$lib/server/audit';
+import { AuditAction } from '@prisma/client';
 
 import type { RoleCode } from '@prisma/client';
 
@@ -185,6 +187,15 @@ export const actions: Actions = {
 				}
 
 				return user;
+			});
+
+			// Registrar en auditoría
+			await auditLog({
+				userId: result.id,
+				action: AuditAction.CREATE,
+				entityType: type,
+				entityId: result.id,
+				description: `Creación de usuario tipo ${type}: ${firstName} ${lastName} (${email})`
 			});
 
 			console.log('Usuario creado:', result.id, 'Contraseña temporal:', tempPassword);

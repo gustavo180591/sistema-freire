@@ -2,6 +2,8 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import bcrypt from 'bcryptjs';
+import { auditLog } from '$lib/server/audit';
+import { AuditAction } from '@prisma/client';
 
 export const actions: Actions = {
 	default: async ({ request }) => {
@@ -83,6 +85,15 @@ export const actions: Actions = {
 						familyRelationship: familyRelationship || null
 					}
 				});
+			});
+
+			// Registrar en auditoría
+			await auditLog({
+				userId,
+				action: AuditAction.UPDATE,
+				entityType: 'STUDENT',
+				entityId: id,
+				description: `Actualización de alumno: ${firstName} ${lastName} (${email})`
 			});
 
 			const successMessage = newPassword && newPassword.trim().length > 0

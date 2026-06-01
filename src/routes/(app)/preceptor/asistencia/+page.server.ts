@@ -2,6 +2,8 @@ import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { requireRole } from '$lib/server/auth/authorization';
+import { auditLog } from '$lib/server/audit';
+import { AuditAction } from '@prisma/client';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	requireRole(locals.user, ['PRECEPTOR']);
@@ -91,6 +93,12 @@ export const actions: Actions = {
 		try {
 			const attendance = JSON.parse(attendanceData) as Array<{ studentId: string; present: boolean; notes?: string }>;
 
+			// Obtener datos de la comisión para auditoría
+			const commission = await prisma.commission.findUnique({
+				where: { id: commissionId },
+				include: { subject: true }
+			});
+
 			await prisma.$transaction(async (tx) => {
 				// Crear registro de asistencia
 				const attendanceRecord = await tx.attendanceRecord.create({
@@ -112,6 +120,15 @@ export const actions: Actions = {
 						}
 					});
 				}
+			});
+
+			// Registrar en auditoría
+			await auditLog({
+				userId: locals.user!.id,
+				action: AuditAction.CREATE,
+				entityType: 'ATTENDANCE',
+				entityId: commissionId,
+				description: `Registro de asistencia para ${commission?.subject.name} (${commission?.name}) el ${date} - ${attendance.length} estudiantes`
 			});
 
 			return { success: 'Asistencia registrada exitosamente' };

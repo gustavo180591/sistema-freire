@@ -2,6 +2,8 @@ import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { requireRole } from '$lib/server/auth/authorization';
+import { auditLog } from '$lib/server/audit';
+import { AuditAction } from '@prisma/client';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	requireRole(locals.user, ['PRECEPTOR']);
@@ -102,6 +104,12 @@ export const actions: Actions = {
 		}
 
 		try {
+			// Obtener datos del estudiante para auditoría
+			const student = await prisma.student.findUnique({
+				where: { id: studentId },
+				include: { user: true }
+			});
+
 			await prisma.studentFollowUp.create({
 				data: {
 					studentId,
@@ -110,6 +118,15 @@ export const actions: Actions = {
 					description,
 					createdBy: locals.user!.id
 				}
+			});
+
+			// Registrar en auditoría
+			await auditLog({
+				userId: locals.user!.id,
+				action: AuditAction.CREATE,
+				entityType: 'STUDENT_FOLLOW_UP',
+				entityId: studentId,
+				description: `Registro de comunicado (${type}): ${title} para ${student?.firstName} ${student?.lastName}`
 			});
 
 			return { success: 'Comunicado registrado exitosamente' };

@@ -1,6 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
+import { auditLog } from '$lib/server/audit';
+import { AuditAction } from '@prisma/client';
 
 export const load: PageServerLoad = async () => {
     const students = await prisma.student.findMany({
@@ -101,16 +103,20 @@ export const actions: Actions = {
                 remaining -= applied;
             }
 
-            await tx.auditLog.create({
-                data: {
-                    action: 'CREATE',
-                    entityType: 'Payment',
-                    entityId: createdPayment.id,
-                    description: `Pago registrado por ${amount} para student ${studentId}`
-                }
-            });
-
             return createdPayment;
+        });
+
+        // Registrar en auditoría fuera de la transacción
+        const student = await prisma.student.findUnique({
+            where: { id: studentId },
+            include: { user: true }
+        });
+
+        await auditLog({
+            action: AuditAction.CREATE,
+            entityType: 'PAYMENT',
+            entityId: payment.id,
+            description: `Pago registrado: ${amount} (${method}) para ${student?.firstName} ${student?.lastName}`
         });
 
         throw redirect(303, `/finanzas/${payment.id}`);

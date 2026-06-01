@@ -2,6 +2,8 @@ import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { requireRole } from '$lib/server/auth/authorization';
+import { auditLog } from '$lib/server/audit';
+import { AuditAction } from '@prisma/client';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	requireRole(locals.user, ['PRECEPTOR']);
@@ -102,6 +104,17 @@ export const actions: Actions = {
 		}
 
 		try {
+			// Obtener datos del estudiante y comisión para auditoría
+			const student = await prisma.student.findUnique({
+				where: { id: studentId },
+				include: { user: true }
+			});
+
+			const commission = await prisma.commission.findUnique({
+				where: { id: commissionId },
+				include: { subject: true }
+			});
+
 			// Buscar o crear el registro de asistencia
 			const attendanceRecord = await prisma.attendanceRecord.findFirst({
 				where: {
@@ -153,6 +166,15 @@ export const actions: Actions = {
 					}
 				});
 			}
+
+			// Registrar en auditoría
+			await auditLog({
+				userId: locals.user!.id,
+				action: AuditAction.CREATE,
+				entityType: 'ATTENDANCE_ENTRY',
+				entityId: studentId,
+				description: `Registro de ${type === 'LLEGADA_TARDE' ? 'llegada tarde' : 'retiro anticipado'}: ${student?.firstName} ${student?.lastName} en ${commission?.subject.name} a las ${time} el ${date}`
+			});
 
 			return { success: 'Registro guardado exitosamente' };
 		} catch (error) {

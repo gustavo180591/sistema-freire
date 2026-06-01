@@ -65,7 +65,7 @@
 	</div>
 
 	<!-- Acciones Rápidas -->
-	<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+	<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
 		<a href="/preceptor/asistencia" class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700">
 			<div class="flex items-center gap-3">
 				<div class="rounded-xl bg-blue-950/50 p-3">
@@ -154,6 +154,36 @@
 				</div>
 			</div>
 			<p class="mt-4 text-sm text-slate-400 group-hover:text-slate-300">Registrar eventos →</p>
+		</a>
+
+		<a href="/preceptor/comunicados" class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700">
+			<div class="flex items-center gap-3">
+				<div class="rounded-xl bg-cyan-950/50 p-3">
+					<svg class="h-6 w-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+					</svg>
+				</div>
+				<div>
+					<p class="text-sm text-slate-400">Comunicados</p>
+					<p class="text-lg font-bold">Gestionar</p>
+				</div>
+			</div>
+			<p class="mt-4 text-sm text-slate-400 group-hover:text-slate-300">Documentación →</p>
+		</a>
+
+		<a href="/preceptor/reportes" class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700">
+			<div class="flex items-center gap-3">
+				<div class="rounded-xl bg-indigo-950/50 p-3">
+					<svg class="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+					</svg>
+				</div>
+				<div>
+					<p class="text-sm text-slate-400">Reportes</p>
+					<p class="text-lg font-bold">Ver</p>
+				</div>
+			</div>
+			<p class="mt-4 text-sm text-slate-400 group-hover:text-slate-300">Estadísticas →</p>
 		</a>
 	</div>
 

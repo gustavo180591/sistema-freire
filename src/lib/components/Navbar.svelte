@@ -23,6 +23,7 @@
 		if (!user) return '/login';
 		if (user.roles.includes('ALUMNO')) return '/alumno';
 		if (user.roles.includes('DOCENTE')) return '/docente';
+		if (user.roles.includes('PRECEPTOR')) return '/preceptor';
 		return '/perfil';
 	});
 

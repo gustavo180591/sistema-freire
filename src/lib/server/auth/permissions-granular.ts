@@ -194,14 +194,21 @@ export async function seedDefaultPermissions() {
     { roleCode: 'DOCENTE', entity: 'COMMISSION', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
     { roleCode: 'DOCENTE', entity: 'PAYSLIP', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
 
-    // PRECEPTOR - Puede gestionar alumnos, inscripciones y ver comisiones (similar a SECRETARIA pero sin finanzas)
+    // PRECEPTOR - Gestión de asistencia, seguimiento de alumnos y calificaciones
     { roleCode: 'PRECEPTOR', entity: 'USER', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
-    { roleCode: 'PRECEPTOR', entity: 'STUDENT', canCreate: true, canRead: true, canUpdate: true, canDelete: false },
+    { roleCode: 'PRECEPTOR', entity: 'STUDENT', canCreate: false, canRead: true, canUpdate: true, canDelete: false },
     { roleCode: 'PRECEPTOR', entity: 'TEACHER', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
     { roleCode: 'PRECEPTOR', entity: 'CAREER', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
     { roleCode: 'PRECEPTOR', entity: 'SUBJECT', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
     { roleCode: 'PRECEPTOR', entity: 'COMMISSION', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
-    { roleCode: 'PRECEPTOR', entity: 'ENROLLMENT', canCreate: true, canRead: true, canUpdate: true, canDelete: false },
+    { roleCode: 'PRECEPTOR', entity: 'ENROLLMENT', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+    { roleCode: 'PRECEPTOR', entity: 'ACADEMIC_TERM', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+    { roleCode: 'PRECEPTOR', entity: 'STUDENT_CHARGE', canCreate: false, canRead: false, canUpdate: false, canDelete: false },
+    { roleCode: 'PRECEPTOR', entity: 'PAYMENT', canCreate: false, canRead: false, canUpdate: false, canDelete: false },
+    { roleCode: 'PRECEPTOR', entity: 'PAYSLIP', canCreate: false, canRead: false, canUpdate: false, canDelete: false },
+    { roleCode: 'PRECEPTOR', entity: 'SCHOLARSHIP', canCreate: false, canRead: false, canUpdate: false, canDelete: false },
+    { roleCode: 'PRECEPTOR', entity: 'AUDIT_LOG', canCreate: false, canRead: false, canUpdate: false, canDelete: false },
+    { roleCode: 'PRECEPTOR', entity: 'PERMISSION', canCreate: false, canRead: false, canUpdate: false, canDelete: false },
 
     // ALUMNO - Solo ver sus datos
     { roleCode: 'ALUMNO', entity: 'STUDENT', canCreate: false, canRead: true, canUpdate: false, canDelete: false },

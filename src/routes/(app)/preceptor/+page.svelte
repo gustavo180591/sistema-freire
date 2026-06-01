@@ -5,7 +5,7 @@
 	let selectedCareer = $state('');
 	let searchQuery = $state('');
 
-	const filteredStudents = $derived(() => {
+	let filteredStudents = $derived.by(() => {
 		return data.students.filter((s: any) => {
 			const matchesCareer = !selectedCareer || s.careerId === selectedCareer;
 			const matchesSearch = !searchQuery ||
@@ -204,7 +204,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each filteredStudents as student}
+					{#each filteredStudents as student (student.id)}
 						<tr class="border-b border-slate-800/50 hover:bg-slate-800/30">
 							<td class="px-4 py-3 text-sm">{student.dni}</td>
 							<td class="px-4 py-3 text-sm">{student.firstName}</td>

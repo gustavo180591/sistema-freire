@@ -14,6 +14,7 @@ export const actions: Actions = {
 		const alumnoType = data.get('alumnoType')?.toString() || 'normal';
 		const newPassword = data.get('newPassword')?.toString();
 		const careerId = data.get('careerId')?.toString();
+		const currentYear = data.get('currentYear')?.toString() ? parseInt(data.get('currentYear')?.toString() || '1') : null;
 
 		// Campos extendidos
 		const birthDate = data.get('birthDate')?.toString();
@@ -67,6 +68,7 @@ export const actions: Actions = {
 						isBecado,
 						isRecursante,
 						careerId: careerId || undefined,
+						currentYear: currentYear || undefined,
 						birthDate: birthDate ? new Date(birthDate) : null,
 						bloodType: bloodType || null,
 						phone: phone || null,

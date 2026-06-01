@@ -351,6 +351,19 @@
 							</select>
 						</div>
 						<div>
+							<label for="currentYear" class="mb-2 block text-sm font-medium text-slate-300">Año de Carrera</label>
+							<select
+								id="currentYear"
+								name="currentYear"
+								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+							>
+								<option value="1" selected={editingStudent.currentYear === 1}>1° Año</option>
+								<option value="2" selected={editingStudent.currentYear === 2}>2° Año</option>
+								<option value="3" selected={editingStudent.currentYear === 3}>3° Año</option>
+								<option value="4" selected={editingStudent.currentYear === 4}>4° Año</option>
+							</select>
+						</div>
+						<div>
 							<label for="locality" class="mb-2 block text-sm font-medium text-slate-300">Localidad</label>
 							<select
 								id="locality"

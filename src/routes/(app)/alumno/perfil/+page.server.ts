@@ -1,6 +1,6 @@
-import type { PageServerLoad, Actions } from './$types';
+import type { PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
-import { fail, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ locals }) => {
     const user = locals.user;
@@ -38,53 +38,4 @@ export const load: PageServerLoad = async ({ locals }) => {
             status: student.status
         }
     };
-};
-
-export const actions: Actions = {
-    default: async ({ request, locals }) => {
-        const user = locals.user;
-
-        if (!user || !user.roles.includes('ALUMNO')) {
-            return fail(403, { error: 'No autorizado' });
-        }
-
-        const formData = await request.formData();
-        const firstName = formData.get('firstName')?.toString();
-        const lastName = formData.get('lastName')?.toString();
-        const email = formData.get('email')?.toString();
-
-        if (!firstName || !lastName || !email) {
-            return fail(400, { error: 'Todos los campos son obligatorios' });
-        }
-
-        try {
-            const student = await prisma.student.findFirst({
-                where: { userId: user.id }
-            });
-
-            if (!student) {
-                return fail(404, { error: 'Estudiante no encontrado' });
-            }
-
-            // Actualizar en transacción
-            await prisma.$transaction(async (tx) => {
-                // Actualizar usuario
-                await tx.user.update({
-                    where: { id: user.id },
-                    data: { email, firstName, lastName }
-                });
-
-                // Actualizar estudiante
-                await tx.student.update({
-                    where: { id: student.id },
-                    data: { firstName, lastName }
-                });
-            });
-
-            return { success: true };
-        } catch (e) {
-            console.error('Error actualizando perfil:', e);
-            return fail(500, { error: 'Error al actualizar el perfil' });
-        }
-    }
 };

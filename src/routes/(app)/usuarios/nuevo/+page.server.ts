@@ -100,18 +100,45 @@ export const actions: Actions = {
 					}
 				});
 
-				// Si es ALUMNO, crear el registro de estudiante
+				// Si es ALUMNO, crear el registro de estudiante con campos extendidos
 				if (type === 'ALUMNO') {
 					if (!careerId) {
 						throw new Error('Debe seleccionar una carrera para el alumno');
 					}
+
+					// Capturar campos adicionales del formulario
+					const birthDate = data.get('birthDate')?.toString();
+					const bloodType = data.get('bloodType')?.toString();
+					const phone = data.get('phone')?.toString();
+					const address = data.get('address')?.toString();
+					const locality = data.get('locality')?.toString();
+					const postalCode = data.get('postalCode')?.toString();
+					const highSchool = data.get('highSchool')?.toString();
+					const highSchoolYear = data.get('highSchoolYear')?.toString() ? parseInt(data.get('highSchoolYear')?.toString() || '0') : null;
+					const instituteYear = data.get('instituteYear')?.toString() ? parseInt(data.get('instituteYear')?.toString() || '0') : null;
+					const familyContactName = data.get('familyContactName')?.toString();
+					const familyContactPhone = data.get('familyContactPhone')?.toString();
+					const familyRelationship = data.get('familyRelationship')?.toString();
+
 					await tx.student.create({
 						data: {
 							userId: user.id,
 							dni,
 							firstName,
 							lastName,
-							careerId
+							careerId,
+							birthDate: birthDate ? new Date(birthDate) : null,
+							bloodType: bloodType || null,
+							phone: phone || null,
+							address: address || null,
+							locality: locality || null,
+							postalCode: postalCode || null,
+							highSchool: highSchool || null,
+							highSchoolYear: highSchoolYear || null,
+							instituteYear: instituteYear || null,
+							familyContactName: familyContactName || null,
+							familyContactPhone: familyContactPhone || null,
+							familyRelationship: familyRelationship || null
 						}
 					});
 				}

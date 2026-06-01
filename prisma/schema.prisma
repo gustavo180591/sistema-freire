@@ -128,6 +128,27 @@ model Student {
   currentYear       Int                    @default(1)
   isBecado          Boolean                @default(false)
   isRecursante      Boolean                @default(false)
+  
+  // Datos personales adicionales
+  birthDate         DateTime?
+  bloodType         String?
+  
+  // Contactos
+  phone             String?
+  familyContactName    String?
+  familyContactPhone   String?
+  familyRelationship   String?
+  
+  // Domicilio
+  address           String?
+  locality          String?
+  postalCode        String?
+  
+  // Educativos
+  highSchool        String?
+  highSchoolYear    Int?
+  instituteYear     Int?
+  
   attendanceEntries AttendanceEntry[]
   enrollments       Enrollment[]
   grades            Grade[]

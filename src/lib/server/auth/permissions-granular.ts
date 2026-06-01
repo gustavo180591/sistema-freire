@@ -16,7 +16,15 @@ export const ENTITIES = [
   'PAYSLIP',
   'SCHOLARSHIP',
   'AUDIT_LOG',
-  'PERMISSION'
+  'PERMISSION',
+  'GRADE',
+  'ATTENDANCE',
+  'STUDENT_FOLLOW_UP',
+  'MATERIAL',
+  'COMMUNICATION',
+  'EVALUATION',
+  'SCHEDULE',
+  'DOCUMENT'
 ] as const;
 
 export type Entity = (typeof ENTITIES)[number];
@@ -148,7 +156,15 @@ function getEntityLabel(entity: Entity): string {
     'PAYSLIP': 'recibos',
     'SCHOLARSHIP': 'becas',
     'AUDIT_LOG': 'auditoría',
-    'PERMISSION': 'permisos'
+    'PERMISSION': 'permisos',
+    'GRADE': 'calificaciones',
+    'ATTENDANCE': 'asistencia',
+    'STUDENT_FOLLOW_UP': 'seguimientos',
+    'MATERIAL': 'materiales',
+    'COMMUNICATION': 'comunicados',
+    'EVALUATION': 'evaluaciones',
+    'SCHEDULE': 'horarios',
+    'DOCUMENT': 'documentos'
   };
   return labels[entity] || entity.toLowerCase();
 }
@@ -189,10 +205,29 @@ export async function seedDefaultPermissions() {
     { roleCode: 'FINANZAS', entity: 'PAYSLIP', canCreate: true, canRead: true, canUpdate: true, canDelete: false },
     { roleCode: 'FINANZAS', entity: 'SCHOLARSHIP', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
 
-    // DOCENTE - Solo lectura de lo académico y comisiones asignadas
+    // DOCENTE - Gestión académica de sus materias asignadas
+    { roleCode: 'DOCENTE', entity: 'USER', canCreate: false, canRead: false, canUpdate: false, canDelete: false },
     { roleCode: 'DOCENTE', entity: 'STUDENT', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+    { roleCode: 'DOCENTE', entity: 'TEACHER', canCreate: false, canRead: false, canUpdate: false, canDelete: false },
+    { roleCode: 'DOCENTE', entity: 'CAREER', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+    { roleCode: 'DOCENTE', entity: 'SUBJECT', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
     { roleCode: 'DOCENTE', entity: 'COMMISSION', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+    { roleCode: 'DOCENTE', entity: 'ACADEMIC_TERM', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+    { roleCode: 'DOCENTE', entity: 'ENROLLMENT', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+    { roleCode: 'DOCENTE', entity: 'GRADE', canCreate: true, canRead: true, canUpdate: true, canDelete: false },
+    { roleCode: 'DOCENTE', entity: 'ATTENDANCE', canCreate: true, canRead: true, canUpdate: true, canDelete: false },
+    { roleCode: 'DOCENTE', entity: 'STUDENT_FOLLOW_UP', canCreate: true, canRead: true, canUpdate: true, canDelete: false },
+    { roleCode: 'DOCENTE', entity: 'MATERIAL', canCreate: true, canRead: true, canUpdate: true, canDelete: true },
+    { roleCode: 'DOCENTE', entity: 'COMMUNICATION', canCreate: true, canRead: true, canUpdate: false, canDelete: false },
+    { roleCode: 'DOCENTE', entity: 'EVALUATION', canCreate: true, canRead: true, canUpdate: true, canDelete: false },
+    { roleCode: 'DOCENTE', entity: 'SCHEDULE', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+    { roleCode: 'DOCENTE', entity: 'DOCUMENT', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+    { roleCode: 'DOCENTE', entity: 'STUDENT_CHARGE', canCreate: false, canRead: false, canUpdate: false, canDelete: false },
+    { roleCode: 'DOCENTE', entity: 'PAYMENT', canCreate: false, canRead: false, canUpdate: false, canDelete: false },
     { roleCode: 'DOCENTE', entity: 'PAYSLIP', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+    { roleCode: 'DOCENTE', entity: 'SCHOLARSHIP', canCreate: false, canRead: false, canUpdate: false, canDelete: false },
+    { roleCode: 'DOCENTE', entity: 'AUDIT_LOG', canCreate: false, canRead: false, canUpdate: false, canDelete: false },
+    { roleCode: 'DOCENTE', entity: 'PERMISSION', canCreate: false, canRead: false, canUpdate: false, canDelete: false },
 
     // PRECEPTOR - Gestión de asistencia, seguimiento de alumnos y calificaciones
     { roleCode: 'PRECEPTOR', entity: 'USER', canCreate: false, canRead: true, canUpdate: false, canDelete: false },

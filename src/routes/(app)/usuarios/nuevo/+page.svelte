@@ -62,6 +62,7 @@
 					<option value="FINANZAS">Finanzas</option>
 					<option value="DIRECTOR">Dirección</option>
 					<option value="APODERADO">Apoderado</option>
+					<option value="PRECEPTOR">Preceptor</option>
 				</select>
 			</div>
 
@@ -103,6 +104,21 @@
 			</div>
 
 			{#if userType === 'ALUMNO'}
+			<!-- Localidad -->
+			<div>
+				<label for="locality" class="mb-2 block text-sm font-medium text-slate-300">Localidad</label>
+				<select
+					id="locality"
+					name="locality"
+					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+				>
+					<option value="">Seleccionar localidad</option>
+					<option value="ALEM">Leandro N. Alem</option>
+					<option value="CAPIOVI">Capiovi</option>
+				</select>
+				<p class="mt-1 text-xs text-slate-500">El ID del alumno se generará con el prefijo según la localidad (A para Alem, C para Capiovi)</p>
+			</div>
+
 			<!-- Datos Personales -->
 			<div class="space-y-6">
 				<div class="grid gap-6 md:grid-cols-2">

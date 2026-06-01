@@ -10,8 +10,18 @@ const ROLE_MAP: Record<string, RoleCode> = {
 	DOCENTE: 'DOCENTE',
 	SECRETARIA: 'SECRETARIA',
 	FINANZAS: 'FINANZAS',
-	DIRECTOR: 'DIRECTOR'
+	DIRECTOR: 'DIRECTOR',
+	APODERADO: 'APODERADO',
+	PRECEPTOR: 'PRECEPTOR'
 };
+
+// Función para generar ID de alumno con prefijo según localidad
+function generateStudentId(locality: string): string {
+	const prefix = locality === 'ALEM' ? 'A' : locality === 'CAPIOVI' ? 'C' : '';
+	const timestamp = Date.now().toString(36);
+	const random = Math.random().toString(36).substring(2, 8);
+	return `${prefix}${timestamp}${random}`.toUpperCase();
+}
 
 export const load: PageServerLoad = async () => {
 	const careers = await prisma.career.findMany({
@@ -120,8 +130,17 @@ export const actions: Actions = {
 					const familyContactPhone = data.get('familyContactPhone')?.toString();
 					const familyRelationship = data.get('familyRelationship')?.toString();
 
+					// Validar que se seleccione localidad
+					if (!locality) {
+						throw new Error('Debe seleccionar la localidad del alumno');
+					}
+
+					// Generar ID con prefijo según localidad
+					const studentId = generateStudentId(locality);
+
 					await tx.student.create({
 						data: {
+							id: studentId,
 							userId: user.id,
 							dni,
 							firstName,

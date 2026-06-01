@@ -35,6 +35,19 @@
 		isRecursante: boolean;
 		currentYear: number;
 		createdAt: Date;
+		// Campos extendidos
+		birthDate: Date | null;
+		bloodType: string | null;
+		phone: string | null;
+		address: string | null;
+		locality: string | null;
+		postalCode: string | null;
+		highSchool: string | null;
+		highSchoolYear: number | null;
+		instituteYear: number | null;
+		familyContactName: string | null;
+		familyContactPhone: string | null;
+		familyRelationship: string | null;
 	}
 
 	interface FilterData {
@@ -322,6 +335,203 @@
 								value={editingStudent.lastName}
 								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 							/>
+						</div>
+						<div>
+							<label for="careerId" class="mb-2 block text-sm font-medium text-slate-300">Carrera</label>
+							<select
+								id="careerId"
+								name="careerId"
+								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+							>
+								{#each data.careers as career}
+									<option value={career.id} selected={editingStudent.careerId === career.id}>
+										{career.name}
+									</option>
+								{/each}
+							</select>
+						</div>
+						<div>
+							<label for="locality" class="mb-2 block text-sm font-medium text-slate-300">Localidad</label>
+							<select
+								id="locality"
+								name="locality"
+								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+							>
+								<option value="">Seleccionar localidad</option>
+								<option value="ALEM" selected={editingStudent.locality === 'ALEM'}>Leandro N. Alem</option>
+								<option value="CAPIOVI" selected={editingStudent.locality === 'CAPIOVI'}>Capiovi</option>
+							</select>
+						</div>
+					</div>
+
+					<!-- Datos Personales -->
+					<div class="space-y-6 border-t border-slate-800 pt-6">
+						<h3 class="text-lg font-semibold text-white">Datos Personales</h3>
+						<div class="grid gap-6 md:grid-cols-2">
+							<div>
+								<label for="birthDate" class="mb-2 block text-sm font-medium text-slate-300">Fecha de Nacimiento</label>
+								<input
+									id="birthDate"
+									name="birthDate"
+									type="date"
+									value={editingStudent.birthDate ? new Date(editingStudent.birthDate).toISOString().split('T')[0] : ''}
+									class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+								/>
+							</div>
+							<div>
+								<label for="bloodType" class="mb-2 block text-sm font-medium text-slate-300">Grupo Sanguíneo</label>
+								<select
+									id="bloodType"
+									name="bloodType"
+									class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+								>
+									<option value="">Seleccionar...</option>
+									<option value="O+" selected={editingStudent.bloodType === 'O+'}>O+</option>
+									<option value="O-" selected={editingStudent.bloodType === 'O-'}>O-</option>
+									<option value="A+" selected={editingStudent.bloodType === 'A+'}>A+</option>
+									<option value="A-" selected={editingStudent.bloodType === 'A-'}>A-</option>
+									<option value="B+" selected={editingStudent.bloodType === 'B+'}>B+</option>
+									<option value="B-" selected={editingStudent.bloodType === 'B-'}>B-</option>
+									<option value="AB+" selected={editingStudent.bloodType === 'AB+'}>AB+</option>
+									<option value="AB-" selected={editingStudent.bloodType === 'AB-'}>AB-</option>
+								</select>
+							</div>
+						</div>
+					</div>
+
+					<!-- Contactos -->
+					<div class="space-y-6 border-t border-slate-800 pt-6">
+						<h3 class="text-lg font-semibold text-white">Contactos</h3>
+						<div class="grid gap-6 md:grid-cols-2">
+							<div>
+								<label for="phone" class="mb-2 block text-sm font-medium text-slate-300">Teléfono/Celular</label>
+								<input
+									id="phone"
+									name="phone"
+									type="tel"
+									value={editingStudent.phone || ''}
+									class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+								/>
+							</div>
+						</div>
+						<div class="space-y-4">
+							<h4 class="text-md font-medium text-slate-300">Contacto Familiar</h4>
+							<div class="grid gap-6 md:grid-cols-3">
+								<div>
+									<label for="familyContactName" class="mb-2 block text-sm font-medium text-slate-300">Nombre del Familiar</label>
+									<input
+										id="familyContactName"
+										name="familyContactName"
+										type="text"
+										value={editingStudent.familyContactName || ''}
+										class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+									/>
+								</div>
+								<div>
+									<label for="familyContactPhone" class="mb-2 block text-sm font-medium text-slate-300">Teléfono del Familiar</label>
+									<input
+										id="familyContactPhone"
+										name="familyContactPhone"
+										type="tel"
+										value={editingStudent.familyContactPhone || ''}
+										class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+									/>
+								</div>
+								<div>
+									<label for="familyRelationship" class="mb-2 block text-sm font-medium text-slate-300">Parentesco</label>
+									<select
+										id="familyRelationship"
+										name="familyRelationship"
+										class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+									>
+										<option value="">Seleccionar...</option>
+										<option value="PADRE" selected={editingStudent.familyRelationship === 'PADRE'}>Padre</option>
+										<option value="MADRE" selected={editingStudent.familyRelationship === 'MADRE'}>Madre</option>
+										<option value="TUTOR" selected={editingStudent.familyRelationship === 'TUTOR'}>Tutor</option>
+										<option value="HERMANO" selected={editingStudent.familyRelationship === 'HERMANO'}>Hermano/a</option>
+										<option value="ABUELO" selected={editingStudent.familyRelationship === 'ABUELO'}>Abuelo/a</option>
+										<option value="OTRO" selected={editingStudent.familyRelationship === 'OTRO'}>Otro</option>
+									</select>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Domicilio -->
+					<div class="space-y-6 border-t border-slate-800 pt-6">
+						<h3 class="text-lg font-semibold text-white">Domicilio</h3>
+						<div class="grid gap-6 md:grid-cols-2">
+							<div>
+								<label for="address" class="mb-2 block text-sm font-medium text-slate-300">Dirección</label>
+								<input
+									id="address"
+									name="address"
+									type="text"
+									value={editingStudent.address || ''}
+									class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+								/>
+							</div>
+							<div>
+								<label for="locality" class="mb-2 block text-sm font-medium text-slate-300">Localidad</label>
+								<input
+									id="locality"
+									name="locality"
+									type="text"
+									value={editingStudent.locality || ''}
+									class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+								/>
+							</div>
+							<div>
+								<label for="postalCode" class="mb-2 block text-sm font-medium text-slate-300">Código Postal</label>
+								<input
+									id="postalCode"
+									name="postalCode"
+									type="text"
+									value={editingStudent.postalCode || ''}
+									class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+								/>
+							</div>
+						</div>
+					</div>
+
+					<!-- Datos Educativos -->
+					<div class="space-y-6 border-t border-slate-800 pt-6">
+						<h3 class="text-lg font-semibold text-white">Datos Educativos</h3>
+						<div class="grid gap-6 md:grid-cols-2">
+							<div>
+								<label for="highSchool" class="mb-2 block text-sm font-medium text-slate-300">Escuela Secundaria</label>
+								<input
+									id="highSchool"
+									name="highSchool"
+									type="text"
+									value={editingStudent.highSchool || ''}
+									class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+								/>
+							</div>
+							<div>
+								<label for="highSchoolYear" class="mb-2 block text-sm font-medium text-slate-300">Año de Egreso Secundario</label>
+								<input
+									id="highSchoolYear"
+									name="highSchoolYear"
+									type="number"
+									min="1950"
+									max={new Date().getFullYear()}
+									value={editingStudent.highSchoolYear || ''}
+									class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+								/>
+							</div>
+							<div>
+								<label for="instituteYear" class="mb-2 block text-sm font-medium text-slate-300">Año de Ingreso al Instituto</label>
+								<input
+									id="instituteYear"
+									name="instituteYear"
+									type="number"
+									min="1950"
+									max={new Date().getFullYear() + 1}
+									value={editingStudent.instituteYear || ''}
+									class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+								/>
+							</div>
 						</div>
 					</div>
 

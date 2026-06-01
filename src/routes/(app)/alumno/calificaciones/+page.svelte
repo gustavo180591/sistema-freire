@@ -44,6 +44,60 @@
 		</div>
 	</div>
 
+	<!-- Materias disponibles para cursar -->
+	{#if data.availableSubjects.length > 0}
+		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+			<h2 class="mb-4 text-lg font-semibold">📖 Materias disponibles para cursar</h2>
+			<p class="mb-4 text-sm text-slate-400">
+				Año {data.student.currentYear}° • {data.availableSubjects.length} materias disponibles
+			</p>
+			<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+				{#each data.availableSubjects as subject}
+					<div class="rounded-xl border border-slate-800 bg-slate-950 p-4">
+						<div class="flex items-start justify-between">
+							<div>
+								<p class="font-medium">{subject.name}</p>
+								<p class="text-sm text-slate-400">{subject.code}</p>
+							</div>
+							<span class="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs bg-blue-950/50 text-blue-400">
+								{subject.yearLevel}° año
+							</span>
+						</div>
+						<div class="mt-3 flex items-center gap-2 text-sm">
+							{#if subject.isMandatory}
+								<span class="rounded-full bg-slate-800 px-2 py-1 text-slate-300">Obligatoria</span>
+							{:else}
+								<span class="rounded-full bg-slate-800 px-2 py-1 text-slate-300">Optativa</span>
+							{/if}
+							<span class="rounded-full bg-slate-800 px-2 py-1 text-slate-300">{subject.accreditationMode}</span>
+						</div>
+						{#if subject.correlatives.length > 0}
+							<div class="mt-3 rounded-lg bg-slate-900/50 p-2">
+								<p class="text-xs text-slate-400">Requisitos:</p>
+								{#each subject.correlatives as correlative}
+									<p class="text-xs text-slate-500">
+										{#if correlative.type === 'REGULAR'}Regular{/if}
+										{#if correlative.type === 'APROBADO'}Aprobado{/if}
+										{#if correlative.type === 'APROBADO_APROBAR'}Aprobado{/if}
+									</p>
+								{/each}
+							</div>
+						{:else}
+							<div class="mt-3 rounded-lg bg-emerald-950/30 p-2">
+								<p class="text-xs text-emerald-400">Sin requisitos previos</p>
+							</div>
+						{/if}
+					</div>
+				{/each}
+			</div>
+		</div>
+	{:else}
+		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+			<h2 class="mb-4 text-lg font-semibold">📖 Materias disponibles para cursar</h2>
+			<p class="text-slate-400">No hay materias disponibles para cursar en este momento. Completa las correlatividades para acceder a más materias.</p>
+		</div>
+	{/if}
+
 	<!-- Resumen de materias -->
 	{#if data.subjectStatuses.length > 0}
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">

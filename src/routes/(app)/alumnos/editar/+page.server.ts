@@ -13,6 +13,21 @@ export const actions: Actions = {
 		const lastName = data.get('lastName')?.toString();
 		const alumnoType = data.get('alumnoType')?.toString() || 'normal';
 		const newPassword = data.get('newPassword')?.toString();
+		const careerId = data.get('careerId')?.toString();
+
+		// Campos extendidos
+		const birthDate = data.get('birthDate')?.toString();
+		const bloodType = data.get('bloodType')?.toString();
+		const phone = data.get('phone')?.toString();
+		const address = data.get('address')?.toString();
+		const locality = data.get('locality')?.toString();
+		const postalCode = data.get('postalCode')?.toString();
+		const highSchool = data.get('highSchool')?.toString();
+		const highSchoolYear = data.get('highSchoolYear')?.toString();
+		const instituteYear = data.get('instituteYear')?.toString();
+		const familyContactName = data.get('familyContactName')?.toString();
+		const familyContactPhone = data.get('familyContactPhone')?.toString();
+		const familyRelationship = data.get('familyRelationship')?.toString();
 
 		if (!id || !userId || !email || !firstName || !lastName) {
 			return fail(400, { error: 'Por favor completá todos los campos requeridos' });
@@ -43,14 +58,27 @@ export const actions: Actions = {
 				const isBecado = alumnoType === 'becado';
 				const isRecursante = alumnoType === 'recursante';
 
-				// Actualizar alumno
+				// Actualizar alumno con campos extendidos
 				await tx.student.update({
 					where: { id },
 					data: {
 						firstName,
 						lastName,
 						isBecado,
-						isRecursante
+						isRecursante,
+						careerId: careerId || undefined,
+						birthDate: birthDate ? new Date(birthDate) : null,
+						bloodType: bloodType || null,
+						phone: phone || null,
+						address: address || null,
+						locality: locality || null,
+						postalCode: postalCode || null,
+						highSchool: highSchool || null,
+						highSchoolYear: highSchoolYear ? parseInt(highSchoolYear) : null,
+						instituteYear: instituteYear ? parseInt(instituteYear) : null,
+						familyContactName: familyContactName || null,
+						familyContactPhone: familyContactPhone || null,
+						familyRelationship: familyRelationship || null
 					}
 				});
 			});

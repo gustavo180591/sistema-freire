@@ -19,6 +19,12 @@ export const load: PageServerLoad = async ({ url }) => {
 		]
 	});
 
+	const careers = await prisma.career.findMany({
+		where: { active: true },
+		orderBy: { name: 'asc' },
+		select: { id: true, name: true }
+	});
+
 	type StudentWithRelations = Prisma.StudentGetPayload<{
 		include: { user: true; career: true };
 	}>;
@@ -43,8 +49,22 @@ export const load: PageServerLoad = async ({ url }) => {
 			isBecado: s.isBecado,
 			isRecursante: s.isRecursante,
 			currentYear: s.currentYear,
-			createdAt: s.createdAt
+			createdAt: s.createdAt,
+			// Campos extendidos
+			birthDate: s.birthDate,
+			bloodType: s.bloodType,
+			phone: s.phone,
+			address: s.address,
+			locality: s.locality,
+			postalCode: s.postalCode,
+			highSchool: s.highSchool,
+			highSchoolYear: s.highSchoolYear,
+			instituteYear: s.instituteYear,
+			familyContactName: s.familyContactName,
+			familyContactPhone: s.familyContactPhone,
+			familyRelationship: s.familyRelationship
 		})),
+		careers,
 		filter: careerId ? { careerId, careerName } : null
 	};
 }

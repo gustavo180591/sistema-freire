@@ -37,6 +37,20 @@ export const load: PageServerLoad = async ({ locals }) => {
         throw redirect(303, '/dashboard');
     }
 
+    // Cargar evaluaciones de las materias del alumno
+    const subjectIds = student.subjectStatuses.map(s => s.subjectId);
+    const evaluations = await prisma.evaluation.findMany({
+        where: {
+            subjectId: { in: subjectIds },
+            type: { in: ['FINAL', 'EXAMEN'] },
+            date: { gte: new Date() } // Solo evaluaciones futuras
+        },
+        include: {
+            subject: true
+        },
+        orderBy: { date: 'asc' }
+    });
+
     // Determinar si el alumno es de primer año
     const isFirstYear = student.currentYear === 1;
 
@@ -143,6 +157,14 @@ export const load: PageServerLoad = async ({ locals }) => {
         finances: {
             totalDebt,
             charges: student.studentCharges.slice(0, 5) // Últimos 5 cargos
-        }
+        },
+        evaluations: evaluations.map(e => ({
+            id: e.id,
+            subjectId: e.subjectId,
+            subjectName: e.subject.name,
+            title: e.title,
+            type: e.type,
+            date: e.date
+        }))
     };
 };

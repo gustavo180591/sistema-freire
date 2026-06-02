@@ -2,6 +2,10 @@
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
+
+	const getAvailableExam = (subjectId: string) => {
+		return data.evaluations?.find(e => e.subjectId === subjectId);
+	};
 </script>
 
 <svelte:head>
@@ -101,6 +105,7 @@
 			<h2 class="text-lg font-semibold mb-4">📚 Materias Cursando</h2>
 			<div class="space-y-3">
 				{#each data.academic.currentSubjects as subject}
+					{@const availableExam = getAvailableExam(subject.id)}
 					<div class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-4">
 						<div>
 							<p class="font-medium">{subject.name}</p>
@@ -110,6 +115,14 @@
 							<span class="rounded-full bg-amber-500/20 text-amber-400 px-3 py-1 text-xs">
 								{subject.regularityStatus}
 							</span>
+							{#if availableExam}
+								<a
+									href="/evaluaciones/{availableExam.id}/inscribir"
+									class="rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-600 transition"
+								>
+									Inscribir a mesa
+								</a>
+							{/if}
 						</div>
 					</div>
 				{/each}

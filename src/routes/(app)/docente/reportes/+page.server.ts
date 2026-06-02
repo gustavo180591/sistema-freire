@@ -12,14 +12,22 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	// Obtener el docente asociado al usuario
 	const teacher = await prisma.teacher.findUnique({
-		where: { userId: locals.user.id },
+		where: { userId: locals.user.id }
+	});
+
+	if (!teacher) {
+		throw redirect(303, '/dashboard');
+	}
+
+	// Obtener las materias asignadas al docente
+	const subjectTeachers = await prisma.subjectTeacher.findMany({
+		where: { teacherId: teacher.id },
 		include: {
-			commissions: {
+			subject: {
 				include: {
-					commission: {
+					careerSubjects: {
 						include: {
-							subject: true,
-							term: true
+							career: true
 						}
 					}
 				}
@@ -27,29 +35,20 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	if (!teacher) {
-		throw redirect(303, '/dashboard');
-	}
+	const subjects = subjectTeachers.map(st => st.subject);
+	const subjectIds = subjects.map(s => s.id);
 
-	// Obtener las comisiones asignadas al docente
-	const commissions = teacher.commissions.map(ct => ct.commission);
-	const commissionIds = commissions.map(c => c.id);
-
-	// Obtener estudiantes de las comisiones del docente
+	// Obtener estudiantes de las carreras de las materias del docente
+	const careerIds = subjects.flatMap(s => s.careerSubjects.map(cs => cs.career.id));
 	const students = await prisma.student.findMany({
 		where: {
 			status: 'ACTIVE',
-			enrollments: {
-				some: {
-					commissionId: {
-						in: commissionIds
-					}
-				}
+			careerId: {
+				in: careerIds
 			}
 		},
 		include: {
-			career: true,
-			enrollments: true
+			career: true
 		}
 	});
 
@@ -57,13 +56,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	// Calificaciones por materia
 	const gradesBySubject = await prisma.grade.groupBy({
-		by: ['commissionId'],
+		by: ['subjectId'],
 		where: {
 			studentId: {
 				in: studentIds
 			},
-			commissionId: {
-				in: commissionIds
+			subjectId: {
+				in: subjectIds
 			}
 		},
 		_count: true,
@@ -75,8 +74,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// Asistencia por materia
 	const attendanceRecords = await prisma.attendanceRecord.findMany({
 		where: {
-			commissionId: {
-				in: commissionIds
+			subjectId: {
+				in: subjectIds
 			}
 		},
 		include: {
@@ -84,14 +83,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	const attendanceBySubject = commissionIds.map(commissionId => {
-		const records = attendanceRecords.filter(r => r.commissionId === commissionId);
+	const attendanceBySubject = subjectIds.map(subjectId => {
+		const records = attendanceRecords.filter(r => r.subjectId === subjectId);
 		const totalEntries = records.reduce((sum, r) => sum + r.entries.length, 0);
 		const presentEntries = records.reduce((sum, r) => sum + r.entries.filter((e: any) => e.present).length, 0);
 		const attendanceRate = totalEntries > 0 ? (presentEntries / totalEntries) * 100 : 0;
 
 		return {
-			commissionId,
+			subjectId,
 			totalClasses: records.length,
 			totalEntries,
 			presentEntries,
@@ -99,23 +98,22 @@ export const load: PageServerLoad = async ({ locals }) => {
 		};
 	});
 
-	// Combinar datos por comisión
-	const subjectReports = commissions.map(commission => {
-		const gradesData = gradesBySubject.find(g => g.commissionId === commission.id);
-		const attendanceData = attendanceBySubject.find(a => a.commissionId === commission.id);
-		const commissionStudents = students.filter(s =>
-			s.enrollments && s.enrollments.some((e: any) => e.commissionId === commission.id)
-		);
+	// Combinar datos por materia
+	const subjectReports = subjects.map(subject => {
+		const gradesData = gradesBySubject.find(g => g.subjectId === subject.id);
+		const attendanceData = attendanceBySubject.find(a => a.subjectId === subject.id);
+		const subjectStudents = students.filter(s => careerIds.includes(s.careerId));
 
 		const avgValue = gradesData?._avg.value;
 		const averageGrade = avgValue ? Math.round(Number(avgValue) * 100) / 100 : 0;
 
 		return {
-			id: commission.id,
-			subject: commission.subject.name,
-			commission: commission.name,
-			term: commission.term.name,
-			totalStudents: commissionStudents.length,
+			id: subject.id,
+			code: subject.code,
+			subject: subject.name,
+			yearLevel: subject.yearLevel,
+			careers: subject.careerSubjects.map(cs => cs.career.name),
+			totalStudents: subjectStudents.length,
 			totalGrades: gradesData?._count || 0,
 			averageGrade,
 			totalClasses: attendanceData?.totalClasses || 0,

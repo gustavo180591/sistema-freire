@@ -14,14 +14,22 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	// Obtener el docente asociado al usuario
 	const teacher = await prisma.teacher.findUnique({
-		where: { userId: locals.user.id },
+		where: { userId: locals.user.id }
+	});
+
+	if (!teacher) {
+		throw redirect(303, '/dashboard');
+	}
+
+	// Obtener las materias asignadas al docente
+	const subjectTeachers = await prisma.subjectTeacher.findMany({
+		where: { teacherId: teacher.id },
 		include: {
-			commissions: {
+			subject: {
 				include: {
-					commission: {
+					careerSubjects: {
 						include: {
-							subject: true,
-							term: true
+							career: true
 						}
 					}
 				}
@@ -29,23 +37,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	if (!teacher) {
-		throw redirect(303, '/dashboard');
-	}
+	const subjects = subjectTeachers.map(st => st.subject);
 
-	// Obtener las comisiones asignadas al docente
-	const commissions = teacher.commissions.map(ct => ct.commission);
-
-	// Obtener estudiantes de las comisiones del docente
+	// Obtener estudiantes de las carreras de las materias del docente
+	const careerIds = subjects.flatMap(s => s.careerSubjects.map(cs => cs.career.id));
 	const students = await prisma.student.findMany({
 		where: {
 			status: 'ACTIVE',
-			enrollments: {
-				some: {
-					commissionId: {
-						in: commissions.map(c => c.id)
-					}
-				}
+			careerId: {
+				in: careerIds
 			}
 		},
 		include: {
@@ -66,12 +66,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 				in: ['MEETING', 'NOTE']
 			},
 			student: {
-				enrollments: {
-					some: {
-						commissionId: {
-							in: commissions.map(c => c.id)
-						}
-					}
+				careerId: {
+					in: careerIds
 				}
 			}
 		},
@@ -88,12 +84,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	return {
-		commissions: commissions.map(c => ({
-			id: c.id,
-			name: c.name,
-			subject: c.subject.name,
-			term: c.term.name,
-			active: c.active
+		subjects: subjects.map(s => ({
+			id: s.id,
+			code: s.code,
+			name: s.name,
+			yearLevel: s.yearLevel,
+			careers: s.careerSubjects.map(cs => cs.career.name)
 		})),
 		students: students.map(s => ({
 			id: s.id,
@@ -135,34 +131,41 @@ export const actions: Actions = {
 		}
 
 		try {
-			// Verificar que el estudiante pertenezca a las comisiones del docente
+			// Verificar que el estudiante pertenezca a las carreras de las materias del docente
 			const teacher = await prisma.teacher.findUnique({
-				where: { userId: locals.user.id },
-				include: {
-					commissions: true
-				}
+				where: { userId: locals.user.id }
 			});
 
 			if (!teacher) {
 				return { error: 'Docente no encontrado' };
 			}
 
-			const teacherCommissionIds = teacher.commissions.map(ct => ct.commissionId);
-			const studentEnrollment = await prisma.enrollment.findFirst({
-				where: {
-					studentId,
-					commissionId: {
-						in: teacherCommissionIds
+			const subjectTeachers = await prisma.subjectTeacher.findMany({
+				where: { teacherId: teacher.id },
+				include: {
+					subject: {
+						include: {
+							careerSubjects: {
+								include: {
+									career: true
+								}
+							}
+						}
 					}
 				}
 			});
 
-			if (!studentEnrollment) {
+			const careerIds = subjectTeachers.flatMap(st => st.subject.careerSubjects.map(cs => cs.career.id));
+			const student = await prisma.student.findUnique({
+				where: { id: studentId }
+			});
+
+			if (!student || !careerIds.includes(student.careerId)) {
 				return { error: 'No tenés permiso para enviar comunicados a este estudiante' };
 			}
 
 			// Obtener datos del estudiante para auditoría
-			const student = await prisma.student.findUnique({
+			const studentWithUser = await prisma.student.findUnique({
 				where: { id: studentId },
 				include: { user: true }
 			});
@@ -183,7 +186,7 @@ export const actions: Actions = {
 				action: AuditAction.CREATE,
 				entityType: 'COMMUNICATION',
 				entityId: studentId,
-				description: `Comunicado: ${type} - ${title} para ${student?.firstName} ${student?.lastName}`
+				description: `Comunicado: ${type} - ${title} para ${studentWithUser?.firstName} ${studentWithUser?.lastName}`
 			});
 
 			return { success: 'Comunicado enviado exitosamente' };

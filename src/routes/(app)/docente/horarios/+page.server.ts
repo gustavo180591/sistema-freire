@@ -12,14 +12,22 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	// Obtener el docente asociado al usuario
 	const teacher = await prisma.teacher.findUnique({
-		where: { userId: locals.user.id },
+		where: { userId: locals.user.id }
+	});
+
+	if (!teacher) {
+		throw redirect(303, '/dashboard');
+	}
+
+	// Obtener las materias asignadas al docente
+	const subjectTeachers = await prisma.subjectTeacher.findMany({
+		where: { teacherId: teacher.id },
 		include: {
-			commissions: {
+			subject: {
 				include: {
-					commission: {
+					careerSubjects: {
 						include: {
-							subject: true,
-							term: true
+							career: true
 						}
 					}
 				}
@@ -27,23 +35,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	if (!teacher) {
-		throw redirect(303, '/dashboard');
-	}
+	const subjects = subjectTeachers.map(st => st.subject);
 
-	// Obtener las comisiones asignadas al docente
-	const commissions = teacher.commissions.map(ct => ct.commission);
-
-	// Obtener estudiantes por comisión
-	const studentsByCommission = await Promise.all(
-		commissions.map(async (commission) => {
+	// Obtener estudiantes por materia
+	const studentsBySubject = await Promise.all(
+		subjects.map(async (subject) => {
+			const careerIds = subject.careerSubjects.map(cs => cs.career.id);
 			const students = await prisma.student.findMany({
 				where: {
 					status: 'ACTIVE',
-					enrollments: {
-						some: {
-							commissionId: commission.id
-						}
+					careerId: {
+						in: careerIds
 					}
 				},
 				include: {
@@ -52,22 +54,21 @@ export const load: PageServerLoad = async ({ locals }) => {
 			});
 
 			return {
-				commissionId: commission.id,
+				subjectId: subject.id,
 				totalStudents: students.length
 			};
 		})
 	);
 
 	return {
-		commissions: commissions.map(c => {
-			const studentData = studentsByCommission.find(s => s.commissionId === c.id);
+		subjects: subjects.map(s => {
+			const studentData = studentsBySubject.find(sbs => sbs.subjectId === s.id);
 			return {
-				id: c.id,
-				name: c.name,
-				subject: c.subject.name,
-				subjectCode: c.subject.code,
-				term: c.term.name,
-				active: c.active,
+				id: s.id,
+				code: s.code,
+				name: s.name,
+				yearLevel: s.yearLevel,
+				careers: s.careerSubjects.map(cs => cs.career.name),
 				totalStudents: studentData?.totalStudents || 0
 			};
 		})

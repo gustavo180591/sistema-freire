@@ -7,7 +7,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     const user = locals.user;
     if (!user) throw redirect(302, '/login');
 
-    requirePermission(user, 'SUBJECT', 'edit');
+    requirePermission(user, 'SUBJECT', 'update');
 
     const subject = await prisma.subject.findUnique({
         where: { id: params.id },
@@ -77,8 +77,8 @@ export const actions: Actions = {
     update: async ({ request, params, locals }) => {
         const user = locals.user;
         if (!user) throw redirect(302, '/login');
-        
-        requirePermission(user, 'SUBJECT', 'edit');
+
+        requirePermission(user, 'SUBJECT', 'update');
         
         const formData = await request.formData();
         
@@ -121,7 +121,7 @@ export const actions: Actions = {
         const user = locals.user;
         if (!user) throw redirect(302, '/login');
         
-        requirePermission(user, 'SUBJECT', 'edit');
+        requirePermission(user, 'SUBJECT', 'update');
         
         const formData = await request.formData();
         const careerId = formData.get('careerId')?.toString();
@@ -159,7 +159,7 @@ export const actions: Actions = {
         const user = locals.user;
         if (!user) throw redirect(302, '/login');
 
-        requirePermission(user, 'SUBJECT', 'edit');
+        requirePermission(user, 'SUBJECT', 'update');
 
         const formData = await request.formData();
         const careerId = formData.get('careerId')?.toString();
@@ -187,7 +187,7 @@ export const actions: Actions = {
         const user = locals.user;
         if (!user) throw redirect(302, '/login');
 
-        requirePermission(user, 'SUBJECT', 'edit');
+        requirePermission(user, 'SUBJECT', 'update');
 
         const formData = await request.formData();
         const teacherId = formData.get('teacherId')?.toString();
@@ -215,7 +215,7 @@ export const actions: Actions = {
         const user = locals.user;
         if (!user) throw redirect(302, '/login');
 
-        requirePermission(user, 'SUBJECT', 'edit');
+        requirePermission(user, 'SUBJECT', 'update');
 
         const formData = await request.formData();
         const teacherId = formData.get('teacherId')?.toString();

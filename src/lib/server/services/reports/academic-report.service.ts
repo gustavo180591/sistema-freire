@@ -15,7 +15,7 @@ export type AcademicReportResult = {
     rows: AcademicReportRow[];
     metrics: {
         activeStudents: number;
-        activeCommissions: number;
+        activeSubjects: number;
         riskStudents: number;
         regularCount: number;
         libreCount: number;
@@ -23,11 +23,11 @@ export type AcademicReportResult = {
 };
 
 export async function getAcademicReport(): Promise<AcademicReportResult> {
-    const [activeStudents, activeCommissions, statuses] = await Promise.all([
+    const [activeStudents, activeSubjects, statuses] = await Promise.all([
         prisma.student.count({
             where: { status: 'ACTIVE' }
         }),
-        prisma.commission.count({
+        prisma.subject.count({
             where: { active: true }
         }),
         prisma.studentSubjectStatus.findMany({
@@ -79,7 +79,7 @@ export async function getAcademicReport(): Promise<AcademicReportResult> {
         rows,
         metrics: {
             activeStudents,
-            activeCommissions,
+            activeSubjects,
             riskStudents,
             regularCount,
             libreCount

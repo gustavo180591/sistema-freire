@@ -47,9 +47,6 @@ export const load: PageServerLoad = async ({ url }) => {
 				},
 				correlatives: {
 					include: { requiredSubject: true }
-				},
-				_count: {
-					select: { commissions: true }
 				}
 			},
 			orderBy: [
@@ -85,8 +82,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			.map(c => c.requiredSubject.name),
 		correlativesAprobadoAprobar: subject.correlatives
 			.filter(c => c.correlativeType === 'APROBADO_APROBAR')
-			.map(c => c.requiredSubject.name),
-		commissionsCount: subject._count.commissions
+			.map(c => c.requiredSubject.name)
 	}));
 
 	return {
@@ -101,7 +97,6 @@ export const load: PageServerLoad = async ({ url }) => {
 		},
 		metrics: {
 			totalSubjects: normalizedSubjects.length,
-			totalCommissions: normalizedSubjects.reduce((acc, s) => acc + s.commissionsCount, 0),
 			totalWithCorrelatives: normalizedSubjects.filter(s => s.correlativesCount > 0).length
 		},
 		// Opciones para filtros

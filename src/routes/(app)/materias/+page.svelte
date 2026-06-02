@@ -2,7 +2,7 @@
 	let { data } = $props();
 
 	const subjects = $derived(data?.subjects ?? []);
-	const metrics = $derived(data?.metrics ?? { totalSubjects: 0, totalCommissions: 0, totalWithCorrelatives: 0 });
+	const metrics = $derived(data?.metrics ?? { totalSubjects: 0, totalWithCorrelatives: 0 });
 	const careers = $derived(data?.careers ?? []);
 	const filters = $derived(data?.filters ?? {});
 	const subjectTypes = $derived(data?.subjectTypes ?? []);

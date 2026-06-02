@@ -4,7 +4,7 @@ import { prisma } from '$lib/server/db/prisma';
 export const load: PageServerLoad = async () => {
     const [
         activeStudents,
-        activeCommissions,
+        activeSubjects,
         studentsWithDebt,
         latestTerm,
         payslipsCount
@@ -12,7 +12,7 @@ export const load: PageServerLoad = async () => {
         prisma.student.count({
             where: { status: 'ACTIVE' }
         }),
-        prisma.commission.count({
+        prisma.subject.count({
             where: { active: true }
         }),
         prisma.studentCharge.groupBy({
@@ -38,7 +38,7 @@ export const load: PageServerLoad = async () => {
         {
             id: 'academic-summary',
             title: 'Reporte académico general',
-            description: `${activeStudents} alumnos activos y ${activeCommissions} comisiones operativas.`,
+            description: `${activeStudents} alumnos activos y ${activeSubjects} materias operativas.`,
             format: 'PDF / Excel',
             href: '/reportes/academico'
         },

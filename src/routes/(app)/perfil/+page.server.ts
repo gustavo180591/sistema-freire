@@ -43,12 +43,12 @@ export const load: PageServerLoad = async ({ locals }) => {
         totalUsers,
         totalStudents,
         totalCareers,
-        totalCommissions
+        totalSubjects
     ] = await Promise.all([
         prisma.user.count(),
         prisma.student.count(),
         prisma.career.count({ where: { active: true } }),
-        prisma.commission.count({ where: { active: true } })
+        prisma.subject.count({ where: { active: true } })
     ]);
 
     return {
@@ -67,7 +67,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             totalUsers,
             totalStudents,
             totalCareers,
-            totalCommissions
+            totalSubjects
         }
     };
 };

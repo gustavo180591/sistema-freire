@@ -34,17 +34,6 @@ export const load: PageServerLoad = async ({ params }) => {
                     }
                 },
                 where: { isActive: true }
-            },
-            commissions: {
-                include: {
-                    term: {
-                        select: { id: true, name: true, year: true }
-                    },
-                    _count: {
-                        select: { enrollments: true }
-                    }
-                },
-                orderBy: { createdAt: 'desc' }
             }
         }
     });

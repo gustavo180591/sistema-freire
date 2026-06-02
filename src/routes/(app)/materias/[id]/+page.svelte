@@ -106,8 +106,8 @@
         </div>
 
         <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-            <p class="text-sm text-slate-400">Comisiones</p>
-            <h2 class="mt-3 text-2xl font-bold">{subject.commissions.length}</h2>
+            <p class="text-sm text-slate-400">Carreras</p>
+            <h2 class="mt-3 text-2xl font-bold">{subject.careerSubjects.length}</h2>
         </div>
     </section>
 
@@ -188,31 +188,6 @@
                             <span class="text-xs text-slate-400">Solo: {req.career.code}</span>
                         {/if}
                     </div>
-                {/each}
-            </div>
-        </section>
-    {/if}
-
-    <!-- Comisiones -->
-    {#if subject.commissions.length > 0}
-        <section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-            <h2 class="mb-4 text-xl font-bold">Comisiones activas</h2>
-            
-            <div class="grid gap-3 md:grid-cols-2">
-                {#each subject.commissions as commission}
-                    <a 
-                        href="/comisiones/{commission.id}"
-                        class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-800/30 p-4 transition hover:border-slate-600"
-                    >
-                        <div>
-                            <p class="font-medium">{commission.name}</p>
-                            <p class="text-sm text-slate-400">
-                                {commission.term.name} {commission.term.year}
-                                • {commission._count.enrollments} inscriptos
-                            </p>
-                        </div>
-                        <span class="text-slate-500">→</span>
-                    </a>
                 {/each}
             </div>
         </section>

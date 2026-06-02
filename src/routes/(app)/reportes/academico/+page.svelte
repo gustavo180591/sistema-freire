@@ -51,8 +51,8 @@
 		</div>
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<p class="text-sm text-slate-400">Comisiones activas</p>
-			<h2 class="mt-3 text-4xl font-bold">{data?.metrics?.activeCommissions ?? 0}</h2>
+			<p class="text-sm text-slate-400">Materias activas</p>
+			<h2 class="mt-3 text-4xl font-bold">{data?.metrics?.activeSubjects ?? 0}</h2>
 		</div>
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">

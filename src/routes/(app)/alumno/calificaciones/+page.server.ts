@@ -16,11 +16,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             career: true,
             grades: {
                 include: {
-                    commission: {
-                        include: {
-                            subject: true
-                        }
-                    }
+                    subject: true
                 },
                 orderBy: {
                     gradedAt: 'desc'
@@ -42,14 +38,12 @@ export const load: PageServerLoad = async ({ locals }) => {
     const gradesBySubject = new Map();
     
     for (const grade of student.grades) {
-        const subjectName = grade.commission.subject?.name || 'Sin materia';
-        const commissionName = grade.commission.name;
-        const key = `${subjectName} - ${commissionName}`;
+        const subjectName = grade.subject?.name || 'Sin materia';
+        const key = subjectName;
         
         if (!gradesBySubject.has(key)) {
             gradesBySubject.set(key, {
                 subject: subjectName,
-                commission: commissionName,
                 grades: [],
                 average: 0
             });

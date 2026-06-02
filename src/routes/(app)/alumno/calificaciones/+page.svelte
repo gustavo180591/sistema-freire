@@ -143,7 +143,6 @@
 					<div class="mb-4 flex items-center justify-between">
 						<div>
 							<h3 class="font-semibold">{subject.subject}</h3>
-							<p class="text-sm text-slate-400">{subject.commission}</p>
 						</div>
 						<div class="text-right">
 							<p class="text-sm text-slate-400">Promedio</p>

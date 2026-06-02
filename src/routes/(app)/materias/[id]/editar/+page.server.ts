@@ -6,9 +6,9 @@ import { requirePermission } from '$lib/server/auth/permissions-granular';
 export const load: PageServerLoad = async ({ params, locals }) => {
     const user = locals.user;
     if (!user) throw redirect(302, '/login');
-    
+
     requirePermission(user, 'SUBJECT', 'edit');
-    
+
     const subject = await prisma.subject.findUnique({
         where: { id: params.id },
         include: {
@@ -25,31 +25,51 @@ export const load: PageServerLoad = async ({ params, locals }) => {
                         select: { id: true, code: true, name: true }
                     }
                 }
+            },
+            teachers: {
+                include: {
+                    teacher: {
+                        include: {
+                            user: {
+                                select: { id: true, firstName: true, lastName: true, email: true }
+                            }
+                        }
+                    }
+                }
             }
         }
     });
-    
+
     if (!subject) {
         throw error(404, 'Materia no encontrada');
     }
-    
+
     const careers = await prisma.career.findMany({
         where: { active: true },
         select: { id: true, code: true, name: true }
     });
-    
+
     const allSubjects = await prisma.subject.findMany({
-        where: { 
+        where: {
             id: { not: params.id },
-            active: true 
+            active: true
         },
         select: { id: true, code: true, name: true, yearLevel: true }
     });
-    
+
+    const teachers = await prisma.teacher.findMany({
+        include: {
+            user: {
+                select: { id: true, firstName: true, lastName: true, email: true }
+            }
+        }
+    });
+
     return {
         subject,
         careers,
-        allSubjects
+        allSubjects,
+        teachers
     };
 };
 
@@ -138,16 +158,16 @@ export const actions: Actions = {
     removeCareer: async ({ request, params, locals }) => {
         const user = locals.user;
         if (!user) throw redirect(302, '/login');
-        
+
         requirePermission(user, 'SUBJECT', 'edit');
-        
+
         const formData = await request.formData();
         const careerId = formData.get('careerId')?.toString();
-        
+
         if (!careerId) {
             return fail(400, { error: 'Carrera requerida' });
         }
-        
+
         try {
             await prisma.careerSubject.deleteMany({
                 where: {
@@ -155,11 +175,67 @@ export const actions: Actions = {
                     subjectId: params.id
                 }
             });
-            
+
             return { success: true };
         } catch (e) {
             console.error(e);
             return fail(500, { error: 'Error al remover carrera' });
+        }
+    },
+
+    addTeacher: async ({ request, params, locals }) => {
+        const user = locals.user;
+        if (!user) throw redirect(302, '/login');
+
+        requirePermission(user, 'SUBJECT', 'edit');
+
+        const formData = await request.formData();
+        const teacherId = formData.get('teacherId')?.toString();
+
+        if (!teacherId) {
+            return fail(400, { error: 'Docente requerido' });
+        }
+
+        try {
+            await prisma.subjectTeacher.create({
+                data: {
+                    subjectId: params.id,
+                    teacherId
+                }
+            });
+
+            return { success: true };
+        } catch (e) {
+            console.error(e);
+            return fail(500, { error: 'Error al agregar docente' });
+        }
+    },
+
+    removeTeacher: async ({ request, params, locals }) => {
+        const user = locals.user;
+        if (!user) throw redirect(302, '/login');
+
+        requirePermission(user, 'SUBJECT', 'edit');
+
+        const formData = await request.formData();
+        const teacherId = formData.get('teacherId')?.toString();
+
+        if (!teacherId) {
+            return fail(400, { error: 'Docente requerido' });
+        }
+
+        try {
+            await prisma.subjectTeacher.deleteMany({
+                where: {
+                    subjectId: params.id,
+                    teacherId
+                }
+            });
+
+            return { success: true };
+        } catch (e) {
+            console.error(e);
+            return fail(500, { error: 'Error al remover docente' });
         }
     }
 };

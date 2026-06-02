@@ -2,10 +2,11 @@
     import { enhance } from '$app/forms';
     
     let { data, form } = $props();
-    
+
     const subject = $derived(data.subject);
     const careers = $derived(data.careers);
     const allSubjects = $derived(data.allSubjects);
+    const teachers = $derived(data.teachers);
     
     // Opciones para selects
     const subjectTypes = [
@@ -99,23 +100,29 @@
     
     <!-- Tabs -->
     <div class="flex gap-2 border-b border-slate-800">
-        <button 
+        <button
             class="px-4 py-3 text-sm font-medium transition {activeTab === 'general' ? 'border-b-2 border-white text-white' : 'text-slate-400 hover:text-slate-300'}"
             onclick={() => activeTab = 'general'}
         >
             Información General
         </button>
-        <button 
+        <button
             class="px-4 py-3 text-sm font-medium transition {activeTab === 'regimen' ? 'border-b-2 border-white text-white' : 'text-slate-400 hover:text-slate-300'}"
             onclick={() => activeTab = 'regimen'}
         >
             Régimen de Correlatividades ({subject.correlatives.length})
         </button>
-        <button 
+        <button
             class="px-4 py-3 text-sm font-medium transition {activeTab === 'careers' ? 'border-b-2 border-white text-white' : 'text-slate-400 hover:text-slate-300'}"
             onclick={() => activeTab = 'careers'}
         >
             Carreras ({subject.careerSubjects.length})
+        </button>
+        <button
+            class="px-4 py-3 text-sm font-medium transition {activeTab === 'teachers' ? 'border-b-2 border-white text-white' : 'text-slate-400 hover:text-slate-300'}"
+            onclick={() => activeTab = 'teachers'}
+        >
+            Docentes ({subject.teachers.length})
         </button>
     </div>
     
@@ -390,6 +397,61 @@
                         class="rounded-xl bg-blue-500 px-6 py-3 text-sm font-medium text-white hover:bg-blue-600 transition"
                     >
                         Agregar
+                    </button>
+                </form>
+            </div>
+        </section>
+    {/if}
+
+    <!-- Tab: Docentes -->
+    {#if activeTab === 'teachers'}
+        <section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+            <h2 class="mb-4 text-xl font-bold">Docentes Asignados</h2>
+
+            <!-- Lista de docentes actuales -->
+            {#if subject.teachers.length > 0}
+                <div class="mb-6 space-y-3">
+                    {#each subject.teachers as st}
+                        <div class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-800/50 p-4">
+                            <div>
+                                <p class="font-medium">{st.teacher.user.firstName} {st.teacher.user.lastName}</p>
+                                <p class="text-sm text-slate-400">{st.teacher.user.email}</p>
+                            </div>
+                            <form method="POST" action="?/removeTeacher" use:enhance class="flex items-center gap-2">
+                                <input type="hidden" name="teacherId" value={st.teacher.id} />
+                                <button
+                                    type="submit"
+                                    class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400 hover:bg-red-500/20"
+                                >
+                                    Eliminar
+                                </button>
+                            </form>
+                        </div>
+                    {/each}
+                </div>
+            {:else}
+                <p class="mb-6 text-slate-400">Esta materia no tiene docentes asignados.</p>
+            {/if}
+
+            <!-- Agregar nuevo docente -->
+            <div class="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+                <h3 class="mb-4 font-medium">Asignar Docente</h3>
+                <form method="POST" action="?/addTeacher" use:enhance class="flex gap-3">
+                    <select
+                        name="teacherId"
+                        class="flex-1 rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
+                        required
+                    >
+                        <option value="">Seleccionar docente...</option>
+                        {#each teachers.filter((t: {id: string}) => !subject.teachers.some((st: {teacher: {id: string}}) => st.teacher.id === t.id)) as teacher}
+                            <option value={teacher.id}>{teacher.user.firstName} {teacher.user.lastName} - {teacher.user.email}</option>
+                        {/each}
+                    </select>
+                    <button
+                        type="submit"
+                        class="rounded-xl bg-blue-500 px-6 py-3 text-sm font-medium text-white hover:bg-blue-600 transition"
+                    >
+                        Asignar
                     </button>
                 </form>
             </div>

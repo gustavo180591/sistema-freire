@@ -12,7 +12,15 @@ export const load: PageServerLoad = async ({ params }) => {
 				}
 			},
 			student: true,
-			teacher: true
+			teacher: {
+				include: {
+					subjects: {
+						include: {
+							subject: true
+						}
+					}
+				}
+			}
 		}
 	});
 
@@ -24,9 +32,18 @@ export const load: PageServerLoad = async ({ params }) => {
 		orderBy: { name: 'asc' }
 	});
 
+	const subjects = await prisma.subject.findMany({
+		where: { active: true },
+		orderBy: [
+			{ yearLevel: 'asc' },
+			{ name: 'asc' }
+		]
+	});
+
 	return {
 		user,
-		roles
+		roles,
+		subjects
 	};
 };
 
@@ -84,6 +101,70 @@ export const actions: Actions = {
 		} catch (e) {
 			console.error(e);
 			return fail(500, { error: 'Error al actualizar roles' });
+		}
+	},
+
+	addSubject: async ({ request, params }) => {
+		const formData = await request.formData();
+		const subjectId = formData.get('subjectId')?.toString();
+
+		if (!subjectId) {
+			return fail(400, { error: 'Materia requerida' });
+		}
+
+		try {
+			// Verificar que el usuario sea docente
+			const teacher = await prisma.teacher.findUnique({
+				where: { userId: params.id }
+			});
+
+			if (!teacher) {
+				return fail(400, { error: 'El usuario no es docente' });
+			}
+
+			await prisma.subjectTeacher.create({
+				data: {
+					subjectId,
+					teacherId: teacher.id
+				}
+			});
+
+			return { success: true };
+		} catch (e) {
+			console.error(e);
+			return fail(500, { error: 'Error al agregar materia' });
+		}
+	},
+
+	removeSubject: async ({ request, params }) => {
+		const formData = await request.formData();
+		const subjectId = formData.get('subjectId')?.toString();
+
+		if (!subjectId) {
+			return fail(400, { error: 'Materia requerida' });
+		}
+
+		try {
+			// Verificar que el usuario sea docente
+			const teacher = await prisma.teacher.findUnique({
+				where: { userId: params.id }
+			});
+
+			if (!teacher) {
+				return fail(400, { error: 'El usuario no es docente' });
+			}
+
+			await prisma.subjectTeacher.deleteMany({
+				where: {
+					subjectId,
+					teacherId: teacher.id
+				}
+			});
+
+			return { success: true };
+		} catch (e) {
+			console.error(e);
+			return fail(500, { error: 'Error al remover materia' });
 		}
 	}
 };

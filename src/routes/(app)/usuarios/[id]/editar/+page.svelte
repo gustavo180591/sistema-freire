@@ -3,6 +3,20 @@
 	import { enhance } from '$app/forms';
 
 	let { data, form }: { data: PageData; form?: any } = $props();
+
+	const isTeacher = $derived(
+		data.user.roles.some((ur) => ur.role.code === 'DOCENTE')
+	);
+
+	const assignedSubjects = $derived(
+		data.user.teacher?.subjects.map((st) => st.subject) ?? []
+	);
+
+	const availableSubjects = $derived(
+		data.subjects.filter(
+			(s) => !assignedSubjects.some((as) => as.id === s.id)
+		)
+	);
 </script>
 
 <svelte:head>
@@ -123,4 +137,63 @@
 			</form>
 		</div>
 	</div>
+
+	{#if isTeacher}
+		<!-- Materias del Docente -->
+		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+			<h2 class="text-xl font-bold mb-4">Materias Asignadas</h2>
+
+			<!-- Lista de materias actuales -->
+			{#if assignedSubjects.length > 0}
+				<div class="mb-6 space-y-3">
+					{#each assignedSubjects as subject}
+						<div class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-800/50 p-4">
+							<div>
+								<p class="font-medium">{subject.name}</p>
+								<p class="text-sm text-slate-400">{subject.code} - Año {subject.yearLevel}</p>
+							</div>
+							<form method="POST" action="?/removeSubject" use:enhance class="flex items-center gap-2">
+								<input type="hidden" name="subjectId" value={subject.id} />
+								<button
+									type="submit"
+									class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400 hover:bg-red-500/20"
+								>
+									Eliminar
+								</button>
+							</form>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<p class="mb-6 text-slate-400">Este docente no tiene materias asignadas.</p>
+			{/if}
+
+			<!-- Agregar nueva materia -->
+			{#if availableSubjects.length > 0}
+				<div class="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+					<h3 class="mb-4 font-medium">Asignar Materia</h3>
+					<form method="POST" action="?/addSubject" use:enhance class="flex gap-3">
+						<select
+							name="subjectId"
+							class="flex-1 rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
+							required
+						>
+							<option value="">Seleccionar materia...</option>
+							{#each availableSubjects as subject}
+								<option value={subject.id}>{subject.code} - {subject.name} (Año {subject.yearLevel})</option>
+							{/each}
+						</select>
+						<button
+							type="submit"
+							class="rounded-xl bg-blue-500 px-6 py-3 text-sm font-medium text-white hover:bg-blue-600 transition"
+						>
+							Asignar
+						</button>
+					</form>
+				</div>
+			{:else}
+				<p class="text-slate-400">No hay materias disponibles para asignar.</p>
+			{/if}
+		</div>
+	{/if}
 </div>

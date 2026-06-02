@@ -25,11 +25,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 		]
 	});
 
-	// Obtener comisiones
-	const commissions = await prisma.commission.findMany({
+	// Obtener materias
+	const subjects = await prisma.subject.findMany({
 		include: {
-			subject: true,
-			term: true
+			careerSubjects: {
+				include: {
+					career: true
+				}
+			}
 		},
 		orderBy: { name: 'asc' }
 	});
@@ -46,11 +49,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 					}
 				}
 			},
-			commission: {
-				include: {
-					subject: true
-				}
-			}
+			subject: true
 		},
 		orderBy: { classDate: 'desc' },
 		take: 10
@@ -65,12 +64,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 			career: s.career.name,
 			currentYear: s.currentYear
 		})),
-		commissions,
+		subjects: subjects.map(s => ({
+			id: s.id,
+			code: s.code,
+			name: s.name,
+			yearLevel: s.yearLevel,
+			careers: s.careerSubjects.map(cs => cs.career.name)
+		})),
 		recentAttendance: recentAttendance.map(r => ({
 			id: r.id,
 			date: r.classDate,
-			commission: r.commission.name,
-			subject: r.commission.subject.name,
+			subject: r.subject.name,
 			totalStudents: r.entries.length,
 			presentStudents: r.entries.filter((e: any) => e.present).length
 		}))
@@ -82,28 +86,27 @@ export const actions: Actions = {
 		requireRole(locals.user, ['PRECEPTOR']);
 
 		const data = await request.formData();
-		const commissionId = data.get('commissionId')?.toString();
+		const subjectId = data.get('subjectId')?.toString();
 		const date = data.get('date')?.toString();
 		const attendanceData = data.get('attendanceData')?.toString();
 
-		if (!commissionId || !date || !attendanceData) {
+		if (!subjectId || !date || !attendanceData) {
 			return { error: 'Por favor completá todos los campos requeridos' };
 		}
 
 		try {
 			const attendance = JSON.parse(attendanceData) as Array<{ studentId: string; present: boolean; notes?: string }>;
 
-			// Obtener datos de la comisión para auditoría
-			const commission = await prisma.commission.findUnique({
-				where: { id: commissionId },
-				include: { subject: true }
+			// Obtener datos de la materia para auditoría
+			const subject = await prisma.subject.findUnique({
+				where: { id: subjectId }
 			});
 
 			await prisma.$transaction(async (tx) => {
 				// Crear registro de asistencia
 				const attendanceRecord = await tx.attendanceRecord.create({
 					data: {
-						commissionId,
+						subjectId,
 						classDate: new Date(date),
 						createdByUserId: locals.user!.id
 					}
@@ -127,8 +130,8 @@ export const actions: Actions = {
 				userId: locals.user!.id,
 				action: AuditAction.CREATE,
 				entityType: 'ATTENDANCE',
-				entityId: commissionId,
-				description: `Registro de asistencia para ${commission?.subject.name} (${commission?.name}) el ${date} - ${attendance.length} estudiantes`
+				entityId: subjectId,
+				description: `Registro de asistencia para ${subject?.name} el ${date} - ${attendance.length} estudiantes`
 			});
 
 			return { success: 'Asistencia registrada exitosamente' };

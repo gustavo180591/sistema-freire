@@ -4,7 +4,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let selectedCommission = $state<string | null>(null);
+	let selectedSubject = $state<string | null>(null);
 	let searchQuery = $state('');
 
 	let filteredStudents = $derived.by(() => {
@@ -25,11 +25,11 @@
 			<h1 class="text-3xl font-bold text-white mb-2">
 				Bienvenido, Prof. {data.teacher.lastName} {data.teacher.firstName}
 			</h1>
-			{#if data.commissions.length > 0}
+			{#if data.subjects.length > 0}
 				<p class="text-slate-400">
-					Docente de <span class="font-semibold text-white">{data.commissions[0].subject}</span>
-					{#if data.commissions.length > 1}
-						<span class="text-slate-500"> y {data.commissions.length - 1} más</span>
+					Docente de <span class="font-semibold text-white">{data.subjects[0].name}</span>
+					{#if data.subjects.length > 1}
+						<span class="text-slate-500"> y {data.subjects.length - 1} más</span>
 					{/if}
 				</p>
 			{:else}
@@ -43,7 +43,7 @@
 				<div class="flex items-center justify-between">
 					<div>
 						<p class="text-slate-400 text-sm">Materias Asignadas</p>
-						<p class="text-3xl font-bold text-white mt-1">{data.commissions.length}</p>
+						<p class="text-3xl font-bold text-white mt-1">{data.subjects.length}</p>
 					</div>
 					<div class="h-12 w-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
 						<svg class="h-6 w-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -193,25 +193,19 @@
 				<table class="w-full">
 					<thead class="bg-slate-800">
 						<tr>
+							<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Código</th>
 							<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Materia</th>
-							<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Comisión</th>
-							<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Ciclo</th>
-							<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Estado</th>
+							<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Año</th>
+							<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Carreras</th>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-slate-800">
-						{#each data.commissions as commission}
+						{#each data.subjects as subject}
 							<tr class="hover:bg-slate-800/50 transition-colors">
-								<td class="px-6 py-4 whitespace-nowrap text-sm text-white">{commission.subject}</td>
-								<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{commission.name}</td>
-								<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{commission.term}</td>
-								<td class="px-6 py-4 whitespace-nowrap">
-									{#if commission.active}
-										<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-500/20 text-green-400">Activa</span>
-									{:else}
-										<span class="px-2 py-1 text-xs font-semibold rounded-full bg-slate-500/20 text-slate-400">Inactiva</span>
-									{/if}
-								</td>
+								<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{subject.code}</td>
+								<td class="px-6 py-4 whitespace-nowrap text-sm text-white">{subject.name}</td>
+								<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{subject.yearLevel}°</td>
+								<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{subject.careers.join(', ')}</td>
 							</tr>
 						{/each}
 					</tbody>
@@ -294,7 +288,6 @@
 						<tr>
 							<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Fecha</th>
 							<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Materia</th>
-							<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Comisión</th>
 							<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Presentes</th>
 							<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Total</th>
 						</tr>
@@ -304,7 +297,6 @@
 							<tr class="hover:bg-slate-800/50 transition-colors">
 								<td class="px-6 py-4 whitespace-nowrap text-sm text-white">{new Date(attendance.date).toLocaleDateString()}</td>
 								<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{attendance.subject}</td>
-								<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{attendance.commission}</td>
 								<td class="px-6 py-4 whitespace-nowrap text-sm text-green-400">{attendance.presentStudents}</td>
 								<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{attendance.totalStudents}</td>
 							</tr>

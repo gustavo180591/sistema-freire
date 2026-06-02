@@ -12,14 +12,22 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	// Obtener el docente asociado al usuario
 	const teacher = await prisma.teacher.findUnique({
-		where: { userId: locals.user.id },
+		where: { userId: locals.user.id }
+	});
+
+	if (!teacher) {
+		throw redirect(303, '/dashboard');
+	}
+
+	// Obtener las materias asignadas al docente
+	const subjectTeachers = await prisma.subjectTeacher.findMany({
+		where: { teacherId: teacher.id },
 		include: {
-			commissions: {
+			subject: {
 				include: {
-					commission: {
+					careerSubjects: {
 						include: {
-							subject: true,
-							term: true
+							career: true
 						}
 					}
 				}
@@ -27,23 +35,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	if (!teacher) {
-		throw redirect(303, '/dashboard');
-	}
+	const subjects = subjectTeachers.map(st => st.subject);
 
-	// Obtener las comisiones asignadas al docente
-	const commissions = teacher.commissions.map(ct => ct.commission);
-
-	// Obtener estudiantes de las comisiones del docente
+	// Obtener estudiantes de las carreras de las materias del docente
+	const careerIds = subjects.flatMap(s => s.careerSubjects.map(cs => cs.career.id));
 	const students = await prisma.student.findMany({
 		where: {
 			status: 'ACTIVE',
-			enrollments: {
-				some: {
-					commissionId: {
-						in: commissions.map(c => c.id)
-					}
-				}
+			careerId: {
+				in: careerIds
 			}
 		},
 		include: {
@@ -60,21 +60,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const recentGrades = await prisma.grade.findMany({
 		where: {
 			createdByUserId: locals.user.id,
-			commissionId: {
-				in: commissions.map(c => c.id)
+			subjectId: {
+				in: subjects.map(s => s.id)
 			}
 		},
 		include: {
-			student: {
-				include: {
-					user: true
-				}
-			},
-			commission: {
-				include: {
-					subject: true
-				}
-			}
+			subject: true
 		},
 		orderBy: { gradedAt: 'desc' },
 		take: 10
@@ -84,16 +75,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const recentAttendance = await prisma.attendanceRecord.findMany({
 		where: {
 			createdByUserId: locals.user.id,
-			commissionId: {
-				in: commissions.map(c => c.id)
+			subjectId: {
+				in: subjects.map(s => s.id)
 			}
 		},
 		include: {
-			commission: {
-				include: {
-					subject: true
-				}
-			},
+			subject: true,
 			entries: true
 		},
 		orderBy: { classDate: 'desc' },
@@ -107,12 +94,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 			lastName: teacher.lastName,
 			dni: teacher.dni
 		},
-		commissions: commissions.map(c => ({
-			id: c.id,
-			name: c.name,
-			subject: c.subject.name,
-			term: c.term.name,
-			active: c.active
+		subjects: subjects.map(s => ({
+			id: s.id,
+			code: s.code,
+			name: s.name,
+			yearLevel: s.yearLevel,
+			careers: s.careerSubjects.map(cs => cs.career.name)
 		})),
 		students: students.map(s => ({
 			id: s.id,
@@ -124,8 +111,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		})),
 		recentGrades: recentGrades.map(g => ({
 			id: g.id,
-			studentName: `${g.student.lastName}, ${g.student.firstName}`,
-			subject: g.commission.subject.name,
+			studentId: g.studentId,
+			subject: g.subject.name,
 			value: g.value,
 			gradeType: g.gradeType,
 			gradedAt: g.gradedAt
@@ -133,8 +120,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		recentAttendance: recentAttendance.map(a => ({
 			id: a.id,
 			date: a.classDate,
-			subject: a.commission.subject.name,
-			commission: a.commission.name,
+			subject: a.subject.name,
 			totalStudents: a.entries.length,
 			presentStudents: a.entries.filter((e: any) => e.present).length
 		}))

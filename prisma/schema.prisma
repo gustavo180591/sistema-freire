@@ -130,29 +130,28 @@ model Student {
   currentYear       Int                    @default(1)
   isBecado          Boolean                @default(false)
   isRecursante      Boolean                @default(false)
-  
+
   // Datos personales adicionales
   birthDate         DateTime?
   bloodType         String?
-  
+
   // Contactos
   phone             String?
   familyContactName    String?
   familyContactPhone   String?
   familyRelationship   String?
-  
+
   // Domicilio
   address           String?
   locality          String?
   postalCode        String?
-  
+
   // Educativos
   highSchool        String?
   highSchoolYear    Int?
   instituteYear     Int?
-  
+
   attendanceEntries AttendanceEntry[]
-  enrollments       Enrollment[]
   grades            Grade[]
   payments          Payment[]
   scholarships      Scholarship[]
@@ -175,7 +174,7 @@ model Teacher {
   lastName    String
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
-  commissions CommissionTeacher[]
+  subjects    SubjectTeacher[]
   payslips    Payslip[]
   user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -187,21 +186,21 @@ model Subject {
   id               String              @id @default(cuid())
   code             String              @unique
   name             String
-  
+
   // Clasificación curricular
   subjectType      SubjectType         // COMMON, CAREER_SPECIFIC, EDI
   trainingField    TrainingField       // GENERAL, ESPECIFICA, PRACTICA, EDI
   yearLevel        Int                 // Año académico (1-4)
-  
+
   // Modalidad de acreditación
   accreditationMode AccreditationMode @default(EXAMEN_FINAL)
-  
+
   // Metadatos académicos
   hoursPerWeek     Int?                // Horas cátedra semanales
   isElective       Boolean             @default(false)
   isRemedial       Boolean             @default(false) // Para recursantes
   description      String?
-  
+
   // Control
   active           Boolean             @default(true)
   createdAt        DateTime            @default(now())
@@ -209,10 +208,14 @@ model Subject {
 
   // Relaciones
   careerSubjects   CareerSubject[]     // Carreras donde se dicta
-  commissions      Commission[]
   planSubjects     PlanSubject[]
   statuses         StudentSubjectStatus[]
-  
+  teachers         SubjectTeacher[]    // Docentes asignados a la materia
+  attendanceRecords AttendanceRecord[]
+  grades           Grade[]
+  materials        ClassMaterial[]
+  evaluations      Evaluation[]
+
   // Correlatividades
   correlatives     SubjectCorrelative[] @relation("subject_correlatives")
   requiredBy       SubjectCorrelative[] @relation("subject_required")
@@ -223,64 +226,14 @@ model Subject {
   @@map("subjects")
 }
 
-model AcademicTerm {
-  id          String       @id @default(cuid())
-  name        String
-  year        Int
-  startDate   DateTime
-  endDate     DateTime
-  active      Boolean      @default(true)
-  commissions Commission[]
+model SubjectTeacher {
+  subjectId String
+  teacherId String
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
-  @@unique([year, name])
-  @@map("academic_terms")
-}
-
-model Commission {
-  id             String              @id @default(cuid())
-  subjectId      String
-  termId         String
-  name           String
-  capacity       Int?
-  active         Boolean             @default(true)
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  attendanceDays AttendanceRecord[]
-  teachers       CommissionTeacher[]
-  subject        Subject             @relation(fields: [subjectId], references: [id])
-  term           AcademicTerm        @relation(fields: [termId], references: [id])
-  enrollments    Enrollment[]
-  grades         Grade[]
-  materials      ClassMaterial[]
-  evaluations    Evaluation[]
-
-  @@unique([subjectId, termId, name])
-  @@index([termId])
-  @@map("commissions")
-}
-
-model CommissionTeacher {
-  commissionId String
-  teacherId    String
-  commission   Commission @relation(fields: [commissionId], references: [id], onDelete: Cascade)
-  teacher      Teacher    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-
-  @@id([commissionId, teacherId])
-  @@map("commission_teachers")
-}
-
-model Enrollment {
-  id           String           @id @default(cuid())
-  studentId    String
-  commissionId String
-  status       EnrollmentStatus @default(PENDING)
-  enrolledAt   DateTime         @default(now())
-  commission   Commission       @relation(fields: [commissionId], references: [id])
-  student      Student          @relation(fields: [studentId], references: [id])
-
-  @@unique([studentId, commissionId])
-  @@index([commissionId, status])
-  @@map("enrollments")
+  @@id([subjectId, teacherId])
+  @@map("subject_teachers")
 }
 
 model SubjectCorrelative {
@@ -330,14 +283,14 @@ model CareerSubject {
 
 model AttendanceRecord {
   id              String            @id @default(cuid())
-  commissionId    String
+  subjectId       String
   classDate       DateTime
   createdByUserId String
   createdAt       DateTime          @default(now())
   entries         AttendanceEntry[]
-  commission      Commission        @relation(fields: [commissionId], references: [id])
+  subject         Subject           @relation(fields: [subjectId], references: [id])
 
-  @@unique([commissionId, classDate])
+  @@unique([subjectId, classDate])
   @@map("attendance_records")
 }
 
@@ -357,16 +310,16 @@ model AttendanceEntry {
 
 model Grade {
   id              String     @id @default(cuid())
-  commissionId    String
+  subjectId       String
   studentId       String
   value           Decimal    @db.Decimal(5, 2)
   gradeType       String
   gradedAt        DateTime   @default(now())
   createdByUserId String
-  commission      Commission @relation(fields: [commissionId], references: [id])
+  subject         Subject    @relation(fields: [subjectId], references: [id])
   student         Student    @relation(fields: [studentId], references: [id])
 
-  @@index([studentId, commissionId])
+  @@index([studentId, subjectId])
   @@map("grades")
 }
 
@@ -701,39 +654,39 @@ model StudentFollowUp {
 }
 
 model ClassMaterial {
-  id           String     @id @default(cuid())
-  commissionId String
-  title        String
-  description  String?
-  fileUrl      String
-  fileSize     Int?       // Tamaño en bytes
-  mimeType     String?    // Tipo MIME
-  uploadedBy   String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  commission   Commission @relation(fields: [commissionId], references: [id], onDelete: Cascade)
-  uploader     User       @relation("MaterialUploader", fields: [uploadedBy], references: [id])
+  id         String     @id @default(cuid())
+  subjectId  String
+  title      String
+  description String?
+  fileUrl    String
+  fileSize   Int?       // Tamaño en bytes
+  mimeType   String?    // Tipo MIME
+  uploadedBy String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  subject    Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  uploader   User       @relation("MaterialUploader", fields: [uploadedBy], references: [id])
 
-  @@index([commissionId])
+  @@index([subjectId])
   @@index([uploadedBy])
   @@map("class_materials")
 }
 
 model Evaluation {
-  id           String     @id @default(cuid())
-  commissionId String
-  title        String
-  description  String?
-  type         String     // PARCIAL, FINAL, RECUPERATORIO, TRABAJO_PRACTICO, EXAMEN
-  date         DateTime?
-  maxScore     Float      @default(10)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  commission   Commission @relation(fields: [commissionId], references: [id], onDelete: Cascade)
-  createdBy    String
-  creator      User       @relation("EvaluationCreator", fields: [createdBy], references: [id])
+  id         String     @id @default(cuid())
+  subjectId  String
+  title      String
+  description String?
+  type       String     // PARCIAL, FINAL, RECUPERATORIO, TRABAJO_PRACTICO, EXAMEN
+  date       DateTime?
+  maxScore   Float      @default(10)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  subject    Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  createdBy  String
+  creator    User       @relation("EvaluationCreator", fields: [createdBy], references: [id])
 
-  @@index([commissionId])
+  @@index([subjectId])
   @@index([createdBy])
   @@map("evaluations")
 }

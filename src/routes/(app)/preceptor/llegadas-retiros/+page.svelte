@@ -4,7 +4,7 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	let selectedStudent = $state('');
-	let selectedCommission = $state('');
+	let selectedSubject = $state('');
 	let selectedDate = $state(new Date().toISOString().split('T')[0]);
 	let selectedType = $state('LLEGADA_TARDE');
 	let selectedTime = $state('');
@@ -30,7 +30,7 @@
 		use:enhance={() => {
 			if (form?.success) {
 				selectedStudent = '';
-				selectedCommission = '';
+				selectedSubject = '';
 				selectedTime = '';
 				notes = '';
 			}
@@ -68,18 +68,18 @@
 			</div>
 
 			<div>
-				<label for="commissionId" class="mb-2 block text-sm font-medium text-slate-300">Comisión</label>
+				<label for="subjectId" class="mb-2 block text-sm font-medium text-slate-300">Materia</label>
 				<select
-					id="commissionId"
-					name="commissionId"
-					bind:value={selectedCommission}
+					id="subjectId"
+					name="subjectId"
+					bind:value={selectedSubject}
 					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 					required
 				>
-					<option value="">Seleccionar comisión</option>
-					{#each data.commissions as commission}
-						<option value={commission.id}>
-							{commission.name} - {commission.subject.name}
+					<option value="">Seleccionar materia</option>
+					{#each data.subjects as subject}
+						<option value={subject.id}>
+							{subject.code} - {subject.name} ({subject.yearLevel}° Año)
 						</option>
 					{/each}
 				</select>
@@ -158,7 +158,7 @@
 						<div class="flex-1">
 							<p class="font-semibold text-white">{record.studentName}</p>
 							<p class="text-sm text-slate-400">DNI: {record.studentDni}</p>
-							<p class="text-sm text-slate-400">{record.commission} - {record.subject}</p>
+							<p class="text-sm text-slate-400">{record.subject}</p>
 							<p class="text-xs text-slate-500 mt-1">
 								Fecha: {new Date(record.date).toLocaleDateString('es-AR')}
 							</p>

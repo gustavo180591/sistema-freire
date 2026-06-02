@@ -4,7 +4,7 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	let selectedStudent = $state('');
-	let selectedCommission = $state('');
+	let selectedSubject = $state('');
 	let grade = $state('');
 	let evaluationType = $state('PARCIAL');
 	let notes = $state('');
@@ -29,7 +29,7 @@
 		use:enhance={() => {
 			if (form?.success) {
 				selectedStudent = '';
-				selectedCommission = '';
+				selectedSubject = '';
 				grade = '';
 				notes = '';
 			}
@@ -67,18 +67,18 @@
 			</div>
 
 			<div>
-				<label for="commissionId" class="mb-2 block text-sm font-medium text-slate-300">Comisión/Materia</label>
+				<label for="subjectId" class="mb-2 block text-sm font-medium text-slate-300">Materia</label>
 				<select
-					id="commissionId"
-					name="commissionId"
-					bind:value={selectedCommission}
+					id="subjectId"
+					name="subjectId"
+					bind:value={selectedSubject}
 					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 					required
 				>
-					<option value="">Seleccionar comisión</option>
-					{#each data.commissions as commission}
-						<option value={commission.id}>
-							{commission.name} - {commission.subject.name}
+					<option value="">Seleccionar materia</option>
+					{#each data.subjects as subject}
+						<option value={subject.id}>
+							{subject.code} - {subject.name} ({subject.yearLevel}° Año)
 						</option>
 					{/each}
 				</select>

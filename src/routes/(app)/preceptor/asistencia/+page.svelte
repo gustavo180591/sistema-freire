@@ -3,13 +3,13 @@
 	import { enhance } from '$app/forms';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
-	let selectedCommission = $state('');
+	let selectedSubject = $state('');
 	let selectedDate = $state(new Date().toISOString().split('T')[0]);
 	let attendanceData = $state<Array<{ studentId: string; present: boolean; notes?: string }>>([]);
 
-	// Inicializar datos de asistencia cuando se selecciona una comisión
+	// Inicializar datos de asistencia cuando se selecciona una materia
 	$effect(() => {
-		if (selectedCommission) {
+		if (selectedSubject) {
 			attendanceData = data.students.map(s => ({
 				studentId: s.id,
 				present: true,
@@ -59,7 +59,7 @@
 		class="space-y-6"
 		use:enhance={() => {
 			if (form?.success) {
-				selectedCommission = '';
+				selectedSubject = '';
 				attendanceData = [];
 			}
 		}}
@@ -76,22 +76,22 @@
 			</div>
 		{/if}
 
-		<!-- Selección de Comisión y Fecha -->
+		<!-- Selección de Materia y Fecha -->
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
 			<div class="grid gap-6 md:grid-cols-2">
 				<div>
-					<label for="commissionId" class="mb-2 block text-sm font-medium text-slate-300">Comisión</label>
+					<label for="subjectId" class="mb-2 block text-sm font-medium text-slate-300">Materia</label>
 					<select
-						id="commissionId"
-						name="commissionId"
-						bind:value={selectedCommission}
+						id="subjectId"
+						name="subjectId"
+						bind:value={selectedSubject}
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 						required
 					>
-						<option value="">Seleccionar comisión</option>
-						{#each data.commissions as commission}
-							<option value={commission.id}>
-								{commission.name} - {commission.subject.name}
+						<option value="">Seleccionar materia</option>
+						{#each data.subjects as subject}
+							<option value={subject.id}>
+								{subject.code} - {subject.name} ({subject.yearLevel}° Año)
 							</option>
 						{/each}
 					</select>
@@ -110,7 +110,7 @@
 				</div>
 			</div>
 
-			{#if selectedCommission}
+			{#if selectedSubject}
 				<div class="mt-4 flex gap-4">
 					<button
 						type="button"
@@ -131,7 +131,7 @@
 		</div>
 
 		<!-- Lista de Estudiantes -->
-		{#if selectedCommission}
+		{#if selectedSubject}
 			<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
 				<h2 class="mb-4 text-xl font-semibold">Estudiantes</h2>
 				<div class="space-y-4">
@@ -198,8 +198,7 @@
 			{#each data.recentAttendance as record}
 				<div class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-4">
 					<div>
-						<p class="font-semibold text-white">{record.commission}</p>
-						<p class="text-sm text-slate-400">{record.subject}</p>
+						<p class="font-semibold text-white">{record.subject}</p>
 						<p class="text-xs text-slate-500">{new Date(record.date).toLocaleDateString('es-AR')}</p>
 					</div>
 					<div class="text-right">

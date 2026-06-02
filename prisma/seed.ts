@@ -1,10 +1,10 @@
 import { PrismaClient, RoleCode } from '@prisma/client';
-import { createHash } from 'crypto';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-function hashPassword(password: string): string {
-  return createHash('sha256').update(password).digest('hex');
+async function hashPassword(password: string): Promise<string> {
+  return await bcrypt.hash(password, 10);
 }
 
 async function main() {
@@ -38,7 +38,7 @@ async function main() {
 			where: { email: 'gustavo.faccendini@gmail.com' }
 		});
 		if (!existingUser) {
-			const passwordHash = hashPassword('$Gustavo1805');
+			const passwordHash = await hashPassword('$Gustavo1805');
 			await prisma.user.create({
 				data: {
 					email: 'gustavo.faccendini@gmail.com',

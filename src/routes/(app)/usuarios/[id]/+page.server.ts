@@ -12,7 +12,15 @@ export const load: PageServerLoad = async ({ params }) => {
 				}
 			},
 			student: true,
-			teacher: true
+			teacher: {
+				include: {
+					subjects: {
+						include: {
+							subject: true
+						}
+					}
+				}
+			}
 		}
 	});
 

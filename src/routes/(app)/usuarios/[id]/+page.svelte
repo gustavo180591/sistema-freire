@@ -2,6 +2,10 @@
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
+
+	const isTeacher = $derived(
+		data.user.roles.some((ur) => ur.role.code === 'DOCENTE')
+	);
 </script>
 
 <svelte:head>
@@ -94,6 +98,34 @@
 					<p class="font-medium">{data.user.teacher.dni}</p>
 				</div>
 			</div>
+		</div>
+	{/if}
+
+	{#if isTeacher && data.user.teacher}
+		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+			<h2 class="text-xl font-bold mb-4">Materias Asignadas</h2>
+			{#if data.user.teacher.subjects.length > 0}
+				<div class="space-y-3">
+					{#each data.user.teacher.subjects as subjectTeacher}
+						<div class="rounded-xl border border-slate-800 bg-slate-800/50 p-4">
+							<div class="flex items-center justify-between">
+								<div>
+									<p class="font-medium">{subjectTeacher.subject.name}</p>
+									<p class="text-sm text-slate-400">{subjectTeacher.subject.code} - Año {subjectTeacher.subject.yearLevel}</p>
+								</div>
+								<a
+									href="/materias/{subjectTeacher.subject.id}"
+									class="text-blue-400 hover:text-blue-300 text-sm"
+								>
+									Ver materia
+								</a>
+							</div>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<p class="text-slate-400">Este docente no tiene materias asignadas.</p>
+			{/if}
 		</div>
 	{/if}
 </div>

@@ -38,8 +38,8 @@
 					</svg>
 				</div>
 				<div>
-					<p class="text-sm text-slate-400">Materias cursadas</p>
-					<p class="text-2xl font-bold">{data.academic.completedSubjects.length}</p>
+					<p class="text-sm text-slate-400">Materias cursando</p>
+					<p class="text-2xl font-bold">{data.academic.currentSubjects.length}</p>
 				</div>
 			</div>
 			<p class="mt-4 text-sm text-slate-400 group-hover:text-slate-300">Ver historial académico →</p>

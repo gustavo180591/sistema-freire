@@ -4,17 +4,17 @@
 	let { data }: { data: PageData } = $props();
 
 	let selectedStudent = $state<string>('');
-	let selectedCommission = $state<string>('');
+	let selectedSubject = $state<string>('');
 	let grade = $state<string>('');
 	let evaluationType = $state<string>('PARCIAL');
 	let notes = $state<string>('');
 	let formError = $state<string>('');
 	let formSuccess = $state<string>('');
 
-	// Set default commission when data is available
+	// Set default subject when data is available
 	$effect(() => {
-		if (data.commissions.length > 0 && !selectedCommission) {
-			selectedCommission = data.commissions[0].id;
+		if (data.subjects.length > 0 && !selectedSubject) {
+			selectedSubject = data.subjects[0].id;
 		}
 	});
 
@@ -22,7 +22,7 @@
 		formError = '';
 		formSuccess = '';
 
-		if (!selectedStudent || !selectedCommission || !grade) {
+		if (!selectedStudent || !selectedSubject || !grade) {
 			formError = 'Por favor completá todos los campos requeridos';
 			return;
 		}
@@ -72,16 +72,16 @@
 				<form method="POST" class="space-y-6">
 					<div class="grid gap-6 md:grid-cols-2">
 						<div>
-							<label for="commission" class="mb-2 block text-sm font-medium text-slate-300">Comisión</label>
+							<label for="subject" class="mb-2 block text-sm font-medium text-slate-300">Materia</label>
 							<select
-								id="commission"
-								name="commissionId"
-								bind:value={selectedCommission}
+								id="subject"
+								name="subjectId"
+								bind:value={selectedSubject}
 								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 							>
-								{#each data.commissions as commission}
-									<option value={commission.id}>
-										{commission.subject} - {commission.name}
+								{#each data.subjects as subject}
+									<option value={subject.id}>
+										{subject.code} - {subject.name} ({subject.careers.join(', ')})
 									</option>
 								{/each}
 							</select>

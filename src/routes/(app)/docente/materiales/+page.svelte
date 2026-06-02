@@ -3,7 +3,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let selectedCommission = $state<string>('');
+	let selectedSubject = $state<string>('');
 	let title = $state<string>('');
 	let description = $state<string>('');
 	let file = $state<File | null>(null);
@@ -11,7 +11,7 @@
 	let formSuccess = $state<string>('');
 
 	function resetForm() {
-		selectedCommission = '';
+		selectedSubject = '';
 		title = '';
 		description = '';
 		file = null;
@@ -66,17 +66,17 @@
 
 				<form method="POST" class="space-y-6" enctype="multipart/form-data">
 					<div>
-						<label for="commission" class="mb-2 block text-sm font-medium text-slate-300">Comisión</label>
+						<label for="subject" class="mb-2 block text-sm font-medium text-slate-300">Materia</label>
 						<select
-							id="commission"
-							name="commissionId"
-							bind:value={selectedCommission}
+							id="subject"
+							name="subjectId"
+							bind:value={selectedSubject}
 							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 						>
-							<option value="">Seleccionar comisión...</option>
-							{#each data.commissions as commission}
-								<option value={commission.id}>
-									{commission.subject} - {commission.name}
+							<option value="">Seleccionar materia...</option>
+							{#each data.subjects as subject}
+								<option value={subject.id}>
+									{subject.code} - {subject.name} ({subject.careers.join(', ')})
 								</option>
 							{/each}
 						</select>
@@ -150,7 +150,7 @@
 						<div class="mb-4 flex items-start justify-between">
 							<div class="flex-1">
 								<h3 class="font-semibold text-white">{material.title}</h3>
-								<p class="text-sm text-slate-400">{material.subject} - {material.commission}</p>
+								<p class="text-sm text-slate-400">{material.subject}</p>
 								{#if material.description}
 									<p class="mt-2 text-slate-300">{material.description}</p>
 								{/if}

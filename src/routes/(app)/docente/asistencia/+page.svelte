@@ -3,17 +3,17 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let selectedCommission = $state<string>('');
+	let selectedSubject = $state<string>('');
 	let selectedDate = $state<string>(new Date().toISOString().split('T')[0]);
 	let attendanceMap = $state<Map<string, boolean>>(new Map());
 	let notesMap = $state<Map<string, string>>(new Map());
 	let formError = $state<string>('');
 	let formSuccess = $state<string>('');
 
-	// Set default commission when data is available
+	// Set default subject when data is available
 	$effect(() => {
-		if (data.commissions.length > 0 && !selectedCommission) {
-			selectedCommission = data.commissions[0].id;
+		if (data.subjects.length > 0 && !selectedSubject) {
+			selectedSubject = data.subjects[0].id;
 		}
 	});
 
@@ -90,16 +90,16 @@
 				<form method="POST" class="space-y-6">
 					<div class="grid gap-6 md:grid-cols-2">
 						<div>
-							<label for="commission" class="mb-2 block text-sm font-medium text-slate-300">Comisión</label>
+							<label for="subject" class="mb-2 block text-sm font-medium text-slate-300">Materia</label>
 							<select
-								id="commission"
-								name="commissionId"
-								bind:value={selectedCommission}
+								id="subject"
+								name="subjectId"
+								bind:value={selectedSubject}
 								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 							>
-								{#each data.commissions as commission}
-									<option value={commission.id}>
-										{commission.subject} - {commission.name}
+								{#each data.subjects as subject}
+									<option value={subject.id}>
+										{subject.code} - {subject.name} ({subject.careers.join(', ')})
 									</option>
 								{/each}
 							</select>
@@ -194,7 +194,7 @@
 					<div class="bg-slate-900 rounded-2xl border border-slate-800 p-6">
 						<div class="mb-4 flex items-center justify-between">
 							<div>
-								<p class="font-semibold text-white">{attendance.subject} - {attendance.commission}</p>
+								<p class="font-semibold text-white">{attendance.subject}</p>
 								<p class="text-sm text-slate-400">{new Date(attendance.date).toLocaleDateString()}</p>
 							</div>
 							<div class="flex gap-4">

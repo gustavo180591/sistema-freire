@@ -1,0 +1,99 @@
+<script lang="ts">
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
+</script>
+
+<svelte:head>
+	<title>Usuario {data.user.firstName} {data.user.lastName} | Sistema Freire</title>
+</svelte:head>
+
+<div class="mx-auto max-w-7xl space-y-8">
+	<div class="flex items-center justify-between">
+		<div>
+			<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Usuario</p>
+			<h1 class="text-3xl font-bold">{data.user.firstName} {data.user.lastName}</h1>
+			<p class="mt-2 text-sm text-slate-400">{data.user.email}</p>
+		</div>
+		<a
+			href="/usuarios/{data.user.id}/editar"
+			class="rounded-2xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.02]"
+		>
+			Editar Usuario
+		</a>
+	</div>
+
+	<div class="grid gap-6 md:grid-cols-2">
+		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+			<h2 class="text-xl font-bold mb-4">Información Personal</h2>
+			<div class="space-y-3">
+				<div>
+					<p class="text-sm text-slate-400">Nombre</p>
+					<p class="font-medium">{data.user.firstName}</p>
+				</div>
+				<div>
+					<p class="text-sm text-slate-400">Apellido</p>
+					<p class="font-medium">{data.user.lastName}</p>
+				</div>
+				<div>
+					<p class="text-sm text-slate-400">Email</p>
+					<p class="font-medium">{data.user.email}</p>
+				</div>
+				<div>
+					<p class="text-sm text-slate-400">Estado</p>
+					<p class="font-medium {data.user.status === 'ACTIVE' ? 'text-green-400' : 'text-red-400'}">
+						{data.user.status === 'ACTIVE' ? 'Activo' : 'Inactivo'}
+					</p>
+				</div>
+			</div>
+		</div>
+
+		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+			<h2 class="text-xl font-bold mb-4">Roles</h2>
+			<div class="space-y-2">
+				{#if data.user.roles.length > 0}
+					{#each data.user.roles as userRole}
+						<div class="rounded-xl bg-slate-800/50 px-4 py-2">
+							<p class="font-medium">{userRole.role.name}</p>
+							<p class="text-sm text-slate-400">{userRole.role.code}</p>
+						</div>
+					{/each}
+				{:else}
+					<p class="text-slate-400">Sin roles asignados</p>
+				{/if}
+			</div>
+		</div>
+	</div>
+
+	{#if data.user.student}
+		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+			<h2 class="text-xl font-bold mb-4">Datos de Estudiante</h2>
+			<div class="space-y-3">
+				<div>
+					<p class="text-sm text-slate-400">DNI</p>
+					<p class="font-medium">{data.user.student.dni}</p>
+				</div>
+				<div>
+					<p class="text-sm text-slate-400">Fecha de Nacimiento</p>
+					<p class="font-medium">
+						{data.user.student.birthDate
+							? new Date(data.user.student.birthDate).toLocaleDateString('es-AR')
+							: 'No especificada'}
+					</p>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	{#if data.user.teacher}
+		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+			<h2 class="text-xl font-bold mb-4">Datos de Docente</h2>
+			<div class="space-y-3">
+				<div>
+					<p class="text-sm text-slate-400">DNI</p>
+					<p class="font-medium">{data.user.teacher.dni}</p>
+				</div>
+			</div>
+		</div>
+	{/if}
+</div>

@@ -25,6 +25,10 @@
 			category: 'Académico',
 			items: [
 				{ label: 'Alumnos', href: '/alumnos', icon: 'users', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS'] },
+				{ label: 'Docentes', href: '/docentes', icon: 'users', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA'] },
+				{ label: 'Preceptores', href: '/preceptores', icon: 'users', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA'] },
+				{ label: 'Secretarios', href: '/secretarios', icon: 'users', roles: ['SUPERADMIN', 'DIRECTOR'] },
+				{ label: 'Directores', href: '/directores', icon: 'users', roles: ['SUPERADMIN', 'DIRECTOR'] },
 				{ label: 'Carreras', href: '/carreras', icon: 'academic', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'] },
 				{ label: 'Materias', href: '/materias', icon: 'book', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE'] },
 				{ label: 'Correlatividades', href: '/correlatividades', icon: 'link', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE'], indent: true },

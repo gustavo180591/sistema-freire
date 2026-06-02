@@ -89,7 +89,7 @@
 						<div class="flex-1">
 							<p class="font-semibold text-white">{absence.studentName}</p>
 							<p class="text-sm text-slate-400">DNI: {absence.studentDni}</p>
-							<p class="text-sm text-slate-400">{absence.commission} - {absence.subject}</p>
+							<p class="text-sm text-slate-400">{absence.subject}</p>
 							<p class="text-xs text-slate-500 mt-1">
 								Fecha: {new Date(absence.date).toLocaleDateString('es-AR')}
 							</p>

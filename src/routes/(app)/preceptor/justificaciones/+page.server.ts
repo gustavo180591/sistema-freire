@@ -37,11 +37,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			},
 			attendance: {
 				include: {
-					commission: {
-						include: {
-							subject: true
-						}
-					}
+					subject: true
 				}
 			}
 		},
@@ -66,8 +62,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			studentName: `${a.student.lastName}, ${a.student.firstName}`,
 			studentDni: a.student.dni,
 			date: a.attendance.classDate,
-			commission: a.attendance.commission.name,
-			subject: a.attendance.commission.subject.name,
+			subject: a.attendance.subject.name,
 			notes: a.notes
 		}))
 	};
@@ -95,9 +90,7 @@ export const actions: Actions = {
 					},
 					attendance: {
 						include: {
-							commission: {
-								include: { subject: true }
-							}
+							subject: true
 						}
 					}
 				}
@@ -116,7 +109,7 @@ export const actions: Actions = {
 				action: AuditAction.UPDATE,
 				entityType: 'ATTENDANCE_ENTRY',
 				entityId: entryId,
-				description: `Justificación de inasistencia: ${entry?.student.firstName} ${entry?.student.lastName} en ${entry?.attendance.commission.subject.name} el ${entry?.attendance.classDate.toLocaleDateString()}`
+				description: `Justificación de inasistencia: ${entry?.student.firstName} ${entry?.student.lastName} en ${entry?.attendance.subject.name} el ${entry?.attendance.classDate.toLocaleDateString()}`
 			});
 
 			return { success: 'Justificación registrada exitosamente' };

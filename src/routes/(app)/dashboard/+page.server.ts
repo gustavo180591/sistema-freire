@@ -16,13 +16,13 @@ export const load: PageServerLoad = async () => {
 	const [
 		activeStudents,
 		lowRegularityCount,
-		activeCommissions,
+		activeSubjects,
 		recentAuditLogs,
 		activeTerms
 	] = await Promise.all([
 		prisma.student.count({ where: { status: 'ACTIVE' } }).catch(() => 0),
 		prisma.studentSubjectStatus.count({ where: { regularityStatus: 'LIBRE' } }).catch(() => 0),
-		prisma.commission.count({ where: { active: true } }).catch(() => 0),
+		prisma.subject.count({ where: { active: true } }).catch(() => 0),
 		prisma.auditLog.findMany({
 			take: 5,
 			orderBy: { createdAt: 'desc' },
@@ -58,7 +58,7 @@ export const load: PageServerLoad = async () => {
 			activeStudents,
 			blockedStudentsCount,
 			lowRegularityCount,
-			activeCommissions,
+			activeSubjects,
 			outstandingDebt,
 			attendanceRiskCount,
 			pendingExamRecords

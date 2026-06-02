@@ -25,16 +25,16 @@
 			description: 'Regularidad baja o asistencia crítica'
 		},
 		{
-			title: 'Comisiones activas',
-			value: data.metrics.activeCommissions,
-			description: 'Cursos y materias en dictado'
+			title: 'Materias activas',
+			value: data.metrics.activeSubjects,
+			description: 'Materias en dictado'
 		}
 	]);
 
 	const quickAccess = [
 		{ label: 'Usuarios', href: '/usuarios' },
 		{ label: 'Carreras', href: '/carreras' },
-		{ label: 'Comisiones', href: '/comisiones' },
+		{ label: 'Materias', href: '/materias' },
 		{ label: 'Finanzas', href: '/finanzas' },
 		{ label: 'Reportes', href: '/reportes' },
 		{ label: 'Recibos', href: '/recibos' }

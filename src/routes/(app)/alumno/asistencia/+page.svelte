@@ -37,7 +37,6 @@
 					<div class="mb-4 flex items-center justify-between">
 						<div>
 							<h2 class="text-lg font-semibold">{subject.subject}</h2>
-							<p class="text-sm text-slate-400">{subject.commission}</p>
 						</div>
 						<div class="text-right">
 							<p class="text-2xl font-bold {subject.percentage >= 80 ? 'text-emerald-400' : subject.percentage >= 60 ? 'text-amber-400' : 'text-red-400'}">

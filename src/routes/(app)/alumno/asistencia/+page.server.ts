@@ -12,33 +12,7 @@ export const load: PageServerLoad = async ({ locals }) => {
     const student = await prisma.student.findFirst({
         where: { userId: user.id },
         include: {
-            attendanceEntries: {
-                include: {
-                    attendance: {
-                        include: {
-                            commission: {
-                                include: {
-                                    subject: true
-                                }
-                            }
-                        }
-                    }
-                },
-                orderBy: {
-                    attendance: {
-                        classDate: 'desc'
-                    }
-                }
-            },
-            enrollments: {
-                include: {
-                    commission: {
-                        include: {
-                            subject: true
-                        }
-                    }
-                }
-            }
+            career: true
         }
     });
 
@@ -46,18 +20,35 @@ export const load: PageServerLoad = async ({ locals }) => {
         throw redirect(303, '/dashboard');
     }
 
-    // Agrupar asistencias por comisión/materia
+    // Obtener entradas de asistencia del estudiante
+    const attendanceEntries = await prisma.attendanceEntry.findMany({
+        where: {
+            studentId: student.id
+        },
+        include: {
+            attendance: {
+                include: {
+                    subject: true
+                }
+            }
+        },
+        orderBy: {
+            attendance: {
+                classDate: 'desc'
+            }
+        }
+    });
+
+    // Agrupar asistencias por materia
     const attendanceBySubject = new Map();
     
-    for (const entry of student.attendanceEntries) {
-        const subjectName = entry.attendance.commission.subject?.name || 'Sin materia';
-        const commissionName = entry.attendance.commission.name;
-        const key = `${subjectName} - ${commissionName}`;
+    for (const entry of attendanceEntries) {
+        const subjectName = entry.attendance.subject?.name || 'Sin materia';
+        const key = subjectName;
         
         if (!attendanceBySubject.has(key)) {
             attendanceBySubject.set(key, {
                 subject: subjectName,
-                commission: commissionName,
                 entries: [],
                 present: 0,
                 absent: 0,
@@ -92,9 +83,9 @@ export const load: PageServerLoad = async ({ locals }) => {
             lastName: student.lastName
         },
         subjects,
-        totalClasses: student.attendanceEntries.length,
-        overallAttendance: student.attendanceEntries.length > 0 
-            ? Math.round((student.attendanceEntries.filter(e => e.present).length / student.attendanceEntries.length) * 100)
+        totalClasses: attendanceEntries.length,
+        overallAttendance: attendanceEntries.length > 0 
+            ? Math.round((attendanceEntries.filter(e => e.present).length / attendanceEntries.length) * 100)
             : 0
     };
 };

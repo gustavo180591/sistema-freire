@@ -95,24 +95,6 @@
 		</div>
 	</div>
 
-	<!-- Inscripciones -->
-	{#if data.enrollments.length > 0}
-		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-			<h2 class="text-lg font-semibold mb-4">📚 Mis Inscripciones</h2>
-			<div class="space-y-3">
-				{#each data.enrollments as enrollment}
-					<div class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-4">
-						<div>
-							<p class="font-medium">{enrollment.subject}</p>
-							<p class="text-sm text-slate-400">{enrollment.commission} • Año {enrollment.year}</p>
-						</div>
-						<span class="rounded-full bg-emerald-950/50 px-3 py-1 text-sm text-emerald-400">Activa</span>
-					</div>
-				{/each}
-			</div>
-		</div>
-	{/if}
-
 	<!-- Últimos cargos -->
 	{#if data.finances.charges.length > 0}
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">

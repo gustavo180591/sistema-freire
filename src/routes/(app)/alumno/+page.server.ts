@@ -29,15 +29,6 @@ export const load: PageServerLoad = async ({ locals }) => {
                 include: {
                     concept: true
                 }
-            },
-            enrollments: {
-                include: {
-                    commission: {
-                        include: {
-                            subject: true
-                        }
-                    }
-                }
             }
         }
     });
@@ -78,12 +69,6 @@ export const load: PageServerLoad = async ({ locals }) => {
         finances: {
             totalDebt,
             charges: student.studentCharges.slice(0, 5) // Últimos 5 cargos
-        },
-        enrollments: student.enrollments.map(e => ({
-            id: e.id,
-            commission: e.commission.name,
-            subject: e.commission.subject?.name || 'Sin materia',
-            year: e.commission.subject?.yearLevel || 0
-        }))
+        }
     };
 };

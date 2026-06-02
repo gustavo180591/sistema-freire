@@ -32,7 +32,7 @@ async function main() {
 
 	// Crear usuario admin si no existe
 	console.log('Seeding admin user...');
-	const superAdminRole = await prisma.role.findFirst({ where: { name: 'SUPERADMIN' } });
+	const superAdminRole = await prisma.role.findFirst({ where: { code: RoleCode.SUPERADMIN } });
 	if (superAdminRole) {
 		const existingUser = await prisma.user.findUnique({
 			where: { email: 'gustavo.faccendini@gmail.com' }

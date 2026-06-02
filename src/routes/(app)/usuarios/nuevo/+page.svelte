@@ -155,6 +155,7 @@
 				</div>
 			</div>
 		</section>
+		{/if}
 
 		<!-- Domicilio -->
 		{#if userType === 'ALUMNO'}

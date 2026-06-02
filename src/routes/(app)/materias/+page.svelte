@@ -20,7 +20,6 @@
 		return groups;
 	});
 
-	// Labels para los tipos
 	const subjectTypeLabels: Record<string, string> = {
 		COMMON: 'Común',
 		CAREER_SPECIFIC: 'Específica',
@@ -54,6 +53,7 @@
 </svelte:head>
 
 <div class="space-y-8">
+	<!-- 1. Header de página -->
 	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
 		<div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
 			<div>
@@ -63,7 +63,6 @@
 					Administración de todas las materias del sistema educativo.
 				</p>
 			</div>
-
 			<a
 				href="/materias/nueva"
 				class="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.02]"
@@ -73,12 +72,13 @@
 		</div>
 	</section>
 
-	<!-- Filtros -->
+	<!-- 2. Panel de filtros -->
 	<section class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
 		<form class="flex flex-wrap gap-4 items-end" method="GET">
 			<div class="flex-1 min-w-[200px]">
-				<label class="block text-xs text-slate-400 mb-1">Buscar</label>
+				<label for="search" class="block text-xs text-slate-400 mb-1">Buscar</label>
 				<input
+					id="search"
 					type="text"
 					name="search"
 					value={filters.search}
@@ -88,8 +88,8 @@
 			</div>
 
 			<div>
-				<label class="block text-xs text-slate-400 mb-1">Carrera</label>
-				<select name="careerId" class="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm">
+				<label for="careerId" class="block text-xs text-slate-400 mb-1">Carrera</label>
+				<select id="careerId" name="careerId" class="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm">
 					<option value="">Todas</option>
 					{#each careers as career}
 						<option value={career.id} selected={filters.careerId === career.id}>
@@ -100,8 +100,8 @@
 			</div>
 
 			<div>
-				<label class="block text-xs text-slate-400 mb-1">Año</label>
-				<select name="yearLevel" class="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm">
+				<label for="yearLevel" class="block text-xs text-slate-400 mb-1">Año</label>
+				<select id="yearLevel" name="yearLevel" class="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm">
 					<option value="">Todos</option>
 					{#each yearLevels as year}
 						<option value={year} selected={filters.yearLevel === year.toString()}>
@@ -112,8 +112,8 @@
 			</div>
 
 			<div>
-				<label class="block text-xs text-slate-400 mb-1">Tipo</label>
-				<select name="subjectType" class="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm">
+				<label for="subjectType" class="block text-xs text-slate-400 mb-1">Tipo</label>
+				<select id="subjectType" name="subjectType" class="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm">
 					<option value="">Todos</option>
 					{#each subjectTypes as type}
 						<option value={type} selected={filters.subjectType === type}>
@@ -124,8 +124,8 @@
 			</div>
 
 			<div>
-				<label class="block text-xs text-slate-400 mb-1">Campo</label>
-				<select name="trainingField" class="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm">
+				<label for="trainingField" class="block text-xs text-slate-400 mb-1">Campo</label>
+				<select id="trainingField" name="trainingField" class="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm">
 					<option value="">Todos</option>
 					{#each trainingFields as field}
 						<option value={field} selected={filters.trainingField === field}>
@@ -146,7 +146,7 @@
 		</form>
 	</section>
 
-	<!-- KPIs -->
+	<!-- 3. Tarjetas de resumen -->
 	<section class="grid gap-4 md:grid-cols-4">
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<p class="text-sm text-slate-400">Total materias</p>
@@ -177,82 +177,78 @@
 		</div>
 	</section>
 
+	<!-- 4. Listado por año -->
 	<section class="space-y-6">
 		{#each Object.entries(groupedSubjects).sort(([a], [b]) => Number(a) - Number(b)) as [year, yearSubjects]}
 			<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 				<h2 class="text-2xl font-semibold">Año {year}</h2>
 				<p class="mt-1 text-sm text-slate-400">{yearSubjects.length} materias</p>
 
-				<div class="mt-6 overflow-hidden rounded-2xl border border-slate-800">
-					<table class="w-full text-left">
+				<!-- 5. Tabla de materias -->
+				<div class="mt-6 overflow-x-auto rounded-2xl border border-slate-800">
+					<table class="w-full min-w-[900px] text-left">
 						<thead class="border-b border-slate-800 bg-slate-900">
-							<!-- Row 1: Main headers with colspans -->
 							<tr class="border-b border-slate-700">
-								<th rowspan="3" class="px-4 py-4 text-sm font-semibold border-r border-slate-700">Código</th>
-								<th rowspan="3" class="px-4 py-4 text-sm font-semibold border-r border-slate-700">Materia</th>
-								<th rowspan="3" class="px-4 py-4 text-sm font-semibold border-r border-slate-700">Modalidad de Acreditación</th>
-								<th colspan="3" class="px-4 py-2 text-sm font-semibold text-center border-r border-slate-700">Régimen de Correlatividades</th>
-								<th rowspan="3" class="px-4 py-4 text-sm font-semibold border-r border-slate-700">Carreras</th>
-								<th rowspan="3" class="px-4 py-4 text-right text-sm font-semibold">Acciones</th>
+								<th rowspan="2" class="px-4 py-3 text-sm font-semibold border-r border-slate-700">Código</th>
+								<th rowspan="2" class="px-4 py-3 text-sm font-semibold border-r border-slate-700">Materia</th>
+								<th rowspan="2" class="px-4 py-3 text-sm font-semibold border-r border-slate-700">Modalidad</th>
+								<th colspan="3" class="px-4 py-2 text-sm font-semibold text-center border-r border-slate-700">Correlatividades</th>
+								<th rowspan="2" class="px-4 py-3 text-sm font-semibold border-r border-slate-700">Carreras</th>
+								<th rowspan="2" class="px-4 py-3 text-right text-sm font-semibold">Acciones</th>
 							</tr>
-							<!-- Row 2: Second level grouping -->
-							<tr class="border-b border-slate-700">
-								<th colspan="2" class="px-4 py-2 text-sm font-semibold text-center border-r border-slate-700">Para cursar deberá</th>
-								<th rowspan="2" class="px-4 py-2 text-sm font-semibold text-center border-r border-slate-700">Para aprobar deberá<br/>haber Aprobado</th>
-							</tr>
-							<!-- Row 3: Individual columns -->
 							<tr>
-								<th class="px-4 py-2 text-xs font-semibold text-center border-r border-slate-700">haber<br/>Regularizado</th>
-								<th class="px-4 py-2 text-xs font-semibold text-center border-r border-slate-700">haber<br/>Aprobado</th>
+								<th class="px-2 py-2 text-xs font-semibold text-center border-r border-slate-700">Regular</th>
+								<th class="px-2 py-2 text-xs font-semibold text-center border-r border-slate-700">Cursar</th>
+								<th class="px-2 py-2 text-xs font-semibold text-center border-r border-slate-700">Aprobar</th>
 							</tr>
 						</thead>
 						<tbody>
 							{#each yearSubjects as subject}
 								<tr class="border-b border-slate-800 last:border-none hover:bg-slate-800/50">
-									<td class="px-4 py-4 font-mono text-sm text-slate-400">{subject.code}</td>
-									<td class="px-4 py-4">
-										<div class="font-medium">{subject.name}</div>
+									<td class="px-4 py-3 font-mono text-sm text-slate-400">{subject.code}</td>
+									<td class="px-4 py-3">
+										<div class="font-medium text-sm">{subject.name}</div>
 										{#if subject.isElective}
 											<span class="text-xs text-amber-400">Optativa</span>
 										{/if}
 									</td>
-									<td class="px-4 py-4">
+									<td class="px-4 py-3">
 										<span class="text-xs text-slate-300">
 											{accreditationModeLabels[subject.accreditationMode] || subject.accreditationMode}
 										</span>
 									</td>
-									<td class="px-4 py-4 text-center">
-									{#if subject.correlativesRegular.length > 0}
-										<span class="rounded-full bg-emerald-500/20 text-emerald-300 px-2 py-1 text-xs">
-											{subject.correlativesRegular.join(', ')}
-										</span>
-									{:else}
-										<span class="text-slate-500">-</span>
-									{/if}
-								</td>
-									<td class="px-4 py-4 text-center">
-									{#if subject.correlativesAprobadoCursar.length > 0}
-										<span class="rounded-full bg-blue-500/20 text-blue-300 px-2 py-1 text-xs">
-											{subject.correlativesAprobadoCursar.join(', ')}
-										</span>
-									{:else}
-										<span class="text-slate-500">-</span>
-									{/if}
-								</td>
-									<td class="px-4 py-4 text-center">
-									{#if subject.correlativesAprobadoAprobar.length > 0}
-										<span class="rounded-full bg-purple-500/20 text-purple-300 px-2 py-1 text-xs">
-											{subject.correlativesAprobadoAprobar.join(', ')}
-										</span>
-									{:else}
-										<span class="text-slate-500">-</span>
-									{/if}
-								</td>
-									<td class="px-4 py-4">
+									<td class="px-2 py-3 text-center">
+										{#if subject.correlativesRegular.length > 0}
+											<span class="inline-block rounded-full bg-emerald-500/20 text-emerald-300 px-2 py-1 text-xs max-w-[120px] truncate" title={subject.correlativesRegular.join(', ')}>
+												{subject.correlativesRegular.join(', ')}
+											</span>
+										{:else}
+											<span class="text-slate-500 text-xs">-</span>
+										{/if}
+									</td>
+									<td class="px-2 py-3 text-center">
+										{#if subject.correlativesAprobadoCursar.length > 0}
+											<span class="inline-block rounded-full bg-blue-500/20 text-blue-300 px-2 py-1 text-xs max-w-[120px] truncate" title={subject.correlativesAprobadoCursar.join(', ')}>
+												{subject.correlativesAprobadoCursar.join(', ')}
+											</span>
+										{:else}
+											<span class="text-slate-500 text-xs">-</span>
+										{/if}
+									</td>
+									<td class="px-2 py-3 text-center">
+										{#if subject.correlativesAprobadoAprobar.length > 0}
+											<span class="inline-block rounded-full bg-purple-500/20 text-purple-300 px-2 py-1 text-xs max-w-[120px] truncate" title={subject.correlativesAprobadoAprobar.join(', ')}>
+												{subject.correlativesAprobadoAprobar.join(', ')}
+											</span>
+										{:else}
+											<span class="text-slate-500 text-xs">-</span>
+										{/if}
+									</td>
+									<td class="px-4 py-3">
 										{#if subject.careers.length > 0}
 											<div class="flex flex-wrap gap-1">
 												{#each subject.careers.slice(0, 2) as career}
-													<span class="text-xs text-slate-400">{career.code}</span>
+													<span class="rounded-full bg-slate-700 text-slate-300 px-2 py-0.5 text-xs">{career.code}</span>
 												{/each}
 												{#if subject.careers.length > 2}
 													<span class="text-xs text-slate-500">+{subject.careers.length - 2}</span>
@@ -262,25 +258,25 @@
 											<span class="text-xs text-slate-500">Todas</span>
 										{/if}
 									</td>
-									<td class="px-4 py-4 text-right">
+									<td class="px-4 py-3 text-right">
 										<div class="flex gap-2 justify-end">
 											<a
 												href={`/materias/${subject.id}`}
-												class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs transition hover:border-slate-500"
+												class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs transition hover:border-slate-500 hover:bg-slate-800"
 												title="Ver detalles"
 											>
 												Ver
 											</a>
 											<a
 												href={`/materias/${subject.id}/correlativas`}
-												class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs transition hover:border-slate-500"
+												class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs transition hover:border-slate-500 hover:bg-slate-800"
 												title="Gestionar correlativas"
 											>
 												Correl.
 											</a>
 											<a
 												href={`/materias/${subject.id}/editar`}
-												class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs transition hover:border-slate-500"
+												class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs transition hover:border-slate-500 hover:bg-slate-800"
 												title="Editar materia"
 											>
 												Editar

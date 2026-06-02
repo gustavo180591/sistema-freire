@@ -128,4 +128,28 @@
 			{/if}
 		</div>
 	{/if}
+
+	{#if data.evaluations && data.evaluations.length > 0}
+		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+			<h2 class="text-xl font-bold mb-4">Evaluaciones Creadas</h2>
+			<div class="space-y-3">
+				{#each data.evaluations as evaluation}
+					<div class="rounded-xl border border-slate-800 bg-slate-800/50 p-4">
+						<div class="flex items-center justify-between">
+							<div>
+								<p class="font-medium">{evaluation.title}</p>
+								<p class="text-sm text-slate-400">{evaluation.subject} ({evaluation.subjectCode}) - {evaluation.type}</p>
+								{#if evaluation.date}
+									<p class="text-sm text-slate-400">
+										Fecha: {new Date(evaluation.date).toLocaleDateString('es-AR')}
+									</p>
+								{/if}
+							</div>
+							<p class="text-sm text-slate-400">Creado por: {evaluation.creator}</p>
+						</div>
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/if}
 </div>

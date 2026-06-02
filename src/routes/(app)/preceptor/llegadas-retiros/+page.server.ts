@@ -25,11 +25,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 		]
 	});
 
-	// Obtener comisiones
-	const commissions = await prisma.commission.findMany({
+	// Obtener materias
+	const subjects = await prisma.subject.findMany({
 		include: {
-			subject: true,
-			term: true
+			careerSubjects: {
+				include: {
+					career: true
+				}
+			}
 		},
 		orderBy: { name: 'asc' }
 	});
@@ -50,11 +53,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			},
 			attendance: {
 				include: {
-					commission: {
-						include: {
-							subject: true
-						}
-					}
+					subject: true
 				}
 			}
 		},
@@ -74,14 +73,19 @@ export const load: PageServerLoad = async ({ locals }) => {
 			lastName: s.lastName,
 			career: s.career.name
 		})),
-		commissions,
+		subjects: subjects.map(s => ({
+			id: s.id,
+			code: s.code,
+			name: s.name,
+			yearLevel: s.yearLevel,
+			careers: s.careerSubjects.map(cs => cs.career.name)
+		})),
 		recentRecords: recentRecords.map(r => ({
 			id: r.id,
 			studentName: `${r.student.lastName}, ${r.student.firstName}`,
 			studentDni: r.student.dni,
 			date: r.attendance.classDate,
-			commission: r.attendance.commission.name,
-			subject: r.attendance.commission.subject.name,
+			subject: r.attendance.subject.name,
 			notes: r.notes
 		}))
 	};
@@ -93,32 +97,31 @@ export const actions: Actions = {
 
 		const data = await request.formData();
 		const studentId = data.get('studentId')?.toString();
-		const commissionId = data.get('commissionId')?.toString();
+		const subjectId = data.get('subjectId')?.toString();
 		const date = data.get('date')?.toString();
 		const type = data.get('type')?.toString(); // 'LLEGADA_TARDE' o 'RETIRO_ANTICIPADO'
 		const time = data.get('time')?.toString();
 		const notes = data.get('notes')?.toString();
 
-		if (!studentId || !commissionId || !date || !type || !time) {
+		if (!studentId || !subjectId || !date || !type || !time) {
 			return { error: 'Por favor completá todos los campos requeridos' };
 		}
 
 		try {
-			// Obtener datos del estudiante y comisión para auditoría
+			// Obtener datos del estudiante y materia para auditoría
 			const student = await prisma.student.findUnique({
 				where: { id: studentId },
 				include: { user: true }
 			});
 
-			const commission = await prisma.commission.findUnique({
-				where: { id: commissionId },
-				include: { subject: true }
+			const subject = await prisma.subject.findUnique({
+				where: { id: subjectId }
 			});
 
 			// Buscar o crear el registro de asistencia
 			const attendanceRecord = await prisma.attendanceRecord.findFirst({
 				where: {
-					commissionId,
+					subjectId,
 					classDate: new Date(date)
 				}
 			});
@@ -130,7 +133,7 @@ export const actions: Actions = {
 			} else {
 				const newRecord = await prisma.attendanceRecord.create({
 					data: {
-						commissionId,
+						subjectId,
 						classDate: new Date(date),
 						createdByUserId: locals.user!.id
 					}
@@ -173,7 +176,7 @@ export const actions: Actions = {
 				action: AuditAction.CREATE,
 				entityType: 'ATTENDANCE_ENTRY',
 				entityId: studentId,
-				description: `Registro de ${type === 'LLEGADA_TARDE' ? 'llegada tarde' : 'retiro anticipado'}: ${student?.firstName} ${student?.lastName} en ${commission?.subject.name} a las ${time} el ${date}`
+				description: `Registro de ${type === 'LLEGADA_TARDE' ? 'llegada tarde' : 'retiro anticipado'}: ${student?.firstName} ${student?.lastName} en ${subject?.name} a las ${time} el ${date}`
 			});
 
 			return { success: 'Registro guardado exitosamente' };

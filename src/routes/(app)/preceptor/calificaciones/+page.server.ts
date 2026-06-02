@@ -25,11 +25,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 		]
 	});
 
-	// Obtener comisiones
-	const commissions = await prisma.commission.findMany({
+	// Obtener materias
+	const subjects = await prisma.subject.findMany({
 		include: {
-			subject: true,
-			term: true
+			careerSubjects: {
+				include: {
+					career: true
+				}
+			}
 		},
 		orderBy: { name: 'asc' }
 	});
@@ -43,7 +46,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 			career: s.career.name,
 			currentYear: s.currentYear
 		})),
-		commissions
+		subjects: subjects.map(s => ({
+			id: s.id,
+			code: s.code,
+			name: s.name,
+			yearLevel: s.yearLevel,
+			careers: s.careerSubjects.map(cs => cs.career.name)
+		}))
 	};
 };
 
@@ -53,12 +62,12 @@ export const actions: Actions = {
 
 		const data = await request.formData();
 		const studentId = data.get('studentId')?.toString();
-		const commissionId = data.get('commissionId')?.toString();
+		const subjectId = data.get('subjectId')?.toString();
 		const grade = data.get('grade')?.toString();
 		const evaluationType = data.get('evaluationType')?.toString();
 		const notes = data.get('notes')?.toString();
 
-		if (!studentId || !commissionId || !grade) {
+		if (!studentId || !subjectId || !grade) {
 			return { error: 'Por favor completá todos los campos requeridos' };
 		}
 
@@ -69,15 +78,14 @@ export const actions: Actions = {
 				include: { user: true }
 			});
 
-			const commission = await prisma.commission.findUnique({
-				where: { id: commissionId },
-				include: { subject: true }
+			const subject = await prisma.subject.findUnique({
+				where: { id: subjectId }
 			});
 
 			await prisma.grade.create({
 				data: {
 					studentId,
-					commissionId,
+					subjectId,
 					value: parseFloat(grade),
 					gradeType: evaluationType || 'PARCIAL',
 					createdByUserId: locals.user!.id
@@ -90,7 +98,7 @@ export const actions: Actions = {
 				action: AuditAction.CREATE,
 				entityType: 'GRADE',
 				entityId: studentId,
-				description: `Carga de calificación: ${grade} para ${student?.firstName} ${student?.lastName} en ${commission?.subject.name} (${evaluationType || 'PARCIAL'})`
+				description: `Carga de calificación: ${grade} para ${student?.firstName} ${student?.lastName} en ${subject?.name} (${evaluationType || 'PARCIAL'})`
 			});
 
 			return { success: 'Calificación registrada exitosamente' };

@@ -17,6 +17,7 @@
 			category: 'Principal',
 			items: [
 				{ label: 'Dashboard', href: '/dashboard', icon: 'home', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'] },
+				{ label: 'Mi Panel', href: '/alumno', icon: 'home', roles: ['ALUMNO'] },
 				{ label: 'Inicio', href: '/', icon: 'home', roles: [] },
 			]
 		},

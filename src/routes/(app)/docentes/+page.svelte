@@ -124,7 +124,7 @@
 							<td class="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
 								<div class="flex items-center justify-end space-x-2">
 									<a
-										href="/docentes/{teacher.id}"
+										href="/usuarios/{teacher.userId}"
 										class="text-emerald-400 hover:text-emerald-300 transition-colors"
 										aria-label="Ver docente"
 									>
@@ -134,7 +134,7 @@
 										</svg>
 									</a>
 									<a
-										href="/usuarios/{teacher.userId}"
+										href="/usuarios/{teacher.userId}/editar"
 										class="text-blue-400 hover:text-blue-300 transition-colors"
 										aria-label="Editar docente"
 									>

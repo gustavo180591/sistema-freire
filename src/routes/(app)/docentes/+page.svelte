@@ -14,6 +14,12 @@
 		lastName: string;
 		email: string;
 		createdAt: Date;
+		subjects: Array<{
+			id: string;
+			code: string;
+			name: string;
+			yearLevel: number;
+		}>;
 	}
 
 	// Filtrar docentes según búsqueda
@@ -89,6 +95,9 @@
 					<th class="w-80 px-3 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider truncate">
 						Email
 					</th>
+					<th class="w-48 px-3 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+						Materias
+					</th>
 					<th class="w-32 px-3 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
 						Fecha Alta
 					</th>
@@ -100,7 +109,7 @@
 			<tbody class="divide-y divide-slate-800">
 				{#if filteredTeachers.length === 0}
 					<tr>
-						<td colspan="5" class="px-3 py-8 text-center text-sm text-slate-400">
+						<td colspan="6" class="px-3 py-8 text-center text-sm text-slate-400">
 							No se encontraron docentes que coincidan con "{searchQuery}"
 						</td>
 					</tr>
@@ -117,6 +126,22 @@
 							</td>
 							<td class="px-3 py-3 whitespace-nowrap text-sm text-slate-300 truncate" title={teacher.email}>
 								{teacher.email}
+							</td>
+							<td class="px-3 py-3">
+								{#if teacher.subjects.length > 0}
+									<div class="flex flex-wrap gap-1">
+										{#each teacher.subjects.slice(0, 2) as subject}
+											<span class="rounded-full bg-slate-700 text-slate-300 px-2 py-0.5 text-xs" title={subject.name}>
+												{subject.code}
+											</span>
+										{/each}
+										{#if teacher.subjects.length > 2}
+											<span class="text-xs text-slate-500">+{teacher.subjects.length - 2}</span>
+										{/if}
+									</div>
+								{:else}
+									<span class="text-xs text-slate-500">Sin materias</span>
+								{/if}
 							</td>
 							<td class="px-3 py-3 whitespace-nowrap text-sm text-slate-300">
 								{new Date(teacher.createdAt).toLocaleDateString('es-AR')}

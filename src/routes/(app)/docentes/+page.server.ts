@@ -6,7 +6,12 @@ import { fail } from '@sveltejs/kit';
 export const load: PageServerLoad = async () => {
 	const teachers = await prisma.teacher.findMany({
 		include: {
-			user: true
+			user: true,
+			subjects: {
+				include: {
+					subject: true
+				}
+			}
 		},
 		orderBy: [
 			{ lastName: 'asc' },
@@ -15,7 +20,14 @@ export const load: PageServerLoad = async () => {
 	});
 
 	type TeacherWithRelations = Prisma.TeacherGetPayload<{
-		include: { user: true };
+		include: {
+			user: true;
+			subjects: {
+				include: {
+					subject: true;
+				};
+			};
+		};
 	}>;
 
 	return {
@@ -26,7 +38,8 @@ export const load: PageServerLoad = async () => {
 			firstName: t.firstName,
 			lastName: t.lastName,
 			email: t.user.email,
-			createdAt: t.createdAt
+			createdAt: t.createdAt,
+			subjects: t.subjects.map((st) => st.subject)
 		}))
 	};
 };

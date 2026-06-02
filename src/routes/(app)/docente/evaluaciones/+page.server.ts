@@ -14,14 +14,22 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	// Obtener el docente asociado al usuario
 	const teacher = await prisma.teacher.findUnique({
-		where: { userId: locals.user.id },
+		where: { userId: locals.user.id }
+	});
+
+	if (!teacher) {
+		throw redirect(303, '/dashboard');
+	}
+
+	// Obtener las materias asignadas al docente
+	const subjectTeachers = await prisma.subjectTeacher.findMany({
+		where: { teacherId: teacher.id },
 		include: {
-			commissions: {
+			subject: {
 				include: {
-					commission: {
+					careerSubjects: {
 						include: {
-							subject: true,
-							term: true
+							career: true
 						}
 					}
 				}
@@ -29,27 +37,18 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	if (!teacher) {
-		throw redirect(303, '/dashboard');
-	}
-
-	// Obtener las comisiones asignadas al docente
-	const commissions = teacher.commissions.map(ct => ct.commission);
+	const subjects = subjectTeachers.map(st => st.subject);
 
 	// Obtener evaluaciones del docente
 	const evaluations = await prisma.evaluation.findMany({
 		where: {
 			createdBy: locals.user.id,
-			commissionId: {
-				in: commissions.map(c => c.id)
+			subjectId: {
+				in: subjects.map(s => s.id)
 			}
 		},
 		include: {
-			commission: {
-				include: {
-					subject: true
-				}
-			},
+			subject: true,
 			creator: true
 		},
 		orderBy: { date: 'desc' },
@@ -57,12 +56,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	return {
-		commissions: commissions.map(c => ({
-			id: c.id,
-			name: c.name,
-			subject: c.subject.name,
-			term: c.term.name,
-			active: c.active
+		subjects: subjects.map(s => ({
+			id: s.id,
+			code: s.code,
+			name: s.name,
+			yearLevel: s.yearLevel,
+			careers: s.careerSubjects.map(cs => cs.career.name)
 		})),
 		evaluations: evaluations.map(e => ({
 			id: e.id,
@@ -71,8 +70,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			type: e.type,
 			date: e.date,
 			maxScore: e.maxScore,
-			subject: e.commission.subject.name,
-			commission: e.commission.name,
+			subject: e.subject.name,
 			createdAt: e.createdAt,
 			creatorName: `${e.creator.firstName} ${e.creator.lastName}`
 		}))
@@ -88,44 +86,48 @@ export const actions: Actions = {
 		}
 
 		const data = await request.formData();
-		const commissionId = data.get('commissionId')?.toString();
+		const subjectId = data.get('subjectId')?.toString();
 		const title = data.get('title')?.toString();
 		const description = data.get('description')?.toString();
 		const type = data.get('type')?.toString();
 		const date = data.get('date')?.toString();
 		const maxScore = data.get('maxScore')?.toString();
 
-		if (!commissionId || !title || !type) {
+		if (!subjectId || !title || !type) {
 			return { error: 'Por favor completá todos los campos requeridos' };
 		}
 
 		try {
-			// Verificar que la comisión pertenezca al docente
+			// Verificar que la materia pertenezca al docente
 			const teacher = await prisma.teacher.findUnique({
-				where: { userId: locals.user.id },
-				include: {
-					commissions: true
-				}
+				where: { userId: locals.user.id }
 			});
 
 			if (!teacher) {
 				return { error: 'Docente no encontrado' };
 			}
 
-			const teacherCommissionIds = teacher.commissions.map(ct => ct.commissionId);
-			if (!teacherCommissionIds.includes(commissionId)) {
-				return { error: 'No tenés permiso para crear evaluaciones en esta comisión' };
+			const subjectTeacher = await prisma.subjectTeacher.findUnique({
+				where: {
+					subjectId_teacherId: {
+						subjectId,
+						teacherId: teacher.id
+					}
+				}
+			});
+
+			if (!subjectTeacher) {
+				return { error: 'No tenés permiso para crear evaluaciones en esta materia' };
 			}
 
-			// Obtener datos de la comisión para auditoría
-			const commission = await prisma.commission.findUnique({
-				where: { id: commissionId },
-				include: { subject: true }
+			// Obtener datos de la materia para auditoría
+			const subject = await prisma.subject.findUnique({
+				where: { id: subjectId }
 			});
 
 			await prisma.evaluation.create({
 				data: {
-					commissionId,
+					subjectId,
 					title,
 					description: description || null,
 					type,
@@ -140,8 +142,8 @@ export const actions: Actions = {
 				userId: locals.user.id,
 				action: AuditAction.CREATE,
 				entityType: 'EVALUATION',
-				entityId: commissionId,
-				description: `Evaluación creada: ${type} - ${title} para ${commission?.subject.name}`
+				entityId: subjectId,
+				description: `Evaluación creada: ${type} - ${title} para ${subject?.name}`
 			});
 
 			return { success: 'Evaluación creada exitosamente' };

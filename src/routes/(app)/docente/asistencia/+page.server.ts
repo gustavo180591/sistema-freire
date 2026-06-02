@@ -14,14 +14,22 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	// Obtener el docente asociado al usuario
 	const teacher = await prisma.teacher.findUnique({
-		where: { userId: locals.user.id },
+		where: { userId: locals.user.id }
+	});
+
+	if (!teacher) {
+		throw redirect(303, '/dashboard');
+	}
+
+	// Obtener las materias asignadas al docente
+	const subjectTeachers = await prisma.subjectTeacher.findMany({
+		where: { teacherId: teacher.id },
 		include: {
-			commissions: {
+			subject: {
 				include: {
-					commission: {
+					careerSubjects: {
 						include: {
-							subject: true,
-							term: true
+							career: true
 						}
 					}
 				}
@@ -29,23 +37,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	if (!teacher) {
-		throw redirect(303, '/dashboard');
-	}
+	const subjects = subjectTeachers.map(st => st.subject);
 
-	// Obtener las comisiones asignadas al docente
-	const commissions = teacher.commissions.map(ct => ct.commission);
-
-	// Obtener estudiantes de las comisiones del docente
+	// Obtener estudiantes de las carreras de las materias del docente
+	const careerIds = subjects.flatMap(s => s.careerSubjects.map(cs => cs.career.id));
 	const students = await prisma.student.findMany({
 		where: {
 			status: 'ACTIVE',
-			enrollments: {
-				some: {
-					commissionId: {
-						in: commissions.map(c => c.id)
-					}
-				}
+			careerId: {
+				in: careerIds
 			}
 		},
 		include: {
@@ -62,16 +62,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const recentAttendance = await prisma.attendanceRecord.findMany({
 		where: {
 			createdByUserId: locals.user.id,
-			commissionId: {
-				in: commissions.map(c => c.id)
+			subjectId: {
+				in: subjects.map(s => s.id)
 			}
 		},
 		include: {
-			commission: {
-				include: {
-					subject: true
-				}
-			},
+			subject: true,
 			entries: {
 				include: {
 					student: {
@@ -87,12 +83,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	return {
-		commissions: commissions.map(c => ({
-			id: c.id,
-			name: c.name,
-			subject: c.subject.name,
-			term: c.term.name,
-			active: c.active
+		subjects: subjects.map(s => ({
+			id: s.id,
+			code: s.code,
+			name: s.name,
+			yearLevel: s.yearLevel,
+			careers: s.careerSubjects.map(cs => cs.career.name)
 		})),
 		students: students.map(s => ({
 			id: s.id,
@@ -105,8 +101,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		recentAttendance: recentAttendance.map(a => ({
 			id: a.id,
 			date: a.classDate,
-			subject: a.commission.subject.name,
-			commission: a.commission.name,
+			subject: a.subject.name,
 			totalStudents: a.entries.length,
 			presentStudents: a.entries.filter((e: any) => e.present).length,
 			entries: a.entries.map((e: any) => ({
@@ -128,36 +123,40 @@ export const actions: Actions = {
 		}
 
 		const data = await request.formData();
-		const commissionId = data.get('commissionId')?.toString();
+		const subjectId = data.get('subjectId')?.toString();
 		const date = data.get('date')?.toString();
 		const attendanceData = data.get('attendanceData')?.toString();
 
-		if (!commissionId || !date || !attendanceData) {
+		if (!subjectId || !date || !attendanceData) {
 			return { error: 'Por favor completá todos los campos requeridos' };
 		}
 
 		try {
-			// Verificar que la comisión pertenezca al docente
+			// Verificar que la materia pertenezca al docente
 			const teacher = await prisma.teacher.findUnique({
-				where: { userId: locals.user.id },
-				include: {
-					commissions: true
-				}
+				where: { userId: locals.user.id }
 			});
 
 			if (!teacher) {
 				return { error: 'Docente no encontrado' };
 			}
 
-			const teacherCommissionIds = teacher.commissions.map(ct => ct.commissionId);
-			if (!teacherCommissionIds.includes(commissionId)) {
-				return { error: 'No tenés permiso para registrar asistencia en esta comisión' };
+			const subjectTeacher = await prisma.subjectTeacher.findUnique({
+				where: {
+					subjectId_teacherId: {
+						subjectId,
+						teacherId: teacher.id
+					}
+				}
+			});
+
+			if (!subjectTeacher) {
+				return { error: 'No tenés permiso para registrar asistencia en esta materia' };
 			}
 
-			// Obtener datos de la comisión para auditoría
-			const commission = await prisma.commission.findUnique({
-				where: { id: commissionId },
-				include: { subject: true }
+			// Obtener datos de la materia para auditoría
+			const subject = await prisma.subject.findUnique({
+				where: { id: subjectId }
 			});
 
 			// Parsear datos de asistencia
@@ -166,7 +165,7 @@ export const actions: Actions = {
 			// Crear registro de asistencia
 			const attendanceRecord = await prisma.attendanceRecord.create({
 				data: {
-					commissionId,
+					subjectId,
 					classDate: new Date(date),
 					createdByUserId: locals.user.id
 				}
@@ -191,7 +190,7 @@ export const actions: Actions = {
 				action: AuditAction.CREATE,
 				entityType: 'ATTENDANCE_RECORD',
 				entityId: attendanceRecord.id,
-				description: `Registro de asistencia: ${presentCount} presentes, ${absentCount} ausentes en ${commission?.subject.name} el ${date}`
+				description: `Registro de asistencia: ${presentCount} presentes, ${absentCount} ausentes en ${subject?.name} el ${date}`
 			});
 
 			return { success: 'Asistencia registrada exitosamente' };

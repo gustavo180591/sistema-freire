@@ -14,14 +14,22 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	// Obtener el docente asociado al usuario
 	const teacher = await prisma.teacher.findUnique({
-		where: { userId: locals.user.id },
+		where: { userId: locals.user.id }
+	});
+
+	if (!teacher) {
+		throw redirect(303, '/dashboard');
+	}
+
+	// Obtener las materias asignadas al docente
+	const subjectTeachers = await prisma.subjectTeacher.findMany({
+		where: { teacherId: teacher.id },
 		include: {
-			commissions: {
+			subject: {
 				include: {
-					commission: {
+					careerSubjects: {
 						include: {
-							subject: true,
-							term: true
+							career: true
 						}
 					}
 				}
@@ -29,23 +37,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	if (!teacher) {
-		throw redirect(303, '/dashboard');
-	}
+	const subjects = subjectTeachers.map(st => st.subject);
 
-	// Obtener las comisiones asignadas al docente
-	const commissions = teacher.commissions.map(ct => ct.commission);
-
-	// Obtener estudiantes de las comisiones del docente
+	// Obtener estudiantes de las carreras de las materias del docente
+	const careerIds = subjects.flatMap(s => s.careerSubjects.map(cs => cs.career.id));
 	const students = await prisma.student.findMany({
 		where: {
 			status: 'ACTIVE',
-			enrollments: {
-				some: {
-					commissionId: {
-						in: commissions.map(c => c.id)
-					}
-				}
+			careerId: {
+				in: careerIds
 			}
 		},
 		include: {
@@ -62,8 +62,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const existingGrades = await prisma.grade.findMany({
 		where: {
 			createdByUserId: locals.user.id,
-			commissionId: {
-				in: commissions.map(c => c.id)
+			subjectId: {
+				in: subjects.map(s => s.id)
 			}
 		},
 		include: {
@@ -72,24 +72,19 @@ export const load: PageServerLoad = async ({ locals }) => {
 					user: true
 				}
 			},
-			commission: {
-				include: {
-					subject: true
-				}
-			}
+			subject: true
 		},
 		orderBy: { gradedAt: 'desc' },
 		take: 50
 	});
 
 	return {
-		commissions: commissions.map(c => ({
-			id: c.id,
-			name: c.name,
-			subject: c.subject.name,
-			subjectId: c.subject.id,
-			term: c.term.name,
-			active: c.active
+		subjects: subjects.map(s => ({
+			id: s.id,
+			code: s.code,
+			name: s.name,
+			yearLevel: s.yearLevel,
+			careers: s.careerSubjects.map(cs => cs.career.name)
 		})),
 		students: students.map(s => ({
 			id: s.id,
@@ -103,8 +98,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			id: g.id,
 			studentId: g.studentId,
 			studentName: `${g.student.lastName}, ${g.student.firstName}`,
-			subject: g.commission.subject.name,
-			commissionId: g.commissionId,
+			subject: g.subject.name,
+			subjectId: g.subjectId,
 			value: g.value,
 			gradeType: g.gradeType,
 			gradedAt: g.gradedAt
@@ -122,31 +117,36 @@ export const actions: Actions = {
 
 		const data = await request.formData();
 		const studentId = data.get('studentId')?.toString();
-		const commissionId = data.get('commissionId')?.toString();
+		const subjectId = data.get('subjectId')?.toString();
 		const grade = data.get('grade')?.toString();
 		const evaluationType = data.get('evaluationType')?.toString();
 		const notes = data.get('notes')?.toString();
 
-		if (!studentId || !commissionId || !grade) {
+		if (!studentId || !subjectId || !grade) {
 			return { error: 'Por favor completá todos los campos requeridos' };
 		}
 
 		try {
-			// Verificar que la comisión pertenezca al docente
+			// Verificar que la materia pertenezca al docente
 			const teacher = await prisma.teacher.findUnique({
-				where: { userId: locals.user.id },
-				include: {
-					commissions: true
-				}
+				where: { userId: locals.user.id }
 			});
 
 			if (!teacher) {
 				return { error: 'Docente no encontrado' };
 			}
 
-			const teacherCommissionIds = teacher.commissions.map(ct => ct.commissionId);
-			if (!teacherCommissionIds.includes(commissionId)) {
-				return { error: 'No tenés permiso para cargar calificaciones en esta comisión' };
+			const subjectTeacher = await prisma.subjectTeacher.findUnique({
+				where: {
+					subjectId_teacherId: {
+						subjectId,
+						teacherId: teacher.id
+					}
+				}
+			});
+
+			if (!subjectTeacher) {
+				return { error: 'No tenés permiso para cargar calificaciones en esta materia' };
 			}
 
 			// Obtener datos del estudiante para auditoría
@@ -155,15 +155,14 @@ export const actions: Actions = {
 				include: { user: true }
 			});
 
-			const commission = await prisma.commission.findUnique({
-				where: { id: commissionId },
-				include: { subject: true }
+			const subject = await prisma.subject.findUnique({
+				where: { id: subjectId }
 			});
 
 			await prisma.grade.create({
 				data: {
 					studentId,
-					commissionId,
+					subjectId,
 					value: parseFloat(grade),
 					gradeType: evaluationType || 'PARCIAL',
 					createdByUserId: locals.user.id
@@ -176,7 +175,7 @@ export const actions: Actions = {
 				action: AuditAction.CREATE,
 				entityType: 'GRADE',
 				entityId: studentId,
-				description: `Carga de calificación: ${grade} para ${student?.firstName} ${student?.lastName} en ${commission?.subject.name} (${evaluationType || 'PARCIAL'})`
+				description: `Carga de calificación: ${grade} para ${student?.firstName} ${student?.lastName} en ${subject?.name} (${evaluationType || 'PARCIAL'})`
 			});
 
 			return { success: 'Calificación registrada exitosamente' };

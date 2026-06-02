@@ -6,7 +6,6 @@ export const load: PageServerLoad = async () => {
         activeStudents,
         activeSubjects,
         studentsWithDebt,
-        latestTerm,
         payslipsCount
     ] = await Promise.all([
         prisma.student.count({
@@ -23,15 +22,7 @@ export const load: PageServerLoad = async () => {
                 }
             }
         }),
-        prisma.academicTerm.findFirst({
-            where: { active: true },
-            orderBy: [{ year: 'desc' }, { startDate: 'desc' }],
-            select: {
-                name: true,
-                year: true
-            }
-        }),
-        Promise.resolve(0) // TODO: Crear modelo Payslip
+        prisma.payslip.count()
     ]);
 
     const reports = [
@@ -69,7 +60,7 @@ export const load: PageServerLoad = async () => {
         reports,
         metrics: {
             availableReports: reports.length,
-            currentPeriod: latestTerm ? `${latestTerm.name} ${latestTerm.year}` : 'Sin período activo',
+            currentPeriod: '2026',
             formats: 'PDF · XLSX'
         }
     };

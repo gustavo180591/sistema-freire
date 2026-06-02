@@ -6,7 +6,7 @@
 			{
 				id: 'academic-summary',
 				title: 'Reporte académico general',
-				description: 'Matrícula, regularidad, comisiones activas y alumnos en riesgo.',
+				description: 'Matrícula, regularidad, materias activas y alumnos en riesgo.',
 				format: 'PDF / Excel',
 				href: '/reportes/academico'
 			},

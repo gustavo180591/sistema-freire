@@ -59,14 +59,13 @@ para tomar decisiones estratégicas con información consolidada.
 
 ## 4.2 Secretaría Académica
 Como Secretaría,
-quiero gestionar carreras, materias, correlatividades y comisiones,
+quiero gestionar carreras, materias y correlatividades,
 para mantener actualizada la estructura académica institucional.
 
 ### Criterios de aceptación:
 - Crear y editar carreras.
 - Crear y editar materias.
 - Configurar correlatividades.
-- Gestionar comisiones.
 - Generar actas oficiales.
 - Consultar historial académico completo.
 
@@ -75,10 +74,10 @@ para mantener actualizada la estructura académica institucional.
 ## 4.3 Docente
 Como Docente,
 quiero cargar notas, registrar asistencia digitalmente y acceder a mi información salarial,
-para llevar control formal y actualizado de mis comisiones y disponer de mi documentación laboral.
+para llevar control formal y actualizado de mis materias asignadas y disponer de mi documentación laboral.
 
 ### Criterios de aceptación:
-- Visualizar únicamente mis comisiones asignadas.
+- Visualizar únicamente mis materias asignadas.
 - Registrar asistencia por fecha.
 - Cargar calificaciones.
 - Consultar estado académico del alumno.

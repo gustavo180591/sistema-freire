@@ -25,7 +25,6 @@
 			items: [
 				{ label: 'Alumnos', href: '/alumnos', icon: 'users', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS'] },
 				{ label: 'Carreras', href: '/carreras', icon: 'academic', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'] },
-				{ label: 'Comisiones', href: '/comisiones', icon: 'users', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE'] },
 				{ label: 'Materias', href: '/materias', icon: 'book', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE'] },
 				{ label: 'Correlatividades', href: '/correlatividades', icon: 'link', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE'], indent: true },
 			]

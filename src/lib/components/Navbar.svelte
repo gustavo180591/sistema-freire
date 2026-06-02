@@ -34,7 +34,6 @@
 		if (path.startsWith('/alumnos')) return 'Alumnos';
 		if (path.startsWith('/usuarios')) return 'Usuarios';
 		if (path.startsWith('/carreras')) return 'Carreras';
-		if (path.startsWith('/comisiones')) return 'Comisiones';
 		if (path.startsWith('/materias')) return 'Materias';
 		if (path.startsWith('/finanzas')) return 'Finanzas';
 		if (path.startsWith('/reportes')) return 'Reportes';

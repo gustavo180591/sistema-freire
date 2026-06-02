@@ -110,7 +110,7 @@ export const actions: Actions = {
         if (roles.some((r) => ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'].includes(r))) {
             redirectUrl = '/dashboard';
         } else if (roles.includes('DOCENTE')) {
-            redirectUrl = '/comisiones';
+            redirectUrl = '/docente';
         } else if (roles.includes('FINANZAS')) {
             redirectUrl = '/finanzas';
         } else if (roles.includes('ALUMNO')) {

@@ -122,19 +122,14 @@ export async function canStudentEnroll(
   const canEnroll = pending.regular.length === 0 && pending.approved.length === 0;
 
   // 6. Verificar si ya está inscripto
-  const existingEnrollment = await prisma.enrollment.findFirst({
+  const existingStatus = await prisma.studentSubjectStatus.findFirst({
     where: {
       studentId,
-      commission: {
-        subjectId
-      },
-      status: {
-        in: ['ACTIVE', 'PENDING']
-      }
+      subjectId
     }
   });
 
-  if (existingEnrollment) {
+  if (existingStatus) {
     warnings.push('El estudiante ya está inscripto en esta materia');
   }
 

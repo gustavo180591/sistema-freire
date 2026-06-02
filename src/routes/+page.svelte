@@ -8,11 +8,11 @@
 		},
 		{
 			name: 'Inscripciones',
-			description: 'Gestión de comisiones, cátedras y inscripciones de alumnos por ciclo lectivo.'
+			description: 'Gestión de materias, planes de estudio y estados académicos de los alumnos.'
 		},
 		{
 			name: 'Asistencia',
-			description: 'Control de presencias, registros de clase y seguimiento de asistencia por comisión.'
+			description: 'Control de presencias, registros de clase y seguimiento de asistencia por materia.'
 		},
 		{
 			name: 'Finanzas',

@@ -11,7 +11,6 @@ const routePermissions: Record<string, string[]> = {
 	'/dashboard': FULL_ACCESS_ROLES,
 	'/usuarios': FULL_ACCESS_ROLES,
 	'/carreras': FULL_ACCESS_ROLES,
-	'/comisiones': [...FULL_ACCESS_ROLES, 'DOCENTE'],
 	'/materias': [...FULL_ACCESS_ROLES, 'DOCENTE'],
 	'/finanzas': [...FULL_ACCESS_ROLES, 'FINANZAS'],
 	'/recibos': [...FULL_ACCESS_ROLES, 'DOCENTE', 'FINANZAS'],

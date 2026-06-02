@@ -7,6 +7,7 @@ const FULL_ACCESS_ROLES = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'];
 
 const routePermissions: Record<string, string[]> = {
 	'/alumno': [...FULL_ACCESS_ROLES, 'ALUMNO'], // Solo alumnos - MÁS ESPECÍFICA primero
+	'/alumno/historial': [...FULL_ACCESS_ROLES, 'ALUMNO'], // Alumnos pueden ver su historial
 	'/alumnos': [...FULL_ACCESS_ROLES, 'FINANZAS'], // Solo personal institucional
 	'/dashboard': FULL_ACCESS_ROLES,
 	'/usuarios': FULL_ACCESS_ROLES,
@@ -69,7 +70,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     // Ordenar rutas por longitud descendente para evitar matching parcial
     // Ej: /alumnos debe evaluarse antes que /alumno
     const sortedRoutes = Object.keys(routePermissions).sort((a, b) => b.length - a.length);
-    
+
     const matchedRoute = sortedRoutes.find((route) =>
         event.url.pathname.startsWith(route)
     );

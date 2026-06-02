@@ -30,7 +30,7 @@
 
 	<!-- Stats Grid -->
 	<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-		<a href="/alumnos/{data.student.id}/historial" class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700">
+		<a href="/alumno/historial" class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700">
 			<div class="flex items-center gap-3">
 				<div class="rounded-xl bg-blue-950/50 p-3">
 					<svg class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

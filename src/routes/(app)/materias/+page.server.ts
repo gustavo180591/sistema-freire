@@ -13,29 +13,43 @@ export const load: PageServerLoad = async ({ url }) => {
 	// Construir where clause
 	const where: any = { active: true };
 
+	// Base conditions
+	const baseConditions: any[] = [{ active: true }];
+
+	// Search condition
 	if (search) {
-		where.OR = [
-			{ name: { contains: search, mode: 'insensitive' } },
-			{ code: { contains: search, mode: 'insensitive' } }
-		];
+		baseConditions.push({
+			OR: [
+				{ name: { contains: search, mode: 'insensitive' } },
+				{ code: { contains: search, mode: 'insensitive' } }
+			]
+		});
 	}
 
+	// Other filters
 	if (yearLevel) {
-		where.yearLevel = parseInt(yearLevel);
+		baseConditions.push({ yearLevel: parseInt(yearLevel) });
 	}
 
 	if (subjectType) {
-		where.subjectType = subjectType as SubjectType;
+		baseConditions.push({ subjectType: subjectType as SubjectType });
 	}
 
 	if (trainingField) {
-		where.trainingField = trainingField as TrainingField;
+		baseConditions.push({ trainingField: trainingField as TrainingField });
 	}
 
 	if (careerId) {
-		where.careerSubjects = {
-			some: { careerId }
-		};
+		baseConditions.push({
+			careerSubjects: {
+				some: { careerId }
+			}
+		});
+	}
+
+	// Apply all conditions with AND
+	if (baseConditions.length > 1) {
+		where.AND = baseConditions;
 	}
 
 	const [subjects, careers] = await Promise.all([

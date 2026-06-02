@@ -147,7 +147,7 @@
 	</section>
 
 	<!-- 3. Tarjetas de resumen -->
-	<section class="grid gap-4 md:grid-cols-4">
+	<section class="grid gap-4 md:grid-cols-2">
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<p class="text-sm text-slate-400">Total materias</p>
 			<h2 class="mt-3 text-4xl font-bold">{metrics.totalSubjects}</h2>
@@ -158,22 +158,6 @@
 			<p class="text-sm text-slate-400">Con correlativas</p>
 			<h2 class="mt-3 text-4xl font-bold">{metrics.totalWithCorrelatives}</h2>
 			<p class="mt-2 text-sm text-slate-500">Materias con requisitos</p>
-		</div>
-
-		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<p class="text-sm text-slate-400">Total comisiones</p>
-			<h2 class="mt-3 text-4xl font-bold">{metrics.totalCommissions}</h2>
-			<p class="mt-2 text-sm text-slate-500">Grupos activos</p>
-		</div>
-
-		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<p class="text-sm text-slate-400">Promedio</p>
-			<h2 class="mt-3 text-4xl font-bold">
-				{metrics.totalSubjects > 0
-					? (metrics.totalCommissions / metrics.totalSubjects).toFixed(1)
-					: '0'}
-			</h2>
-			<p class="mt-2 text-sm text-slate-500">Comisiones por materia</p>
 		</div>
 	</section>
 

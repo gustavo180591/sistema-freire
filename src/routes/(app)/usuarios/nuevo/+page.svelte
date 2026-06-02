@@ -153,7 +153,41 @@
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 					/>
 				</div>
+			</div>
+		</section>
 
+		<!-- Domicilio -->
+		{#if userType === 'ALUMNO'}
+		<section class="space-y-4">
+			<h2 class="text-lg font-semibold text-white">Domicilio</h2>
+			<div class="grid gap-6 md:grid-cols-2">
+				<div>
+					<label for="address" class="mb-2 block text-sm font-medium text-slate-300">Dirección</label>
+					<input
+						id="address"
+						name="address"
+						type="text"
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+					/>
+				</div>
+				<div>
+					<label for="postalCode" class="mb-2 block text-sm font-medium text-slate-300">Código postal</label>
+					<input
+						id="postalCode"
+						name="postalCode"
+						type="text"
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+					/>
+				</div>
+			</div>
+		</section>
+		{/if}
+
+		<!-- 3. Datos académicos -->
+		{#if userType === 'ALUMNO'}
+		<section class="space-y-4">
+			<h2 class="text-lg font-semibold text-white">Datos académicos</h2>
+			<div class="grid gap-6 md:grid-cols-2">
 				<div>
 					<label for="locality" class="mb-2 block text-sm font-medium text-slate-300">Localidad</label>
 					<select
@@ -166,22 +200,10 @@
 						<option value="CAPIOVI">Capiovi</option>
 					</select>
 					<p class="mt-1 text-xs text-slate-500">
-						{#if userType === 'ALUMNO'}
-							El ID del alumno se generará con el prefijo según la localidad (A para Alem, C para Capiovi)
-						{:else}
-							Selecciona la localidad del preceptor
-						{/if}
+						El ID del alumno se generará con el prefijo según la localidad (A para Alem, C para Capiovi)
 					</p>
 				</div>
-			</div>
-		</section>
-		{/if}
 
-		<!-- 3. Datos académicos -->
-		{#if userType === 'ALUMNO'}
-		<section class="space-y-4">
-			<h2 class="text-lg font-semibold text-white">Datos académicos</h2>
-			<div class="grid gap-6 md:grid-cols-2">
 				<div>
 					<label for="careerId" class="mb-2 block text-sm font-medium text-slate-300">Carrera</label>
 					<select
@@ -327,34 +349,7 @@
 		</section>
 		{/if}
 
-		<!-- 5. Domicilio -->
-		{#if userType === 'ALUMNO'}
-		<section class="space-y-4">
-			<h2 class="text-lg font-semibold text-white">Domicilio</h2>
-			<div class="grid gap-6 md:grid-cols-2">
-				<div>
-					<label for="address" class="mb-2 block text-sm font-medium text-slate-300">Dirección</label>
-					<input
-						id="address"
-						name="address"
-						type="text"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-					/>
-				</div>
-				<div>
-					<label for="postalCode" class="mb-2 block text-sm font-medium text-slate-300">Código postal</label>
-					<input
-						id="postalCode"
-						name="postalCode"
-						type="text"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-					/>
-				</div>
-			</div>
-		</section>
-		{/if}
-
-		<!-- 6. Información del sistema -->
+		<!-- 5. Información del sistema -->
 		<section class="rounded-2xl border border-slate-800 bg-slate-950 p-5 text-sm text-slate-400">
 			El sistema asignará automáticamente el rol según el tipo seleccionado y generará una
 			contraseña temporal con cambio obligatorio en el primer acceso.

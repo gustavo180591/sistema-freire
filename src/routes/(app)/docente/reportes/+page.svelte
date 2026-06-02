@@ -59,7 +59,6 @@
 						<div class="mb-4 flex items-start justify-between">
 							<div>
 								<h3 class="font-semibold text-white text-lg">{report.subject}</h3>
-								<p class="text-sm text-slate-400">{report.commission} - {report.term}</p>
 							</div>
 						</div>
 

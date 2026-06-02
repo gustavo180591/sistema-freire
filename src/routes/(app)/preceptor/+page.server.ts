@@ -29,11 +29,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 		orderBy: { name: 'asc' }
 	});
 
-	// Obtener comisiones
-	const commissions = await prisma.commission.findMany({
+	// Obtener materias
+	const subjects = await prisma.subject.findMany({
+		where: { active: true },
 		include: {
-			subject: true,
-			term: true
+			careerSubjects: {
+				include: {
+					career: true
+				}
+			}
 		},
 		orderBy: { name: 'asc' }
 	});
@@ -52,6 +56,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 			currentYear: s.currentYear
 		})),
 		careers,
-		commissions
+		subjects: subjects.map(s => ({
+			id: s.id,
+			code: s.code,
+			name: s.name,
+			yearLevel: s.yearLevel,
+			careers: s.careerSubjects.map(cs => cs.career.name)
+		}))
 	};
 };

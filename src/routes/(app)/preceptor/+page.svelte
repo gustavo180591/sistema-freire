@@ -235,15 +235,15 @@
 		</div>
 	</div>
 
-	<!-- Información de Comisiones -->
+	<!-- Información de Materias -->
 	<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-		<h2 class="mb-4 text-xl font-semibold">Comisiones Activas</h2>
+		<h2 class="mb-4 text-xl font-semibold">Materias Activas</h2>
 		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-			{#each data.commissions as commission}
+			{#each data.subjects as subject}
 				<div class="rounded-xl border border-slate-800 bg-slate-950 p-4">
-					<p class="font-semibold text-white">{commission.name}</p>
-					<p class="text-sm text-slate-400">{commission.subject.name}</p>
-					<p class="mt-2 text-xs text-slate-500">{commission.term.name}</p>
+					<p class="font-semibold text-white">{subject.code} - {subject.name}</p>
+					<p class="text-sm text-slate-400">{subject.yearLevel}° Año</p>
+					<p class="mt-2 text-xs text-slate-500">{subject.careers.join(', ')}</p>
 				</div>
 			{/each}
 		</div>

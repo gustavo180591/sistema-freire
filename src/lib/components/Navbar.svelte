@@ -18,10 +18,19 @@
 
 	const logoPath = '/logo.png';
 
+	// Determinar URL de inicio según rol
+	const homeUrl = $derived(() => {
+		if (!user) return '/';
+		if (user.roles.includes('ALUMNO')) return '/alumno';
+		if (user.roles.includes('DOCENTE')) return '/docente';
+		if (user.roles.includes('PRECEPTOR')) return '/preceptor';
+		return '/dashboard';
+	});
+
 	// Determinar URL de perfil según rol
 	const profileUrl = $derived(() => {
 		if (!user) return '/login';
-		if (user.roles.includes('ALUMNO')) return '/alumno';
+		if (user.roles.includes('ALUMNO')) return '/alumno/perfil';
 		if (user.roles.includes('DOCENTE')) return '/docente';
 		if (user.roles.includes('PRECEPTOR')) return '/preceptor';
 		return '/perfil';
@@ -76,7 +85,7 @@
 		<div class="flex h-full items-center justify-between">
 			<!-- Logo + Sección -->
 			<div class="flex items-center gap-6">
-				<a href="/" class="flex items-center gap-2 transition hover:opacity-80">
+				<a href={homeUrl()} class="flex items-center gap-2 transition hover:opacity-80">
 					<img src={logoPath} alt="Logo" class="h-8 w-auto" />
 					<span class="text-lg font-bold text-white">Paulo Freire</span>
 				</a>

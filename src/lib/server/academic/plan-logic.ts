@@ -264,7 +264,7 @@ export async function getCurriculum(careerId: string, year?: number) {
       isMandatory: cs.isMandatory,
     });
     return acc;
-  }, {} as Record<number, typeof careerSubjects>);
+  }, {} as Record<number, Array<{ subject: any; isMandatory: boolean }>>);
 
   return {
     careerId,

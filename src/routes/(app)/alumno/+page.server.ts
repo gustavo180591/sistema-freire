@@ -44,6 +44,16 @@ export const load: PageServerLoad = async ({ locals }) => {
         s => s.regularityStatus === 'REGULAR'
     ).length;
 
+    // Materias cursadas (aprobadas o regularizadas)
+    const completedSubjects = student.subjectStatuses.filter(
+        s => s.approved || s.regularityStatus === 'REGULAR'
+    );
+
+    // Materias cursando (en estado LIBRE)
+    const currentSubjects = student.subjectStatuses.filter(
+        s => s.regularityStatus === 'LIBRE'
+    );
+
     // Calcular deuda total
     const totalDebt = student.studentCharges.reduce(
         (acc, charge) => acc + Number(charge.amount),
@@ -64,7 +74,23 @@ export const load: PageServerLoad = async ({ locals }) => {
             totalSubjects,
             approvedSubjects,
             regularSubjects,
-            progress: totalSubjects > 0 ? Math.round((approvedSubjects / totalSubjects) * 100) : 0
+            progress: totalSubjects > 0 ? Math.round((approvedSubjects / totalSubjects) * 100) : 0,
+            completedSubjects: completedSubjects.map(s => ({
+                id: s.subject.id,
+                name: s.subject.name,
+                code: s.subject.code,
+                yearLevel: s.subject.yearLevel,
+                regularityStatus: s.regularityStatus,
+                approved: s.approved
+            })),
+            currentSubjects: currentSubjects.map(s => ({
+                id: s.subject.id,
+                name: s.subject.name,
+                code: s.subject.code,
+                yearLevel: s.subject.yearLevel,
+                regularityStatus: s.regularityStatus,
+                approved: s.approved
+            }))
         },
         finances: {
             totalDebt,

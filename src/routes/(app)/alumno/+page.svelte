@@ -39,7 +39,7 @@
 				</div>
 				<div>
 					<p class="text-sm text-slate-400">Materias cursadas</p>
-					<p class="text-2xl font-bold">{data.academic.totalSubjects}</p>
+					<p class="text-2xl font-bold">{data.academic.completedSubjects.length}</p>
 				</div>
 			</div>
 			<p class="mt-4 text-sm text-slate-400 group-hover:text-slate-300">Ver historial académico →</p>
@@ -94,6 +94,56 @@
 			</p>
 		</div>
 	</div>
+
+	<!-- Materias Cursando -->
+	{#if data.academic.currentSubjects.length > 0}
+		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+			<h2 class="text-lg font-semibold mb-4">📚 Materias Cursando</h2>
+			<div class="space-y-3">
+				{#each data.academic.currentSubjects as subject}
+					<div class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-4">
+						<div>
+							<p class="font-medium">{subject.name}</p>
+							<p class="text-sm text-slate-400">{subject.code} - Año {subject.yearLevel}</p>
+						</div>
+						<div class="flex items-center gap-2">
+							<span class="rounded-full bg-amber-500/20 text-amber-400 px-3 py-1 text-xs">
+								{subject.regularityStatus}
+							</span>
+						</div>
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/if}
+
+	<!-- Materias Cursadas -->
+	{#if data.academic.completedSubjects.length > 0}
+		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+			<h2 class="text-lg font-semibold mb-4">✅ Materias Cursadas</h2>
+			<div class="space-y-3">
+				{#each data.academic.completedSubjects as subject}
+					<div class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-4">
+						<div>
+							<p class="font-medium">{subject.name}</p>
+							<p class="text-sm text-slate-400">{subject.code} - Año {subject.yearLevel}</p>
+						</div>
+						<div class="flex items-center gap-2">
+							{#if subject.approved}
+								<span class="rounded-full bg-emerald-500/20 text-emerald-400 px-3 py-1 text-xs">
+									Aprobada
+								</span>
+							{:else}
+								<span class="rounded-full bg-blue-500/20 text-blue-400 px-3 py-1 text-xs">
+									Regular
+								</span>
+							{/if}
+						</div>
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/if}
 
 	<!-- Últimos cargos -->
 	{#if data.finances.charges.length > 0}

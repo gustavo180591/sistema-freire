@@ -14,14 +14,22 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	// Obtener el docente asociado al usuario
 	const teacher = await prisma.teacher.findUnique({
-		where: { userId: locals.user.id },
+		where: { userId: locals.user.id }
+	});
+
+	if (!teacher) {
+		throw redirect(303, '/dashboard');
+	}
+
+	// Obtener las materias asignadas al docente
+	const subjectTeachers = await prisma.subjectTeacher.findMany({
+		where: { teacherId: teacher.id },
 		include: {
-			commissions: {
+			subject: {
 				include: {
-					commission: {
+					careerSubjects: {
 						include: {
-							subject: true,
-							term: true
+							career: true
 						}
 					}
 				}
@@ -29,27 +37,18 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	if (!teacher) {
-		throw redirect(303, '/dashboard');
-	}
-
-	// Obtener las comisiones asignadas al docente
-	const commissions = teacher.commissions.map(ct => ct.commission);
+	const subjects = subjectTeachers.map(st => st.subject);
 
 	// Obtener materiales de clase del docente
 	const materials = await prisma.classMaterial.findMany({
 		where: {
 			uploadedBy: locals.user.id,
-			commissionId: {
-				in: commissions.map(c => c.id)
+			subjectId: {
+				in: subjects.map(s => s.id)
 			}
 		},
 		include: {
-			commission: {
-				include: {
-					subject: true
-				}
-			},
+			subject: true,
 			uploader: true
 		},
 		orderBy: { createdAt: 'desc' },
@@ -57,12 +56,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	return {
-		commissions: commissions.map(c => ({
-			id: c.id,
-			name: c.name,
-			subject: c.subject.name,
-			term: c.term.name,
-			active: c.active
+		subjects: subjects.map(s => ({
+			id: s.id,
+			code: s.code,
+			name: s.name,
+			yearLevel: s.yearLevel,
+			careers: s.careerSubjects.map(cs => cs.career.name)
 		})),
 		materials: materials.map(m => ({
 			id: m.id,
@@ -71,8 +70,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			fileUrl: m.fileUrl,
 			fileSize: m.fileSize,
 			mimeType: m.mimeType,
-			subject: m.commission.subject.name,
-			commission: m.commission.name,
+			subject: m.subject.name,
 			createdAt: m.createdAt,
 			uploaderName: `${m.uploader.firstName} ${m.uploader.lastName}`
 		}))
@@ -88,37 +86,41 @@ export const actions: Actions = {
 		}
 
 		const data = await request.formData();
-		const commissionId = data.get('commissionId')?.toString();
+		const subjectId = data.get('subjectId')?.toString();
 		const title = data.get('title')?.toString();
 		const description = data.get('description')?.toString();
 		const file = data.get('file') as File;
 
-		if (!commissionId || !title || !file) {
+		if (!subjectId || !title || !file) {
 			return { error: 'Por favor completá todos los campos requeridos' };
 		}
 
 		try {
-			// Verificar que la comisión pertenezca al docente
+			// Verificar que la materia pertenezca al docente
 			const teacher = await prisma.teacher.findUnique({
-				where: { userId: locals.user.id },
-				include: {
-					commissions: true
-				}
+				where: { userId: locals.user.id }
 			});
 
 			if (!teacher) {
 				return { error: 'Docente no encontrado' };
 			}
 
-			const teacherCommissionIds = teacher.commissions.map(ct => ct.commissionId);
-			if (!teacherCommissionIds.includes(commissionId)) {
-				return { error: 'No tenés permiso para subir materiales a esta comisión' };
+			const subjectTeacher = await prisma.subjectTeacher.findUnique({
+				where: {
+					subjectId_teacherId: {
+						subjectId,
+						teacherId: teacher.id
+					}
+				}
+			});
+
+			if (!subjectTeacher) {
+				return { error: 'No tenés permiso para subir materiales a esta materia' };
 			}
 
-			// Obtener datos de la comisión para auditoría
-			const commission = await prisma.commission.findUnique({
-				where: { id: commissionId },
-				include: { subject: true }
+			// Obtener datos de la materia para auditoría
+			const subject = await prisma.subject.findUnique({
+				where: { id: subjectId }
 			});
 
 			// Convertir archivo a buffer
@@ -135,7 +137,7 @@ export const actions: Actions = {
 			const fs = await import('fs');
 			const path = await import('path');
 			const uploadsDir = path.join(process.cwd(), 'static', 'uploads', 'materials');
-			
+
 			try {
 				await fs.promises.mkdir(uploadsDir, { recursive: true });
 			} catch (e) {
@@ -147,7 +149,7 @@ export const actions: Actions = {
 
 			await prisma.classMaterial.create({
 				data: {
-					commissionId,
+					subjectId,
 					title,
 					description: description || null,
 					fileUrl,
@@ -162,8 +164,8 @@ export const actions: Actions = {
 				userId: locals.user.id,
 				action: AuditAction.CREATE,
 				entityType: 'MATERIAL',
-				entityId: commissionId,
-				description: `Material de clase subido: ${title} para ${commission?.subject.name} (${file.name})`
+				entityId: subjectId,
+				description: `Material de clase subido: ${title} para ${subject?.name} (${file.name})`
 			});
 
 			return { success: 'Material subido exitosamente' };

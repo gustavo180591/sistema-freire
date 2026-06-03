@@ -1,8 +1,15 @@
 import type { PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { SubjectType, TrainingField } from '@prisma/client';
+import { getUserAllowedLocationIds } from '$lib/server/auth/authorization';
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, locals }) => {
+	if (!locals.user) {
+		throw new Error('Usuario no autenticado');
+	}
+
+	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+
 	// Obtener parámetros de filtro
 	const search = url.searchParams.get('search') || '';
 	const yearLevel = url.searchParams.get('yearLevel') || '';
@@ -15,6 +22,19 @@ export const load: PageServerLoad = async ({ url }) => {
 
 	// Base conditions
 	const baseConditions: any[] = [{ active: true }];
+
+	// Filtrar por localidades permitidas a través de carreras
+	if (allowedLocationIds.length > 0) {
+		baseConditions.push({
+			careerSubjects: {
+				some: {
+					career: {
+						locationId: { in: allowedLocationIds }
+					}
+				}
+			}
+		});
+	}
 
 	// Search condition
 	if (search) {
@@ -69,7 +89,10 @@ export const load: PageServerLoad = async ({ url }) => {
 			]
 		}),
 		prisma.career.findMany({
-			where: { active: true },
+			where: { 
+				active: true,
+				locationId: { in: allowedLocationIds }
+			},
 			select: { id: true, name: true, code: true }
 		})
 	]);

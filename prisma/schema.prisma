@@ -30,6 +30,7 @@ model User {
   resolvedFollowUps StudentFollowUp[] @relation("FollowUpResolver")
   uploadedMaterials ClassMaterial[] @relation("MaterialUploader")
   createdEvaluations Evaluation[] @relation("EvaluationCreator")
+  locationPermissions UserLocationPermission[]
 
   // Bloqueo por intentos fallidos
   failedLoginAttempts Int       @default(0)
@@ -90,12 +91,15 @@ model Career {
   active          Boolean        @default(true)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
+  locationId      String
   students        Student[]
   studyPlans      StudyPlan[]
   careerSubjects  CareerSubject[] // Materias específicas de esta carrera
   subjectCorrelatives SubjectCorrelative[] // Correlativas específicas de carrera
+  location        Location       @relation(fields: [locationId], references: [id])
 
   @@index([trainingField, active])
+  @@index([locationId, active])
   @@map("careers")
 }
 
@@ -393,13 +397,16 @@ model StudentCharge {
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
   userId      String?
+  academicTermId String?
   allocations PaymentAllocation[]
   concept     ChargeConcept       @relation(fields: [conceptId], references: [id])
   student     Student             @relation(fields: [studentId], references: [id])
   user        User?               @relation(fields: [userId], references: [id])
+  academicTerm AcademicTerm?       @relation(fields: [academicTermId], references: [id])
 
   @@index([studentId, status])
   @@index([periodLabel])
+  @@index([academicTermId])
   @@map("student_charges")
 }
 
@@ -413,11 +420,14 @@ model Payment {
   notes       String?
   createdAt   DateTime            @default(now())
   userId      String?
+  academicTermId String?
   allocations PaymentAllocation[]
   student     Student             @relation(fields: [studentId], references: [id])
   user        User?               @relation(fields: [userId], references: [id])
+  academicTerm AcademicTerm?       @relation(fields: [academicTermId], references: [id])
 
   @@index([studentId, paidAt])
+  @@index([academicTermId])
   @@map("payments")
 }
 
@@ -594,6 +604,77 @@ enum DocumentType {
   PHOTO_ID
   MEDICAL_CERTIFICATE
   OTHER
+}
+
+// ======================================================
+// LOCATION MODEL - Para separar sedes/localidades
+// ======================================================
+
+model Location {
+  id          String    @id @default(cuid())
+  name        String    @unique  // Ej: "Sede Central", "Anexo Norte"
+  code        String    @unique  // Código corto para referencias
+  address     String?
+  city        String?
+  province    String?
+  phone       String?
+  email       String?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  careers     Career[]
+  userPermissions UserLocationPermission[]
+  academicTerms AcademicTerm[]
+
+  @@index([active])
+  @@map("locations")
+}
+
+model UserLocationPermission {
+  id         String   @id @default(cuid())
+  userId     String
+  locationId String
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, locationId])
+  @@index([userId])
+  @@index([locationId])
+  @@map("user_location_permissions")
+}
+
+// ======================================================
+// ACADEMIC TERM MODEL - Períodos lectivos
+// ======================================================
+
+model AcademicTerm {
+  id          String          @id @default(cuid())
+  name        String          // Ej: "2024 - 1° Cuatrimestre"
+  code        String          @unique  // Ej: "2024-1C"
+  year        Int
+  termType    TermType        // ANUAL, 1C, 2C, etc.
+  startDate   DateTime
+  endDate     DateTime
+  active      Boolean         @default(true)
+  locationId  String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  charges     StudentCharge[]
+  payments    Payment[]
+  location    Location?       @relation(fields: [locationId], references: [id])
+
+  @@index([year, active])
+  @@index([locationId, active])
+  @@map("academic_terms")
+}
+
+enum TermType {
+  ANUAL        // Año completo
+  PRIMER_CUATRIMESTRE  // 1° Cuatrimestre
+  SEGUNDO_CUATRIMESTRE // 2° Cuatrimestre
+  VERANO       // Curso de verano
+  ESPECIAL     // Período especial
 }
 
 model StudentDocument {

@@ -1,9 +1,23 @@
 import type { PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
+import { getUserAllowedLocationIds } from '$lib/server/auth/authorization';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
+	if (!locals.user) {
+		throw new Error('Usuario no autenticado');
+	}
+
+	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+
     const [charges, payments] = await Promise.all([
         prisma.studentCharge.findMany({
+			where: {
+				student: {
+					career: {
+						locationId: { in: allowedLocationIds }
+					}
+				}
+			},
             include: {
                 student: {
                     include: {
@@ -20,6 +34,13 @@ export const load: PageServerLoad = async () => {
             }
         }),
         prisma.payment.findMany({
+			where: {
+				student: {
+					career: {
+						locationId: { in: allowedLocationIds }
+					}
+				}
+			},
             select: {
                 amount: true
             }

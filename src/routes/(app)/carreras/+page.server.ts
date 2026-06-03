@@ -1,11 +1,19 @@
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { fail } from '@sveltejs/kit';
+import { getUserAllowedLocationIds } from '$lib/server/auth/authorization';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
+	if (!locals.user) {
+		throw new Error('Usuario no autenticado');
+	}
+
+	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+
     const careers = await prisma.career.findMany({
         where: {
-            active: true
+            active: true,
+			locationId: { in: allowedLocationIds }
         },
         include: {
             studyPlans: {

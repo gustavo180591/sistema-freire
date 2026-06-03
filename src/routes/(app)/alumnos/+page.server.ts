@@ -1,11 +1,24 @@
 import { prisma } from '$lib/server/db/prisma';
 import type { Prisma } from '@prisma/client';
 import type { PageServerLoad } from './$types';
+import { getUserAllowedLocationIds } from '$lib/server/auth/authorization';
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, locals }) => {
+	if (!locals.user) {
+		throw new Error('Usuario no autenticado');
+	}
+
 	const careerId = url.searchParams.get('carrera');
-	
-	const where = careerId ? { careerId } : {};
+	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+
+	const where: Prisma.StudentWhereInput = careerId ? { careerId } : {};
+
+	// Filtrar por localidades permitidas a través de la carrera
+	if (allowedLocationIds.length > 0) {
+		where.career = {
+			locationId: { in: allowedLocationIds }
+		};
+	}
 	
 	const students = await prisma.student.findMany({
 		where,
@@ -20,7 +33,10 @@ export const load: PageServerLoad = async ({ url }) => {
 	});
 
 	const careers = await prisma.career.findMany({
-		where: { active: true },
+		where: {
+			active: true,
+			locationId: { in: allowedLocationIds }
+		},
 		orderBy: { name: 'asc' },
 		select: { id: true, name: true }
 	});

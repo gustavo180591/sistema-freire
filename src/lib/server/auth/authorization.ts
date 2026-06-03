@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+import { prisma } from '$lib/server/db/prisma';
 
 export function hasRole(
     user: App.Locals['user'],
@@ -37,5 +38,68 @@ export function requireRoleOrOwnership(
 
     if (!byRole && !byOwner) {
         throw error(403, 'No autorizado');
+    }
+}
+
+/**
+ * Obtiene los IDs de localidades permitidos para un usuario
+ * Si el usuario es SUPERADMIN, tiene acceso a todas las localidades
+ * Si no tiene permisos de localidad, retorna array vacío (sin acceso)
+ */
+export async function getUserAllowedLocationIds(userId: string): Promise<string[]> {
+    // Verificar si es SUPERADMIN para acceso global
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+            roles: {
+                include: {
+                    role: true
+                }
+            }
+        }
+    });
+
+    if (!user) return [];
+
+    const isSuperAdmin = user.roles.some(r => r.role.code === 'SUPERADMIN');
+    if (isSuperAdmin) {
+        // Retornar todas las localidades activas
+        const locations = await prisma.location.findMany({
+            where: { active: true },
+            select: { id: true }
+        });
+        return locations.map(l => l.id);
+    }
+
+    // Retornar localidades específicas asignadas
+    const permissions = await prisma.userLocationPermission.findMany({
+        where: { userId },
+        include: {
+            location: {
+                select: { id: true, active: true }
+            }
+        }
+    });
+
+    return permissions
+        .filter(p => p.location.active)
+        .map(p => p.location.id);
+}
+
+/**
+ * Verifica si un usuario tiene acceso a una localidad específica
+ */
+export async function hasLocationAccess(userId: string, locationId: string): Promise<boolean> {
+    const allowedIds = await getUserAllowedLocationIds(userId);
+    return allowedIds.includes(locationId);
+}
+
+/**
+ * Requiere que el usuario tenga acceso a la localidad especificada
+ */
+export async function requireLocationAccess(userId: string, locationId: string) {
+    const hasAccess = await hasLocationAccess(userId, locationId);
+    if (!hasAccess) {
+        throw error(403, 'No tienes permisos para acceder a datos de esta localidad');
     }
 }

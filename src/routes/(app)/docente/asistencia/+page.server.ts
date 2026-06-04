@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
-import { requireRole } from '$lib/server/auth/authorization';
+import { requireRole, getUserAllowedLocationIds } from '$lib/server/auth/authorization';
 import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
 
@@ -12,6 +12,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/login');
 	}
 
+	// Obtener localidades permitidas para el docente
+	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+
 	// Obtener el docente asociado al usuario
 	const teacher = await prisma.teacher.findUnique({
 		where: { userId: locals.user.id }
@@ -21,13 +24,18 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/dashboard');
 	}
 
-	// Obtener las materias asignadas al docente
+	// Obtener las materias asignadas al docente, filtrando por localidades permitidas
 	const subjectTeachers = await prisma.subjectTeacher.findMany({
 		where: { teacherId: teacher.id },
 		include: {
 			subject: {
 				include: {
 					careerSubjects: {
+						where: {
+							career: {
+								locationId: { in: allowedLocationIds }
+							}
+						},
 						include: {
 							career: true
 						}

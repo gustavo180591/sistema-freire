@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
-import { requireRole } from '$lib/server/auth/authorization';
+import { requireRole, getUserAllowedLocationIds } from '$lib/server/auth/authorization';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	requireRole(locals.user, ['PRECEPTOR']);
@@ -10,9 +10,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/login');
 	}
 
-	// Obtener estudiantes activos
+	// Obtener localidades permitidas para el preceptor
+	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+
+	// Obtener estudiantes activos filtrados por localidad
 	const students = await prisma.student.findMany({
-		where: { status: 'ACTIVE' },
+		where: {
+			status: 'ACTIVE',
+			career: {
+				locationId: { in: allowedLocationIds }
+			}
+		},
 		include: {
 			user: true,
 			career: true
@@ -23,17 +31,25 @@ export const load: PageServerLoad = async ({ locals }) => {
 		]
 	});
 
-	// Obtener carreras disponibles
+	// Obtener carreras disponibles filtradas por localidad
 	const careers = await prisma.career.findMany({
-		where: { active: true },
+		where: {
+			active: true,
+			locationId: { in: allowedLocationIds }
+		},
 		orderBy: { name: 'asc' }
 	});
 
-	// Obtener materias
+	// Obtener materias filtradas por localidad
 	const subjects = await prisma.subject.findMany({
 		where: { active: true },
 		include: {
 			careerSubjects: {
+				where: {
+					career: {
+						locationId: { in: allowedLocationIds }
+					}
+				},
 				include: {
 					career: true
 				}

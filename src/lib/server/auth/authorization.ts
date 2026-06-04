@@ -43,11 +43,11 @@ export function requireRoleOrOwnership(
 
 /**
  * Obtiene los IDs de localidades permitidos para un usuario
- * Si el usuario es SUPERADMIN, tiene acceso a todas las localidades
- * Si no tiene permisos de localidad, retorna array vacío (sin acceso)
+ * Roles con acceso global a todas las localidades: SUPERADMIN, DIRECTOR, SECRETARIA, FINANZAS, APODERADO
+ * Otros roles (DOCENTE, PRECEPTOR, ALUMNO) solo ven sus localidades asignadas
  */
 export async function getUserAllowedLocationIds(userId: string): Promise<string[]> {
-    // Verificar si es SUPERADMIN para acceso global
+    // Verificar roles del usuario
     const user = await prisma.user.findUnique({
         where: { id: userId },
         include: {
@@ -61,8 +61,11 @@ export async function getUserAllowedLocationIds(userId: string): Promise<string[
 
     if (!user) return [];
 
-    const isSuperAdmin = user.roles.some(r => r.role.code === 'SUPERADMIN');
-    if (isSuperAdmin) {
+    // Roles con acceso global a todas las localidades
+    const globalAccessRoles = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'FINANZAS', 'APODERADO'];
+    const hasGlobalAccess = user.roles.some(r => globalAccessRoles.includes(r.role.code));
+
+    if (hasGlobalAccess) {
         // Retornar todas las localidades activas
         const locations = await prisma.location.findMany({
             where: { active: true },

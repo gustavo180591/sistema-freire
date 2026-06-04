@@ -9,7 +9,8 @@
 		return 'text-red-400 bg-red-950/50';
 	}
 
-	function getStatusColor(status: string): string {
+	function getStatusColor(status: string, promoted?: boolean): string {
+		if (promoted) return 'text-purple-400 bg-purple-950/50';
 		switch (status) {
 			case 'REGULAR': return 'text-amber-400 bg-amber-950/50';
 			case 'APROBADO': return 'text-emerald-400 bg-emerald-950/50';
@@ -108,8 +109,8 @@
 						<div class="flex items-start justify-between">
 							<div>
 								<p class="font-medium">{status.subject}</p>
-								<span class="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs {getStatusColor(status.status)}">
-									{status.status}
+								<span class="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs {getStatusColor(status.status, status.promoted)}">
+									{#if status.promoted}⭐ PROMOCIONADO{:else}{status.status}{/if}
 								</span>
 							</div>
 							<div class="text-right">
@@ -119,12 +120,27 @@
 								</p>
 							</div>
 						</div>
-						{#if status.approved}
+						{#if status.finalGrade !== null}
+							<div class="mt-3 flex items-center justify-between">
+								<div class="flex items-center gap-2">
+									<p class="text-sm text-slate-400">Nota final:</p>
+									<p class="font-semibold {getGradeColor(status.finalGrade)}">
+										{status.finalGrade.toFixed(2)}
+									</p>
+								</div>
+								{#if status.promoted}
+									<span class="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs text-purple-400 bg-purple-950/50">
+										⭐ Promocionado
+									</span>
+								{/if}
+							</div>
+						{/if}
+						{#if status.approved && !status.promoted}
 							<div class="mt-3 flex items-center gap-2 text-emerald-400">
 								<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
 								</svg>
-								<span class="text-sm font-medium">Materia aprobada</span>
+								<span class="text-sm font-medium">Aprobado con final</span>
 							</div>
 						{/if}
 					</div>

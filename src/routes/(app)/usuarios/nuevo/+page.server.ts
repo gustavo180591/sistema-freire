@@ -25,14 +25,16 @@ function generateStudentId(locality: string): string {
 	return `${prefix}${timestamp}${random}`.toUpperCase();
 }
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ url }) => {
 	const careers = await prisma.career.findMany({
 		where: { active: true },
 		orderBy: { name: 'asc' },
 		select: { id: true, name: true }
 	});
 
-	return { careers };
+	const type = url.searchParams.get('type') || 'ALUMNO';
+
+	return { careers, type };
 };
 
 export const actions: Actions = {

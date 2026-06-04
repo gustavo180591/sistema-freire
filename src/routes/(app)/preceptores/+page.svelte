@@ -50,7 +50,7 @@
 			<p class="mt-2 text-sm text-slate-400">Administración del cuerpo de preceptores del instituto.</p>
 		</div>
 		<a
-			href="/usuarios/nuevo"
+			href="/usuarios/nuevo?type=PRECEPTOR"
 			class="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.02]"
 		>
 			<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

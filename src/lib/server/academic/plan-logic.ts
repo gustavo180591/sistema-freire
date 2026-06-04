@@ -141,6 +141,126 @@ export async function canStudentEnroll(
 }
 
 /**
+ * Calcula el estado final de un estudiante en una materia anual
+ * Determina si está promocionado, regular o libre según los umbrales
+ */
+export async function calculateFinalStatus(
+  studentId: string,
+  subjectId: string
+): Promise<{
+  regularityStatus: 'REGULAR' | 'LIBRE';
+  approved: boolean;
+  promoted: boolean;
+  finalGrade: number;
+  promotionDate?: Date;
+}> {
+  // Obtener todas las calificaciones del estudiante en la materia
+  const grades = await prisma.grade.findMany({
+    where: { studentId, subjectId }
+  });
+
+  if (grades.length === 0) {
+    return {
+      regularityStatus: 'LIBRE',
+      approved: false,
+      promoted: false,
+      finalGrade: 0
+    };
+  }
+
+  // Calcular promedio
+  const sum = grades.reduce((acc, g) => acc + Number(g.value), 0);
+  const average = sum / grades.length;
+
+  // Obtener umbrales de la materia
+  const subject = await prisma.subject.findUnique({
+    where: { id: subjectId }
+  });
+
+  const approvalThreshold = Number(subject?.approvalThreshold || 6);
+  const promotionThreshold = Number(subject?.promotionThreshold || 8);
+
+  // Determinar estado según umbrales
+  if (average >= promotionThreshold) {
+    return {
+      regularityStatus: 'REGULAR',
+      approved: true,
+      promoted: true,
+      finalGrade: average,
+      promotionDate: new Date()
+    };
+  } else if (average >= approvalThreshold) {
+    return {
+      regularityStatus: 'REGULAR',
+      approved: false,  // Necesita rendir final
+      promoted: false,
+      finalGrade: average
+    };
+  } else {
+    return {
+      regularityStatus: 'LIBRE',
+      approved: false,
+      promoted: false,
+      finalGrade: average
+    };
+  }
+}
+
+/**
+ * Actualiza el estado de un estudiante en una materia basándose en sus calificaciones
+ * Debe llamarse al cerrar el período anual o cuando se carga una calificación final
+ */
+export async function updateStudentSubjectStatus(
+  studentId: string,
+  subjectId: string
+): Promise<void> {
+  // Calcular estado final
+  const status = await calculateFinalStatus(studentId, subjectId);
+
+  // Buscar o crear el registro de estado
+  const existingStatus = await prisma.studentSubjectStatus.findUnique({
+    where: {
+      studentId_subjectId: {
+        studentId,
+        subjectId
+      }
+    }
+  });
+
+  if (existingStatus) {
+    // Actualizar registro existente
+    await prisma.studentSubjectStatus.update({
+      where: {
+        studentId_subjectId: {
+          studentId,
+          subjectId
+        }
+      },
+      data: {
+        regularityStatus: status.regularityStatus,
+        approved: status.approved,
+        promoted: status.promoted,
+        finalGrade: status.finalGrade,
+        promotionDate: status.promotionDate
+      }
+    });
+  } else {
+    // Crear nuevo registro
+    await prisma.studentSubjectStatus.create({
+      data: {
+        studentId,
+        subjectId,
+        regularityStatus: status.regularityStatus,
+        approved: status.approved,
+        promoted: status.promoted,
+        finalGrade: status.finalGrade,
+        promotionDate: status.promotionDate
+      }
+    });
+  }
+}
+
+/**
  * Verifica si un estudiante puede aprobar una materia
  * Revisa correlativas de tipo APROBADO para dar el final
  */
@@ -154,12 +274,19 @@ export async function canStudentPass(
   missing: string[];
   reason?: string;
 }> {
-  // 1. Verificar que tenga nota suficiente
-  if (finalGrade < 4) {
+  // Obtener umbrales de la materia
+  const subject = await prisma.subject.findUnique({
+    where: { id: subjectId }
+  });
+
+  const approvalThreshold = Number(subject?.approvalThreshold || 6);
+
+  // 1. Verificar que tenga nota suficiente (usando umbral dinámico)
+  if (finalGrade < approvalThreshold) {
     return {
       canPass: false,
       missing: [],
-      reason: 'La nota mínima para aprobar es 4',
+      reason: `La nota mínima para aprobar es ${approvalThreshold}`,
     };
   }
 

@@ -3,7 +3,7 @@
 	import { enhance } from '$app/forms';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
-	let userType = $state('ALUMNO');
+	let userType = $state(data.type || 'ALUMNO');
 	let loading = $state(false);
 
 	const emailLabel = $derived(

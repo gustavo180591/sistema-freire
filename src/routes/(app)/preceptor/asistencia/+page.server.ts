@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
-import { requireRole } from '$lib/server/auth/authorization';
+import { requireRole, getUserAllowedLocationIds } from '$lib/server/auth/authorization';
 import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
 
@@ -12,9 +12,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/login');
 	}
 
-	// Obtener estudiantes activos
+	// Obtener localidades permitidas para el preceptor
+	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+
+	// Obtener estudiantes activos filtrados por localidad
 	const students = await prisma.student.findMany({
-		where: { status: 'ACTIVE' },
+		where: {
+			status: 'ACTIVE',
+			career: {
+				locationId: { in: allowedLocationIds }
+			}
+		},
 		include: {
 			user: true,
 			career: true
@@ -25,10 +33,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 		]
 	});
 
-	// Obtener materias
+	// Obtener materias filtradas por localidad
 	const subjects = await prisma.subject.findMany({
 		include: {
 			careerSubjects: {
+				where: {
+					career: {
+						locationId: { in: allowedLocationIds }
+					}
+				},
 				include: {
 					career: true
 				}
@@ -37,8 +50,19 @@ export const load: PageServerLoad = async ({ locals }) => {
 		orderBy: { name: 'asc' }
 	});
 
-	// Obtener registros de asistencia recientes
+	// Obtener registros de asistencia recientes filtrados por localidad
 	const recentAttendance = await prisma.attendanceRecord.findMany({
+		where: {
+			subject: {
+				careerSubjects: {
+					some: {
+						career: {
+							locationId: { in: allowedLocationIds }
+						}
+					}
+				}
+			}
+		},
 		include: {
 			entries: {
 				include: {

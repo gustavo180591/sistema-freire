@@ -69,6 +69,9 @@ export const load: PageServerLoad = async ({ locals }) => {
         subject: status.subject.name,
         status: status.regularityStatus,
         approved: status.approved,
+        promoted: status.promoted,
+        finalGrade: status.finalGrade ? Number(status.finalGrade) : null,
+        promotionDate: status.promotionDate,
         attendancePercent: Number(status.attendancePercent)
     }));
 

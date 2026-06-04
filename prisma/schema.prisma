@@ -199,6 +199,11 @@ model Subject {
   // Modalidad de acreditación
   accreditationMode AccreditationMode @default(EXAMEN_FINAL)
 
+  // Umbrales de calificación para materias anuales
+  approvalThreshold    Decimal @default(6) @db.Decimal(3, 2)  // Nota mínima para aprobar (regular)
+  promotionThreshold   Decimal @default(8) @db.Decimal(3, 2)  // Nota mínima para promocionar
+  isAnnual             Boolean @default(true)                // Indica si es materia anual
+
   // Metadatos académicos
   hoursPerWeek     Int?                // Horas cátedra semanales
   isElective       Boolean             @default(false)
@@ -334,12 +339,16 @@ model StudentSubjectStatus {
   attendancePercent Decimal          @default(0) @db.Decimal(5, 2)
   regularityStatus  RegularityStatus @default(LIBRE)
   approved          Boolean          @default(false)
+  promoted          Boolean          @default(false)  // Promocionado con nota >= threshold
+  finalGrade        Decimal?                      @db.Decimal(5, 2)  // Nota final del año
+  promotionDate     DateTime?                     // Fecha de promoción
   updatedAt         DateTime         @updatedAt
   student           Student          @relation(fields: [studentId], references: [id])
   subject           Subject          @relation(fields: [subjectId], references: [id])
 
   @@unique([studentId, subjectId])
   @@index([studentId, regularityStatus])
+  @@index([studentId, promoted])
   @@map("student_subject_status")
 }
 

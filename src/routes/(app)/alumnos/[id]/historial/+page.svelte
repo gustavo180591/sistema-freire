@@ -1,7 +1,10 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import { enhance } from '$app/forms';
 
 	let { data }: { data: PageData } = $props();
+	let showResetModal = $state(false);
+	let resetMessage = $state<{ type: 'success' | 'error'; text: string } | null>(null);
 
 	const student = $derived(data.student);
 	const academic = $derived(data.academic);
@@ -140,3 +143,70 @@
 		</table>
 	</section>
 </div>
+
+<!-- Modal de confirmación para restablecer contraseña -->
+{#if showResetModal}
+	<div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+		<div class="bg-slate-900 rounded-3xl border border-slate-800 p-8 max-w-md w-full">
+			<div class="flex items-center space-x-4 mb-6">
+				<div class="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/20">
+					<svg class="h-6 w-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+					</svg>
+				</div>
+				<div>
+					<h2 class="text-xl font-bold text-white">Restablecer contraseña</h2>
+					<p class="text-sm text-slate-400">Esta acción no se puede deshacer</p>
+				</div>
+			</div>
+
+			<div class="bg-slate-800/50 rounded-2xl p-4 mb-6">
+				<p class="text-white font-medium">{student.fullName}</p>
+				<p class="text-sm text-slate-400">DNI: {student.dni}</p>
+				<p class="text-sm text-amber-400 mt-2">La contraseña se restablecerá a: 12345678</p>
+			</div>
+
+			<form
+				method="POST"
+				action="?/resetPassword"
+				use:enhance={() => {
+					return async ({ result, update }) => {
+						if (result.type === 'success' && result.data) {
+							resetMessage = { type: 'success', text: (result.data as any).message || 'Contraseña restablecida' };
+							showResetModal = false;
+							await update();
+							setTimeout(() => resetMessage = null, 3000);
+						} else if (result.type === 'failure' && result.data) {
+							resetMessage = { type: 'error', text: (result.data as any).error || 'Error al restablecer contraseña' };
+							await update();
+							setTimeout(() => resetMessage = null, 3000);
+						}
+					};
+				}}
+			>
+				<div class="flex justify-end space-x-4">
+					<button
+						type="button"
+						onclick={() => showResetModal = false}
+						class="rounded-2xl border border-slate-700 px-6 py-3 font-semibold text-white transition hover:bg-slate-800"
+					>
+						Cancelar
+					</button>
+					<button
+						type="submit"
+						class="rounded-2xl bg-amber-500 px-6 py-3 font-semibold text-white transition hover:bg-amber-600"
+					>
+						Restablecer
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{/if}
+
+<!-- Mensaje de éxito/error -->
+{#if resetMessage}
+	<div class="fixed bottom-4 right-4 rounded-2xl px-6 py-4 {resetMessage.type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white font-medium shadow-lg">
+		{resetMessage.text}
+	</div>
+{/if}

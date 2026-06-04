@@ -9,14 +9,41 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	}
 
 	const careerId = url.searchParams.get('carrera');
+	const locationIdParam = url.searchParams.get('localidad');
 	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+
+	// Obtener todas las localidades activas
+	const allLocations = await prisma.location.findMany({
+		where: { active: true },
+		select: { id: true, name: true, code: true },
+		orderBy: { name: 'asc' }
+	});
+
+	// Determinar si el usuario tiene acceso global (todas las localidades)
+	const hasGlobalAccess = allowedLocationIds.length === allLocations.length;
+
+	// Filtrar localidades a mostrar en el selector
+	const filterableLocations = hasGlobalAccess ? allLocations : allLocations.filter(l => allowedLocationIds.includes(l.id));
+
+	// Determinar localidades a usar en el filtro
+	let effectiveLocationIds = allowedLocationIds;
+	let selectedLocationId: string | null = null;
+
+	// Si el usuario tiene acceso global y seleccionó una localidad específica
+	if (hasGlobalAccess && locationIdParam) {
+		const selectedLocation = allLocations.find(l => l.id === locationIdParam);
+		if (selectedLocation) {
+			effectiveLocationIds = [selectedLocation.id];
+			selectedLocationId = selectedLocation.id;
+		}
+	}
 
 	const where: Prisma.StudentWhereInput = careerId ? { careerId } : {};
 
-	// Filtrar por localidades permitidas a través de la carrera
-	if (allowedLocationIds.length > 0) {
+	// Filtrar por localidades efectivas a través de la carrera
+	if (effectiveLocationIds.length > 0) {
 		where.career = {
-			locationId: { in: allowedLocationIds }
+			locationId: { in: effectiveLocationIds }
 		};
 	}
 	
@@ -35,7 +62,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	const careers = await prisma.career.findMany({
 		where: {
 			active: true,
-			locationId: { in: allowedLocationIds }
+			locationId: { in: effectiveLocationIds }
 		},
 		orderBy: { name: 'asc' },
 		select: { id: true, name: true }
@@ -81,6 +108,9 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			familyRelationship: s.familyRelationship
 		})),
 		careers,
+		locations: filterableLocations,
+		hasGlobalAccess,
+		selectedLocationId,
 		filter: careerId ? { careerId, careerName } : null
 	};
 }

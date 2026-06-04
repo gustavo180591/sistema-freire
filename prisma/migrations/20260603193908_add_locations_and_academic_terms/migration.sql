@@ -20,7 +20,7 @@ CREATE TABLE "locations" (
 
 -- Insert default location for existing careers
 INSERT INTO "locations" ("id", "name", "code", "city", "province", "active", "createdAt", "updatedAt")
-VALUES ('default-location-id', 'Sede Posadas', 'POSADAS', 'Posadas', 'Misiones', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('default-location-id', 'Leandro N. Alem', 'ALEM', 'Leandro N. Alem', 'Misiones', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- AlterTable: Add locationId as nullable first
 ALTER TABLE "careers" ADD COLUMN     "locationId" TEXT;

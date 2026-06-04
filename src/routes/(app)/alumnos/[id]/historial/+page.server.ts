@@ -1,7 +1,10 @@
-import type { PageServerLoad } from './$types';
+import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { requireStudentAccess } from '$lib/server/auth/student-access';
-import { error } from '@sveltejs/kit';
+import { error, fail } from '@sveltejs/kit';
+import bcrypt from 'bcryptjs';
+import { auditLog } from '$lib/server/audit';
+import { AuditAction } from '@prisma/client';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
     await requireStudentAccess(locals.user, params.id);
@@ -70,9 +73,40 @@ export const load: PageServerLoad = async ({ params, locals }) => {
         subjects = [...subjects, ...subjectsWithoutStatus];
     }
 
+    // Calcular progreso real del alumno
+    // Obtener todas las materias de la carrera
+    const allCareerSubjects = await prisma.subject.findMany({
+        where: {
+            active: true,
+            careerSubjects: {
+                some: {
+                    careerId: student.careerId
+                }
+            }
+        },
+        select: { id: true }
+    });
+
+    const totalCareerSubjects = allCareerSubjects.length;
+    const approvedCount = student.subjectStatuses.filter(s => s.approved).length;
+    const progress = totalCareerSubjects > 0 ? Math.round((approvedCount / totalCareerSubjects) * 100) : 0;
+
+    // Calcular deuda financiera real
+    const totalCharges = student.studentCharges.reduce((sum, charge) => sum + Number(charge.amount), 0);
+    const totalPayments = await prisma.payment.aggregate({
+        where: {
+            studentId: student.id
+        },
+        _sum: {
+            amount: true
+        }
+    });
+    const totalDebt = totalCharges - Number(totalPayments._sum.amount || 0);
+
     return {
         student: {
             id: student.id,
+            userId: student.userId,
             fullName: `${student.firstName} ${student.lastName}`,
             dni: student.dni,
             status: student.status,
@@ -80,15 +114,57 @@ export const load: PageServerLoad = async ({ params, locals }) => {
         },
         academic: {
             totalSubjects: subjects.length,
-            approvedSubjects: subjects.filter((s) => s.approved).length,
+            approvedSubjects: approvedCount,
             regularSubjects: subjects.filter(
                 (s) => s.regularityStatus === 'REGULAR'
             ).length,
-            progress: 75,
+            progress,
             subjects
         },
         financial: {
-            totalDebt: 0
+            totalDebt
         }
     };
+};
+
+export const actions: Actions = {
+    resetPassword: async ({ params, locals, request }) => {
+        await requireStudentAccess(locals.user, params.id);
+
+        if (!locals.user) {
+            return fail(401, { error: 'Usuario no autenticado' });
+        }
+
+        const student = await prisma.student.findUnique({
+            where: { id: params.id },
+            include: { user: true }
+        });
+
+        if (!student) {
+            return fail(404, { error: 'Alumno no encontrado' });
+        }
+
+        const defaultPassword = '12345678';
+        const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+        try {
+            await prisma.user.update({
+                where: { id: student.userId },
+                data: { passwordHash: hashedPassword }
+            });
+
+            await auditLog({
+                userId: locals.user.id,
+                action: AuditAction.UPDATE,
+                entityType: 'USER',
+                entityId: student.userId,
+                description: `Contraseña restablecida para alumno: ${student.firstName} ${student.lastName} (${student.dni})`
+            });
+
+            return { success: true, message: 'Contraseña restablecida a 12345678' };
+        } catch (error) {
+            console.error('Error al restablecer contraseña:', error);
+            return fail(500, { error: 'Error al restablecer la contraseña' });
+        }
+    }
 };

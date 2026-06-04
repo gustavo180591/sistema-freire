@@ -6,6 +6,7 @@
 	let editingStudent = $state<Student | null>(null);
 	let deletingStudent = $state<Student | null>(null);
 	let searchQuery = $state('');
+	let selectedLocation = $state(data.selectedLocationId || '');
 
 	// Filtrar estudiantes según búsqueda
 	const filteredStudents = $derived(
@@ -20,6 +21,19 @@
 			);
 		})
 	);
+
+	// Actualizar URL cuando cambia la localidad seleccionada
+	function updateLocationFilter(event: Event) {
+		const select = event.target as HTMLSelectElement;
+		const locationId = select.value;
+		const url = new URL(window.location.href);
+		if (locationId) {
+			url.searchParams.set('localidad', locationId);
+		} else {
+			url.searchParams.delete('localidad');
+		}
+		window.location.href = url.toString();
+	}
 
 	interface Student {
 		id: string;
@@ -153,7 +167,25 @@
 	</div>
 
 	<!-- Filtro de búsqueda -->
-	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 space-y-4">
+		{#if data.hasGlobalAccess && data.locations.length > 1}
+			<div class="flex items-center gap-4">
+				<label for="locationFilter" class="text-sm font-medium text-slate-300 whitespace-nowrap">
+					Filtrar por localidad:
+				</label>
+				<select
+					id="locationFilter"
+					bind:value={selectedLocation}
+					onchange={updateLocationFilter}
+					class="flex-1 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 transition outline-none focus:border-slate-500"
+				>
+					<option value="">Todas las localidades</option>
+					{#each data.locations as location}
+						<option value={location.id}>{location.name}</option>
+					{/each}
+				</select>
+			</div>
+		{/if}
 		<input
 			type="text"
 			placeholder="Buscar por nombre, email o DNI"

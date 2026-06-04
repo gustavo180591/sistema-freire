@@ -8,18 +8,18 @@ async function main() {
 	// Crear localidades iniciales
 	const locations = [
 		{
-			name: 'Sede Posadas',
-			code: 'POSADAS',
-			address: 'Dirección Sede Posadas',
-			city: 'Posadas',
+			name: 'Leandro N. Alem',
+			code: 'ALEM',
+			address: 'Dirección Sede Leandro N. Alem',
+			city: 'Leandro N. Alem',
 			province: 'Misiones',
 			active: true
 		},
 		{
-			name: 'Sede Oberá',
-			code: 'OBERA',
-			address: 'Dirección Sede Oberá',
-			city: 'Oberá',
+			name: 'Capiovi',
+			code: 'CAPIOVI',
+			address: 'Dirección Sede Capiovi',
+			city: 'Capiovi',
 			province: 'Misiones',
 			active: true
 		}
@@ -75,8 +75,8 @@ async function main() {
 
 	// Crear un período académico inicial para 2025
 	console.log('Seeding initial academic term...');
-	const posadasLocation = createdLocations.find(l => l.code === 'POSADAS');
-	if (posadasLocation) {
+	const alemLocation = createdLocations.find(l => l.code === 'ALEM');
+	if (alemLocation) {
 		await prisma.academicTerm.upsert({
 			where: { code: '2025-ANUAL' },
 			update: {},
@@ -88,7 +88,7 @@ async function main() {
 				startDate: new Date('2025-03-01'),
 				endDate: new Date('2025-12-31'),
 				active: true,
-				locationId: posadasLocation.id
+				locationId: alemLocation.id
 			}
 		});
 		console.log('Academic term 2025 created/updated');

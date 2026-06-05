@@ -1,11 +1,15 @@
 import { fail, redirect } from '@sveltejs/kit';
-import type { Actions } from './$types';
+import type { Actions, PageServerLoad, ActionData } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { AuditAction } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCK_DURATION_MINUTES = 30;
+
+export const load: PageServerLoad = async () => {
+	return {};
+};
 
 export const actions = {
 	default: async ({ request, cookies }) => {
@@ -14,7 +18,7 @@ export const actions = {
 		const password = data.get('password')?.toString();
 
 		if (!email || !password) {
-			return fail(400, { error: 'Faltan credenciales', missing: true });
+			return fail(400, { error: 'Faltan credenciales', missing: true } satisfies ActionData);
 		}
 
 		const user = await prisma.user.findUnique({
@@ -23,7 +27,7 @@ export const actions = {
 		});
 
 		if (!user) {
-			return fail(400, { error: 'Credenciales inválidas', incorrect: true });
+			return fail(400, { error: 'Credenciales inválidas', incorrect: true } satisfies ActionData);
 		}
 
 		// Verificar si la cuenta está bloqueada
@@ -46,7 +50,7 @@ export const actions = {
 				error: `Cuenta temporalmente bloqueada. Intente nuevamente en ${minutesLeft} minutos.`,
 				locked: true,
 				minutesLeft
-			});
+			} satisfies ActionData);
 		}
 
 		// Si pasó el tiempo de bloqueo, limpiar el bloqueo
@@ -62,7 +66,7 @@ export const actions = {
 		}
 
 		if (user.status !== 'ACTIVE') {
-			return fail(403, { error: 'El usuario se encuentra inactivo o bloqueado' });
+			return fail(403, { error: 'El usuario se encuentra inactivo o bloqueado' } satisfies ActionData);
 		}
 
 		const validPassword = await bcrypt.compare(password, user.passwordHash);
@@ -100,14 +104,14 @@ export const actions = {
 					error: `Demasiados intentos fallidos. Cuenta bloqueada por ${LOCK_DURATION_MINUTES} minutos.`,
 					locked: true,
 					minutesLeft: LOCK_DURATION_MINUTES
-				});
+				} satisfies ActionData);
 			}
 
 			return fail(400, { 
 				error: 'Credenciales inválidas', 
 				incorrect: true,
 				attemptsLeft: MAX_FAILED_ATTEMPTS - newAttempts
-			});
+			} satisfies ActionData);
 		}
 
 		// Login exitoso - limpiar contador de intentos

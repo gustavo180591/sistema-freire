@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { canManageUsers } from '$lib/client/permissions';
 
 	let { data } = $props();
 
@@ -42,12 +43,14 @@
 			</p>
 		</div>
 
-		<a
-			href="/usuarios/nuevo"
-			class="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.02]"
-		>
-			+ Nuevo usuario
-		</a>
+		{#if canManageUsers()}
+			<a
+				href="/usuarios/nuevo"
+				class="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.02]"
+			>
+				+ Nuevo usuario
+			</a>
+		{/if}
 	</div>
 
 	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">

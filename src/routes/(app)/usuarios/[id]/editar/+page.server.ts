@@ -1,6 +1,8 @@
 import { prisma } from '$lib/server/db/prisma';
 import type { PageServerLoad, Actions } from './$types';
 import { error, fail, redirect } from '@sveltejs/kit';
+import { auditLog } from '$lib/server/audit';
+import { AuditAction } from '@prisma/client';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const currentUser = locals.user;
@@ -73,6 +75,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	return {
 		user,
+		currentUserRoles: currentUser.roles,
 		roles,
 		subjects: subjects.map(s => ({
 			...s,
@@ -218,6 +221,15 @@ export const actions: Actions = {
 				}
 			});
 
+			// Registrar en auditoría
+			await auditLog({
+				userId: currentUser.id,
+				action: AuditAction.UPDATE,
+				entityType: 'USER',
+				entityId: params.id,
+				description: `Actualización de usuario ${targetUser.firstName} ${targetUser.lastName} (${targetUser.email})`
+			});
+
 			return { success: true };
 		} catch (e) {
 			console.error(e);
@@ -313,6 +325,53 @@ export const actions: Actions = {
 		} catch (e) {
 			console.error(e);
 			return fail(500, { error: 'Error al remover materia' });
+		}
+	},
+
+	revokeAllSessions: async ({ params, locals }) => {
+		const currentUser = locals.user;
+		if (!currentUser) {
+			return fail(401, { error: 'No autorizado' });
+		}
+
+		// Solo SUPERADMIN y DIRECTOR pueden revocar todas las sesiones
+		if (!currentUser.roles.includes('SUPERADMIN') && !currentUser.roles.includes('DIRECTOR')) {
+			return fail(403, { error: 'No tienes permisos para revocar sesiones' });
+		}
+
+		// Prevenir auto-revocación (un usuario no puede revocar sus propias sesiones)
+		if (currentUser.id === params.id) {
+			return fail(400, { error: 'No puedes revocar tus propias sesiones. Usa la función de logout normal.' });
+		}
+
+		try {
+			// Obtener usuario objetivo
+			const targetUser = await prisma.user.findUnique({
+				where: { id: params.id }
+			});
+
+			if (!targetUser) {
+				return fail(404, { error: 'Usuario no encontrado' });
+			}
+
+			// Eliminar todas las sesiones del usuario
+			const deletedCount = await prisma.session.deleteMany({
+				where: { userId: params.id }
+			});
+
+			// Registrar en auditoría
+			await auditLog({
+				userId: currentUser.id,
+				action: AuditAction.DELETE,
+				entityType: 'SESSION',
+				entityId: params.id,
+				description: `Revocación de todas las sesiones del usuario ${targetUser.firstName} ${targetUser.lastName} (${targetUser.email}). ${deletedCount.count} sesiones eliminadas.`
+			});
+
+			return { success: true, message: `${deletedCount.count} sesiones revocadas exitosamente` };
+		} catch (e) {
+			console.error(e);
+			return fail(500, { error: 'Error al revocar sesiones' });
 		}
 	}
 };

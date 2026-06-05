@@ -317,6 +317,31 @@
 		</div>
 	</div>
 
+	<!-- Seguridad -->
+	{#if data.currentUserRoles && data.currentUserRoles.some(r => ['SUPERADMIN', 'DIRECTOR'].includes(r))}
+		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+			<h2 class="text-xl font-bold mb-4">Seguridad</h2>
+			<div class="space-y-4">
+				<form method="POST" action="?/revokeAllSessions" use:enhance>
+					<div class="flex items-center justify-between">
+						<div>
+							<p class="font-medium text-white">Revocar todas las sesiones</p>
+							<p class="text-sm text-slate-400">
+								Este usuario deberá volver a iniciar sesión en todos sus dispositivos
+							</p>
+						</div>
+						<button
+							type="submit"
+							class="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/20 transition"
+						>
+							Revocar Sesiones
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	{/if}
+
 	{#if isTeacher}
 		<!-- Materias del Docente -->
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">

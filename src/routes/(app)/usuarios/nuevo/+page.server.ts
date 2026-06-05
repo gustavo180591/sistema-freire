@@ -32,9 +32,15 @@ export const load: PageServerLoad = async ({ url }) => {
 		select: { id: true, name: true }
 	});
 
+	const locations = await prisma.location.findMany({
+		where: { active: true },
+		orderBy: { name: 'asc' },
+		select: { id: true, name: true, code: true }
+	});
+
 	const type = url.searchParams.get('type') || 'ALUMNO';
 
-	return { careers, type };
+	return { careers, locations, type };
 };
 
 export const actions: Actions = {
@@ -170,6 +176,8 @@ export const actions: Actions = {
 
 				// Si es DOCENTE, crear el registro de docente
 				if (type === 'DOCENTE') {
+					const locality = data.get('locality')?.toString();
+					
 					await tx.teacher.create({
 						data: {
 							userId: user.id,
@@ -178,14 +186,61 @@ export const actions: Actions = {
 							lastName
 						}
 					});
+
+					// Asignar permiso de localidad si se seleccionó
+					if (locality) {
+						const location = await tx.location.findUnique({
+							where: { code: locality }
+						});
+						if (location) {
+							await tx.userLocationPermission.create({
+								data: {
+									userId: user.id,
+									locationId: location.id
+								}
+							});
+						}
+					}
 				}
 
-				// Si es PRECEPTOR, capturar localidad (se puede usar para futuras funcionalidades)
+				// Si es PRECEPTOR, capturar localidad y asignar permiso
 				if (type === 'PRECEPTOR') {
 					const locality = data.get('locality')?.toString();
-					// Por ahora, la localidad del preceptor no se guarda en ningún campo específico
-					// Se podría agregar un campo al modelo User o crear un modelo Preceptor en el futuro
-					// Para referencia, la localidad seleccionada es: {locality}
+					
+					// Asignar permiso de localidad si se seleccionó
+					if (locality) {
+						const location = await tx.location.findUnique({
+							where: { code: locality }
+						});
+						if (location) {
+							await tx.userLocationPermission.create({
+								data: {
+									userId: user.id,
+									locationId: location.id
+								}
+							});
+						}
+					}
+				}
+
+				// Si es SECRETARIA, asignar permiso de localidad
+				if (type === 'SECRETARIA') {
+					const locality = data.get('locality')?.toString();
+					
+					// Asignar permiso de localidad si se seleccionó
+					if (locality) {
+						const location = await tx.location.findUnique({
+							where: { code: locality }
+						});
+						if (location) {
+							await tx.userLocationPermission.create({
+								data: {
+									userId: user.id,
+									locationId: location.id
+								}
+							});
+						}
+					}
 				}
 
 				return user;

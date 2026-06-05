@@ -54,50 +54,229 @@
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<h2 class="text-xl font-bold mb-4">Datos Personales</h2>
 			<form method="POST" action="?/updateUser" use:enhance class="space-y-4">
-				<div>
-					<label for="firstName" class="block text-sm text-slate-400 mb-1">Nombre</label>
-					<input
-						id="firstName"
-						name="firstName"
-						type="text"
-						value={data.user.firstName}
-						required
-						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
-					/>
+				<div class="grid gap-4 md:grid-cols-2">
+					<div>
+						<label for="firstName" class="block text-sm text-slate-400 mb-1">Nombre</label>
+						<input
+							id="firstName"
+							name="firstName"
+							type="text"
+							value={data.user.firstName}
+							required
+							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+						/>
+					</div>
+					<div>
+						<label for="lastName" class="block text-sm text-slate-400 mb-1">Apellido</label>
+						<input
+							id="lastName"
+							name="lastName"
+							type="text"
+							value={data.user.lastName}
+							required
+							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+						/>
+					</div>
+					<div>
+						<label for="email" class="block text-sm text-slate-400 mb-1">Email</label>
+						<input
+							id="email"
+							name="email"
+							type="email"
+							value={data.user.email}
+							required
+							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+						/>
+					</div>
+					<div>
+						<label for="status" class="block text-sm text-slate-400 mb-1">Estado</label>
+						<select
+							id="status"
+							name="status"
+							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+						>
+							<option value="ACTIVE" selected={data.user.status === 'ACTIVE'}>Activo</option>
+							<option value="INACTIVE" selected={data.user.status === 'INACTIVE'}>Inactivo</option>
+						</select>
+					</div>
 				</div>
-				<div>
-					<label for="lastName" class="block text-sm text-slate-400 mb-1">Apellido</label>
-					<input
-						id="lastName"
-						name="lastName"
-						type="text"
-						value={data.user.lastName}
-						required
-						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
-					/>
+
+				{#if data.user.student}
+				<div class="border-t border-slate-800 pt-4 mt-4">
+					<h3 class="text-lg font-semibold mb-4">Datos de Estudiante</h3>
+					<div class="grid gap-4 md:grid-cols-2">
+						<div>
+							<label for="dni" class="block text-sm text-slate-400 mb-1">DNI</label>
+							<input
+								id="dni"
+								name="dni"
+								type="text"
+								value={data.user.student.dni}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+						<div>
+							<label for="birthDate" class="block text-sm text-slate-400 mb-1">Fecha de Nacimiento</label>
+							<input
+								id="birthDate"
+								name="birthDate"
+								type="date"
+								value={data.user.student.birthDate ? new Date(data.user.student.birthDate).toISOString().split('T')[0] : ''}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+						<div>
+							<label for="bloodType" class="block text-sm text-slate-400 mb-1">Grupo Sanguíneo</label>
+							<select
+								id="bloodType"
+								name="bloodType"
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							>
+								<option value="">Seleccionar...</option>
+								<option value="O+" selected={data.user.student.bloodType === 'O+'}>O+</option>
+								<option value="O-" selected={data.user.student.bloodType === 'O-'}>O-</option>
+								<option value="A+" selected={data.user.student.bloodType === 'A+'}>A+</option>
+								<option value="A-" selected={data.user.student.bloodType === 'A-'}>A-</option>
+								<option value="B+" selected={data.user.student.bloodType === 'B+'}>B+</option>
+								<option value="B-" selected={data.user.student.bloodType === 'B-'}>B-</option>
+								<option value="AB+" selected={data.user.student.bloodType === 'AB+'}>AB+</option>
+								<option value="AB-" selected={data.user.student.bloodType === 'AB-'}>AB-</option>
+							</select>
+						</div>
+						<div>
+							<label for="phone" class="block text-sm text-slate-400 mb-1">Teléfono</label>
+							<input
+								id="phone"
+								name="phone"
+								type="tel"
+								value={data.user.student.phone || ''}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+						<div>
+							<label for="address" class="block text-sm text-slate-400 mb-1">Dirección</label>
+							<input
+								id="address"
+								name="address"
+								type="text"
+								value={data.user.student.address || ''}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+						<div>
+							<label for="locality" class="block text-sm text-slate-400 mb-1">Localidad</label>
+							<select
+								id="locality"
+								name="locality"
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							>
+								<option value="">Seleccionar...</option>
+								<option value="ALEM" selected={data.user.student.locality === 'ALEM'}>Leandro N. Alem</option>
+								<option value="CAPIOVI" selected={data.user.student.locality === 'CAPIOVI'}>Capiovi</option>
+							</select>
+						</div>
+						<div>
+							<label for="postalCode" class="block text-sm text-slate-400 mb-1">Código Postal</label>
+							<input
+								id="postalCode"
+								name="postalCode"
+								type="text"
+								value={data.user.student.postalCode || ''}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+						<div>
+							<label for="careerId" class="block text-sm text-slate-400 mb-1">Carrera</label>
+							<select
+								id="careerId"
+								name="careerId"
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							>
+								<option value="">Seleccionar...</option>
+								{#each data.careers as career}
+									<option value={career.id} selected={data.user.student.careerId === career.id}>{career.name}</option>
+								{/each}
+							</select>
+						</div>
+						<div>
+							<label for="currentYear" class="block text-sm text-slate-400 mb-1">Año de Carrera</label>
+							<select
+								id="currentYear"
+								name="currentYear"
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							>
+								<option value="1" selected={data.user.student.currentYear === 1}>1° Año</option>
+								<option value="2" selected={data.user.student.currentYear === 2}>2° Año</option>
+								<option value="3" selected={data.user.student.currentYear === 3}>3° Año</option>
+								<option value="4" selected={data.user.student.currentYear === 4}>4° Año</option>
+							</select>
+						</div>
+					</div>
 				</div>
-				<div>
-					<label for="email" class="block text-sm text-slate-400 mb-1">Email</label>
-					<input
-						id="email"
-						name="email"
-						type="email"
-						value={data.user.email}
-						required
-						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
-					/>
+				{/if}
+
+				{#if data.user.teacher}
+				<div class="border-t border-slate-800 pt-4 mt-4">
+					<h3 class="text-lg font-semibold mb-4">Datos de Docente</h3>
+					<div class="grid gap-4 md:grid-cols-2">
+						<div>
+							<label for="dni" class="block text-sm text-slate-400 mb-1">DNI</label>
+							<input
+								id="dni"
+								name="dni"
+								type="text"
+								value={data.user.teacher.dni}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+						<div>
+							<label for="phone" class="block text-sm text-slate-400 mb-1">Teléfono</label>
+							<input
+								id="phone"
+								name="phone"
+								type="tel"
+								value={data.user.phone || ''}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+					</div>
 				</div>
-				<div>
-					<label for="status" class="block text-sm text-slate-400 mb-1">Estado</label>
-					<select
-						id="status"
-						name="status"
-						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
-					>
-						<option value="ACTIVE" selected={data.user.status === 'ACTIVE'}>Activo</option>
-						<option value="INACTIVE" selected={data.user.status === 'INACTIVE'}>Inactivo</option>
-					</select>
+				{/if}
+
+				{#if !data.user.student && !data.user.teacher}
+				<div class="border-t border-slate-800 pt-4 mt-4">
+					<h3 class="text-lg font-semibold mb-4">Datos Administrativos</h3>
+					<div class="grid gap-4 md:grid-cols-2">
+						<div>
+							<label for="phone" class="block text-sm text-slate-400 mb-1">Teléfono</label>
+							<input
+								id="phone"
+								name="phone"
+								type="tel"
+								value={data.user.phone || ''}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+						<div>
+							<label for="locality" class="block text-sm text-slate-400 mb-1">Localidad de Trabajo</label>
+							<select
+								id="locality"
+								name="locality"
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							>
+								<option value="">Seleccionar...</option>
+								{#each data.locations as location}
+									<option value={location.code} selected={data.user.locationPermissions?.some(lp => lp.location.code === location.code)}>{location.name}</option>
+								{/each}
+							</select>
+							<p class="mt-1 text-xs text-slate-500">
+								El usuario tendrá acceso a los datos de esta localidad
+							</p>
+						</div>
+					</div>
 				</div>
+				{/if}
+
 				<button
 					type="submit"
 					class="w-full rounded-xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.02]"

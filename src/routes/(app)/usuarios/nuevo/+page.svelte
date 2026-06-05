@@ -109,7 +109,7 @@
 		</section>
 
 		<!-- 2. Datos personales -->
-		{#if userType === 'ALUMNO' || userType === 'PRECEPTOR'}
+		{#if userType === 'ALUMNO' || userType === 'PRECEPTOR' || userType === 'DOCENTE' || userType === 'SECRETARIA'}
 		<section class="space-y-4">
 			<h2 class="text-lg font-semibold text-white">Datos personales</h2>
 			<div class="grid gap-6 md:grid-cols-2">
@@ -153,6 +153,24 @@
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 					/>
 				</div>
+
+				{#if userType !== 'ALUMNO'}
+				<div>
+					<label for="locality" class="mb-2 block text-sm font-medium text-slate-300">Localidad de trabajo</label>
+					<select
+						id="locality"
+						name="locality"
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+					>
+						<option value="">Seleccionar localidad</option>
+						<option value="ALEM">Leandro N. Alem</option>
+						<option value="CAPIOVI">Capiovi</option>
+					</select>
+					<p class="mt-1 text-xs text-slate-500">
+						El usuario tendrá acceso a los datos de esta localidad
+					</p>
+				</div>
+				{/if}
 			</div>
 		</section>
 		{/if}

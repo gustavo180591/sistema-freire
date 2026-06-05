@@ -39,7 +39,11 @@ export const load: PageServerLoad = async () => {
 			lastName: t.lastName,
 			email: t.user.email,
 			createdAt: t.createdAt,
-			subjects: t.subjects.map((st) => st.subject)
+			subjects: t.subjects.map((st) => ({
+				...st.subject,
+				approvalThreshold: st.subject.approvalThreshold ? Number(st.subject.approvalThreshold) : null,
+				promotionThreshold: st.subject.promotionThreshold ? Number(st.subject.promotionThreshold) : null
+			}))
 		}))
 	};
 };

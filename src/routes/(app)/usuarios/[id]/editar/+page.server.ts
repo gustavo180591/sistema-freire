@@ -20,6 +20,11 @@ export const load: PageServerLoad = async ({ params }) => {
 						}
 					}
 				}
+			},
+			locationPermissions: {
+				include: {
+					location: true
+				}
 			}
 		}
 	});
@@ -40,10 +45,22 @@ export const load: PageServerLoad = async ({ params }) => {
 		]
 	});
 
+	const careers = await prisma.career.findMany({
+		where: { active: true },
+		orderBy: { name: 'asc' }
+	});
+
+	const locations = await prisma.location.findMany({
+		where: { active: true },
+		orderBy: { name: 'asc' }
+	});
+
 	return {
 		user,
 		roles,
-		subjects
+		subjects,
+		careers,
+		locations
 	};
 };
 
@@ -54,19 +71,98 @@ export const actions: Actions = {
 		const lastName = formData.get('lastName')?.toString();
 		const email = formData.get('email')?.toString();
 		const status = formData.get('status')?.toString();
+		const phone = formData.get('phone')?.toString();
+		const dni = formData.get('dni')?.toString();
+		const birthDate = formData.get('birthDate')?.toString();
+		const bloodType = formData.get('bloodType')?.toString();
+		const address = formData.get('address')?.toString();
+		const locality = formData.get('locality')?.toString();
+		const postalCode = formData.get('postalCode')?.toString();
+		const careerId = formData.get('careerId')?.toString();
+		const currentYear = formData.get('currentYear')?.toString();
 
 		if (!firstName || !lastName || !email) {
 			return fail(400, { error: 'Datos requeridos faltantes' });
 		}
 
 		try {
-			await prisma.user.update({
-				where: { id: params.id },
-				data: {
-					firstName,
-					lastName,
-					email,
-					status: status as 'ACTIVE' | 'INACTIVE'
+			await prisma.$transaction(async (tx) => {
+				// Actualizar usuario base
+				await tx.user.update({
+					where: { id: params.id },
+					data: {
+						firstName,
+						lastName,
+						email,
+						status: status as 'ACTIVE' | 'INACTIVE'
+					}
+				});
+
+				// Actualizar estudiante si existe
+				const student = await tx.student.findUnique({
+					where: { userId: params.id }
+				});
+
+				if (student) {
+					await tx.student.update({
+						where: { id: student.id },
+						data: {
+							dni: dni || student.dni,
+							birthDate: birthDate ? new Date(birthDate) : student.birthDate,
+							bloodType: bloodType || student.bloodType,
+							phone: phone || student.phone,
+							address: address || student.address,
+							locality: locality || student.locality,
+							postalCode: postalCode || student.postalCode,
+							careerId: careerId || student.careerId,
+							currentYear: currentYear ? parseInt(currentYear) : student.currentYear
+						}
+					});
+				}
+
+				// Actualizar docente si existe
+				const teacher = await tx.teacher.findUnique({
+					where: { userId: params.id }
+				});
+
+				if (teacher) {
+					await tx.teacher.update({
+						where: { id: teacher.id },
+						data: {
+							dni: dni || teacher.dni,
+							firstName,
+							lastName
+						}
+					});
+				}
+
+				// Actualizar teléfono del usuario si se proporcionó
+				if (phone) {
+					await tx.user.update({
+						where: { id: params.id },
+						data: { phone }
+					});
+				}
+
+				// Actualizar permisos de localidad si se proporcionó
+				if (locality) {
+					// Eliminar permisos existentes
+					await tx.userLocationPermission.deleteMany({
+						where: { userId: params.id }
+					});
+
+					// Agregar nuevo permiso
+					const location = await tx.location.findUnique({
+						where: { code: locality }
+					});
+					if (location) {
+						await tx.userLocationPermission.create({
+							data: {
+								userId: params.id,
+								locationId: location.id
+							}
+						});
+					}
 				}
 			});
 

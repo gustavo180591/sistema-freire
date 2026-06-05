@@ -51,15 +51,23 @@ export const load: PageServerLoad = async ({ params }) => {
         throw error(404, 'Carrera no encontrada');
     }
 
-    // Agrupar materias por año
-    const subjectsByYear: Record<number, typeof career.careerSubjects> = {};
+    // Agrupar materias por año y convertir Decimals a números
+    const subjectsByYear: Record<number, any[]> = {};
     
     career.careerSubjects.forEach((cs) => {
         const year = cs.yearLevel;
         if (!subjectsByYear[year]) {
             subjectsByYear[year] = [];
         }
-        subjectsByYear[year].push(cs);
+        // Convertir Decimals a números
+        subjectsByYear[year].push({
+            ...cs,
+            subject: {
+                ...cs.subject,
+                approvalThreshold: cs.subject.approvalThreshold ? Number(cs.subject.approvalThreshold) : null,
+                promotionThreshold: cs.subject.promotionThreshold ? Number(cs.subject.promotionThreshold) : null
+            }
+        });
     });
 
     // Calcular totales

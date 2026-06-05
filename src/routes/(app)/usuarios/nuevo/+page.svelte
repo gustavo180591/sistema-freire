@@ -167,14 +167,28 @@
 						id="locality"
 						name="locality"
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						disabled={data.isSecretary && data.secretaryLocationCode ? true : undefined}
 					>
-						<option value="">Seleccionar localidad</option>
-						<option value="ALEM">Leandro N. Alem</option>
-						<option value="CAPIOVI">Capiovi</option>
+						{#if data.isSecretary && data.secretaryLocationCode}
+							<option value={data.secretaryLocationCode} selected>
+								{data.secretaryLocationCode}
+							</option>
+						{:else}
+							<option value="">Seleccionar localidad</option>
+							{#each data.locations as location}
+								<option value={location.code}>{location.name}</option>
+							{/each}
+						{/if}
 					</select>
-					<p class="mt-1 text-xs text-slate-500">
-						El usuario tendrá acceso a los datos de esta localidad
-					</p>
+					{#if data.isSecretary && data.secretaryLocationCode}
+						<p class="mt-1 text-xs text-slate-500">
+							Localidad asignada automáticamente según tu permiso de trabajo. Contacta a un administrador para cambiarla.
+						</p>
+					{:else}
+						<p class="mt-1 text-xs text-slate-500">
+							El usuario tendrá acceso a los datos de esta localidad
+						</p>
+					{/if}
 				</div>
 				{/if}
 			</div>
@@ -219,14 +233,28 @@
 						id="locality"
 						name="locality"
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						disabled={data.isSecretary && data.secretaryLocationCode ? true : undefined}
 					>
-						<option value="">Seleccionar localidad</option>
-						<option value="ALEM">Leandro N. Alem</option>
-						<option value="CAPIOVI">Capiovi</option>
+						{#if data.isSecretary && data.secretaryLocationCode}
+							<option value={data.secretaryLocationCode} selected>
+								{data.secretaryLocationCode}
+							</option>
+						{:else}
+							<option value="">Seleccionar localidad</option>
+							{#each data.locations as location}
+								<option value={location.code}>{location.name}</option>
+							{/each}
+						{/if}
 					</select>
-					<p class="mt-1 text-xs text-slate-500">
-						El ID del alumno se generará con el prefijo según la localidad (A para Alem, C para Capiovi)
-					</p>
+					{#if data.isSecretary && data.secretaryLocationCode}
+						<p class="mt-1 text-xs text-slate-500">
+							Localidad asignada automáticamente según tu permiso de trabajo. Contacta a un administrador para cambiarla.
+						</p>
+					{:else}
+						<p class="mt-1 text-xs text-slate-500">
+							El ID del alumno se generará con el prefijo según la localidad (A para Alem, C para Capiovi)
+						</p>
+					{/if}
 				</div>
 
 				<div>

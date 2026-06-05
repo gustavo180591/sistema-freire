@@ -39,6 +39,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
 	// Si es SECRETARIA, filtrar localidades según sus permisos
 	let locations;
+	let secretaryLocationCode: string | null = null;
 	if (currentUser.roles.includes('SECRETARIA')) {
 		const userWithPermissions = await prisma.user.findUnique({
 			where: { id: currentUser.id },
@@ -53,6 +54,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
 		if (userWithPermissions && userWithPermissions.locationPermissions.length > 0) {
 			locations = userWithPermissions.locationPermissions.map(lp => lp.location);
+			secretaryLocationCode = userWithPermissions.locationPermissions[0].location.code;
 		} else {
 			locations = await prisma.location.findMany({
 				where: { active: true },
@@ -70,7 +72,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
 	const type = url.searchParams.get('type') || 'ALUMNO';
 
-	return { careers, locations, type, isSecretary: currentUser.roles.includes('SECRETARIA') };
+	return { careers, locations, type, isSecretary: currentUser.roles.includes('SECRETARIA'), secretaryLocationCode };
 };
 
 export const actions: Actions = {

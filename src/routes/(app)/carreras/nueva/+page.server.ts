@@ -36,7 +36,7 @@ export const actions: Actions = {
 					data: {
 						name,
 						active
-					}
+					} as any
 				});
 
 				// Crear relaciones de localidad

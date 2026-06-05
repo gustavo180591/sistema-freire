@@ -6,7 +6,7 @@
 			{
 				id: '1',
 				student: 'Ana Rodríguez',
-				career: 'Profesorado de Educación Inicial',
+				career: 'PROFESORADO DE EDUCACIÓN SECUNDARIA EN MATEMÁTICA',
 				period: 'Marzo 2026',
 				debt: 18500,
 				status: 'Con deuda'
@@ -14,7 +14,7 @@
 			{
 				id: '2',
 				student: 'Lucas Benítez',
-				career: 'Profesorado de Matemática',
+				career: 'PROFESORADO DE EDUCACIÓN SECUNDARIA EN LENGUA Y LITERATURA',
 				period: 'Marzo 2026',
 				debt: 0,
 				status: 'Al día'

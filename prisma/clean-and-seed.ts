@@ -5,24 +5,32 @@ const prisma = new PrismaClient();
 
 async function cleanDatabase() {
   console.log('🧹 Limpiando base de datos...\n');
-  
+
   // Borrar en orden correcto (dependencias primero)
   await prisma.subjectCorrelative.deleteMany({});
   console.log('  ✅ Correlativas eliminadas');
-  
+
   await prisma.careerSubject.deleteMany({});
   console.log('  ✅ CareerSubjects eliminadas');
-  
+
   await prisma.planSubject.deleteMany({});
   console.log('  ✅ PlanSubjects eliminadas');
-  
+
   await prisma.studyPlan.deleteMany({});
   console.log('  ✅ Planes de estudio eliminados');
-  
+
   await prisma.subject.deleteMany({});
   console.log('  ✅ Materias eliminadas');
-  
-  // No borramos carreras para mantener los IDs
+
+  await prisma.student.deleteMany({});
+  console.log('  ✅ Estudiantes eliminados');
+
+  await prisma.careerLocation.deleteMany({});
+  console.log('  ✅ CareerLocations eliminadas');
+
+  await prisma.career.deleteMany({});
+  console.log('  ✅ Carreras eliminadas');
+
   console.log('\n🧹 Limpieza completada\n');
 }
 
@@ -167,36 +175,41 @@ async function main() {
   try {
     // 1. Limpiar
     await cleanDatabase();
-    
-    // 2. Crear/verificar carreras
-    let careerMat = await prisma.career.findUnique({ where: { code: 'MATEMATICA' } });
-    let careerLen = await prisma.career.findUnique({ where: { code: 'LENGUA_LITERATURA' } });
-    
-    if (!careerMat) {
-      careerMat = await prisma.career.create({
-        data: {
-          code: 'MATEMATICA',
-          name: 'Profesorado de Matemática',
-          trainingField: 'ESPECIFICA',
-          durationYears: 4,
-          active: true
+
+    // 2. Obtener localidades
+    const locations = await prisma.location.findMany({ where: { active: true } });
+    console.log(`  📍 ${locations.length} localidades encontradas`);
+
+    // 3. Crear carreras
+    console.log('\n🎓 Creando carreras...');
+
+    const careerMat = await prisma.career.create({
+      data: {
+        name: 'PROFESORADO DE EDUCACIÓN SECUNDARIA EN MATEMÁTICA',
+        durationYears: 4,
+        active: true,
+        locations: {
+          create: locations.map(loc => ({
+            locationId: loc.id
+          }))
         }
-      });
-      console.log('  ✅ Carrera Matemática creada');
-    }
-    
-    if (!careerLen) {
-      careerLen = await prisma.career.create({
-        data: {
-          code: 'LENGUA_LITERATURA',
-          name: 'Profesorado de Lengua y Literatura',
-          trainingField: 'ESPECIFICA',
-          durationYears: 4,
-          active: true
+      }
+    } as any);
+    console.log('  ✅ Carrera Matemática creada');
+
+    const careerLen = await prisma.career.create({
+      data: {
+        name: 'PROFESORADO DE EDUCACIÓN SECUNDARIA EN LENGUA Y LITERATURA',
+        durationYears: 4,
+        active: true,
+        locations: {
+          create: locations.map(loc => ({
+            locationId: loc.id
+          }))
         }
-      });
-      console.log('  ✅ Carrera Lengua creada');
-    }
+      }
+    } as any);
+    console.log('  ✅ Carrera Lengua creada');
     
     // 3. Seed Matemática
     console.log('\n📐 Cargando Matemática...');

@@ -103,7 +103,7 @@ async function seed() {
     update: {},
     create: {
       code: 'MATEMATICA_CAPIOVI',
-      name: 'Profesorado de Matemática (Capioví)',
+      name: 'PROFESORADO DE EDUCACIÓN SECUNDARIA EN LENGUA Y LITERATURA (Capioví)',
       active: true,
     }
   });
@@ -156,7 +156,7 @@ async function seed() {
     update: {},
     create: {
       careerId: mateCapiovi.id,
-      name: 'Plan 2025 - Profesorado de Matemática',
+      name: 'Plan 2025 - PROFESORADO DE EDUCACIÓN SECUNDARIA EN LENGUA Y LITERATURA',
       version: '2025',
       durationYears: 4,
       active: true,

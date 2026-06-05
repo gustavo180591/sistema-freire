@@ -17,16 +17,16 @@
 		(data?.careers as Career[]) ?? [
 			{
 				id: '1',
-				code: 'PI-2025',
-				name: 'Profesorado de Educación Inicial',
+				code: 'PM-2026',
+				name: 'PROFESORADO DE EDUCACIÓN SECUNDARIA EN MATEMÁTICA',
 				active: true,
 				plans: 2,
 				students: 184
 			},
 			{
 				id: '2',
-				code: 'PM-2024',
-				name: 'Profesorado de Matemática',
+				code: 'PL-2026',
+				name: 'PROFESORADO DE EDUCACIÓN SECUNDARIA EN LENGUA Y LITERATURA',
 				active: true,
 				plans: 3,
 				students: 132

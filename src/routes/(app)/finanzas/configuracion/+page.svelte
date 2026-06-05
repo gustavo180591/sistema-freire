@@ -108,7 +108,7 @@
 
 				<!-- Carrera: Matemáticas -->
 				<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-					<h3 class="mb-6 text-lg font-semibold">Profesorado de Matemáticas</h3>
+					<h3 class="mb-6 text-lg font-semibold">PROFESORADO DE EDUCACIÓN SECUNDARIA EN LENGUA Y LITERATURAs</h3>
 					<div class="space-y-4">
 						<div>
 							<label class="mb-2 block text-sm text-slate-400">Alumno Normal</label>

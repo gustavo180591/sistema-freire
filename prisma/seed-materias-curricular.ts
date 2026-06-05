@@ -214,7 +214,7 @@ async function seed() {
     },
     create: {
       code: 'MATEMATICA',
-      name: 'Profesorado de Matemática',
+      name: 'PROFESORADO DE EDUCACIÓN SECUNDARIA EN LENGUA Y LITERATURA',
       trainingField: TrainingField.ESPECIFICA,
       resolution: 'Res. ME N° 1235/2024',
       durationYears: 4,

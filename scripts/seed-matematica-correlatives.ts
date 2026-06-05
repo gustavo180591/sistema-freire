@@ -19,7 +19,7 @@ type CorrelativeSeed = {
 
 const CAREER = {
   code: 'MATEMATICA',
-  name: 'Profesorado de Matemática',
+  name: 'PROFESORADO DE EDUCACIÓN SECUNDARIA EN LENGUA Y LITERATURA',
   trainingField: TrainingField.ESPECIFICA,
   resolution: null as string | null,
   durationYears: 4,

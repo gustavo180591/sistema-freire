@@ -25,7 +25,7 @@
 		data?.career ?? {
 			id: '1',
 			code: 'PI-2025',
-			name: 'Profesorado de Educación Inicial',
+			name: 'PROFESORADO DE EDUCACIÓN SECUNDARIA EN MATEMÁTICA',
 			active: true,
 			students: 184,
 			plans: [

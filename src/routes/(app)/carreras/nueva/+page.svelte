@@ -59,10 +59,10 @@
 					id="trainingField"
 					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none"
 				>
-					<option value="TECNICO">Técnico</option>
-					<option value="PROFESORADO">Profesorado</option>
-					<option value="BACHILLERATO">Bachillerato</option>
-					<option value="TERTIARIO">Terciario</option>
+					<option value="GENERAL">Formación General</option>
+					<option value="ESPECIFICA">Formación Específica</option>
+					<option value="PRACTICA">Prácticas Profesionalizantes</option>
+					<option value="EDI">Espacios de Definición Institucional</option>
 				</select>
 			</div>
 

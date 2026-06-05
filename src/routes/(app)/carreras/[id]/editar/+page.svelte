@@ -65,13 +65,17 @@
 
 				<div>
 					<label for="trainingField" class="mb-2 block text-sm font-medium text-slate-300">Campo de formación</label>
-					<input
+					<select
 						id="trainingField"
 						name="trainingField"
-						type="text"
 						value={data.career.trainingField}
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-					/>
+					>
+						<option value="GENERAL">Formación General</option>
+						<option value="ESPECIFICA">Formación Específica</option>
+						<option value="PRACTICA">Prácticas Profesionalizantes</option>
+						<option value="EDI">Espacios de Definición Institucional</option>
+					</select>
 				</div>
 
 				<div>

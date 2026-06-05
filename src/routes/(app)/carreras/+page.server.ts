@@ -13,7 +13,11 @@ export const load: PageServerLoad = async ({ locals }) => {
     const careers = await prisma.career.findMany({
         where: {
             active: true,
-			locationId: { in: allowedLocationIds }
+			locations: {
+				some: {
+					locationId: { in: allowedLocationIds }
+				}
+			}
         },
         include: {
             studyPlans: {

@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 
-	let { form } = $props();
+	let { form, data } = $props();
 
 	let code = $state('');
 	let name = $state('');
+	let trainingField = $state('');
 	let description = $state('');
 	let isActive = $state(true);
 </script>
@@ -37,10 +38,11 @@
 
 		<div class="grid gap-6 md:grid-cols-2">
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Código</label>
+				<label for="code" class="mb-2 block text-sm font-medium text-slate-300">Código</label>
 				<input
 					bind:value={code}
 					name="code"
+					id="code"
 					placeholder="PEI-2026"
 					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-slate-500"
 				/>
@@ -50,10 +52,26 @@
 			</div>
 
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Estado inicial</label>
+				<label for="trainingField" class="mb-2 block text-sm font-medium text-slate-300">Campo de formación</label>
+				<select
+					bind:value={trainingField}
+					name="trainingField"
+					id="trainingField"
+					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none"
+				>
+					<option value="TECNICO">Técnico</option>
+					<option value="PROFESORADO">Profesorado</option>
+					<option value="BACHILLERATO">Bachillerato</option>
+					<option value="TERTIARIO">Terciario</option>
+				</select>
+			</div>
+
+			<div>
+				<label for="active" class="mb-2 block text-sm font-medium text-slate-300">Estado inicial</label>
 				<select
 					bind:value={isActive}
 					name="active"
+					id="active"
 					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none"
 				>
 					<option value={true}>Activa</option>
@@ -63,13 +81,34 @@
 		</div>
 
 		<div>
-			<label class="mb-2 block text-sm font-medium text-slate-300">Nombre de la carrera</label>
+			<label for="name" class="mb-2 block text-sm font-medium text-slate-300">Nombre de la carrera</label>
 			<input
 				bind:value={name}
 				name="name"
+				id="name"
 				placeholder="Profesorado de Educación Inicial"
 				class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-slate-500"
 			/>
+		</div>
+
+		<div>
+			<label for="locationIds" class="mb-2 block text-sm font-medium text-slate-300">Localidades</label>
+			<div class="space-y-2">
+				{#each data.locations as location}
+					<label class="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950 p-3 cursor-pointer hover:bg-slate-800 transition">
+						<input
+							type="checkbox"
+							name="locationIds"
+							value={location.id}
+							class="h-4 w-4 rounded border-slate-600 bg-slate-800 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-900"
+						/>
+						<span class="text-sm text-slate-300">{location.name}</span>
+					</label>
+				{/each}
+			</div>
+			<p class="mt-1 text-xs text-slate-500">
+				Seleccioná las localidades donde se dictará la carrera
+			</p>
 		</div>
 
 		<div>

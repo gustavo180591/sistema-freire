@@ -31,7 +31,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 					careerSubjects: {
 						where: {
 							career: {
-								locationId: { in: allowedLocationIds }
+								locations: {
+									some: {
+										locationId: { in: allowedLocationIds }
+									}
+								}
 							}
 						},
 						include: {

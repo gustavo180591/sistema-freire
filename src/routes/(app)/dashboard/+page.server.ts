@@ -38,7 +38,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 			where: {
 				status: 'ACTIVE',
 				career: {
-					locationId: { in: allowedLocationIds }
+					locations: {
+						some: {
+							locationId: { in: allowedLocationIds }
+						}
+					}
 				}
 			}
 		}).catch(() => 0),
@@ -48,7 +52,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 				regularityStatus: 'LIBRE',
 				student: {
 					career: {
-						locationId: { in: allowedLocationIds }
+						locations: {
+							some: {
+								locationId: { in: allowedLocationIds }
+							}
+						}
 					}
 				}
 			}
@@ -90,7 +98,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 			attendancePercent: { lt: REGULARITY_THRESHOLD },
 			student: {
 				career: {
-					locationId: { in: allowedLocationIds }
+					locations: {
+						some: {
+							locationId: { in: allowedLocationIds }
+						}
+					}
 				}
 			}
 		}

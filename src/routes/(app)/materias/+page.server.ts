@@ -29,7 +29,11 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			careerSubjects: {
 				some: {
 					career: {
-						locationId: { in: allowedLocationIds }
+						locations: {
+							some: {
+								locationId: { in: allowedLocationIds }
+							}
+						}
 					}
 				}
 			}
@@ -91,7 +95,11 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		prisma.career.findMany({
 			where: { 
 				active: true,
-				locationId: { in: allowedLocationIds }
+				locations: {
+					some: {
+						locationId: { in: allowedLocationIds }
+					}
+				}
 			},
 			select: { id: true, name: true, code: true }
 		})

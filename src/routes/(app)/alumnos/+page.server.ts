@@ -43,7 +43,11 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	// Filtrar por localidades efectivas a través de la carrera
 	if (effectiveLocationIds.length > 0) {
 		where.career = {
-			locationId: { in: effectiveLocationIds }
+			locations: {
+				some: {
+					locationId: { in: effectiveLocationIds }
+				}
+			}
 		};
 	}
 	
@@ -62,7 +66,11 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	const careers = await prisma.career.findMany({
 		where: {
 			active: true,
-			locationId: { in: effectiveLocationIds }
+			locations: {
+				some: {
+					locationId: { in: effectiveLocationIds }
+				}
+			}
 		},
 		orderBy: { name: 'asc' },
 		select: { id: true, name: true }

@@ -18,7 +18,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 		where: {
 			status: 'ACTIVE',
 			career: {
-				locationId: { in: allowedLocationIds }
+				locations: {
+					some: {
+						locationId: { in: allowedLocationIds }
+					}
+				}
 			}
 		},
 		include: {
@@ -35,7 +39,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const careers = await prisma.career.findMany({
 		where: {
 			active: true,
-			locationId: { in: allowedLocationIds }
+			locations: {
+				some: {
+					locationId: { in: allowedLocationIds }
+				}
+			}
 		},
 		orderBy: { name: 'asc' }
 	});
@@ -47,7 +55,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 			careerSubjects: {
 				where: {
 					career: {
-						locationId: { in: allowedLocationIds }
+						locations: {
+							some: {
+								locationId: { in: allowedLocationIds }
+							}
+						}
 					}
 				},
 				include: {

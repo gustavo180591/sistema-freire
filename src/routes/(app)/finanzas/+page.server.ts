@@ -14,7 +14,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 			where: {
 				student: {
 					career: {
-						locationId: { in: allowedLocationIds }
+						locations: {
+							some: {
+								locationId: { in: allowedLocationIds }
+							}
+						}
 					}
 				}
 			},
@@ -37,7 +41,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 			where: {
 				student: {
 					career: {
-						locationId: { in: allowedLocationIds }
+						locations: {
+							some: {
+								locationId: { in: allowedLocationIds }
+							}
+						}
 					}
 				}
 			},

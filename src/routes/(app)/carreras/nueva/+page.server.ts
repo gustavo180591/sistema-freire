@@ -1,6 +1,16 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/db/prisma';
-import type { Actions } from './$types';
+import type { Actions, PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async () => {
+	const locations = await prisma.location.findMany({
+		where: { active: true },
+		orderBy: { name: 'asc' },
+		select: { id: true, name: true, code: true }
+	});
+
+	return { locations };
+};
 
 export const actions: Actions = {
 	default: async ({ request }) => {
@@ -8,7 +18,7 @@ export const actions: Actions = {
 
 		const code = formData.get('code');
 		const name = formData.get('name');
-		const locationId = formData.get('locationId');
+		const locationIds = formData.getAll('locationIds') as string[];
 		const trainingField = formData.get('trainingField');
 		const activeStr = formData.get('active');
 
@@ -20,7 +30,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'El nombre es requerido' });
 		}
 
-		if (!locationId || typeof locationId !== 'string') {
+		if (!locationIds || locationIds.length === 0) {
 			return fail(400, { error: 'La localidad es requerida' });
 		}
 
@@ -31,13 +41,24 @@ export const actions: Actions = {
 		const active = activeStr === 'true';
 
 		try {
-			await prisma.career.create({
-				data: {
-					code,
-					name,
-					locationId,
-					trainingField: trainingField as any,
-					active
+			await prisma.$transaction(async (tx) => {
+				const career = await tx.career.create({
+					data: {
+						code,
+						name,
+						trainingField: trainingField as any,
+						active
+					}
+				});
+
+				// Crear relaciones de localidad
+				for (const locationId of locationIds) {
+					await tx.careerLocation.create({
+						data: {
+							careerId: career.id,
+							locationId
+						}
+					});
 				}
 			});
 		} catch (error) {

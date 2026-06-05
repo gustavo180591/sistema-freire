@@ -58,7 +58,11 @@ export const load: PageServerLoad = async ({ params }) => {
 	return {
 		user,
 		roles,
-		subjects,
+		subjects: subjects.map(s => ({
+			...s,
+			approvalThreshold: s.approvalThreshold ? Number(s.approvalThreshold) : null,
+			promotionThreshold: s.promotionThreshold ? Number(s.promotionThreshold) : null
+		})),
 		careers,
 		locations
 	};

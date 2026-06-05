@@ -20,6 +20,11 @@ export const load: PageServerLoad = async ({ params }) => {
 						}
 					}
 				}
+			},
+			locationPermissions: {
+				include: {
+					location: true
+				}
 			}
 		}
 	});

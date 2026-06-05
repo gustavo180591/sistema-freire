@@ -6,6 +6,14 @@
 	const isTeacher = $derived(
 		data.user.roles.some((ur) => ur.role.code === 'DOCENTE')
 	);
+
+	const canViewEvaluations = $derived(
+		data.user.roles.some((ur) => ['SUPERADMIN', 'DIRECTOR', 'DOCENTE'].includes(ur.role.code))
+	);
+
+	const isAdministrative = $derived(
+		data.user.roles.some((ur) => ['SECRETARIA', 'PRECEPTOR', 'FINANZAS', 'APODERADO'].includes(ur.role.code))
+	);
 </script>
 
 <svelte:head>
@@ -101,6 +109,30 @@
 		</div>
 	{/if}
 
+	{#if isAdministrative}
+		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+			<h2 class="text-xl font-bold mb-4">Datos Administrativos</h2>
+			<div class="space-y-3">
+				{#if data.user.phone}
+					<div>
+						<p class="text-sm text-slate-400">Teléfono</p>
+						<p class="font-medium">{data.user.phone}</p>
+					</div>
+				{/if}
+				{#if data.user.locationPermissions && data.user.locationPermissions.length > 0}
+					<div>
+						<p class="text-sm text-slate-400">Localidad de Trabajo</p>
+						<div class="space-y-1">
+							{#each data.user.locationPermissions as lp}
+								<p class="font-medium">{lp.location.name}</p>
+							{/each}
+						</div>
+					</div>
+				{/if}
+			</div>
+		</div>
+	{/if}
+
 	{#if isTeacher && data.user.teacher}
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<h2 class="text-xl font-bold mb-4">Materias Asignadas</h2>
@@ -129,7 +161,7 @@
 		</div>
 	{/if}
 
-	{#if data.evaluations && data.evaluations.length > 0}
+	{#if canViewEvaluations && data.evaluations && data.evaluations.length > 0}
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<h2 class="text-xl font-bold mb-4">Evaluaciones Creadas</h2>
 			<div class="space-y-3">

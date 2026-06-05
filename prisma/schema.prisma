@@ -98,7 +98,7 @@ model Career {
   subjectCorrelatives SubjectCorrelative[] // Correlativas específicas de carrera
   locations       CareerLocation[] // Relación N:M con localidades
 
-  @@index([trainingField, active])
+  @@index([active])
   @@map("careers")
 }
 

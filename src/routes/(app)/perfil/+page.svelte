@@ -90,16 +90,34 @@
 				<p class="text-sm font-medium text-slate-400 mb-2">Email</p>
 				<p class="text-white">{data.user.email}</p>
 			</div>
+			{#if data.user.phone}
+				<div>
+					<p class="text-sm font-medium text-slate-400 mb-2">Teléfono</p>
+					<p class="text-white">{data.user.phone}</p>
+				</div>
+			{/if}
 			<div>
 				<p class="text-sm font-medium text-slate-400 mb-2">Roles</p>
 				<div class="flex flex-wrap gap-2">
-					{#each data.user.roles as role}
+					{#each data.user.roleNames as roleName}
 						<span class="inline-flex rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1 text-xs">
-							{role}
+							{roleName}
 						</span>
 					{/each}
 				</div>
 			</div>
+			{#if data.user.locationPermissions && data.user.locationPermissions.length > 0}
+				<div class="md:col-span-2">
+					<p class="text-sm font-medium text-slate-400 mb-2">Localidad de Trabajo</p>
+					<div class="flex flex-wrap gap-2">
+						{#each data.user.locationPermissions as location}
+							<span class="inline-flex rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1 text-xs">
+								{location.name}
+							</span>
+						{/each}
+					</div>
+				</div>
+			{/if}
 		</div>
 	</div>
 

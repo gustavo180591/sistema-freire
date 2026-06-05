@@ -2,7 +2,12 @@ import { prisma } from '$lib/server/db/prisma';
 import type { PageServerLoad, Actions } from './$types';
 import { error, fail, redirect } from '@sveltejs/kit';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
+	const currentUser = locals.user;
+	if (!currentUser) {
+		throw redirect(303, '/login');
+	}
+
 	const user = await prisma.user.findUnique({
 		where: { id: params.id },
 		include: {
@@ -31,6 +36,17 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	if (!user) {
 		throw error(404, 'Usuario no encontrado');
+	}
+
+	// Verificar permisos: SECRETARIA no puede editar SUPERADMIN, SECRETARIA, DIRECTOR, APODERADO
+	const isSecretary = currentUser.roles.includes('SECRETARIA');
+	const restrictedRoles = ['SUPERADMIN', 'SECRETARIA', 'DIRECTOR', 'APODERADO'];
+
+	if (isSecretary) {
+		const hasRestrictedRole = user.roles.some(ur => restrictedRoles.includes(ur.role.code));
+		if (hasRestrictedRole) {
+			throw error(403, 'No tienes permiso para editar usuarios con roles administrativos');
+		}
 	}
 
 	const roles = await prisma.role.findMany({
@@ -69,7 +85,39 @@ export const load: PageServerLoad = async ({ params }) => {
 };
 
 export const actions: Actions = {
-	updateUser: async ({ request, params }) => {
+	updateUser: async ({ request, params, locals }) => {
+		const currentUser = locals.user;
+		if (!currentUser) {
+			return fail(401, { error: 'No autorizado' });
+		}
+
+		// Obtener roles del usuario a editar
+		const targetUser = await prisma.user.findUnique({
+			where: { id: params.id },
+			include: {
+				roles: {
+					include: {
+						role: true
+					}
+				}
+			}
+		});
+
+		if (!targetUser) {
+			return fail(404, { error: 'Usuario no encontrado' });
+		}
+
+		// Verificar permisos: SECRETARIA no puede editar SUPERADMIN, SECRETARIA, DIRECTOR, APODERADO, FINANZAS
+		const isSecretary = currentUser.roles.includes('SECRETARIA');
+		const restrictedRoles = ['SUPERADMIN', 'SECRETARIA', 'DIRECTOR', 'APODERADO', 'FINANZAS'];
+
+		if (isSecretary) {
+			const hasRestrictedRole = targetUser.roles.some(ur => restrictedRoles.includes(ur.role.code));
+			if (hasRestrictedRole) {
+				return fail(403, { error: 'No tienes permiso para editar usuarios con roles administrativos' });
+			}
+		}
+
 		const formData = await request.formData();
 		const firstName = formData.get('firstName')?.toString();
 		const lastName = formData.get('lastName')?.toString();

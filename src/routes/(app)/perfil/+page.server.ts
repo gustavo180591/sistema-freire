@@ -30,6 +30,11 @@ export const load: PageServerLoad = async ({ locals }) => {
                         select: { code: true, name: true }
                     }
                 }
+            },
+            locationPermissions: {
+                include: {
+                    location: true
+                }
             }
         }
     });
@@ -58,10 +63,13 @@ export const load: PageServerLoad = async ({ locals }) => {
             firstName: userWithRoles.firstName,
             lastName: userWithRoles.lastName,
             fullName: `${userWithRoles.firstName} ${userWithRoles.lastName}`,
+            phone: userWithRoles.phone,
             roles: userWithRoles.roles.map(r => r.role.code),
+            roleNames: userWithRoles.roles.map(r => r.role.name),
             status: userWithRoles.status === 'ACTIVE' ? 'Activo' : 'Inactivo',
             totpEnabled: userWithRoles.totpEnabled,
-            totpVerified: userWithRoles.totpVerified
+            totpVerified: userWithRoles.totpVerified,
+            locationPermissions: userWithRoles.locationPermissions.map(lp => lp.location)
         },
         metrics: {
             totalUsers,

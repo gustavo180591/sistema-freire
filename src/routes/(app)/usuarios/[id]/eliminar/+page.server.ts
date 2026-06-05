@@ -4,7 +4,12 @@ import { prisma } from '$lib/server/db/prisma';
 import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
 
-export const load: PageServerLoad = async ({ params }: { params: { id: string } }) => {
+export const load: PageServerLoad = async ({ params, locals }: { params: { id: string }; locals: any }) => {
+	const currentUser = locals.user;
+	if (!currentUser) {
+		throw redirect(303, '/login');
+	}
+
 	const user = await prisma.user.findUnique({
 		where: { id: params.id },
 		include: {
@@ -22,11 +27,27 @@ export const load: PageServerLoad = async ({ params }: { params: { id: string } 
 		throw fail(404, { error: 'Usuario no encontrado' });
 	}
 
+	// Verificar permisos: SECRETARIA no puede eliminar SUPERADMIN, SECRETARIA, DIRECTOR, APODERADO
+	const isSecretary = currentUser.roles.includes('SECRETARIA');
+	const restrictedRoles = ['SUPERADMIN', 'SECRETARIA', 'DIRECTOR', 'APODERADO'];
+
+	if (isSecretary) {
+		const hasRestrictedRole = user.roles.some(ur => restrictedRoles.includes(ur.role.code));
+		if (hasRestrictedRole) {
+			throw fail(403, { error: 'No tienes permiso para eliminar usuarios con roles administrativos' });
+		}
+	}
+
 	return { user };
 };
 
 export const actions: Actions = {
-	default: async ({ params }: { params: { id: string } }) => {
+	default: async ({ params, locals }: { params: { id: string }; locals: any }) => {
+		const currentUser = locals.user;
+		if (!currentUser) {
+			return fail(401, { error: 'No autorizado' });
+		}
+
 		try {
 			const user = await prisma.user.findUnique({
 				where: { id: params.id },
@@ -43,6 +64,17 @@ export const actions: Actions = {
 
 			if (!user) {
 				return fail(404, { error: 'Usuario no encontrado' });
+			}
+
+			// Verificar permisos: SECRETARIA no puede eliminar SUPERADMIN, SECRETARIA, DIRECTOR, APODERADO
+			const isSecretary = currentUser.roles.includes('SECRETARIA');
+			const restrictedRoles = ['SUPERADMIN', 'SECRETARIA', 'DIRECTOR', 'APODERADO'];
+
+			if (isSecretary) {
+				const hasRestrictedRole = user.roles.some(ur => restrictedRoles.includes(ur.role.code));
+				if (hasRestrictedRole) {
+					return fail(403, { error: 'No tienes permiso para eliminar usuarios con roles administrativos' });
+				}
 			}
 
 			// No permitir eliminar al último SUPERADMIN

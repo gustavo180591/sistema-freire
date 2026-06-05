@@ -135,6 +135,9 @@ export const actions: Actions = {
 		const postalCode = formData.get('postalCode')?.toString();
 		const careerId = formData.get('careerId')?.toString();
 		const currentYear = formData.get('currentYear')?.toString();
+		const teacherStatus = formData.get('teacherStatus')?.toString();
+		const hireDate = formData.get('hireDate')?.toString();
+		const observations = formData.get('observations')?.toString();
 
 		if (!firstName || !lastName || !email) {
 			return fail(400, { error: 'Datos requeridos faltantes' });
@@ -186,7 +189,10 @@ export const actions: Actions = {
 						data: {
 							dni: dni || teacher.dni,
 							firstName,
-							lastName
+							lastName,
+							status: teacherStatus ? teacherStatus as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'RESIGNED' : teacher.status,
+							hireDate: hireDate ? new Date(hireDate) : teacher.hireDate,
+							observations: observations !== undefined ? observations : teacher.observations
 						}
 					});
 				}

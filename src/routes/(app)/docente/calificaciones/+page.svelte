@@ -10,6 +10,11 @@
 	let notes = $state<string>('');
 	let formError = $state<string>('');
 	let formSuccess = $state<string>('');
+	let editingGrade = $state<any>(null);
+	let editGradeValue = $state<string>('');
+	let editEvaluationType = $state<string>('PARCIAL');
+	let editFormError = $state<string>('');
+	let editFormSuccess = $state<string>('');
 
 	// Set default subject when data is available
 	$effect(() => {
@@ -41,6 +46,22 @@
 		notes = '';
 		formError = '';
 		formSuccess = '';
+	}
+
+	function startEditGrade(gradeItem: any) {
+		editingGrade = gradeItem;
+		editGradeValue = gradeItem.value.toString();
+		editEvaluationType = gradeItem.gradeType;
+		editFormError = '';
+		editFormSuccess = '';
+	}
+
+	function cancelEditGrade() {
+		editingGrade = null;
+		editGradeValue = '';
+		editEvaluationType = 'PARCIAL';
+		editFormError = '';
+		editFormSuccess = '';
 	}
 </script>
 
@@ -180,6 +201,7 @@
 							<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Nota</th>
 							<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Tipo</th>
 							<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Fecha</th>
+							<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Acciones</th>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-slate-800">
@@ -190,11 +212,19 @@
 								<td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-white">{grade.value}</td>
 								<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{grade.gradeType}</td>
 								<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{new Date(grade.gradedAt).toLocaleDateString()}</td>
+								<td class="px-6 py-4 whitespace-nowrap text-sm">
+									<button
+										onclick={() => startEditGrade(grade)}
+										class="rounded-xl bg-blue-500/20 px-3 py-1 text-blue-400 hover:bg-blue-500/30 transition-colors"
+									>
+										Editar
+									</button>
+								</td>
 							</tr>
 						{/each}
 						{#if data.existingGrades.length === 0}
 							<tr>
-								<td colspan="5" class="px-6 py-8 text-center text-slate-400">
+								<td colspan="6" class="px-6 py-8 text-center text-slate-400">
 									No hay calificaciones registradas aún
 								</td>
 							</tr>
@@ -205,3 +235,91 @@
 		</div>
 	</div>
 </div>
+
+<!-- Modal de Edición de Calificación -->
+{#if editingGrade}
+	<div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+		<div class="bg-slate-900 rounded-3xl border border-slate-800 p-8 max-w-md w-full">
+			<div class="flex items-center justify-between mb-6">
+				<div>
+					<h2 class="text-2xl font-bold text-white">Editar Calificación</h2>
+					<p class="text-sm text-slate-400">{editingGrade.studentName} - {editingGrade.subject}</p>
+				</div>
+				<button
+					onclick={cancelEditGrade}
+					class="rounded-xl bg-slate-800 px-4 py-2 text-slate-400 hover:bg-slate-700 transition-colors"
+				>
+					Cancelar
+				</button>
+			</div>
+
+			{#if editFormError}
+				<div class="mb-4 p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-400">
+					{editFormError}
+				</div>
+			{/if}
+
+			{#if editFormSuccess}
+				<div class="mb-4 p-4 bg-green-500/20 border border-green-500/50 rounded-xl text-green-400">
+					{editFormSuccess}
+				</div>
+			{/if}
+
+			<form
+				method="POST"
+				action="?/editGrade"
+				class="space-y-6"
+			>
+				<input type="hidden" name="gradeId" value={editingGrade.id} />
+
+				<div>
+					<label for="editGrade" class="mb-2 block text-sm font-medium text-slate-300">Nota (0-10)</label>
+					<input
+						id="editGrade"
+						name="grade"
+						type="number"
+						min="0"
+						max="10"
+						step="0.01"
+						bind:value={editGradeValue}
+						placeholder="Ej: 7.5"
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+					/>
+				</div>
+
+				<div>
+					<label for="editEvaluationType" class="mb-2 block text-sm font-medium text-slate-300">Tipo de Evaluación</label>
+					<select
+						id="editEvaluationType"
+						name="evaluationType"
+						bind:value={editEvaluationType}
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+					>
+						<option value="PARCIAL">Parcial</option>
+						<option value="FINAL">Final</option>
+						<option value="RECUPERATORIO">Recuperatorio</option>
+						<option value="TRABAJO_PRACTICO">Trabajo Práctico</option>
+						<option value="EXAMEN">Examen</option>
+						<option value="OTRO">Otro</option>
+					</select>
+				</div>
+
+				<div class="flex justify-end space-x-4">
+					<button
+						type="button"
+						onclick={cancelEditGrade}
+						class="rounded-2xl border border-slate-700 px-6 py-3 font-semibold text-white transition hover:bg-slate-800"
+					>
+						Cancelar
+					</button>
+					<button
+						type="submit"
+						class="rounded-2xl bg-blue-500 px-6 py-3 font-semibold text-white transition hover:bg-blue-600"
+					>
+						Guardar Cambios
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{/if}

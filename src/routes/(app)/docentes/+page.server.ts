@@ -49,7 +49,7 @@ export const load: PageServerLoad = async () => {
 };
 
 export const actions: Actions = {
-	deleteTeacher: async ({ request }) => {
+	deleteTeacher: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const id = formData.get('id')?.toString();
 		const userId = formData.get('userId')?.toString();
@@ -59,6 +59,12 @@ export const actions: Actions = {
 		}
 
 		try {
+			// Obtener datos del docente para auditoría
+			const teacher = await prisma.teacher.findUnique({
+				where: { id },
+				include: { user: true }
+			});
+
 			// Eliminar el registro de Teacher
 			await prisma.teacher.delete({
 				where: { id }
@@ -68,6 +74,19 @@ export const actions: Actions = {
 			await prisma.user.delete({
 				where: { id: userId }
 			});
+
+			// Registrar en auditoría
+			if (teacher && locals.user) {
+				const { auditLog } = await import('$lib/server/audit');
+				const { AuditAction } = await import('@prisma/client');
+				await auditLog({
+					userId: locals.user.id,
+					action: AuditAction.DELETE,
+					entityType: 'TEACHER',
+					entityId: id,
+					description: `Eliminación de docente: ${teacher.lastName}, ${teacher.firstName} (DNI: ${teacher.dni})`
+				});
+			}
 
 			return { success: true };
 		} catch (e) {

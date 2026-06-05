@@ -119,6 +119,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			entries: a.entries.map((e: any) => ({
 				studentId: e.studentId,
 				studentName: `${e.student.lastName}, ${e.student.firstName}`,
+				studentDni: e.student.dni,
 				present: e.present,
 				notes: e.notes
 			}))
@@ -209,6 +210,91 @@ export const actions: Actions = {
 		} catch (error) {
 			console.error('Error al registrar asistencia:', error);
 			return { error: 'Error al registrar la asistencia' };
+		}
+	},
+
+	editAttendance: async ({ request, locals }) => {
+		requireRole(locals.user, ['DOCENTE']);
+
+		if (!locals.user) {
+			return { error: 'No autenticado' };
+		}
+
+		const data = await request.formData();
+		const attendanceId = data.get('attendanceId')?.toString();
+		const attendanceData = data.get('attendanceData')?.toString();
+
+		if (!attendanceId || !attendanceData) {
+			return { error: 'Datos requeridos faltantes' };
+		}
+
+		try {
+			// Verificar que el registro de asistencia pertenezca al docente
+			const attendanceRecord = await prisma.attendanceRecord.findUnique({
+				where: { id: attendanceId },
+				include: {
+					subject: true
+				}
+			});
+
+			if (!attendanceRecord) {
+				return { error: 'Registro de asistencia no encontrado' };
+			}
+
+			if (attendanceRecord.createdByUserId !== locals.user.id) {
+				return { error: 'No tenés permiso para editar este registro de asistencia' };
+			}
+
+			// Parsear datos de asistencia
+			const attendance = JSON.parse(attendanceData) as Array<{ studentId: string; present: boolean; notes?: string }>;
+
+			// Actualizar o crear entradas de asistencia
+			for (const a of attendance) {
+				const existingEntry = await prisma.attendanceEntry.findUnique({
+					where: {
+						attendanceId_studentId: {
+							attendanceId,
+							studentId: a.studentId
+						}
+					}
+				});
+
+				if (existingEntry) {
+					await prisma.attendanceEntry.update({
+						where: { id: existingEntry.id },
+						data: {
+							present: a.present,
+							notes: a.notes || null
+						}
+					});
+				} else {
+					await prisma.attendanceEntry.create({
+						data: {
+							attendanceId,
+							studentId: a.studentId,
+							present: a.present,
+							notes: a.notes || null
+						}
+					});
+				}
+			}
+
+			const presentCount = attendance.filter(a => a.present).length;
+			const absentCount = attendance.length - presentCount;
+
+			// Registrar en auditoría
+			await auditLog({
+				userId: locals.user.id,
+				action: AuditAction.UPDATE,
+				entityType: 'ATTENDANCE_RECORD',
+				entityId: attendanceId,
+				description: `Edición de asistencia: ${presentCount} presentes, ${absentCount} ausentes en ${attendanceRecord.subject.name} el ${attendanceRecord.classDate.toLocaleDateString('es-AR')}`
+			});
+
+			return { success: 'Asistencia actualizada exitosamente' };
+		} catch (error) {
+			console.error('Error al editar asistencia:', error);
+			return { error: 'Error al editar la asistencia' };
 		}
 	}
 };

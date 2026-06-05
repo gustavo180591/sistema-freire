@@ -239,6 +239,39 @@
 								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
 							/>
 						</div>
+						<div>
+							<label for="teacherStatus" class="block text-sm text-slate-400 mb-1">Estado Laboral</label>
+							<select
+								id="teacherStatus"
+								name="teacherStatus"
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							>
+								<option value="ACTIVE" selected={data.user.teacher.status === 'ACTIVE'}>Activo</option>
+								<option value="INACTIVE" selected={data.user.teacher.status === 'INACTIVE'}>Inactivo</option>
+								<option value="SUSPENDED" selected={data.user.teacher.status === 'SUSPENDED'}>Suspendido</option>
+								<option value="RESIGNED" selected={data.user.teacher.status === 'RESIGNED'}>Renunció</option>
+							</select>
+						</div>
+						<div>
+							<label for="hireDate" class="block text-sm text-slate-400 mb-1">Fecha de Ingreso</label>
+							<input
+								id="hireDate"
+								name="hireDate"
+								type="date"
+								value={data.user.teacher.hireDate ? new Date(data.user.teacher.hireDate).toISOString().split('T')[0] : ''}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+						<div class="md:col-span-2">
+							<label for="observations" class="block text-sm text-slate-400 mb-1">Observaciones</label>
+							<textarea
+								id="observations"
+								name="observations"
+								rows="3"
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+								placeholder="Notas adicionales sobre el docente..."
+							>{data.user.teacher.observations || ''}</textarea>
+						</div>
 					</div>
 				</div>
 				{/if}

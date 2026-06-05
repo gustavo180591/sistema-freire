@@ -247,13 +247,7 @@
 						{/if}
 					</select>
 					{#if data.isSecretary && data.secretaryLocationCode}
-						<p class="mt-1 text-xs text-slate-500">
-							Localidad asignada automáticamente según tu permiso de trabajo. Contacta a un administrador para cambiarla.
-						</p>
-					{:else}
-						<p class="mt-1 text-xs text-slate-500">
-							El ID del alumno se generará con el prefijo según la localidad (A para Alem, C para Capiovi)
-						</p>
+						<p class="mt-1 text-xs text-slate-400">Localidad asignada por permisos</p>
 					{/if}
 				</div>
 
@@ -263,6 +257,7 @@
 						id="careerId"
 						name="careerId"
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						required
 					>
 						<option value="">Seleccionar carrera</option>
 						{#each data.careers as career}
@@ -319,44 +314,132 @@
 					/>
 				</div>
 			</div>
+		</section>
+		{/if}
 
-			<div class="space-y-3">
-				<h3 class="text-sm font-medium text-slate-300">Tipo de alumno</h3>
-				<div class="flex items-center space-x-6">
-					<label class="flex items-center space-x-3 cursor-pointer">
-						<input
-							id="alumnoNormal"
-							name="alumnoType"
-							type="radio"
-							value="normal"
-							checked
-							class="h-4 w-4 border-slate-600 bg-slate-950 text-blue-600 focus:ring-blue-500 focus:ring-2"
-						/>
-						<span class="text-sm text-slate-300">Normal</span>
-					</label>
-					<label class="flex items-center space-x-3 cursor-pointer">
-						<input
-							id="alumnoBecado"
-							name="alumnoType"
-							type="radio"
-							value="becado"
-							class="h-4 w-4 border-slate-600 bg-slate-950 text-blue-600 focus:ring-blue-500 focus:ring-2"
-						/>
-						<span class="text-sm text-slate-300">Becado</span>
-					</label>
-					<label class="flex items-center space-x-3 cursor-pointer">
-						<input
-							id="alumnoRecursante"
-							name="alumnoType"
-							type="radio"
-							value="recursante"
-							class="h-4 w-4 border-slate-600 bg-slate-950 text-blue-600 focus:ring-blue-500 focus:ring-2"
-						/>
-						<span class="text-sm text-slate-300">Recursante</span>
-					</label>
+		<!-- 3. Datos laborales (DOCENTE) -->
+		{#if userType === 'DOCENTE'}
+		<section class="space-y-4">
+			<h2 class="text-lg font-semibold text-white">Datos laborales</h2>
+			<div class="grid gap-6 md:grid-cols-2">
+				<div>
+					<label for="locality" class="mb-2 block text-sm font-medium text-slate-300">Localidad</label>
+					<select
+						id="locality"
+						name="locality"
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						disabled={data.isSecretary && data.secretaryLocationCode ? true : undefined}
+					>
+						{#if data.isSecretary && data.secretaryLocationCode}
+							<option value={data.secretaryLocationCode} selected>
+								{data.secretaryLocationCode}
+							</option>
+						{:else}
+							<option value="">Seleccionar localidad</option>
+							{#each data.locations as location}
+								<option value={location.code}>{location.name}</option>
+							{/each}
+						{/if}
+					</select>
+					{#if data.isSecretary && data.secretaryLocationCode}
+						<p class="mt-1 text-xs text-slate-400">Localidad asignada por permisos</p>
+					{/if}
+				</div>
+
+				<div>
+					<label for="hireDate" class="mb-2 block text-sm font-medium text-slate-300">Fecha de ingreso</label>
+					<input
+						id="hireDate"
+						name="hireDate"
+						type="date"
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+					/>
+				</div>
+
+				<div class="md:col-span-2">
+					<label for="observations" class="mb-2 block text-sm font-medium text-slate-300">Observaciones</label>
+					<textarea
+						id="observations"
+						name="observations"
+						rows="3"
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						placeholder="Notas adicionales sobre el docente..."
+					></textarea>
 				</div>
 			</div>
 		</section>
+		{/if}
+
+		<!-- 3. Datos laborales (PRECEPTOR) -->
+		{#if userType === 'PRECEPTOR'}
+		<section class="space-y-4">
+			<h2 class="text-lg font-semibold text-white">Datos laborales</h2>
+			<div class="grid gap-6 md:grid-cols-2">
+				<div>
+					<label for="locality" class="mb-2 block text-sm font-medium text-slate-300">Localidad</label>
+					<select
+						id="locality"
+						name="locality"
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						disabled={data.isSecretary && data.secretaryLocationCode ? true : undefined}
+					>
+						{#if data.isSecretary && data.secretaryLocationCode}
+							<option value={data.secretaryLocationCode} selected>
+								{data.secretaryLocationCode}
+							</option>
+						{:else}
+							<option value="">Seleccionar localidad</option>
+							{#each data.locations as location}
+								<option value={location.code}>{location.name}</option>
+							{/each}
+						{/if}
+					</select>
+					{#if data.isSecretary && data.secretaryLocationCode}
+						<p class="mt-1 text-xs text-slate-400">Localidad asignada por permisos</p>
+					{/if}
+				</div>
+			</div>
+		</section>
+		{/if}
+
+		<!-- 4. Tipo de alumno (solo para ALUMNO) -->
+		{#if userType === 'ALUMNO'}
+		<div class="space-y-3">
+			<h3 class="text-sm font-medium text-slate-300">Tipo de alumno</h3>
+			<div class="flex items-center space-x-6">
+				<label class="flex items-center space-x-3 cursor-pointer">
+					<input
+						id="alumnoNormal"
+						name="alumnoType"
+						type="radio"
+						value="normal"
+						checked
+						class="h-4 w-4 border-slate-600 bg-slate-950 text-blue-600 focus:ring-blue-500 focus:ring-2"
+					/>
+					<span class="text-sm text-slate-300">Normal</span>
+				</label>
+				<label class="flex items-center space-x-3 cursor-pointer">
+					<input
+						id="alumnoBecado"
+						name="alumnoType"
+						type="radio"
+						value="becado"
+						class="h-4 w-4 border-slate-600 bg-slate-950 text-blue-600 focus:ring-blue-500 focus:ring-2"
+					/>
+					<span class="text-sm text-slate-300">Becado</span>
+				</label>
+				<label class="flex items-center space-x-3 cursor-pointer">
+					<input
+						id="alumnoRecursante"
+						name="alumnoType"
+						type="radio"
+						value="recursante"
+						class="h-4 w-4 border-slate-600 bg-slate-950 text-blue-600 focus:ring-blue-500 focus:ring-2"
+					/>
+					<span class="text-sm text-slate-300">Recursante</span>
+				</label>
+			</div>
+		</div>
 		{/if}
 
 		<!-- 4. Contacto familiar -->

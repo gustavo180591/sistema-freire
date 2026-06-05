@@ -245,13 +245,17 @@ export const actions: Actions = {
 				// Si es DOCENTE, crear el registro de docente
 				if (type === 'DOCENTE') {
 					const locality = data.get('locality')?.toString();
-					
-					await tx.teacher.create({
+					const hireDate = data.get('hireDate')?.toString();
+					const observations = data.get('observations')?.toString();
+
+					const teacher = await tx.teacher.create({
 						data: {
 							userId: user.id,
 							dni,
 							firstName,
-							lastName
+							lastName,
+							hireDate: hireDate ? new Date(hireDate) : null,
+							observations: observations || null
 						}
 					});
 
@@ -269,6 +273,15 @@ export const actions: Actions = {
 							});
 						}
 					}
+
+					// Registrar en auditoría
+					await auditLog({
+						userId: currentUser.id,
+						action: AuditAction.CREATE,
+						entityType: 'TEACHER',
+						entityId: teacher.id,
+						description: `Creación de docente: ${lastName}, ${firstName} (DNI: ${dni})`
+					});
 				}
 
 				// Si es PRECEPTOR, capturar localidad y asignar permiso

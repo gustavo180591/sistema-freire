@@ -9,6 +9,11 @@
 	let notesMap = $state<Map<string, string>>(new Map());
 	let formError = $state<string>('');
 	let formSuccess = $state<string>('');
+	let editingAttendance = $state<any>(null);
+	let editAttendanceMap = $state<Map<string, boolean>>(new Map());
+	let editNotesMap = $state<Map<string, string>>(new Map());
+	let editFormError = $state<string>('');
+	let editFormSuccess = $state<string>('');
 
 	// Set default subject when data is available
 	$effect(() => {
@@ -41,6 +46,40 @@
 		});
 		formError = '';
 		formSuccess = '';
+	}
+
+	function startEditAttendance(attendance: any) {
+		editingAttendance = attendance;
+		editAttendanceMap = new Map();
+		editNotesMap = new Map();
+		attendance.entries.forEach((entry: any) => {
+			editAttendanceMap.set(entry.studentId, entry.present);
+			editNotesMap.set(entry.studentId, entry.notes || '');
+		});
+		editFormError = '';
+		editFormSuccess = '';
+	}
+
+	function cancelEditAttendance() {
+		editingAttendance = null;
+		editAttendanceMap = new Map();
+		editNotesMap = new Map();
+		editFormError = '';
+		editFormSuccess = '';
+	}
+
+	function toggleEditAttendance(studentId: string) {
+		editAttendanceMap.set(studentId, !editAttendanceMap.get(studentId));
+	}
+
+	function getEditAttendanceData() {
+		return JSON.stringify(
+			editingAttendance.entries.map((entry: any) => ({
+				studentId: entry.studentId,
+				present: editAttendanceMap.get(entry.studentId) ?? true,
+				notes: editNotesMap.get(entry.studentId) || ''
+			}))
+		);
 	}
 
 	function getAttendanceData() {
@@ -197,15 +236,23 @@
 								<p class="font-semibold text-white">{attendance.subject}</p>
 								<p class="text-sm text-slate-400">{new Date(attendance.date).toLocaleDateString()}</p>
 							</div>
-							<div class="flex gap-4">
-								<div class="text-center">
-									<p class="text-sm text-green-400">Presentes</p>
-									<p class="text-xl font-bold text-green-400">{attendance.presentStudents}</p>
+							<div class="flex items-center gap-4">
+								<div class="flex gap-4">
+									<div class="text-center">
+										<p class="text-sm text-green-400">Presentes</p>
+										<p class="text-xl font-bold text-green-400">{attendance.presentStudents}</p>
+									</div>
+									<div class="text-center">
+										<p class="text-sm text-red-400">Ausentes</p>
+										<p class="text-xl font-bold text-red-400">{attendance.totalStudents - attendance.presentStudents}</p>
+									</div>
 								</div>
-								<div class="text-center">
-									<p class="text-sm text-red-400">Ausentes</p>
-									<p class="text-xl font-bold text-red-400">{attendance.totalStudents - attendance.presentStudents}</p>
-								</div>
+								<button
+									onclick={() => startEditAttendance(attendance)}
+									class="rounded-xl bg-blue-500/20 px-4 py-2 text-blue-400 hover:bg-blue-500/30 transition-colors"
+								>
+									Editar
+								</button>
 							</div>
 						</div>
 						<div class="max-h-48 overflow-y-auto">
@@ -245,3 +292,96 @@
 		</div>
 	</div>
 </div>
+
+<!-- Modal de Edición de Asistencia -->
+{#if editingAttendance}
+	<div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+		<div class="bg-slate-900 rounded-3xl border border-slate-800 p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+			<div class="flex items-center justify-between mb-6">
+				<div>
+					<h2 class="text-2xl font-bold text-white">Editar Asistencia</h2>
+					<p class="text-sm text-slate-400">{editingAttendance.subject} - {new Date(editingAttendance.date).toLocaleDateString()}</p>
+				</div>
+				<button
+					onclick={cancelEditAttendance}
+					class="rounded-xl bg-slate-800 px-4 py-2 text-slate-400 hover:bg-slate-700 transition-colors"
+				>
+					Cancelar
+				</button>
+			</div>
+
+			{#if editFormError}
+				<div class="mb-4 p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-400">
+					{editFormError}
+				</div>
+			{/if}
+
+			{#if editFormSuccess}
+				<div class="mb-4 p-4 bg-green-500/20 border border-green-500/50 rounded-xl text-green-400">
+					{editFormSuccess}
+				</div>
+			{/if}
+
+			<form
+				method="POST"
+				action="?/editAttendance"
+				class="space-y-6"
+			>
+				<input type="hidden" name="attendanceId" value={editingAttendance.id} />
+				<input type="hidden" name="attendanceData" value={getEditAttendanceData()} />
+
+				<!-- Lista de estudiantes para editar -->
+				<div>
+					<h3 class="text-lg font-semibold text-white mb-4">Estudiantes</h3>
+					<div class="space-y-3">
+						{#each editingAttendance.entries as entry (entry.studentId)}
+							<div class="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-950 p-4">
+								<div class="flex-1">
+									<p class="font-medium text-white">{entry.studentName}</p>
+									<p class="text-sm text-slate-400">{entry.studentDni}</p>
+								</div>
+								<div class="flex items-center gap-4">
+									<label class="flex items-center gap-2 cursor-pointer">
+										<input
+											type="checkbox"
+											checked={editAttendanceMap.get(entry.studentId)}
+											onchange={() => toggleEditAttendance(entry.studentId)}
+											class="h-5 w-5 rounded border-slate-600 bg-slate-950 text-green-500 focus:ring-green-500"
+										/>
+										<span class="text-sm text-slate-300">Presente</span>
+									</label>
+									<input
+										type="text"
+										placeholder="Notas..."
+										value={editNotesMap.get(entry.studentId) || ''}
+										oninput={(e) => {
+											const target = e.target as HTMLInputElement;
+											editNotesMap.set(entry.studentId, target.value);
+										}}
+										class="w-48 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white transition outline-none focus:border-slate-500"
+									/>
+								</div>
+							</div>
+						{/each}
+					</div>
+				</div>
+
+				<div class="flex justify-end space-x-4">
+					<button
+						type="button"
+						onclick={cancelEditAttendance}
+						class="rounded-2xl border border-slate-700 px-6 py-3 font-semibold text-white transition hover:bg-slate-800"
+					>
+						Cancelar
+					</button>
+					<button
+						type="submit"
+						class="rounded-2xl bg-blue-500 px-6 py-3 font-semibold text-white transition hover:bg-blue-600"
+					>
+						Guardar Cambios
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{/if}

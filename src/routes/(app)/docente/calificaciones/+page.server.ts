@@ -108,10 +108,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		})),
 		existingGrades: existingGrades.map(g => ({
 			id: g.id,
-			studentId: g.studentId,
 			studentName: `${g.student.lastName}, ${g.student.firstName}`,
 			subject: g.subject.name,
-			subjectId: g.subjectId,
 			value: g.value,
 			gradeType: g.gradeType,
 			gradedAt: g.gradedAt
@@ -194,6 +192,89 @@ export const actions: Actions = {
 		} catch (error) {
 			console.error('Error al registrar calificación:', error);
 			return { error: 'Error al registrar la calificación' };
+		}
+	},
+
+	editGrade: async ({ request, locals }) => {
+		requireRole(locals.user, ['DOCENTE']);
+
+		if (!locals.user) {
+			return { error: 'No autenticado' };
+		}
+
+		const data = await request.formData();
+		const gradeId = data.get('gradeId')?.toString();
+		const grade = data.get('grade')?.toString();
+		const evaluationType = data.get('evaluationType')?.toString();
+
+		if (!gradeId || !grade) {
+			return { error: 'Datos requeridos faltantes' };
+		}
+
+		try {
+			// Verificar que la calificación pertenezca al docente
+			const existingGrade = await prisma.grade.findUnique({
+				where: { id: gradeId },
+				include: {
+					student: {
+						include: { user: true }
+					},
+					subject: true
+				}
+			});
+
+			if (!existingGrade) {
+				return { error: 'Calificación no encontrada' };
+			}
+
+			if (existingGrade.createdByUserId !== locals.user.id) {
+				return { error: 'No tenés permiso para editar esta calificación' };
+			}
+
+			// Verificar que la materia pertenezca al docente
+			const teacher = await prisma.teacher.findUnique({
+				where: { userId: locals.user.id }
+			});
+
+			if (!teacher) {
+				return { error: 'Docente no encontrado' };
+			}
+
+			const subjectTeacher = await prisma.subjectTeacher.findUnique({
+				where: {
+					subjectId_teacherId: {
+						subjectId: existingGrade.subjectId,
+						teacherId: teacher.id
+					}
+				}
+			});
+
+			if (!subjectTeacher) {
+				return { error: 'No tenés permiso para editar calificaciones en esta materia' };
+			}
+
+			// Actualizar calificación
+			await prisma.grade.update({
+				where: { id: gradeId },
+				data: {
+					value: parseFloat(grade),
+					gradeType: evaluationType || existingGrade.gradeType
+				}
+			});
+
+			// Registrar en auditoría
+			await auditLog({
+				userId: locals.user.id,
+				action: AuditAction.UPDATE,
+				entityType: 'GRADE',
+				entityId: gradeId,
+				description: `Edición de calificación: ${existingGrade.value} → ${grade} para ${existingGrade.student.firstName} ${existingGrade.student.lastName} en ${existingGrade.subject.name}`
+			});
+
+			return { success: 'Calificación actualizada exitosamente' };
+		} catch (error) {
+			console.error('Error al editar calificación:', error);
+			return { error: 'Error al editar la calificación' };
 		}
 	}
 };

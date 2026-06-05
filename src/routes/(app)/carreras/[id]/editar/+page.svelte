@@ -99,6 +99,25 @@
 				</div>
 
 				<div>
+					<label for="locationId" class="mb-2 block text-sm font-medium text-slate-300">Localidad</label>
+					<select
+						id="locationId"
+						name="locationId"
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+					>
+						<option value="">Seleccionar localidad</option>
+						{#each data.locations as location}
+							<option value={location.id} selected={data.career.locationId === location.id}>
+								{location.name}
+							</option>
+						{/each}
+					</select>
+					<p class="mt-1 text-xs text-slate-500">
+						Localidad donde se dicta la carrera
+					</p>
+				</div>
+
+				<div>
 					<label for="active" class="mb-2 block text-sm font-medium text-slate-300">Estado</label>
 					<select
 						id="active"

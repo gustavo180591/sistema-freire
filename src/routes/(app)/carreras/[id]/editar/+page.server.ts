@@ -6,6 +6,9 @@ export const load: PageServerLoad = async ({ params }) => {
 	const career = await prisma.career.findUnique({
 		where: {
 			id: params.id
+		},
+		include: {
+			location: true
 		}
 	});
 
@@ -13,8 +16,15 @@ export const load: PageServerLoad = async ({ params }) => {
 		throw error(404, 'Carrera no encontrada');
 	}
 
+	const locations = await prisma.location.findMany({
+		where: { active: true },
+		orderBy: { name: 'asc' },
+		select: { id: true, name: true, code: true }
+	});
+
 	return {
-		career
+		career,
+		locations
 	};
 };
 
@@ -27,8 +37,9 @@ export const actions: Actions = {
 		const resolution = formData.get('resolution')?.toString();
 		const durationYears = formData.get('durationYears')?.toString();
 		const active = formData.get('active')?.toString();
+		const locationId = formData.get('locationId')?.toString();
 
-		if (!code || !name || !trainingField || !durationYears) {
+		if (!code || !name || !trainingField || !durationYears || !locationId) {
 			return fail(400, { error: 'Por favor completá los campos requeridos' });
 		}
 
@@ -41,7 +52,8 @@ export const actions: Actions = {
 					trainingField,
 					resolution: resolution || null,
 					durationYears: parseInt(durationYears),
-					active: active === 'true'
+					active: active === 'true',
+					locationId
 				}
 			});
 

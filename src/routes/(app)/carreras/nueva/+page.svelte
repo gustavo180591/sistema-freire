@@ -3,9 +3,7 @@
 
 	let { form, data } = $props();
 
-	let code = $state('');
 	let name = $state('');
-	let trainingField = $state('');
 	let description = $state('');
 	let isActive = $state(true);
 </script>
@@ -37,35 +35,6 @@
 		{/if}
 
 		<div class="grid gap-6 md:grid-cols-2">
-			<div>
-				<label for="code" class="mb-2 block text-sm font-medium text-slate-300">Código</label>
-				<input
-					bind:value={code}
-					name="code"
-					id="code"
-					placeholder="PEI-2026"
-					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-slate-500"
-				/>
-				<p class="mt-2 text-xs text-slate-500">
-					Identificador único para reportes, planes y trazabilidad.
-				</p>
-			</div>
-
-			<div>
-				<label for="trainingField" class="mb-2 block text-sm font-medium text-slate-300">Campo de formación</label>
-				<select
-					bind:value={trainingField}
-					name="trainingField"
-					id="trainingField"
-					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none"
-				>
-					<option value="GENERAL">Formación General</option>
-					<option value="ESPECIFICA">Formación Específica</option>
-					<option value="PRACTICA">Prácticas Profesionalizantes</option>
-					<option value="EDI">Espacios de Definición Institucional</option>
-				</select>
-			</div>
-
 			<div>
 				<label for="active" class="mb-2 block text-sm font-medium text-slate-300">Estado inicial</label>
 				<select

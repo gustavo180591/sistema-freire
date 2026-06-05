@@ -84,9 +84,9 @@ model Session {
 
 model Career {
   id              String         @id @default(cuid())
-  code            String         @unique
+  code            String         @unique @default(uuid())
   name            String
-  trainingField   TrainingField  // Campo de formación
+  trainingField   TrainingField? // Campo de formación (opcional)
   resolution      String?        // Resolución ministerial
   durationYears   Int            @default(4)
   active          Boolean        @default(true)

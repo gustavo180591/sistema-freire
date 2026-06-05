@@ -36,17 +36,15 @@ export const load: PageServerLoad = async ({ params }) => {
 export const actions: Actions = {
 	updateCareer: async ({ request, params }) => {
 		const formData = await request.formData();
-		const code = formData.get('code')?.toString();
 		const name = formData.get('name')?.toString();
-		const trainingField = formData.get('trainingField')?.toString();
 		const resolution = formData.get('resolution')?.toString();
 		const durationYears = formData.get('durationYears')?.toString();
 		const active = formData.get('active')?.toString();
-		
+
 		// Obtener múltiples localidades
 		const locationIds = formData.getAll('locationIds') as string[];
 
-		if (!code || !name || !trainingField || !durationYears) {
+		if (!name || !durationYears) {
 			return fail(400, { error: 'Por favor completá los campos requeridos' });
 		}
 
@@ -60,9 +58,7 @@ export const actions: Actions = {
 				await tx.career.update({
 					where: { id: params.id },
 					data: {
-						code,
 						name,
-						trainingField: trainingField as any,
 						resolution: resolution || null,
 						durationYears: parseInt(durationYears),
 						active: active === 'true'

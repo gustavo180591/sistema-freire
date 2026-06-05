@@ -16,26 +16,16 @@ export const actions: Actions = {
 	default: async ({ request }) => {
 		const formData = await request.formData();
 
-		const code = formData.get('code');
 		const name = formData.get('name');
 		const locationIds = formData.getAll('locationIds') as string[];
-		const trainingField = formData.get('trainingField');
 		const activeStr = formData.get('active');
-
-		if (!code || typeof code !== 'string') {
-			return fail(400, { error: 'El código es requerido' });
-		}
 
 		if (!name || typeof name !== 'string') {
 			return fail(400, { error: 'El nombre es requerido' });
 		}
 
 		if (!locationIds || locationIds.length === 0) {
-			return fail(400, { error: 'La localidad es requerida' });
-		}
-
-		if (!trainingField || typeof trainingField !== 'string') {
-			return fail(400, { error: 'El campo de formación es requerido' });
+			return fail(400, { error: 'Por favor seleccioná al menos una localidad' });
 		}
 
 		const active = activeStr === 'true';
@@ -44,9 +34,7 @@ export const actions: Actions = {
 			await prisma.$transaction(async (tx) => {
 				const career = await tx.career.create({
 					data: {
-						code,
 						name,
-						trainingField: trainingField as any,
 						active
 					}
 				});

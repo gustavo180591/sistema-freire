@@ -42,17 +42,6 @@
 			<h2 class="text-lg font-semibold text-white">Datos básicos</h2>
 			<div class="grid gap-6 md:grid-cols-2">
 				<div>
-					<label for="code" class="mb-2 block text-sm font-medium text-slate-300">Código</label>
-					<input
-						id="code"
-						name="code"
-						type="text"
-						value={data.career.code}
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-					/>
-				</div>
-
-				<div>
 					<label for="name" class="mb-2 block text-sm font-medium text-slate-300">Nombre</label>
 					<input
 						id="name"
@@ -61,21 +50,6 @@
 						value={data.career.name}
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 					/>
-				</div>
-
-				<div>
-					<label for="trainingField" class="mb-2 block text-sm font-medium text-slate-300">Campo de formación</label>
-					<select
-						id="trainingField"
-						name="trainingField"
-						value={data.career.trainingField}
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-					>
-						<option value="GENERAL">Formación General</option>
-						<option value="ESPECIFICA">Formación Específica</option>
-						<option value="PRACTICA">Prácticas Profesionalizantes</option>
-						<option value="EDI">Espacios de Definición Institucional</option>
-					</select>
 				</div>
 
 				<div>

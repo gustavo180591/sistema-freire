@@ -31,3 +31,6 @@ create-admin.js
 prisma/seed-superadmin.ts
 prisma/*.seed.ts
 *.seed-credentials.ts
+
+# Database backups (contain sensitive data)
+prisma/backup/

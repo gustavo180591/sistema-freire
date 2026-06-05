@@ -3,10 +3,20 @@ import type { Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import bcrypt from 'bcryptjs';
 import { auditLog } from '$lib/server/audit';
-import { AuditAction } from '@prisma/client';
+import { AuditAction, StudentStatus } from '@prisma/client';
+import { checkPermission } from '$lib/server/auth/permissions-granular';
 
 export const actions: Actions = {
-	default: async ({ request }) => {
+	default: async ({ request, locals }) => {
+		const user = locals.user;
+		if (!user) return fail(401, { error: 'No autenticado' });
+
+		// Verificar permiso para actualizar alumnos
+		const canUpdate = await checkPermission(user, 'STUDENT', 'update');
+		if (!canUpdate) {
+			return fail(403, { error: 'No tenés permiso para actualizar alumnos' });
+		}
+
 		const data = await request.formData();
 		const id = data.get('id')?.toString();
 		const userId = data.get('userId')?.toString();
@@ -17,6 +27,8 @@ export const actions: Actions = {
 		const newPassword = data.get('newPassword')?.toString();
 		const careerId = data.get('careerId')?.toString();
 		const currentYear = data.get('currentYear')?.toString() ? parseInt(data.get('currentYear')?.toString() || '1') : null;
+		const status = data.get('status')?.toString();
+		const statusReason = data.get('statusReason')?.toString();
 
 		// Campos extendidos
 		const birthDate = data.get('birthDate')?.toString();
@@ -36,7 +48,59 @@ export const actions: Actions = {
 			return fail(400, { error: 'Por favor completá todos los campos requeridos' });
 		}
 
+		// Validar que el estado sea válido
+		const validStatuses: StudentStatus[] = ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'GRADUATED'];
+		if (status && !validStatuses.includes(status as StudentStatus)) {
+			return fail(400, { error: 'Estado académico inválido' });
+		}
+
+		// Si el estado cambia a algo diferente de ACTIVE, requerir motivo
+		if (status && status !== 'ACTIVE' && !statusReason?.trim()) {
+			return fail(400, { error: 'El motivo es obligatorio para estados no activos' });
+		}
+
 		try {
+			// Obtener estado actual del alumno para auditoría
+			const currentStudent = await prisma.student.findUnique({
+				where: { id },
+				select: { status: true }
+			});
+
+			if (!currentStudent) {
+				return fail(404, { error: 'Alumno no encontrado' });
+			}
+
+			const statusChanged = status && status !== currentStudent.status;
+
+			// Validación: No se puede cambiar a GRADUATED sin confirmación de requisitos
+			if (status === 'GRADUATED' && currentStudent.status !== 'GRADUATED') {
+				// Verificar si el alumno tiene todas las materias aprobadas
+				const student = await prisma.student.findUnique({
+					where: { id },
+					include: {
+						subjectStatuses: true,
+						career: {
+							include: {
+								careerSubjects: true
+							}
+						}
+					}
+				});
+
+				if (!student) {
+					return fail(404, { error: 'Alumno no encontrado' });
+				}
+
+				const totalSubjects = student.career.careerSubjects.length;
+				const approvedSubjects = student.subjectStatuses.filter(s => s.approved).length;
+
+				if (approvedSubjects < totalSubjects) {
+					return fail(400, { 
+						error: `El alumno no puede egresar. Tiene ${approvedSubjects} de ${totalSubjects} materias aprobadas.` 
+					});
+				}
+			}
+
 			// Actualizar en transacción
 			await prisma.$transaction(async (tx) => {
 				// Preparar datos de actualización del usuario
@@ -71,6 +135,7 @@ export const actions: Actions = {
 						isRecursante,
 						careerId: careerId || undefined,
 						currentYear: currentYear || undefined,
+						status: status ? (status as StudentStatus) : undefined,
 						birthDate: birthDate ? new Date(birthDate) : null,
 						bloodType: bloodType || null,
 						phone: phone || null,
@@ -88,12 +153,21 @@ export const actions: Actions = {
 			});
 
 			// Registrar en auditoría
+			let auditDescription = `Actualización de alumno: ${firstName} ${lastName} (${email})`;
+			
+			if (statusChanged) {
+				auditDescription += ` - Cambio de estado: ${currentStudent.status} → ${status}`;
+				if (statusReason) {
+					auditDescription += ` (Motivo: ${statusReason})`;
+				}
+			}
+
 			await auditLog({
-				userId,
+				userId: user.id,
 				action: AuditAction.UPDATE,
 				entityType: 'STUDENT',
 				entityId: id,
-				description: `Actualización de alumno: ${firstName} ${lastName} (${email})`
+				description: auditDescription
 			});
 
 			const successMessage = newPassword && newPassword.trim().length > 0

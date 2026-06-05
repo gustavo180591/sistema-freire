@@ -73,11 +73,33 @@
 	const filter = $derived((data as { filter?: FilterData | null }).filter ?? null);
 
 	function getStatusColor(status: string) {
-		return status === 'ACTIVE' ? 'text-green-400' : 'text-red-400';
+		switch (status) {
+			case 'ACTIVE': return 'text-green-400';
+			case 'INACTIVE': return 'text-yellow-400';
+			case 'SUSPENDED': return 'text-red-400';
+			case 'GRADUATED': return 'text-blue-400';
+			default: return 'text-slate-400';
+		}
 	}
 
 	function getStatusText(status: string) {
-		return status === 'ACTIVE' ? 'Activo' : 'Inactivo';
+		switch (status) {
+			case 'ACTIVE': return 'Activo';
+			case 'INACTIVE': return 'Inactivo';
+			case 'SUSPENDED': return 'Suspendido';
+			case 'GRADUATED': return 'Egresado';
+			default: return status;
+		}
+	}
+
+	function getStatusBadgeColor(status: string) {
+		switch (status) {
+			case 'ACTIVE': return 'bg-green-950/50 text-green-400 border-green-800';
+			case 'INACTIVE': return 'bg-yellow-950/50 text-yellow-400 border-yellow-800';
+			case 'SUSPENDED': return 'bg-red-950/50 text-red-400 border-red-800';
+			case 'GRADUATED': return 'bg-blue-950/50 text-blue-400 border-blue-800';
+			default: return 'bg-slate-800 text-slate-400 border-slate-700';
+		}
 	}
 
 	function getStudentType(student: Student) {
@@ -396,18 +418,36 @@
 							</select>
 						</div>
 						<div>
-							<label for="locality" class="mb-2 block text-sm font-medium text-slate-300">Localidad</label>
+							<label for="status" class="mb-2 block text-sm font-medium text-slate-300">Estado Académico</label>
 							<select
-								id="locality"
-								name="locality"
+								id="status"
+								name="status"
 								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 							>
-								<option value="">Seleccionar localidad</option>
-								<option value="ALEM" selected={editingStudent.locality === 'ALEM'}>Leandro N. Alem</option>
-								<option value="CAPIOVI" selected={editingStudent.locality === 'CAPIOVI'}>Capiovi</option>
+								<option value="ACTIVE" selected={editingStudent.status === 'ACTIVE'}>Activo</option>
+								<option value="INACTIVE" selected={editingStudent.status === 'INACTIVE'}>Inactivo</option>
+								<option value="SUSPENDED" selected={editingStudent.status === 'SUSPENDED'}>Suspendido</option>
+								<option value="GRADUATED" selected={editingStudent.status === 'GRADUATED'}>Egresado</option>
 							</select>
 						</div>
 					</div>
+
+					<!-- Motivo de cambio de estado (solo si cambia el estado) -->
+					{#if editingStudent.status !== 'ACTIVE'}
+						<div class="space-y-6 border-t border-slate-800 pt-6">
+							<h3 class="text-lg font-semibold text-white">Motivo del Estado Actual</h3>
+							<div>
+								<label for="statusReason" class="mb-2 block text-sm font-medium text-slate-300">Motivo (obligatorio para estados no activos)</label>
+								<textarea
+									id="statusReason"
+									name="statusReason"
+									rows="3"
+									placeholder="Describe el motivo del estado actual del alumno..."
+									class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+								></textarea>
+							</div>
+						</div>
+					{/if}
 
 					<!-- Datos Personales -->
 					<div class="space-y-6 border-t border-slate-800 pt-6">

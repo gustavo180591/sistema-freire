@@ -35,7 +35,17 @@
 					DNI: {student.dni} · {student.career}
 				</p>
 				<div class="mt-4 inline-flex rounded-full border border-slate-700 px-4 py-2 text-sm">
-					{student.status}
+					{#if student.status === 'ACTIVE'}
+						<span class="text-green-400">Activo</span>
+					{:else if student.status === 'INACTIVE'}
+						<span class="text-yellow-400">Inactivo</span>
+					{:else if student.status === 'SUSPENDED'}
+						<span class="text-red-400">Suspendido</span>
+					{:else if student.status === 'GRADUATED'}
+						<span class="text-blue-400">Egresado</span>
+					{:else}
+						{student.status}
+					{/if}
 				</div>
 			</div>
 			<div class="flex flex-wrap gap-2">
@@ -94,6 +104,13 @@
 
 	<!-- CTA -->
 	<section class="flex flex-wrap gap-3">
+		<a
+			href={`/alumnos/${student.id}/historial-anual`}
+			class="rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:scale-[1.02]"
+		>
+			Historial por Ciclo Lectivo
+		</a>
+
 		<a
 			href={`/alumnos/${student.id}/certificados`}
 			class="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.02]"

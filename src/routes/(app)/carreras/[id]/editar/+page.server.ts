@@ -8,7 +8,11 @@ export const load: PageServerLoad = async ({ params }) => {
 			id: params.id
 		},
 		include: {
-			location: true
+			locations: {
+				include: {
+					location: true
+				}
+			}
 		}
 	});
 
@@ -24,7 +28,8 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	return {
 		career,
-		locations
+		locations,
+		careerLocationIds: career.locations.map(cl => cl.locationId)
 	};
 };
 
@@ -37,23 +42,46 @@ export const actions: Actions = {
 		const resolution = formData.get('resolution')?.toString();
 		const durationYears = formData.get('durationYears')?.toString();
 		const active = formData.get('active')?.toString();
-		const locationId = formData.get('locationId')?.toString();
+		
+		// Obtener múltiples localidades
+		const locationIds = formData.getAll('locationIds') as string[];
 
-		if (!code || !name || !trainingField || !durationYears || !locationId) {
+		if (!code || !name || !trainingField || !durationYears) {
 			return fail(400, { error: 'Por favor completá los campos requeridos' });
 		}
 
+		if (!locationIds || locationIds.length === 0) {
+			return fail(400, { error: 'Por favor seleccioná al menos una localidad' });
+		}
+
 		try {
-			await prisma.career.update({
-				where: { id: params.id },
-				data: {
-					code,
-					name,
-					trainingField,
-					resolution: resolution || null,
-					durationYears: parseInt(durationYears),
-					active: active === 'true',
-					locationId
+			await prisma.$transaction(async (tx) => {
+				// Actualizar datos básicos de la carrera
+				await tx.career.update({
+					where: { id: params.id },
+					data: {
+						code,
+						name,
+						trainingField: trainingField as any,
+						resolution: resolution || null,
+						durationYears: parseInt(durationYears),
+						active: active === 'true'
+					}
+				});
+
+				// Eliminar relaciones de localidad existentes
+				await tx.careerLocation.deleteMany({
+					where: { careerId: params.id }
+				});
+
+				// Crear nuevas relaciones de localidad
+				for (const locationId of locationIds) {
+					await tx.careerLocation.create({
+						data: {
+							careerId: params.id,
+							locationId
+						}
+					});
 				}
 			});
 

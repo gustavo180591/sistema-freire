@@ -99,21 +99,23 @@
 				</div>
 
 				<div>
-					<label for="locationId" class="mb-2 block text-sm font-medium text-slate-300">Localidad</label>
-					<select
-						id="locationId"
-						name="locationId"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-					>
-						<option value="">Seleccionar localidad</option>
+					<label for="locationIds" class="mb-2 block text-sm font-medium text-slate-300">Localidades</label>
+					<div class="space-y-2">
 						{#each data.locations as location}
-							<option value={location.id} selected={data.career.locationId === location.id}>
-								{location.name}
-							</option>
+							<label class="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950 p-3 cursor-pointer hover:bg-slate-800 transition">
+								<input
+									type="checkbox"
+									name="locationIds"
+									value={location.id}
+									checked={data.careerLocationIds.includes(location.id)}
+									class="h-4 w-4 rounded border-slate-600 bg-slate-800 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-900"
+								/>
+								<span class="text-sm text-slate-300">{location.name}</span>
+							</label>
 						{/each}
-					</select>
+					</div>
 					<p class="mt-1 text-xs text-slate-500">
-						Localidad donde se dicta la carrera
+						Seleccioná las localidades donde se dicta la carrera
 					</p>
 				</div>
 

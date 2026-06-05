@@ -92,15 +92,13 @@ model Career {
   active          Boolean        @default(true)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
-  locationId      String
   students        Student[]
   studyPlans      StudyPlan[]
   careerSubjects  CareerSubject[] // Materias específicas de esta carrera
   subjectCorrelatives SubjectCorrelative[] // Correlativas específicas de carrera
-  location        Location       @relation(fields: [locationId], references: [id])
+  locations       CareerLocation[] // Relación N:M con localidades
 
   @@index([trainingField, active])
-  @@index([locationId, active])
   @@map("careers")
 }
 
@@ -632,12 +630,27 @@ model Location {
   active      Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  careers     Career[]
+  careers     CareerLocation[] // Relación N:M con carreras
   userPermissions UserLocationPermission[]
   academicTerms AcademicTerm[]
 
   @@index([active])
   @@map("locations")
+}
+
+// Tabla intermedia para relación N:M Career-Location
+model CareerLocation {
+  id         String   @id @default(cuid())
+  careerId   String
+  locationId String
+  createdAt  DateTime @default(now())
+  career     Career   @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([careerId, locationId])
+  @@index([careerId])
+  @@index([locationId])
+  @@map("career_locations")
 }
 
 model UserLocationPermission {

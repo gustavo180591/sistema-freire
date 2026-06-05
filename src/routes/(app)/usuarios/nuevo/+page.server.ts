@@ -25,26 +25,61 @@ function generateStudentId(locality: string): string {
 	return `${prefix}${timestamp}${random}`.toUpperCase();
 }
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, locals }) => {
+	const currentUser = locals.user;
+	if (!currentUser) {
+		throw redirect(303, '/login');
+	}
+
 	const careers = await prisma.career.findMany({
 		where: { active: true },
 		orderBy: { name: 'asc' },
 		select: { id: true, name: true }
 	});
 
-	const locations = await prisma.location.findMany({
-		where: { active: true },
-		orderBy: { name: 'asc' },
-		select: { id: true, name: true, code: true }
-	});
+	// Si es SECRETARIA, filtrar localidades según sus permisos
+	let locations;
+	if (currentUser.roles.includes('SECRETARIA')) {
+		const userWithPermissions = await prisma.user.findUnique({
+			where: { id: currentUser.id },
+			include: {
+				locationPermissions: {
+					include: {
+						location: true
+					}
+				}
+			}
+		});
+
+		if (userWithPermissions && userWithPermissions.locationPermissions.length > 0) {
+			locations = userWithPermissions.locationPermissions.map(lp => lp.location);
+		} else {
+			locations = await prisma.location.findMany({
+				where: { active: true },
+				orderBy: { name: 'asc' },
+				select: { id: true, name: true, code: true }
+			});
+		}
+	} else {
+		locations = await prisma.location.findMany({
+			where: { active: true },
+			orderBy: { name: 'asc' },
+			select: { id: true, name: true, code: true }
+		});
+	}
 
 	const type = url.searchParams.get('type') || 'ALUMNO';
 
-	return { careers, locations, type };
+	return { careers, locations, type, isSecretary: currentUser.roles.includes('SECRETARIA') };
 };
 
 export const actions: Actions = {
-	default: async ({ request }) => {
+	default: async ({ request, locals }) => {
+		const currentUser = locals.user;
+		if (!currentUser) {
+			return fail(401, { error: 'No autorizado' });
+		}
+
 		const data = await request.formData();
 		const email = data.get('email')?.toString();
 		const firstName = data.get('firstName')?.toString();
@@ -54,7 +89,38 @@ export const actions: Actions = {
 		const careerId = data.get('careerId')?.toString();
 		const alumnoType = data.get('alumnoType')?.toString() || 'normal';
 		
-		// Determinar valores booleanos según el tipo de alumno
+		// Verificar permisos: SECRETARIA solo puede crear DOCENTE, ALUMNO, PRECEPTOR
+		const isSecretary = currentUser.roles.includes('SECRETARIA');
+		const allowedRolesForSecretary = ['DOCENTE', 'ALUMNO', 'PRECEPTOR'];
+
+		if (isSecretary && type && !allowedRolesForSecretary.includes(type)) {
+			return fail(403, { error: 'Como SECRETARIA solo puedes crear DOCENTES, ALUMNOS y PRECEPTORES' });
+		}
+
+		// Si es SECRETARIA, verificar que la localidad seleccionada esté en sus permisos
+		if (isSecretary) {
+			const userWithPermissions = await prisma.user.findUnique({
+				where: { id: currentUser.id },
+				include: {
+					locationPermissions: {
+						include: {
+							location: true
+						}
+					}
+				}
+			});
+
+			if (!userWithPermissions || userWithPermissions.locationPermissions.length === 0) {
+				return fail(403, { error: 'No tienes permisos de localidad asignados' });
+			}
+
+			const allowedLocationCodes = userWithPermissions.locationPermissions.map(lp => lp.location.code);
+			const selectedLocality = data.get('locality')?.toString();
+
+			if (selectedLocality && !allowedLocationCodes.includes(selectedLocality)) {
+				return fail(403, { error: 'Solo puedes crear usuarios de tu localidad asignada' });
+			}
+		}
 		const isBecado = alumnoType === 'becado';
 		const isRecursante = alumnoType === 'recursante';
 

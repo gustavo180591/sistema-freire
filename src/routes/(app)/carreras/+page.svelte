@@ -4,7 +4,6 @@
 	
 	interface Career {
 		id: string;
-		code: string;
 		name: string;
 		active: boolean;
 		plans: number;
@@ -17,7 +16,6 @@
 		(data?.careers as Career[]) ?? [
 			{
 				id: '1',
-				code: 'PM-2026',
 				name: 'PROFESORADO DE EDUCACIÓN SECUNDARIA EN MATEMÁTICA',
 				active: true,
 				plans: 2,
@@ -25,7 +23,6 @@
 			},
 			{
 				id: '2',
-				code: 'PL-2026',
 				name: 'PROFESORADO DE EDUCACIÓN SECUNDARIA EN LENGUA Y LITERATURA',
 				active: true,
 				plans: 3,
@@ -47,7 +44,7 @@
 	const filtered = $derived<Career[]>(
 		careers.filter((career: Career) => {
 			const q = search.toLowerCase();
-			return career.name.toLowerCase().includes(q) || career.code.toLowerCase().includes(q);
+			return career.name.toLowerCase().includes(q);
 		})
 	);
 	
@@ -107,7 +104,7 @@
 		<input
 			bind:value={search}
 			type="text"
-			placeholder="Buscar por nombre o código"
+			placeholder="Buscar por nombre"
 			class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-slate-500"
 		/>
 	</section>
@@ -116,7 +113,6 @@
 		<table class="w-full text-left">
 			<thead class="border-b border-slate-800 bg-slate-900">
 				<tr>
-					<th class="px-6 py-4 text-sm font-semibold">Código</th>
 					<th class="px-6 py-4 text-sm font-semibold">Carrera</th>
 					<th class="px-6 py-4 text-sm font-semibold">Planes</th>
 					<th class="px-6 py-4 text-sm font-semibold">Alumnos</th>
@@ -127,7 +123,6 @@
 			<tbody>
 				{#each filtered as career (career.id)}
 					<tr class="border-b border-slate-800 last:border-none">
-						<td class="px-6 py-4 font-mono text-sm text-slate-300">{career.code}</td>
 						<td class="px-6 py-4 font-medium">{career.name}</td>
 						<td class="px-6 py-4">{career.plans ?? 0}</td>
 						<td class="px-6 py-4">{career.students ?? 0}</td>
@@ -203,7 +198,7 @@
 				<div>
 					<h3 class="text-lg font-semibold">¿Eliminar carrera?</h3>
 					<p class="text-sm text-slate-400 mt-1">
-						<strong>{deletingCareer.name}</strong> ({deletingCareer.code})
+						<strong>{deletingCareer.name}</strong>
 					</p>
 				</div>
 			</div>

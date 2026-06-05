@@ -77,7 +77,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			}
 		},
 		include: {
-			subject: true
+			subject: true,
+			student: true
 		},
 		orderBy: { gradedAt: 'desc' },
 		take: 10
@@ -124,6 +125,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		recentGrades: recentGrades.map(g => ({
 			id: g.id,
 			studentId: g.studentId,
+			studentName: `${g.student.lastName}, ${g.student.firstName}`,
 			subject: g.subject.name,
 			value: g.value,
 			gradeType: g.gradeType,

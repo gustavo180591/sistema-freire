@@ -113,7 +113,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 			value: g.value,
 			gradeType: g.gradeType,
 			gradedAt: g.gradedAt
-		}))
+		})) as Array<{
+			id: string;
+			studentName: string;
+			subject: string;
+			value: any;
+			gradeType: string;
+			gradedAt: Date;
+		}>
 	};
 };
 

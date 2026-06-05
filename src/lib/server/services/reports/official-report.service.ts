@@ -25,9 +25,9 @@ export async function getOfficialReport(): Promise<OfficialReportResult> {
             prisma.student.count({
                 where: { status: 'ACTIVE' }
             }),
-            prisma.enrollment.count({
+            prisma.student.count({
                 where: { status: 'ACTIVE' }
-            }),
+            }), // Using student count as enrollment count (enrollment model doesn't exist)
             prisma.academicTerm.findFirst({
                 where: { active: true },
                 orderBy: [{ year: 'desc' }]

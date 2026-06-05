@@ -2,7 +2,9 @@
 	import { enhance } from '$app/forms';
 	let { data, form } = $props();
 
-	const errors = $derived(form?.errors ?? {});
+	const errors = $derived(
+		(form?.errors as { subjectId?: string; sortOrder?: string; general?: string }) ?? {}
+	);
 	const success = $derived(form?.success ?? true);
 
 	const groupedSubjects = $derived(() => {

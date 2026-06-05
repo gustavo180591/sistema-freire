@@ -66,7 +66,9 @@ export const actions: Actions = {
 					code,
 					name,
 					yearLevel: yearLevelNum,
-					active
+					active,
+					subjectType: 'COMMON',
+					trainingField: 'GENERAL'
 				}
 			});
 

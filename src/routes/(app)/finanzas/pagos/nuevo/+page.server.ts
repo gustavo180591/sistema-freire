@@ -20,7 +20,11 @@ export const load: PageServerLoad = async () => {
             id: s.id,
             fullName: `${s.firstName} ${s.lastName}`.trim()
         })),
-        pendingCharges: []
+        pendingCharges: [] as Array<{
+            periodLabel: string;
+            concept: string;
+            pending: number;
+        }>
     };
 };
 

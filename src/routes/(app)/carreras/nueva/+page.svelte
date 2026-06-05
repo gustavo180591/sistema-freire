@@ -112,10 +112,11 @@
 		</div>
 
 		<div>
-			<label class="mb-2 block text-sm font-medium text-slate-300">Descripción</label>
+			<label for="description" class="mb-2 block text-sm font-medium text-slate-300">Descripción</label>
 			<textarea
 				bind:value={description}
 				name="description"
+				id="description"
 				rows="5"
 				placeholder="Detalle institucional, alcance, resolución y observaciones"
 				class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-slate-500"

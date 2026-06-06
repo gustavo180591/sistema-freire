@@ -44,6 +44,11 @@ export function canManageUsers(): boolean {
 	return hasAnyRole(['SUPERADMIN', 'DIRECTOR']);
 }
 
+// Función para verificar si el usuario puede gestionar docentes
+export function canManageTeachers(): boolean {
+	return hasAnyRole(['SUPERADMIN', 'DIRECTOR', 'SECRETARIA']);
+}
+
 // Función para verificar si el usuario puede ver auditoría
 export function canViewAudit(): boolean {
 	return hasAnyRole(['SUPERADMIN', 'DIRECTOR']);

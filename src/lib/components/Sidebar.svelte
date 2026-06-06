@@ -9,93 +9,168 @@
 		roles: string[];
 	}
 
+	interface NavItem {
+		label: string;
+		href: string;
+		icon: string;
+		roles: string[];
+		children?: NavItem[];
+	}
+
+	interface NavSection {
+		category: string;
+		items: NavItem[];
+		collapsible?: boolean;
+	}
+
 	let { user, isOpen = $bindable(false) }: { user: User | null; isOpen?: boolean } = $props();
 
-	// Navegación agrupada por categorías
-	const navigation = [
+	// Estado de submenús colapsados
+	let collapsedSections = $state<Record<string, boolean>>({});
+
+	// Navegación agrupada por categorías con submenús
+	const navigation: NavSection[] = [
 		{
 			category: 'Principal',
 			items: [
-				{ label: 'Dashboard', href: '/dashboard', icon: 'home', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'] },
-				{ label: 'Mi Panel', href: '/alumno', icon: 'home', roles: ['ALUMNO'] },
+				{ label: 'Dashboard', href: '/dashboard', icon: 'dashboard', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'] },
+				{ label: 'Mi Panel', href: '/alumno', icon: 'user-circle', roles: ['ALUMNO'] },
 				{ label: 'Inicio', href: '/', icon: 'home', roles: [] },
 			]
 		},
 		{
 			category: 'Académico',
+			collapsible: true,
 			items: [
-				{ label: 'Alumnos', href: '/alumnos', icon: 'users', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS'] },
-				{ label: 'Docentes', href: '/docentes', icon: 'users', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA'] },
-				{ label: 'Preceptores', href: '/preceptores', icon: 'users', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA'] },
-				{ label: 'Secretarios', href: '/secretarios', icon: 'users', roles: ['SUPERADMIN', 'DIRECTOR'] },
-				{ label: 'Directores', href: '/directores', icon: 'users', roles: ['SUPERADMIN', 'DIRECTOR'] },
-				{ label: 'Carreras', href: '/carreras', icon: 'academic', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'] },
-				{ label: 'Materias', href: '/materias', icon: 'book', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE'] },
-				{ label: 'Correlatividades', href: '/correlatividades', icon: 'link', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE'], indent: true },
+				{ label: 'Alumnos', href: '/alumnos', icon: 'graduation-cap', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS'] },
+				{ label: 'Docentes', href: '/docentes', icon: 'chalkboard-teacher', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA'] },
+				{ label: 'Preceptores', href: '/preceptores', icon: 'clipboard-user', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA'] },
+				{ label: 'Secretarios', href: '/secretarios', icon: 'user-tie', roles: ['SUPERADMIN', 'DIRECTOR'] },
+				{ label: 'Directores', href: '/directores', icon: 'user-shield', roles: ['SUPERADMIN', 'DIRECTOR'] },
+				{ label: 'Carreras', href: '/carreras', icon: 'building-columns', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'] },
+				{ label: 'Materias', href: '/materias', icon: 'book-open', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE'] },
+				{ label: 'Correlatividades', href: '/correlatividades', icon: 'diagram-project', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE'] },
 			]
 		},
 		{
 			category: 'Administración',
+			collapsible: true,
 			items: [
-				{ label: 'Usuarios', href: '/usuarios', icon: 'users', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'] },
-				{ label: 'Finanzas', href: '/finanzas', icon: 'currency', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS'] },
-				{ label: 'Recibos', href: '/recibos', icon: 'document', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE', 'FINANZAS'] },
-				{ label: 'Reportes', href: '/reportes', icon: 'chart', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS'] },
+				{ label: 'Usuarios', href: '/usuarios', icon: 'users-gear', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'] },
+				{ label: 'Finanzas', href: '/finanzas', icon: 'coins', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS'] },
+				{ label: 'Recibos', href: '/recibos', icon: 'receipt', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE', 'FINANZAS'] },
+				{ label: 'Reportes', href: '/reportes', icon: 'chart-line', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS'] },
 			]
 		},
 		{
 			category: 'Sistema',
+			collapsible: true,
 			items: [
-				{ label: 'Auditoría', href: '/auditoria', icon: 'shield', roles: ['SUPERADMIN', 'DIRECTOR'] },
-				{ label: 'Permisos', href: '/permisos', icon: 'lock', roles: ['SUPERADMIN'] },
-				{ label: 'Contacto', href: '/contacto', icon: 'mail', roles: [] },
+				{ label: 'Auditoría', href: '/auditoria', icon: 'clipboard-list', roles: ['SUPERADMIN', 'DIRECTOR'] },
+				{ label: 'Permisos', href: '/permisos', icon: 'key', roles: ['SUPERADMIN'] },
+				{ label: 'Contacto', href: '/contacto', icon: 'envelope', roles: [] },
 			]
 		}
 	];
 
 	// Filtrar items según roles
-	function hasAccess(item: { roles: string[] }) {
+	function hasAccess(item: NavItem): boolean {
 		if (!user) return false;
 		if (item.roles.length === 0) return true;
 		return item.roles.some(role => user.roles.includes(role));
 	}
 
-	function isActive(href: string) {
+	function isActive(href: string): boolean {
 		return page.url.pathname === href || page.url.pathname.startsWith(href + '/');
 	}
 
-	// Iconos SVG
+	function toggleSection(category: string) {
+		collapsedSections[category] = !collapsedSections[category];
+	}
+
+	function isSectionCollapsed(category: string): boolean {
+		return collapsedSections[category] ?? false;
+	}
+
+	// Iconos SVG mejorados y más específicos
 	const icons: Record<string, string> = {
 		home: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
-		users: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
-		academic: 'M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.422A12.083 12.083 0 0112 21.5a12.083 12.083 0 01-6.16-10.922L12 14z',
-		book: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
-		link: 'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1',
-		currency: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-		document: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-		chart: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z',
-		mail: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
-		shield: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
-		lock: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z',
+		dashboard: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z',
+		'user-circle': 'M18 9a3 3 0 11-6 0 3 3 0 016 0zm-9 3a3 3 0 11-6 0 3 3 0 016 0zm9 8a3 3 0 11-6 0 3 3 0 016 0zm-9 8a3 3 0 11-6 0 3 3 0 016 0z',
+		'graduation-cap': 'M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.422A12.083 12.083 0 0112 21.5a12.083 12.083 0 01-6.16-10.922L12 14z',
+		'chalkboard-teacher': 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
+		'clipboard-user': 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
+		'user-tie': 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z M8 21h8',
+		'user-shield': 'M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.422A12.083 12.083 0 0112 21.5a12.083 12.083 0 01-6.16-10.922L12 14z M9 12l2 2 4-4',
+		'building-columns': 'M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z',
+		'book-open': 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+		'diagram-project': 'M7 17l.597-.267A2 2 0 018.238 17H9a2 2 0 012 2v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1a2 2 0 012-2h.762a2 2 0 01.641-.267L7 17zm3.414-5.656a2 2 0 00-2.828 0l-4 4a2 2 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1',
+		'users-gear': 'M10 6a2 2 0 110-4 2 2 0 010 4zM15 8a2 2 0 110-4 2 2 0 010 4zM5 8a2 2 0 110-4 2 2 0 010 4zM6 12a2 2 0 00-2 2v4a2 2 0 002 2h12a2 2 0 002-2v-4a2 2 0 00-2-2H6z M12 15v3m0 0v3m0-3h3m-3 0H9',
+		coins: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+		receipt: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z M5 21h14',
+		'chart-line': 'M3 3v18h18 M3 18l6-6 4 4 8-8',
+		'clipboard-list': 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
+		key: 'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z',
+		envelope: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+		'chevron-down': 'M19 9l-7 7-7-7',
+		'chevron-right': 'M9 5l7 7-7 7',
 	};
 </script>
 
 <!-- Desktop Sidebar -->
 <aside class="hidden lg:block fixed left-0 top-16 bottom-0 w-64 bg-slate-900 border-r border-slate-800 overflow-y-auto">
-	<nav class="p-4 space-y-6">
+	<nav class="p-4 space-y-2">
 		{#each navigation as group}
 			{@const visibleItems = group.items.filter(hasAccess)}
 			{#if visibleItems.length > 0}
-				<div>
-					<h3 class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-						{group.category}
+				<div class="mb-4">
+					{#if group.collapsible}
+						<button
+							onclick={() => toggleSection(group.category)}
+							class="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider hover:text-slate-400 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 rounded"
+							aria-expanded={!isSectionCollapsed(group.category)}
+							aria-controls="section-{group.category}"
+						>
+							<span>{group.category}</span>
+							<svg
+								class="h-4 w-4 transition-transform duration-200"
+								class:rotate-180={!isSectionCollapsed(group.category)}
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={icons['chevron-down']} />
+							</svg>
+						</button>
+						{#if !isSectionCollapsed(group.category)}
+							<ul id="section-{group.category}" class="mt-1 space-y-1">
+								{#each visibleItems as item}
+									<li>
+										<a
+											href={item.href}
+											class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 relative group/link {isActive(item.href) ? 'bg-indigo-600/20 text-indigo-400 border-l-2 border-indigo-500' : 'text-slate-400 hover:bg-slate-800 hover:text-white border-l-2 border-transparent'}"
+											aria-current={isActive(item.href) ? 'page' : undefined}
+										>
+											<svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={icons[item.icon]} />
+											</svg>
+											<span>{item.label}</span>
+										</a>
+									</li>
+								{/each}
+							</ul>
+						{/if}
+					{:else}
+						<h3 class="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+							{group.category}
 						</h3>
-						<ul class="space-y-1">
+						<ul class="mt-1 space-y-1">
 							{#each visibleItems as item}
 								<li>
 									<a
 										href={item.href}
-										class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition {isActive(item.href) ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'} {item.indent ? 'ml-4' : ''}"
+										class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 relative group/link {isActive(item.href) ? 'bg-indigo-600/20 text-indigo-400 border-l-2 border-indigo-500' : 'text-slate-400 hover:bg-slate-800 hover:text-white border-l-2 border-transparent'}"
+										aria-current={isActive(item.href) ? 'page' : undefined}
 									>
 										<svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={icons[item.icon]} />
@@ -105,9 +180,10 @@
 								</li>
 							{/each}
 						</ul>
-					</div>
-				{/if}
-			{/each}
+					{/if}
+				</div>
+			{/if}
+		{/each}
 	</nav>
 </aside>
 
@@ -130,30 +206,70 @@
 				</div>
 			</div>
 
-			<nav class="p-4 space-y-6">
+			<nav class="p-4 space-y-2">
 				{#each navigation as group}
 					{@const visibleItems = group.items.filter(hasAccess)}
 					{#if visibleItems.length > 0}
-						<div>
-							<h3 class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-								{group.category}
-							</h3>
-							<ul class="space-y-1">
-								{#each visibleItems as item}
-									<li>
-										<a
-											href={item.href}
-											onclick={() => isOpen = false}
-											class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition {isActive(item.href) ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'} {item.indent ? 'ml-4' : ''}"
-										>
-											<svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={icons[item.icon]} />
-											</svg>
-											<span>{item.label}</span>
-										</a>
-									</li>
-								{/each}
-							</ul>
+						<div class="mb-4">
+							{#if group.collapsible}
+								<button
+									onclick={() => toggleSection(group.category)}
+									class="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider hover:text-slate-400 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 rounded"
+									aria-expanded={!isSectionCollapsed(group.category)}
+									aria-controls="mobile-section-{group.category}"
+								>
+									<span>{group.category}</span>
+									<svg
+										class="h-4 w-4 transition-transform duration-200"
+										class:rotate-180={!isSectionCollapsed(group.category)}
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24"
+									>
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={icons['chevron-down']} />
+									</svg>
+								</button>
+								{#if !isSectionCollapsed(group.category)}
+									<ul id="mobile-section-{group.category}" class="mt-1 space-y-1">
+										{#each visibleItems as item}
+											<li>
+												<a
+													href={item.href}
+													onclick={() => isOpen = false}
+													class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 relative group/link {isActive(item.href) ? 'bg-indigo-600/20 text-indigo-400 border-l-2 border-indigo-500' : 'text-slate-400 hover:bg-slate-800 hover:text-white border-l-2 border-transparent'}"
+													aria-current={isActive(item.href) ? 'page' : undefined}
+												>
+													<svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={icons[item.icon]} />
+													</svg>
+													<span>{item.label}</span>
+												</a>
+											</li>
+										{/each}
+									</ul>
+								{/if}
+							{:else}
+								<h3 class="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+									{group.category}
+								</h3>
+								<ul class="mt-1 space-y-1">
+									{#each visibleItems as item}
+										<li>
+											<a
+												href={item.href}
+												onclick={() => isOpen = false}
+												class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 relative group/link {isActive(item.href) ? 'bg-indigo-600/20 text-indigo-400 border-l-2 border-indigo-500' : 'text-slate-400 hover:bg-slate-800 hover:text-white border-l-2 border-transparent'}"
+												aria-current={isActive(item.href) ? 'page' : undefined}
+											>
+												<svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={icons[item.icon]} />
+												</svg>
+												<span>{item.label}</span>
+											</a>
+										</li>
+									{/each}
+								</ul>
+							{/if}
 						</div>
 					{/if}
 				{/each}

@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function resetLoginAttempts() {
-	const email = 'gustavo.faccendini@gmail.com';
+	const email = 'admin.test@example.com';
 
 	console.log(`🔓 Resetting login attempts for ${email}...`);
 

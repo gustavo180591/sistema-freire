@@ -5,12 +5,12 @@ const prisma = new PrismaClient();
 
 async function fixUser() {
   const user = await prisma.user.findUnique({ 
-    where: { email: 'gustavo.faccendini@gmail.com' } 
+    where: { email: 'admin.test@example.com' } 
   });
   
   if (!user) {
     console.log('Usuario NO existe. Creando...');
-    const hash = await bcrypt.hash('$Gustavo1805', 10);
+    const hash = await bcrypt.hash('TestPassword123!', 10);
     
     // Buscar rol SUPERADMIN
     let role = await prisma.role.findFirst({ where: { code: 'SUPERADMIN' } });
@@ -28,10 +28,10 @@ async function fixUser() {
     
     const newUser = await prisma.user.create({
       data: {
-        email: 'gustavo.faccendini@gmail.com',
+        email: 'admin.test@example.com',
         passwordHash: hash,
-        firstName: 'Gustavo',
-        lastName: 'Faccendini',
+        firstName: 'Admin',
+        lastName: 'Test',
         roles: {
           create: {
             role: {
@@ -44,9 +44,9 @@ async function fixUser() {
     console.log('✅ Usuario creado:', newUser.email);
   } else {
     console.log('Usuario existe, actualizando contraseña...');
-    const hash = await bcrypt.hash('$Gustavo1805', 10);
+    const hash = await bcrypt.hash('TestPassword123!', 10);
     await prisma.user.update({
-      where: { email: 'gustavo.faccendini@gmail.com' },
+      where: { email: 'admin.test@example.com' },
       data: { passwordHash: hash }
     });
     console.log('✅ Contraseña actualizada');

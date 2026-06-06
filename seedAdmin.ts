@@ -25,8 +25,8 @@ async function main() {
 		console.log(`  ✅ Rol: ${role.code}`);
 	}
 
-	const email = 'gustavo.faccendini@gmail.com';
-	const password = '$Mariel1805';
+	const email = 'admin.test@example.com';
+	const password = 'TestPassword123!';
 
 	// Hasheamos la contraseña
 	const passwordHash = await bcrypt.hash(password, 10);
@@ -45,15 +45,15 @@ async function main() {
 		where: { email },
 		update: {
 			passwordHash,
-			firstName: 'Gustavo',
-			lastName: 'Faccendini',
+			firstName: 'Admin',
+			lastName: 'Test',
 			status: 'ACTIVE'
 		},
 		create: {
 			email,
 			passwordHash,
-			firstName: 'Gustavo',
-			lastName: 'Faccendini',
+			firstName: 'Admin',
+			lastName: 'Test',
 			status: 'ACTIVE'
 		}
 	});

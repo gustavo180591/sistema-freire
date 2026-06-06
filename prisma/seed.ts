@@ -35,16 +35,16 @@ async function main() {
 	const superAdminRole = await prisma.role.findFirst({ where: { code: RoleCode.SUPERADMIN } });
 	if (superAdminRole) {
 		const existingUser = await prisma.user.findUnique({
-			where: { email: 'gustavo.faccendini@gmail.com' }
+			where: { email: 'admin.test@example.com' }
 		});
 		if (!existingUser) {
-			const passwordHash = await hashPassword('$Gustavo1805');
+			const passwordHash = await hashPassword('TestPassword123!');
 			await prisma.user.create({
 				data: {
-					email: 'gustavo.faccendini@gmail.com',
+					email: 'admin.test@example.com',
 					passwordHash,
-					firstName: 'Gustavo',
-					lastName: 'Faccendini',
+					firstName: 'Admin',
+					lastName: 'Test',
 					roles: { create: [{ role: { connect: { id: superAdminRole.id } } }] }
 				}
 			});

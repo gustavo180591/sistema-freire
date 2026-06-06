@@ -159,7 +159,7 @@
 						</svg>
 						<div class="text-sm">
 							<p class="text-slate-400">Período actual</p>
-							<p class="font-semibold text-white">{currentTerm.name} {currentTerm.year}</p>
+							<p class="font-semibold text-white">{currentTerm.name}</p>
 						</div>
 					</div>
 				{/if}

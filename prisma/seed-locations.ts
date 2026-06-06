@@ -73,25 +73,25 @@ async function main() {
 		}
 	}
 
-	// Crear un período académico inicial para 2025
+	// Crear un período académico inicial para 2026
 	console.log('Seeding initial academic term...');
 	const alemLocation = createdLocations.find(l => l.code === 'ALEM');
 	if (alemLocation) {
 		await prisma.academicTerm.upsert({
-			where: { code: '2025-ANUAL' },
+			where: { code: '2026-ANUAL' },
 			update: {},
 			create: {
-				name: '2025 - Año Completo',
-				code: '2025-ANUAL',
-				year: 2025,
+				name: '2026 - Año Completo',
+				code: '2026-ANUAL',
+				year: 2026,
 				termType: 'ANUAL',
-				startDate: new Date('2025-03-01'),
-				endDate: new Date('2025-12-31'),
+				startDate: new Date('2026-03-01'),
+				endDate: new Date('2026-12-31'),
 				active: true,
 				locationId: alemLocation.id
 			}
 		});
-		console.log('Academic term 2025 created/updated');
+		console.log('Academic term 2026 created/updated');
 	}
 
 	console.log('Locations seeding completed!');

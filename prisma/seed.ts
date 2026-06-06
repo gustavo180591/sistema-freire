@@ -18,7 +18,8 @@ async function main() {
 		{ code: RoleCode.PRECEPTOR, name: 'Preceptor' },
 		{ code: RoleCode.ALUMNO, name: 'Alumno' },
 		{ code: RoleCode.FINANZAS, name: 'Finanzas' },
-		{ code: RoleCode.APODERADO, name: 'Apoderado' }
+		{ code: RoleCode.APODERADO, name: 'Apoderado' },
+		{ code: RoleCode.LIQUIDADOR, name: 'Liquidador' }
 	];
 
 	for (const role of roles) {

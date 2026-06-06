@@ -38,6 +38,12 @@ const defaultPermissions = [
   { roleCode: 'FINANZAS', entity: 'PAYSLIP', canCreate: true, canRead: true, canUpdate: true, canDelete: false },
   { roleCode: 'FINANZAS', entity: 'SCHOLARSHIP', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
 
+  // LIQUIDADOR - Solo carga de recibos de sueldo
+  { roleCode: 'LIQUIDADOR', entity: 'USER', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+  { roleCode: 'LIQUIDADOR', entity: 'STUDENT', canCreate: false, canRead: false, canUpdate: false, canDelete: false },
+  { roleCode: 'LIQUIDADOR', entity: 'TEACHER', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+  { roleCode: 'LIQUIDADOR', entity: 'PAYSLIP', canCreate: true, canRead: true, canUpdate: true, canDelete: false },
+
   // DOCENTE - Solo lectura de lo académico
   { roleCode: 'DOCENTE', entity: 'STUDENT', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
   { roleCode: 'DOCENTE', entity: 'COMMISSION', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
@@ -63,8 +69,8 @@ async function main() {
           entity: perm.entity as Entity
         }
       },
-      update: perm,
-      create: perm
+      update: perm as any,
+      create: perm as any
     });
   }
 

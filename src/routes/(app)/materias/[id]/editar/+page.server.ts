@@ -44,6 +44,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
         throw error(404, 'Materia no encontrada');
     }
 
+    // Convert Decimal types to strings for serialization
+    const normalizedSubject = {
+        ...subject,
+        approvalThreshold: subject.approvalThreshold?.toString() || '6',
+        promotionThreshold: subject.promotionThreshold?.toString() || '7'
+    };
+
     const careers = await prisma.career.findMany({
         where: { active: true },
         select: { id: true, code: true, name: true }
@@ -66,7 +73,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     });
 
     return {
-        subject,
+        subject: normalizedSubject,
         careers,
         allSubjects,
         teachers

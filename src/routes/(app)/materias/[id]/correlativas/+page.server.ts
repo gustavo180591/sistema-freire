@@ -32,6 +32,29 @@ export const load: PageServerLoad = async ({ params }) => {
         throw redirect(302, '/materias');
     }
 
+    // Convert Decimal types to strings for serialization
+    const normalizedSubject = {
+        ...subject,
+        approvalThreshold: subject.approvalThreshold?.toString() || '6',
+        promotionThreshold: subject.promotionThreshold?.toString() || '7',
+        correlatives: subject.correlatives.map(c => ({
+            ...c,
+            requiredSubject: {
+                ...c.requiredSubject,
+                approvalThreshold: c.requiredSubject.approvalThreshold?.toString() || '6',
+                promotionThreshold: c.requiredSubject.promotionThreshold?.toString() || '7'
+            }
+        })),
+        requiredBy: subject.requiredBy.map(r => ({
+            ...r,
+            subject: {
+                ...r.subject,
+                approvalThreshold: r.subject.approvalThreshold?.toString() || '6',
+                promotionThreshold: r.subject.promotionThreshold?.toString() || '7'
+            }
+        }))
+    };
+
     // Get all careers for this subject
     const careers = subject.careerSubjects.map(cs => cs.career);
     const careerIds = careers.map(c => c.id);
@@ -59,9 +82,16 @@ export const load: PageServerLoad = async ({ params }) => {
         ]
     });
 
+    // Normalize available subjects as well
+    const normalizedAvailableSubjects = availableSubjects.map(s => ({
+        ...s,
+        approvalThreshold: s.approvalThreshold?.toString() || '6',
+        promotionThreshold: s.promotionThreshold?.toString() || '7'
+    }));
+
     return {
-        subject,
-        availableSubjects,
+        subject: normalizedSubject,
+        availableSubjects: normalizedAvailableSubjects,
         careers
     };
 };

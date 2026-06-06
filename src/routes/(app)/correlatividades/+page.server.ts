@@ -34,13 +34,13 @@ export const load: PageServerLoad = async () => {
 		careers: subject.careerSubjects.map(cs => cs.career),
 		correlativesRegular: subject.correlatives
 			.filter(c => c.correlativeType === 'REGULAR')
-			.map(c => c.requiredSubject.name),
+			.map(c => `${c.requiredSubject.code} - ${c.requiredSubject.name}`),
 		correlativesAprobadoCursar: subject.correlatives
 			.filter(c => c.correlativeType === 'APROBADO')
-			.map(c => c.requiredSubject.name),
+			.map(c => `${c.requiredSubject.code} - ${c.requiredSubject.name}`),
 		correlativesAprobadoAprobar: subject.correlatives
 			.filter(c => c.correlativeType === 'APROBADO_APROBAR')
-			.map(c => c.requiredSubject.name)
+			.map(c => `${c.requiredSubject.code} - ${c.requiredSubject.name}`)
 	}));
 
 	return {

@@ -1,5 +1,7 @@
 <script lang="ts">
     import { enhance } from '$app/forms';
+    import { canManageSubjects } from '$lib/client/permissions';
+    import { page } from '$app/stores';
     
     let { data, form } = $props();
     
@@ -29,6 +31,8 @@
     
     const selectedCareer = $derived(careers.find(c => c.id === selectedCareerId));
     
+    const hasActiveFilters = $derived(selectedCareerId !== '' || selectedYear !== '');
+    
     const availableYears = $derived(() => {
         if (selectedCareer) {
             return Array.from({ length: selectedCareer.durationYears }, (_, i) => i + 1);
@@ -47,6 +51,25 @@
         EXAMEN_FINAL: 'Examen Final',
         PROMOCIONAL_SIN_FINAL: 'Promocional sin examen final'
     };
+    
+    const accreditationModeColors: Record<string, string> = {
+        PROMOCIONAL: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+        EXAMEN_FINAL: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+        PROMOCIONAL_SIN_FINAL: 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+    };
+    
+    function clearFilters() {
+        selectedCareerId = '';
+        selectedYear = '';
+    }
+    
+    function getCorrelativeBadge(correlatives: string[], colorClass: string) {
+        if (correlatives.length === 0) {
+            return { text: '-', class: 'text-slate-600 text-xs' };
+        }
+        const text = correlatives.slice(0, 2).join(', ') + (correlatives.length > 2 ? ` (+${correlatives.length - 2})` : '');
+        return { text, class: `inline-flex items-center rounded-lg border px-2 py-1 text-xs font-medium ${colorClass} max-w-[150px] truncate` };
+    }
     
     function openModal(subject: typeof subjects[0]) {
         editingSubject = subject;
@@ -146,41 +169,54 @@
 
 <div class="space-y-6">
     <!-- Header -->
-    <section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-        <div class="flex items-center justify-between">
-            <h1 class="text-3xl font-bold">Correlatividades</h1>
-            <button 
-                onclick={openCreateModal}
-                class="rounded-xl bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600"
-            >
-                + Nueva Materia
-            </button>
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+                <span class="inline-flex items-center rounded-lg bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-400">
+                    Gestión académica
+                </span>
+                <h1 class="mt-2 text-2xl font-semibold text-white">Correlatividades</h1>
+                <p class="mt-1 text-sm text-slate-400">Administra los requisitos para cursar y aprobar materias del plan de estudios</p>
+            </div>
+            {#if canManageSubjects()}
+                <a
+                    href="/materias/nueva"
+                    class="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition-all hover:bg-slate-100"
+                >
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Nueva materia
+                </a>
+            {/if}
         </div>
-        <p class="mt-2 text-slate-400">Gestión de correlatividades del plan de estudios</p>
     </section>
     
     <!-- Filters -->
-    <section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-        <div class="flex gap-4 flex-wrap">
-            <div class="flex-1 min-w-[200px]">
-                <label for="careerFilter" class="block text-sm font-medium text-slate-300 mb-2">Carrera</label>
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
+        <form class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-2 flex-1 min-w-[200px]">
+                <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <label for="careerFilter" class="sr-only">Carrera</label>
                 <select 
                     id="careerFilter"
                     bind:value={selectedCareerId}
-                    class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
+                    class="flex-1 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                 >
                     <option value="">Todas las carreras</option>
                     {#each careers as career}
-                        <option value={career.id}>{career.name} ({career.code})</option>
+                        <option value={career.id}>{career.name}</option>
                     {/each}
                 </select>
             </div>
-            <div class="flex-1 min-w-[200px]">
-                <label for="yearFilter" class="block text-sm font-medium text-slate-300 mb-2">Año</label>
+            <div class="flex items-center gap-2 flex-1 min-w-[150px]">
+                <label for="yearFilter" class="sr-only">Año</label>
                 <select 
                     id="yearFilter"
                     bind:value={selectedYear}
-                    class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
+                    class="flex-1 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                 >
                     <option value="">Todos los años</option>
                     {#each availableYears() as year}
@@ -188,161 +224,170 @@
                     {/each}
                 </select>
             </div>
-        </div>
+            {#if hasActiveFilters}
+                <a href="/correlatividades" class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition-all hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/50">
+                    Limpiar
+                </a>
+            {/if}
+        </form>
     </section>
     
     <!-- Tabla de Correlatividades -->
-    <section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-        <div class="overflow-x-auto">
-            <table class="w-full border-collapse">
-                <thead>
-                    <!-- Primera fila de encabezados -->
-                    <tr class="border-b-2 border-slate-600">
-                        <th rowspan="3" class="border border-slate-400 bg-slate-700 px-4 py-3 text-sm font-semibold text-center text-white">
-                            Curso
-                        </th>
-                        <th rowspan="3" class="border border-slate-400 bg-slate-700 px-4 py-3 text-sm font-semibold text-center text-white">
-                            Unidad Curricular
-                        </th>
-                        <th rowspan="3" class="border border-slate-400 bg-slate-700 px-4 py-3 text-sm font-semibold text-center text-white">
-                            Modalidad de Acreditación
-                        </th>
-                        <th colspan="3" class="border border-slate-400 bg-indigo-600 px-4 py-3 text-sm font-semibold text-center text-white">
-                            Régimen de Correlatividades
-                        </th>
-                        <th rowspan="3" class="border border-slate-400 bg-slate-700 px-4 py-3 text-sm font-semibold text-center text-white">
-                            Acciones
-                        </th>
-                    </tr>
-                    
-                    <!-- Segunda fila de encabezados -->
-                    <tr class="border-b-2 border-slate-600">
-                        <th colspan="2" class="border border-slate-400 bg-slate-600 px-4 py-2 text-xs font-semibold text-center text-white">
-                            Para cursar deberá
-                        </th>
-                        <th rowspan="2" class="border border-slate-400 bg-slate-600 px-4 py-2 text-xs font-semibold text-center text-white">
-                            Para aprobar deberá
-                        </th>
-                    </tr>
-                    
-                    <!-- Tercera fila de encabezados -->
-                    <tr class="border-b-2 border-slate-600">
-                        <th class="border border-slate-400 bg-slate-600 px-4 py-2 text-xs font-semibold text-center text-white">
-                            haber Regularizado
-                        </th>
-                        <th class="border border-slate-400 bg-slate-600 px-4 py-2 text-xs font-semibold text-center text-white">
-                            haber Aprobado
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each filteredSubjects as subject}
-                        <tr class="border-b border-slate-400">
-                            <td class="border border-slate-400 px-4 py-3 text-center text-sm text-white">
-                                {subject.yearLevel}° Año
-                            </td>
-                            <td class="border border-slate-400 px-4 py-3 text-sm text-white">
-                                <p class="font-medium">{subject.name}</p>
-                                <p class="text-xs text-slate-400">{subject.code}</p>
-                            </td>
-                            <td 
-                                role="button"
-                                tabindex="0"
-                                class="border border-slate-400 px-4 py-3 text-center text-sm text-white cursor-pointer hover:bg-slate-700/50 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                onclick={() => openModal(subject)}
-                                onkeydown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        openModal(subject);
-                                    }
-                                }}
-                            >
-                                {accreditationModeLabels[subject.accreditationMode] || subject.accreditationMode}
-                            </td>
-                            <td 
-                                role="button"
-                                tabindex="0"
-                                class="border border-slate-400 px-4 py-3 text-center text-sm text-white cursor-pointer hover:bg-slate-700/50 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                onclick={() => openCorrelativesModal(subject, 'REGULAR')}
-                                onkeydown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        openCorrelativesModal(subject, 'REGULAR');
-                                    }
-                                }}
-                            >
-                                {#if subject.correlativesRegular.length > 0}
-                                    {subject.correlativesRegular.join(', ')}
-                                {:else}
-                                    -
-                                {/if}
-                            </td>
-                            <td 
-                                role="button"
-                                tabindex="0"
-                                class="border border-slate-400 px-4 py-3 text-center text-sm text-white cursor-pointer hover:bg-slate-700/50 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                onclick={() => openCorrelativesModal(subject, 'APROBADO')}
-                                onkeydown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        openCorrelativesModal(subject, 'APROBADO');
-                                    }
-                                }}
-                            >
-                                {#if subject.correlativesAprobadoCursar.length > 0}
-                                    {subject.correlativesAprobadoCursar.join(', ')}
-                                {:else}
-                                    -
-                                {/if}
-                            </td>
-                            <td 
-                                role="button"
-                                tabindex="0"
-                                class="border border-slate-400 px-4 py-3 text-center text-sm text-white cursor-pointer hover:bg-slate-700/50 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                onclick={() => openCorrelativesModal(subject, 'APROBADO_APROBAR')}
-                                onkeydown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        openCorrelativesModal(subject, 'APROBADO_APROBAR');
-                                    }
-                                }}
-                            >
-                                {#if subject.correlativesAprobadoAprobar.length > 0}
-                                    {subject.correlativesAprobadoAprobar.join(', ')}
-                                {:else}
-                                    -
-                                {/if}
-                            </td>
-                            <td class="border border-slate-400 px-4 py-3 text-center">
-                                <div class="flex justify-center gap-1">
-                                    <button 
-                                        onclick={() => openViewModal(subject)}
-                                        class="inline-block rounded-lg border border-slate-600 px-2 py-1.5 text-xs font-medium text-white transition hover:bg-slate-700 hover:border-slate-500"
-                                        title="Ver"
-                                    >
-                                        👁
-                                    </button>
-                                    <button 
-                                        onclick={() => openEditCorrelativesModal(subject)}
-                                        class="inline-block rounded-lg border border-slate-600 px-2 py-1.5 text-xs font-medium text-white transition hover:bg-slate-700 hover:border-slate-500"
-                                        title="Editar Correlativas"
-                                    >
-                                        ✏
-                                    </button>
-                                    <button 
-                                        onclick={() => openDeleteModal(subject)}
-                                        class="inline-block rounded-lg border border-red-600 px-2 py-1.5 text-xs font-medium text-white transition hover:bg-red-700 hover:border-red-500"
-                                        title="Eliminar"
-                                    >
-                                        🗑
-                                    </button>
-                                </div>
-                            </td>
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+        {#if filteredSubjects.length === 0}
+            <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-12 text-center">
+                <div class="flex flex-col items-center gap-4">
+                    <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-800">
+                        <svg class="h-8 w-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                        </svg>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-sm font-medium text-white">No hay materias registradas</p>
+                        <p class="text-sm text-slate-400">Comienza agregando materias al plan de estudios</p>
+                    </div>
+                    {#if canManageSubjects()}
+                        <a
+                            href="/materias/nueva"
+                            class="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition-all hover:bg-slate-100"
+                        >
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Nueva materia
+                        </a>
+                    {/if}
+                </div>
+            </div>
+        {:else if subjects.length > 0 && filteredSubjects.length === 0}
+            <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-12 text-center">
+                <div class="flex flex-col items-center gap-4">
+                    <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-800">
+                        <svg class="h-8 w-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-sm font-medium text-white">No se encontraron resultados</p>
+                        <p class="text-sm text-slate-400">No hay materias que coincidan con los filtros aplicados</p>
+                    </div>
+                    <a href="/correlatividades" class="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 transition-all hover:bg-slate-700">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Limpiar filtros
+                    </a>
+                </div>
+            </div>
+        {:else}
+            <div class="overflow-x-auto rounded-xl border border-slate-800">
+                <table class="w-full min-w-[1400px]">
+                    <thead class="border-b-2 border-slate-700 bg-slate-800/50">
+                        <tr>
+                            <th class="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-300 border-b border-slate-700">Curso/Año</th>
+                            <th class="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-300 border-b border-slate-700">Unidad Curricular</th>
+                            <th class="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-300 border-b border-slate-700">Modalidad de Acreditación</th>
+                            <th class="px-4 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-300 border-b border-slate-700" colspan="3">Régimen de Correlatividades</th>
+                            <th class="px-4 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-300 border-b border-slate-700">Acciones</th>
                         </tr>
-                    {/each}
-                </tbody>
-            </table>
-        </div>
+                        <tr class="bg-slate-800/30">
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-slate-400 border-b border-slate-700"></th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-slate-400 border-b border-slate-700"></th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-slate-400 border-b border-slate-700"></th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-slate-400 border-b border-slate-700">Para cursar deberá haber regularizado</th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-slate-400 border-b border-slate-700">Para cursar deberá haber aprobado</th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-slate-400 border-b border-slate-700">Para aprobar deberá haber aprobado</th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-slate-400 border-b border-slate-700"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                        {#each [1, 2, 3, 4] as year}
+                            {@const yearSubjects = filteredSubjects.filter(s => s.yearLevel === year)}
+                            {#if yearSubjects.length > 0}
+                                <tr class="bg-indigo-950/20">
+                                    <td colspan="7" class="px-4 py-3">
+                                        <span class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-300">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                            </svg>
+                                            {year}° Año
+                                        </span>
+                                    </td>
+                                </tr>
+                                {#each yearSubjects as subject}
+                                    {@const regularBadge = getCorrelativeBadge(subject.correlativesRegular, 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20')}
+                                    {@const cursarBadge = getCorrelativeBadge(subject.correlativesAprobadoCursar, 'bg-blue-500/10 text-blue-400 border-blue-500/20')}
+                                    {@const aprobarBadge = getCorrelativeBadge(subject.correlativesAprobadoAprobar, 'bg-purple-500/10 text-purple-400 border-purple-500/20')}
+                                    {@const accreditationBadge = accreditationModeColors[subject.accreditationMode] || 'bg-slate-500/10 text-slate-400 border-slate-500/20'}
+                                    <tr class="transition-colors hover:bg-slate-800/40">
+                                        <td class="px-4 py-4">
+                                            <span class="text-sm font-medium text-slate-300">{year}° Año</span>
+                                        </td>
+                                        <td class="px-4 py-4">
+                                            <div class="min-w-0">
+                                                <p class="text-sm font-semibold text-white truncate" title={subject.name}>{subject.name}</p>
+                                                <p class="text-xs text-slate-500 font-mono">{subject.code}</p>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-4">
+                                            <span class="inline-flex items-center rounded-lg border px-3 py-1.5 text-xs font-semibold {accreditationBadge}">
+                                                {accreditationModeLabels[subject.accreditationMode] || subject.accreditationMode}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-4 text-center">
+                                            <span class={regularBadge.class} title={subject.correlativesRegular.join(', ')}>{regularBadge.text}</span>
+                                        </td>
+                                        <td class="px-4 py-4 text-center">
+                                            <span class={cursarBadge.class} title={subject.correlativesAprobadoCursar.join(', ')}>{cursarBadge.text}</span>
+                                        </td>
+                                        <td class="px-4 py-4 text-center">
+                                            <span class={aprobarBadge.class} title={subject.correlativesAprobadoAprobar.join(', ')}>{aprobarBadge.text}</span>
+                                        </td>
+                                        <td class="px-4 py-4 text-right">
+                                            <div class="flex items-center justify-end gap-1">
+                                                <a
+                                                    href={`/materias/${subject.id}`}
+                                                    class="rounded-lg p-2 text-emerald-400 transition-colors hover:bg-emerald-500/10 hover:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                                                    aria-label="Ver detalles de materia"
+                                                    title="Ver"
+                                                >
+                                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                    </svg>
+                                                </a>
+                                                <a
+                                                    href={`/materias/${subject.id}/correlativas`}
+                                                    class="rounded-lg p-2 text-blue-400 transition-colors hover:bg-blue-500/10 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                                    aria-label="Gestionar correlativas"
+                                                    title="Correlativas"
+                                                >
+                                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                                    </svg>
+                                                </a>
+                                                {#if canManageSubjects()}
+                                                    <a
+                                                        href={`/materias/${subject.id}/editar`}
+                                                        class="rounded-lg p-2 text-purple-400 transition-colors hover:bg-purple-500/10 hover:text-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                                                        aria-label="Editar materia"
+                                                        title="Editar"
+                                                    >
+                                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                    </a>
+                                                {/if}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {/each}
+                            {/if}
+                        {/each}
+                    </tbody>
+                </table>
+            </div>
+        {/if}
     </section>
 </div>
 

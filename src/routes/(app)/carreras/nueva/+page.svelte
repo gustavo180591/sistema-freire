@@ -4,8 +4,19 @@
 	let { form, data } = $props();
 
 	let name = $state('');
+	let code = $state('');
+	let trainingField = $state('GENERAL');
+	let resolution = $state('');
+	let durationYears = $state('4');
 	let description = $state('');
 	let isActive = $state(true);
+
+	const trainingFieldOptions = [
+		{ value: 'GENERAL', label: 'General' },
+		{ value: 'ESPECIFICA', label: 'Específica' },
+		{ value: 'PRACTICA', label: 'Práctica' },
+		{ value: 'EDI', label: 'EDI' }
+	];
 </script>
 
 <svelte:head>
@@ -36,6 +47,48 @@
 
 		<div class="grid gap-6 md:grid-cols-2">
 			<div>
+				<label for="code" class="mb-2 block text-sm font-medium text-slate-300">Código <span class="text-red-400">*</span></label>
+				<input
+					bind:value={code}
+					name="code"
+					id="code"
+					required
+					placeholder="PI-2025"
+					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-slate-500"
+				/>
+			</div>
+
+			<div>
+				<label for="trainingField" class="mb-2 block text-sm font-medium text-slate-300">Campo de formación <span class="text-red-400">*</span></label>
+				<select
+					bind:value={trainingField}
+					name="trainingField"
+					id="trainingField"
+					required
+					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-slate-500"
+				>
+					{#each trainingFieldOptions as option}
+						<option value={option.value}>{option.label}</option>
+					{/each}
+				</select>
+			</div>
+
+			<div>
+				<label for="durationYears" class="mb-2 block text-sm font-medium text-slate-300">Duración (años) <span class="text-red-400">*</span></label>
+				<input
+					bind:value={durationYears}
+					name="durationYears"
+					id="durationYears"
+					type="number"
+					min="1"
+					max="10"
+					required
+					placeholder="4"
+					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-slate-500"
+				/>
+			</div>
+
+			<div>
 				<label for="active" class="mb-2 block text-sm font-medium text-slate-300">Estado inicial</label>
 				<select
 					bind:value={isActive}
@@ -50,12 +103,24 @@
 		</div>
 
 		<div>
-			<label for="name" class="mb-2 block text-sm font-medium text-slate-300">Nombre de la carrera</label>
+			<label for="name" class="mb-2 block text-sm font-medium text-slate-300">Nombre de la carrera <span class="text-red-400">*</span></label>
 			<input
 				bind:value={name}
 				name="name"
 				id="name"
+				required
 				placeholder="PROFESORADO DE EDUCACIÓN SECUNDARIA EN MATEMÁTICA"
+				class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-slate-500"
+			/>
+		</div>
+
+		<div>
+			<label for="resolution" class="mb-2 block text-sm font-medium text-slate-300">Resolución</label>
+			<input
+				bind:value={resolution}
+				name="resolution"
+				id="resolution"
+				placeholder="Resolución Ministerial N° 1234/2025"
 				class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-slate-500"
 			/>
 		</div>

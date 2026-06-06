@@ -1,8 +1,12 @@
 <script lang="ts">
-	let { data } = $props();
+	import { enhance } from '$app/forms';
+	import { canManageCareers } from '$lib/client/permissions';
+	let { data, form } = $props();
 
 	const plan = $derived(data?.plan);
 	const metrics = $derived(data?.metrics ?? { totalSubjects: 0, totalYears: 0 });
+
+	let removingSubject = $state<typeof plan.subjects[0] | null>(null);
 
 	const groupedSubjects = $derived(() => {
 		const groups: Record<number, typeof plan.subjects> = {};
@@ -13,6 +17,12 @@
 			groups[subject.yearLevel].push(subject);
 		});
 		return groups;
+	});
+
+	$effect(() => {
+		if (form && !form.error) {
+			removingSubject = null;
+		}
 	});
 </script>
 
@@ -43,20 +53,22 @@
 				</p>
 			</div>
 
-			<div class="flex gap-3">
-				<a
-					href={`/carreras/${plan.career.id}/planes/${plan.id}/editar`}
-					class="rounded-2xl border border-slate-700 px-4 py-3 text-sm font-semibold transition hover:border-slate-500"
-				>
-					Editar plan
-				</a>
-				<a
-					href={`/carreras/${plan.career.id}/planes/${plan.id}/materias/nueva`}
-					class="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.02]"
-				>
-					+ Agregar materia
-				</a>
-			</div>
+			{#if canManageCareers()}
+				<div class="flex gap-3">
+					<a
+						href={`/carreras/${plan.career.id}/planes/${plan.id}/editar`}
+						class="rounded-2xl border border-slate-700 px-4 py-3 text-sm font-semibold transition hover:border-slate-500"
+					>
+						Editar plan
+					</a>
+					<a
+						href={`/carreras/${plan.career.id}/planes/${plan.id}/materias/nueva`}
+						class="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.02]"
+					>
+						+ Agregar materia
+					</a>
+				</div>
+			{/if}
 		</div>
 	</section>
 
@@ -111,12 +123,22 @@
 										</span>
 									</td>
 									<td class="px-6 py-4 text-right">
-										<a
-											href={`/materias/${subject.id}`}
-											class="rounded-xl border border-slate-700 px-3 py-2 text-sm transition hover:border-slate-500"
-										>
-											Ver materia
-										</a>
+										<div class="flex items-center justify-end gap-2">
+											<a
+												href={`/materias/${subject.id}`}
+												class="rounded-xl border border-slate-700 px-3 py-2 text-sm transition hover:border-slate-500"
+											>
+												Ver materia
+											</a>
+											{#if canManageCareers()}
+												<button
+													onclick={() => removingSubject = subject}
+													class="rounded-xl border border-red-900/50 bg-red-500/10 px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/20"
+												>
+													Eliminar
+												</button>
+											{/if}
+										</div>
 									</td>
 								</tr>
 							{/each}
@@ -127,3 +149,45 @@
 		{/each}
 	</section>
 </div>
+
+{#if removingSubject}
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+		<div class="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-8">
+			<h2 class="text-2xl font-bold">Eliminar materia del plan</h2>
+			<p class="mt-4 text-sm text-slate-400">
+				¿Estás seguro de que deseas eliminar <strong>{removingSubject.name}</strong> ({removingSubject.code}) del plan de estudio?
+			</p>
+			<p class="mt-2 text-sm text-slate-500">
+				Esta acción no elimina la materia del sistema, solo la desvincula de este plan.
+			</p>
+
+			{#if form?.error}
+				<div class="mt-4 rounded-2xl border border-red-900 bg-red-900/10 p-4 text-sm text-red-400">
+					{form.error}
+				</div>
+			{/if}
+
+			<form
+				method="POST"
+				action="?/removeSubject"
+				use:enhance
+				class="mt-6 flex gap-4"
+			>
+				<input type="hidden" name="subjectId" value={removingSubject.id} />
+				<button
+					type="button"
+					onclick={() => removingSubject = null}
+					class="rounded-2xl border border-slate-700 px-6 py-3 text-sm font-semibold transition hover:border-slate-500"
+				>
+					Cancelar
+				</button>
+				<button
+					type="submit"
+					class="rounded-2xl bg-red-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-red-600"
+				>
+					Eliminar
+				</button>
+			</form>
+		</div>
+	</div>
+{/if}

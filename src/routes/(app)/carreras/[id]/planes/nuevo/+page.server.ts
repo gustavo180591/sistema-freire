@@ -2,8 +2,14 @@ import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { requirePermission } from '$lib/server/auth/permissions-granular';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
+	const user = locals.user;
+	if (!user) throw redirect(302, '/login');
+
+	requirePermission(user, 'CAREER', 'update');
+
 	const career = await prisma.career.findUnique({
 		where: {
 			id: params.id
@@ -25,7 +31,12 @@ export const load: PageServerLoad = async ({ params }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, params }) => {
+	default: async ({ request, params, locals }) => {
+		const user = locals.user;
+		if (!user) throw redirect(302, '/login');
+
+		requirePermission(user, 'CAREER', 'update');
+
 		const formData = await request.formData();
 		const name = formData.get('name') as string;
 		const version = formData.get('version') as string;

@@ -1,7 +1,8 @@
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import { getUserAllowedLocationIds } from '$lib/server/auth/authorization';
+import { requirePermission } from '$lib/server/auth/permissions-granular';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) {
@@ -59,7 +60,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-    delete: async ({ request }) => {
+    delete: async ({ request, locals }) => {
+        const user = locals.user;
+        if (!user) throw redirect(302, '/login');
+
+        requirePermission(user, 'CAREER', 'delete');
+
         const formData = await request.formData();
         const id = formData.get('id') as string;
 

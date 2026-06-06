@@ -54,6 +54,21 @@ export function canManagePreceptors(): boolean {
 	return hasAnyRole(['SUPERADMIN', 'DIRECTOR', 'SECRETARIA']);
 }
 
+// Función para verificar si el usuario puede gestionar secretarios
+export function canManageSecretaries(): boolean {
+	return hasAnyRole(['SUPERADMIN', 'DIRECTOR']);
+}
+
+// Función para verificar si el usuario puede gestionar directores
+export function canManageDirectors(): boolean {
+	return hasRole('SUPERADMIN');
+}
+
+// Función para verificar si el usuario puede gestionar carreras
+export function canManageCareers(): boolean {
+	return hasAnyRole(['SUPERADMIN', 'DIRECTOR']);
+}
+
 // Función para verificar si el usuario puede ver auditoría
 export function canViewAudit(): boolean {
 	return hasAnyRole(['SUPERADMIN', 'DIRECTOR']);

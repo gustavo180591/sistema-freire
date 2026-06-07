@@ -99,6 +99,8 @@ model Career {
   careerSubjects  CareerSubject[] // Materias específicas de esta carrera
   subjectCorrelatives SubjectCorrelative[] // Correlativas específicas de carrera
   locations       CareerLocation[] // Relación N:M con localidades
+  commissions     SubjectCommission[] // Comisiones de materias
+  enrollments     SubjectEnrollment[] // Inscripciones a materias
 
   @@index([active])
   @@map("careers")
@@ -165,6 +167,7 @@ model Student {
   documents         StudentDocument[]
   followUps         StudentFollowUp[]
   academicHistory   AcademicYearHistory[]
+  enrollments       SubjectEnrollment[]    // Inscripciones a materias
   career            Career                 @relation(fields: [careerId], references: [id])
   user              User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -202,6 +205,7 @@ model Teacher {
   updatedAt   DateTime            @updatedAt
   subjects    SubjectTeacher[]
   payslips    Payslip[]
+  commissions SubjectCommission[]
   user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([lastName, firstName])
@@ -247,6 +251,8 @@ model Subject {
   grades           Grade[]
   materials        ClassMaterial[]
   evaluations      Evaluation[]
+  commissions      SubjectCommission[]  // Comisiones de cursado
+  enrollments      SubjectEnrollment[]  // Inscripciones a materias
 
   // Correlatividades
   correlatives     SubjectCorrelative[] @relation("subject_correlatives")
@@ -387,6 +393,8 @@ model StudyPlan {
   durationYears Int           @default(4)
   subjects      PlanSubject[]
   career        Career        @relation(fields: [careerId], references: [id])
+  commissions   SubjectCommission[]
+  enrollments   SubjectEnrollment[]
 
   @@unique([careerId, version])
   @@map("study_plans")
@@ -685,6 +693,7 @@ model Location {
   careers     CareerLocation[] // Relación N:M con carreras
   userPermissions UserLocationPermission[]
   academicTerms AcademicTerm[]
+  commissions SubjectCommission[]
 
   @@index([active])
   @@map("locations")
@@ -738,6 +747,8 @@ model AcademicTerm {
   charges     StudentCharge[]
   payments    Payment[]
   location    Location?       @relation(fields: [locationId], references: [id])
+  commissions SubjectCommission[]
+  enrollments SubjectEnrollment[]
 
   @@index([year, active])
   @@index([locationId, active])
@@ -845,4 +856,96 @@ model Evaluation {
   @@index([subjectId])
   @@index([createdBy])
   @@map("evaluations")
+}
+
+// ======================================================
+// ENROLLMENT MODEL - Inscripciones a materias
+// ======================================================
+
+model SubjectCommission {
+  id              String              @id @default(cuid())
+  code            String              @unique // Código de comisión (ej: "A", "B", "C1")
+  subjectId       String
+  academicTermId  String?             // Período lectivo (opcional para flexibilidad)
+  careerId        String?             // Carrera específica (null si es común)
+  studyPlanId     String?             // Plan de estudio específico
+  teacherId       String?             // Docente responsable
+  locationId      String?             // Localidad/sede
+  
+  // Cupos
+  maxCapacity     Int                 @default(40) // Cupo máximo
+  currentEnrolled Int                 @default(0) // Inscriptos actuales
+  
+  // Horario
+  schedule        String?             // Descripción de horario (ej: "Lunes 14-18")
+  scheduleJson    Json?               // Horario estructurado para futura automatización
+  
+  // Estado
+  active          Boolean             @default(true)
+  observations    String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  
+  // Relaciones
+  subject         Subject             @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  academicTerm    AcademicTerm?       @relation(fields: [academicTermId], references: [id])
+  career          Career?             @relation(fields: [careerId], references: [id])
+  studyPlan       StudyPlan?          @relation(fields: [studyPlanId], references: [id])
+  teacher         Teacher?            @relation(fields: [teacherId], references: [id])
+  location        Location?           @relation(fields: [locationId], references: [id])
+  enrollments     SubjectEnrollment[]
+  
+  @@index([subjectId, active])
+  @@index([academicTermId, active])
+  @@index([careerId, active])
+  @@index([teacherId])
+  @@map("subject_commissions")
+}
+
+model SubjectEnrollment {
+  id              String              @id @default(cuid())
+  studentId       String
+  subjectId       String
+  commissionId    String?             // Comisión asignada (null si no hay comisiones)
+  careerId        String
+  studyPlanId     String?
+  academicTermId  String?
+  
+  // Estado de inscripción
+  status          EnrollmentStatus    @default(PENDING)
+  
+  // Fechas
+  enrolledAt      DateTime            @default(now())
+  confirmedAt     DateTime?
+  cancelledAt     DateTime?
+  rejectedAt      DateTime?
+  
+  // Motivos
+  rejectionReason String?
+  cancellationReason String?
+  observations    String?
+  
+  // Quién realizó la acción
+  enrolledBy      String?             // Usuario que inscribió (null si auto-inscripción)
+  confirmedBy     String?
+  cancelledBy     String?
+  rejectedBy      String?
+  
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  
+  // Relaciones
+  student         Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject         Subject             @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  commission      SubjectCommission?  @relation(fields: [commissionId], references: [id])
+  career          Career              @relation(fields: [careerId], references: [id])
+  studyPlan       StudyPlan?          @relation(fields: [studyPlanId], references: [id])
+  academicTerm    AcademicTerm?       @relation(fields: [academicTermId], references: [id])
+  
+  @@unique([studentId, subjectId, academicTermId])
+  @@index([studentId, status])
+  @@index([subjectId, status])
+  @@index([commissionId])
+  @@index([academicTermId, status])
+  @@map("subject_enrollments")
 }

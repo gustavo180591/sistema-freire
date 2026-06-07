@@ -12,8 +12,10 @@ const defaultPermissions = [
   { roleCode: 'DIRECTOR', entity: 'CAREER', canCreate: true, canRead: true, canUpdate: true, canDelete: true },
   { roleCode: 'DIRECTOR', entity: 'SUBJECT', canCreate: true, canRead: true, canUpdate: true, canDelete: true },
   { roleCode: 'DIRECTOR', entity: 'COMMISSION', canCreate: true, canRead: true, canUpdate: true, canDelete: true },
+  { roleCode: 'DIRECTOR', entity: 'SUBJECT_COMMISSION', canCreate: true, canRead: true, canUpdate: true, canDelete: true },
   { roleCode: 'DIRECTOR', entity: 'ACADEMIC_TERM', canCreate: true, canRead: true, canUpdate: true, canDelete: true },
   { roleCode: 'DIRECTOR', entity: 'ENROLLMENT', canCreate: true, canRead: true, canUpdate: true, canDelete: true },
+  { roleCode: 'DIRECTOR', entity: 'SUBJECT_ENROLLMENT', canCreate: true, canRead: true, canUpdate: true, canDelete: true },
   { roleCode: 'DIRECTOR', entity: 'STUDENT_CHARGE', canCreate: true, canRead: true, canUpdate: true, canDelete: true },
   { roleCode: 'DIRECTOR', entity: 'PAYMENT', canCreate: true, canRead: true, canUpdate: true, canDelete: true },
   { roleCode: 'DIRECTOR', entity: 'PAYSLIP', canCreate: true, canRead: true, canUpdate: true, canDelete: true },
@@ -28,7 +30,9 @@ const defaultPermissions = [
   { roleCode: 'SECRETARIA', entity: 'CAREER', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
   { roleCode: 'SECRETARIA', entity: 'SUBJECT', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
   { roleCode: 'SECRETARIA', entity: 'COMMISSION', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+  { roleCode: 'SECRETARIA', entity: 'SUBJECT_COMMISSION', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
   { roleCode: 'SECRETARIA', entity: 'ENROLLMENT', canCreate: true, canRead: true, canUpdate: true, canDelete: false },
+  { roleCode: 'SECRETARIA', entity: 'SUBJECT_ENROLLMENT', canCreate: true, canRead: true, canUpdate: true, canDelete: false },
 
   // FINANZAS - Solo finanzas
   { roleCode: 'FINANZAS', entity: 'USER', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
@@ -49,8 +53,9 @@ const defaultPermissions = [
   { roleCode: 'DOCENTE', entity: 'COMMISSION', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
   { roleCode: 'DOCENTE', entity: 'PAYSLIP', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
 
-  // ALUMNO - Solo ver sus datos
+  // ALUMNO - Solo ver sus datos y crear sus inscripciones
   { roleCode: 'ALUMNO', entity: 'STUDENT', canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+  { roleCode: 'ALUMNO', entity: 'SUBJECT_ENROLLMENT', canCreate: true, canRead: true, canUpdate: true, canDelete: false },
 
   // APODERADO - Similar a alumno
   { roleCode: 'APODERADO', entity: 'STUDENT', canCreate: false, canRead: true, canUpdate: false, canDelete: false },

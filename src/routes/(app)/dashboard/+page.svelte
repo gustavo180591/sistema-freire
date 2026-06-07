@@ -140,8 +140,8 @@
 
 <div class="space-y-8">
 	<!-- Header Institucional -->
-	<section class="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900/95 to-indigo-950/30 p-8 md:p-10">
-		<div class="absolute inset-0 bg-[url('/grid.svg')] opacity-5"></div>
+	<section class="relative overflow-hidden rounded-3xl border border-slate-800 bg-linear-to-br from-slate-900 via-slate-900/95 to-indigo-950/30 p-8 md:p-10">
+		<div class="absolute inset-0 opacity-5 bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] bg-size-[40px_40px]"></div>
 		<div class="relative">
 			<div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
 				<div class="flex-1">

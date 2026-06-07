@@ -136,8 +136,8 @@
 	<section class="mx-auto flex min-h-screen max-w-7xl flex-col justify-center px-6 py-16">
 		<!-- Hero Section -->
 		<div class="max-w-4xl">
-			<div class="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900/95 to-indigo-950/30 p-8 md:p-12">
-				<div class="absolute inset-0 bg-[url('/grid.svg')] opacity-5"></div>
+			<div class="relative overflow-hidden rounded-3xl border border-slate-800 bg-linear-to-br from-slate-900 via-slate-900/95 to-indigo-950/30 p-8 md:p-12">
+				<div class="absolute inset-0 opacity-5 bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] bg-size-[40px_40px]"></div>
 				<div class="relative">
 					<p class="mb-4 text-sm font-semibold tracking-[0.2em] text-indigo-400 uppercase">
 						Instituto Superior de Formación Docente

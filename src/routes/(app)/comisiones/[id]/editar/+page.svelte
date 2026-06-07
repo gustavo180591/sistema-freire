@@ -4,8 +4,11 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	let selectedCareer = $state(data.commission.careerId || '');
-	let selectedStudyPlan = $state(data.commission.studyPlanId || '');
+	const initialCareerId = $derived(data.commission.careerId || '');
+	const initialStudyPlanId = $derived(data.commission.studyPlanId || '');
+
+	let selectedCareer = $state(initialCareerId);
+	let selectedStudyPlan = $state(initialStudyPlanId);
 
 	// Filtrar planes por carrera seleccionada
 	const filteredStudyPlans = $derived(
@@ -36,6 +39,7 @@
 			<a
 				href="/comisiones/{data.commission.id}"
 				class="rounded-xl border border-slate-700 p-2 text-slate-400 hover:bg-slate-800 transition"
+				aria-label="Volver al detalle de comisión"
 			>
 				<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -68,8 +72,9 @@
 			<div class="grid gap-6 md:grid-cols-2">
 				<!-- Código -->
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Código <span class="text-red-400">*</span></label>
+					<label for="code" class="mb-2 block text-sm font-medium text-slate-300">Código <span class="text-red-400">*</span></label>
 					<input
+						id="code"
 						type="text"
 						name="code"
 						required
@@ -81,8 +86,9 @@
 
 				<!-- Materia -->
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Materia <span class="text-red-400">*</span></label>
+					<label for="subjectId" class="mb-2 block text-sm font-medium text-slate-300">Materia <span class="text-red-400">*</span></label>
 					<select
+						id="subjectId"
 						name="subjectId"
 						required
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
@@ -98,8 +104,9 @@
 
 				<!-- Carrera -->
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Carrera</label>
+					<label for="careerId" class="mb-2 block text-sm font-medium text-slate-300">Carrera</label>
 					<select
+						id="careerId"
 						name="careerId"
 						bind:value={selectedCareer}
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
@@ -115,8 +122,9 @@
 
 				<!-- Plan de Estudio -->
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Plan de Estudio</label>
+					<label for="studyPlanId" class="mb-2 block text-sm font-medium text-slate-300">Plan de Estudio</label>
 					<select
+						id="studyPlanId"
 						name="studyPlanId"
 						bind:value={selectedStudyPlan}
 						disabled={!selectedCareer}
@@ -133,8 +141,9 @@
 
 				<!-- Período Lectivo -->
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Período Lectivo <span class="text-red-400">*</span></label>
+					<label for="academicTermId" class="mb-2 block text-sm font-medium text-slate-300">Período Lectivo <span class="text-red-400">*</span></label>
 					<select
+						id="academicTermId"
 						name="academicTermId"
 						required
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
@@ -150,8 +159,9 @@
 
 				<!-- Docente -->
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Docente</label>
+					<label for="teacherId" class="mb-2 block text-sm font-medium text-slate-300">Docente</label>
 					<select
+						id="teacherId"
 						name="teacherId"
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
 					>
@@ -166,8 +176,9 @@
 
 				<!-- Localidad -->
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Localidad</label>
+					<label for="locationId" class="mb-2 block text-sm font-medium text-slate-300">Localidad</label>
 					<select
+						id="locationId"
 						name="locationId"
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
 					>
@@ -182,8 +193,9 @@
 
 				<!-- Cupo Máximo -->
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Cupo Máximo <span class="text-red-400">*</span></label>
+					<label for="maxCapacity" class="mb-2 block text-sm font-medium text-slate-300">Cupo Máximo <span class="text-red-400">*</span></label>
 					<input
+						id="maxCapacity"
 						type="number"
 						name="maxCapacity"
 						required
@@ -196,8 +208,9 @@
 
 				<!-- Estado -->
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Estado</label>
+					<label for="active" class="mb-2 block text-sm font-medium text-slate-300">Estado</label>
 					<select
+						id="active"
 						name="active"
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
 					>
@@ -209,8 +222,9 @@
 
 			<!-- Horario -->
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Horario</label>
+				<label for="schedule" class="mb-2 block text-sm font-medium text-slate-300">Horario</label>
 				<input
+					id="schedule"
 					type="text"
 					name="schedule"
 					value={data.commission.schedule || ''}
@@ -221,8 +235,9 @@
 
 			<!-- Observaciones -->
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Observaciones</label>
+				<label for="observations" class="mb-2 block text-sm font-medium text-slate-300">Observaciones</label>
 				<textarea
+					id="observations"
 					name="observations"
 					placeholder="Notas adicionales sobre la comisión..."
 					rows="3"

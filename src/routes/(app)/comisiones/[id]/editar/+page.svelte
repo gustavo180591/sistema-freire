@@ -1,14 +1,12 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
 	import { enhance } from '$app/forms';
+	import { untrack } from 'svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	const initialCareerId = $derived(data.commission.careerId || '');
-	const initialStudyPlanId = $derived(data.commission.studyPlanId || '');
-
-	let selectedCareer = $state(initialCareerId);
-	let selectedStudyPlan = $state(initialStudyPlanId);
+	let selectedCareer = $state(untrack(() => data.commission.careerId || ''));
+	let selectedStudyPlan = $state(untrack(() => data.commission.studyPlanId || ''));
 
 	// Filtrar planes por carrera seleccionada
 	const filteredStudyPlans = $derived(

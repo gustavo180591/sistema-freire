@@ -8,42 +8,38 @@ datasource db {
 }
 
 model User {
-  id           String          @id @default(cuid())
-  email        String          @unique
-  passwordHash String
-  firstName    String
-  lastName     String
-  status       UserStatus      @default(ACTIVE)
-  phone        String?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  auditLogs    AuditLog[]
-  payments     Payment[]
-  scholarships Scholarship[]
-  sessions     Session[]
-  charges      StudentCharge[]
-  student      Student?
-  teacher      Teacher?
-  roles        UserRole[]
-  uploadedDocs StudentDocument[] @relation("UploadedBy")
-  verifiedDocs StudentDocument[] @relation("VerifiedBy")
-  createdFollowUps StudentFollowUp[] @relation("FollowUpCreator")
-  resolvedFollowUps StudentFollowUp[] @relation("FollowUpResolver")
-  uploadedMaterials ClassMaterial[] @relation("MaterialUploader")
-  createdEvaluations Evaluation[] @relation("EvaluationCreator")
-  locationPermissions UserLocationPermission[]
-  uploadedPayslips Payslip[] @relation("PayslipUploader")
-  deletedPayslips Payslip[] @relation("PayslipDeleter")
-
-  // Bloqueo por intentos fallidos
-  failedLoginAttempts Int       @default(0)
+  id                  String                   @id @default(cuid())
+  email               String                   @unique
+  passwordHash        String
+  firstName           String
+  lastName            String
+  status              UserStatus               @default(ACTIVE)
+  phone               String?
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  failedLoginAttempts Int                      @default(0)
   lockedUntil         DateTime?
   lastFailedAttempt   DateTime?
-
-  // 2FA TOTP
-  totpSecret  String?   // Secreto para generar códigos (encriptado)
-  totpEnabled Boolean   @default(false)
-  totpVerified Boolean  @default(false) // Verificado tras setup inicial
+  totpSecret          String?
+  totpEnabled         Boolean                  @default(false)
+  totpVerified        Boolean                  @default(false)
+  auditLogs           AuditLog[]
+  uploadedMaterials   ClassMaterial[]          @relation("MaterialUploader")
+  createdEvaluations  Evaluation[]             @relation("EvaluationCreator")
+  payments            Payment[]
+  deletedPayslips     Payslip[]                @relation("PayslipDeleter")
+  uploadedPayslips    Payslip[]                @relation("PayslipUploader")
+  scholarships        Scholarship[]
+  sessions            Session[]
+  charges             StudentCharge[]
+  uploadedDocs        StudentDocument[]        @relation("UploadedBy")
+  verifiedDocs        StudentDocument[]        @relation("VerifiedBy")
+  createdFollowUps    StudentFollowUp[]        @relation("FollowUpCreator")
+  resolvedFollowUps   StudentFollowUp[]        @relation("FollowUpResolver")
+  student             Student?
+  teacher             Teacher?
+  locationPermissions UserLocationPermission[]
+  roles               UserRole[]
 
   @@index([lastName, firstName])
   @@map("users")
@@ -85,22 +81,22 @@ model Session {
 }
 
 model Career {
-  id              String         @id @default(cuid())
-  code            String         @unique @default(uuid())
-  name            String
-  trainingField   TrainingField? // Campo de formación (opcional)
-  resolution      String?        // Resolución ministerial
-  durationYears   Int            @default(4)
-  active          Boolean        @default(true)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  students        Student[]
-  studyPlans      StudyPlan[]
-  careerSubjects  CareerSubject[] // Materias específicas de esta carrera
-  subjectCorrelatives SubjectCorrelative[] // Correlativas específicas de carrera
-  locations       CareerLocation[] // Relación N:M con localidades
-  commissions     SubjectCommission[] // Comisiones de materias
-  enrollments     SubjectEnrollment[] // Inscripciones a materias
+  id                  String               @id @default(cuid())
+  code                String               @unique @default(uuid())
+  name                String
+  trainingField       TrainingField?
+  resolution          String?
+  durationYears       Int                  @default(4)
+  active              Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  locations           CareerLocation[]
+  careerSubjects      CareerSubject[]
+  students            Student[]
+  studyPlans          StudyPlan[]
+  commissions         SubjectCommission[]
+  subjectCorrelatives SubjectCorrelative[]
+  enrollments         SubjectEnrollment[]
 
   @@index([active])
   @@map("careers")
@@ -125,66 +121,57 @@ model AuditLog {
 }
 
 model Student {
-  id                String                 @id @default(cuid())
-  userId            String                 @unique
-  dni               String                 @unique
-  firstName         String
-  lastName          String
-  status            StudentStatus          @default(ACTIVE)
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
-  careerId          String
-  currentYear       Int                    @default(1)
-  isBecado          Boolean                @default(false)
-  isRecursante      Boolean                @default(false)
-
-  // Datos personales adicionales
-  birthDate         DateTime?
-  bloodType         String?
-
-  // Contactos
-  phone             String?
-  familyContactName    String?
-  familyContactPhone   String?
-  familyRelationship   String?
-
-  // Domicilio
-  address           String?
-  locality          String?
-  postalCode        String?
-
-  // Educativos
-  highSchool        String?
-  highSchoolYear    Int?
-  instituteYear     Int?
-
-  attendanceEntries AttendanceEntry[]
-  grades            Grade[]
-  payments          Payment[]
-  scholarships      Scholarship[]
-  studentCharges    StudentCharge[]
-  subjectStatuses   StudentSubjectStatus[]
-  documents         StudentDocument[]
-  followUps         StudentFollowUp[]
-  academicHistory   AcademicYearHistory[]
-  enrollments       SubjectEnrollment[]    // Inscripciones a materias
-  career            Career                 @relation(fields: [careerId], references: [id])
-  user              User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String                 @id @default(cuid())
+  userId             String                 @unique
+  dni                String                 @unique
+  firstName          String
+  lastName           String
+  status             StudentStatus          @default(ACTIVE)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  careerId           String
+  currentYear        Int                    @default(1)
+  isBecado           Boolean                @default(false)
+  isRecursante       Boolean                @default(false)
+  birthDate          DateTime?
+  bloodType          String?
+  phone              String?
+  familyContactName  String?
+  familyContactPhone String?
+  familyRelationship String?
+  address            String?
+  locality           String?
+  postalCode         String?
+  highSchool         String?
+  highSchoolYear     Int?
+  instituteYear      Int?
+  academicHistory    AcademicYearHistory[]
+  attendanceEntries  AttendanceEntry[]
+  grades             Grade[]
+  payments           Payment[]
+  scholarships       Scholarship[]
+  studentCharges     StudentCharge[]
+  documents          StudentDocument[]
+  followUps          StudentFollowUp[]
+  subjectStatuses    StudentSubjectStatus[]
+  career             Career                 @relation(fields: [careerId], references: [id])
+  user               User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollments        SubjectEnrollment[]
 
   @@index([lastName, firstName])
   @@map("students")
 }
 
 model AcademicYearHistory {
-  id          String              @id @default(cuid())
-  studentId   String
-  year        Int                 // Año académico (ej: 2024)
-  careerId    String
-  status      AcademicYearStatus  @default(ENROLLED)
+  id           String             @id @default(cuid())
+  studentId    String
+  year         Int
+  careerId     String
+  status       AcademicYearStatus @default(ENROLLED)
   observations String?
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  student     Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  student      Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, year])
   @@index([studentId, year])
@@ -193,20 +180,20 @@ model AcademicYearHistory {
 }
 
 model Teacher {
-  id          String              @id @default(cuid())
-  userId      String              @unique
-  dni         String              @unique
-  firstName   String
-  lastName    String
-  status      TeacherStatus       @default(ACTIVE)
-  hireDate    DateTime?
+  id           String              @id @default(cuid())
+  userId       String              @unique
+  dni          String              @unique
+  firstName    String
+  lastName     String
+  status       TeacherStatus       @default(ACTIVE)
+  hireDate     DateTime?
   observations String?
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  subjects    SubjectTeacher[]
-  payslips    Payslip[]
-  commissions SubjectCommission[]
-  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  payslips     Payslip[]
+  commissions  SubjectCommission[]
+  subjects     SubjectTeacher[]
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([lastName, firstName])
   @@index([status])
@@ -214,49 +201,35 @@ model Teacher {
 }
 
 model Subject {
-  id               String              @id @default(cuid())
-  code             String              @unique
-  name             String
-
-  // Clasificación curricular
-  subjectType      SubjectType         // COMMON, CAREER_SPECIFIC, EDI
-  trainingField    TrainingField       // GENERAL, ESPECIFICA, PRACTICA, EDI
-  yearLevel        Int                 // Año académico (1-4)
-
-  // Modalidad de acreditación
-  accreditationMode AccreditationMode @default(EXAMEN_FINAL)
-
-  // Umbrales de calificación para materias anuales
-  approvalThreshold    Decimal @default(6) @db.Decimal(3, 2)  // Nota mínima para aprobar (regular)
-  promotionThreshold   Decimal @default(8) @db.Decimal(3, 2)  // Nota mínima para promocionar
-  isAnnual             Boolean @default(true)                // Indica si es materia anual
-
-  // Metadatos académicos
-  hoursPerWeek     Int?                // Horas cátedra semanales
-  isElective       Boolean             @default(false)
-  isRemedial       Boolean             @default(false) // Para recursantes
-  description      String?
-
-  // Control
-  active           Boolean             @default(true)
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-
-  // Relaciones
-  careerSubjects   CareerSubject[]     // Carreras donde se dicta
-  planSubjects     PlanSubject[]
-  statuses         StudentSubjectStatus[]
-  teachers         SubjectTeacher[]    // Docentes asignados a la materia
-  attendanceRecords AttendanceRecord[]
-  grades           Grade[]
-  materials        ClassMaterial[]
-  evaluations      Evaluation[]
-  commissions      SubjectCommission[]  // Comisiones de cursado
-  enrollments      SubjectEnrollment[]  // Inscripciones a materias
-
-  // Correlatividades
-  correlatives     SubjectCorrelative[] @relation("subject_correlatives")
-  requiredBy       SubjectCorrelative[] @relation("subject_required")
+  id                 String                 @id @default(cuid())
+  code               String                 @unique
+  name               String
+  subjectType        SubjectType
+  trainingField      TrainingField
+  yearLevel          Int
+  accreditationMode  AccreditationMode      @default(EXAMEN_FINAL)
+  approvalThreshold  Decimal                @default(6) @db.Decimal(3, 2)
+  promotionThreshold Decimal                @default(8) @db.Decimal(3, 2)
+  isAnnual           Boolean                @default(true)
+  hoursPerWeek       Int?
+  isElective         Boolean                @default(false)
+  isRemedial         Boolean                @default(false)
+  description        String?
+  active             Boolean                @default(true)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  attendanceRecords  AttendanceRecord[]
+  careerSubjects     CareerSubject[]
+  materials          ClassMaterial[]
+  evaluations        Evaluation[]
+  grades             Grade[]
+  planSubjects       PlanSubject[]
+  statuses           StudentSubjectStatus[]
+  commissions        SubjectCommission[]
+  requiredBy         SubjectCorrelative[]   @relation("subject_required")
+  correlatives       SubjectCorrelative[]   @relation("subject_correlatives")
+  enrollments        SubjectEnrollment[]
+  teachers           SubjectTeacher[]
 
   @@index([subjectType, yearLevel])
   @@index([trainingField, yearLevel])
@@ -275,23 +248,18 @@ model SubjectTeacher {
 }
 
 model SubjectCorrelative {
-  id                String           @id @default(cuid())
-  subjectId         String           // Materia que tiene la correlativa
-  requiredSubjectId String           // Materia requerida
-  correlativeType   CorrelativeType  // Tipo de correlatividad
-  
-  // Opcional: solo para ciertas carreras (null = todas)
+  id                String          @id @default(cuid())
+  subjectId         String
+  requiredSubjectId String
+  correlativeType   CorrelativeType
   careerId          String?
-  
-  isActive          Boolean          @default(true)
+  isActive          Boolean         @default(true)
   notes             String?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-
-  // Relaciones
-  subject           Subject          @relation("subject_correlatives", fields: [subjectId], references: [id], onDelete: Cascade)
-  requiredSubject   Subject          @relation("subject_required", fields: [requiredSubjectId], references: [id], onDelete: Cascade)
-  career            Career?          @relation(fields: [careerId], references: [id])
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  career            Career?         @relation(fields: [careerId], references: [id])
+  requiredSubject   Subject         @relation("subject_required", fields: [requiredSubjectId], references: [id], onDelete: Cascade)
+  subject           Subject         @relation("subject_correlatives", fields: [subjectId], references: [id], onDelete: Cascade)
 
   @@unique([subjectId, requiredSubjectId, careerId])
   @@index([subjectId, correlativeType])
@@ -299,19 +267,16 @@ model SubjectCorrelative {
   @@map("subject_correlatives")
 }
 
-// Relación N:M entre Carrera y Materia (materias específicas)
 model CareerSubject {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   careerId    String
   subjectId   String
-  isMandatory Boolean   @default(true) // Obligatoria u optativa
-  yearLevel   Int       // Año específico en esta carrera
-  
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  career      Career    @relation(fields: [careerId], references: [id], onDelete: Cascade)
-  subject     Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  isMandatory Boolean  @default(true)
+  yearLevel   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  career      Career   @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
   @@unique([careerId, subjectId])
   @@index([careerId, yearLevel])
@@ -323,12 +288,18 @@ model AttendanceRecord {
   id              String            @id @default(cuid())
   subjectId       String
   classDate       DateTime
+  commissionId    String?           // Opcional para mantener compatibilidad con carga por materia
   createdByUserId String
   createdAt       DateTime          @default(now())
   entries         AttendanceEntry[]
   subject         Subject           @relation(fields: [subjectId], references: [id])
+  commission      SubjectCommission? @relation(fields: [commissionId], references: [id])
 
-  @@unique([subjectId, classDate])
+  // Constraint único: (subjectId, classDate, commissionId)
+  // NOTA: En PostgreSQL, NULL en columnas únicas permite duplicados.
+  // Cuando commissionId es NULL, múltiples registros con mismo (subjectId, classDate) son permitidos.
+  // Esto se mitige con validación backend en las acciones de creación de asistencia.
+  @@unique([subjectId, classDate, commissionId])
   @@map("attendance_records")
 }
 
@@ -347,15 +318,15 @@ model AttendanceEntry {
 }
 
 model Grade {
-  id              String     @id @default(cuid())
+  id              String   @id @default(cuid())
   subjectId       String
   studentId       String
-  value           Decimal    @db.Decimal(5, 2)
+  value           Decimal  @db.Decimal(5, 2)
   gradeType       String
-  gradedAt        DateTime   @default(now())
+  gradedAt        DateTime @default(now())
   createdByUserId String
-  subject         Subject    @relation(fields: [subjectId], references: [id])
-  student         Student    @relation(fields: [studentId], references: [id])
+  student         Student  @relation(fields: [studentId], references: [id])
+  subject         Subject  @relation(fields: [subjectId], references: [id])
 
   @@index([studentId, subjectId])
   @@map("grades")
@@ -368,9 +339,9 @@ model StudentSubjectStatus {
   attendancePercent Decimal          @default(0) @db.Decimal(5, 2)
   regularityStatus  RegularityStatus @default(LIBRE)
   approved          Boolean          @default(false)
-  promoted          Boolean          @default(false)  // Promocionado con nota >= threshold
-  finalGrade        Decimal?                      @db.Decimal(5, 2)  // Nota final del año
-  promotionDate     DateTime?                     // Fecha de promoción
+  promoted          Boolean          @default(false)
+  finalGrade        Decimal?         @db.Decimal(5, 2)
+  promotionDate     DateTime?
   updatedAt         DateTime         @updatedAt
   student           Student          @relation(fields: [studentId], references: [id])
   subject           Subject          @relation(fields: [subjectId], references: [id])
@@ -382,17 +353,17 @@ model StudentSubjectStatus {
 }
 
 model StudyPlan {
-  id            String        @id @default(cuid())
+  id            String              @id @default(cuid())
   careerId      String
   name          String
   version       String
-  isDefault     Boolean       @default(false)
-  active        Boolean       @default(true)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  durationYears Int           @default(4)
+  isDefault     Boolean             @default(false)
+  active        Boolean             @default(true)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  durationYears Int                 @default(4)
   subjects      PlanSubject[]
-  career        Career        @relation(fields: [careerId], references: [id])
+  career        Career              @relation(fields: [careerId], references: [id])
   commissions   SubjectCommission[]
   enrollments   SubjectEnrollment[]
 
@@ -425,24 +396,24 @@ model ChargeConcept {
 }
 
 model StudentCharge {
-  id          String              @id @default(cuid())
-  studentId   String
-  conceptId   String
-  periodLabel String
-  amount      Decimal             @db.Decimal(12, 2)
-  paidAmount  Decimal             @default(0) @db.Decimal(12, 2)
-  dueDate     DateTime?
-  status      ChargeStatus        @default(PENDING)
-  notes       String?
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  userId      String?
+  id             String              @id @default(cuid())
+  studentId      String
+  conceptId      String
+  periodLabel    String
+  amount         Decimal             @db.Decimal(12, 2)
+  paidAmount     Decimal             @default(0) @db.Decimal(12, 2)
+  dueDate        DateTime?
+  status         ChargeStatus        @default(PENDING)
+  notes          String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  userId         String?
   academicTermId String?
-  allocations PaymentAllocation[]
-  concept     ChargeConcept       @relation(fields: [conceptId], references: [id])
-  student     Student             @relation(fields: [studentId], references: [id])
-  user        User?               @relation(fields: [userId], references: [id])
-  academicTerm AcademicTerm?       @relation(fields: [academicTermId], references: [id])
+  allocations    PaymentAllocation[]
+  academicTerm   AcademicTerm?       @relation(fields: [academicTermId], references: [id])
+  concept        ChargeConcept       @relation(fields: [conceptId], references: [id])
+  student        Student             @relation(fields: [studentId], references: [id])
+  user           User?               @relation(fields: [userId], references: [id])
 
   @@index([studentId, status])
   @@index([periodLabel])
@@ -451,20 +422,20 @@ model StudentCharge {
 }
 
 model Payment {
-  id          String              @id @default(cuid())
-  studentId   String
-  amount      Decimal             @db.Decimal(12, 2)
-  method      PaymentMethod
-  reference   String?
-  paidAt      DateTime            @default(now())
-  notes       String?
-  createdAt   DateTime            @default(now())
-  userId      String?
+  id             String              @id @default(cuid())
+  studentId      String
+  amount         Decimal             @db.Decimal(12, 2)
+  method         PaymentMethod
+  reference      String?
+  paidAt         DateTime            @default(now())
+  notes          String?
+  createdAt      DateTime            @default(now())
+  userId         String?
   academicTermId String?
-  allocations PaymentAllocation[]
-  student     Student             @relation(fields: [studentId], references: [id])
-  user        User?               @relation(fields: [userId], references: [id])
-  academicTerm AcademicTerm?       @relation(fields: [academicTermId], references: [id])
+  allocations    PaymentAllocation[]
+  academicTerm   AcademicTerm?       @relation(fields: [academicTermId], references: [id])
+  student        Student             @relation(fields: [studentId], references: [id])
+  user           User?               @relation(fields: [userId], references: [id])
 
   @@index([studentId, paidAt])
   @@index([academicTermId])
@@ -507,26 +478,270 @@ model Payslip {
   periodYear       Int
   amount           Decimal       @db.Decimal(12, 2)
   status           PayslipStatus @default(PENDING)
-  fileUrl          String?       // Mantenido para compatibilidad, no usado como URL pública
-  fileKey          String?       // Clave interna en storage privado
-  fileSize         Int?          // Tamaño en bytes
-  mimeType         String?       // Tipo MIME validado
-  originalFileName String?       // Nombre original del archivo subido
+  fileUrl          String?
+  fileKey          String?
+  fileSize         Int?
+  mimeType         String?
+  originalFileName String?
   notes            String?
-  uploadedBy       String?       // ID del usuario que cargó el recibo
-  deletedAt        DateTime?     // Eliminación lógica
-  deletedBy        String?       // ID del usuario que eliminó el recibo
+  uploadedBy       String?
+  deletedAt        DateTime?
+  deletedBy        String?
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
+  deleter          User?         @relation("PayslipDeleter", fields: [deletedBy], references: [id])
   teacher          Teacher       @relation(fields: [teacherId], references: [id])
   uploader         User?         @relation("PayslipUploader", fields: [uploadedBy], references: [id])
-  deleter          User?         @relation("PayslipDeleter", fields: [deletedBy], references: [id])
 
   @@unique([teacherId, periodMonth, periodYear])
   @@index([teacherId, periodYear, periodMonth])
   @@index([uploadedBy])
   @@index([deletedAt])
   @@map("payslips")
+}
+
+model Permission {
+  id        String   @id @default(cuid())
+  roleCode  RoleCode
+  entity    String
+  canCreate Boolean  @default(false)
+  canRead   Boolean  @default(true)
+  canUpdate Boolean  @default(false)
+  canDelete Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([roleCode, entity])
+  @@index([roleCode])
+  @@index([entity])
+  @@map("permissions")
+}
+
+model Location {
+  id              String                   @id @default(cuid())
+  name            String                   @unique
+  code            String                   @unique
+  address         String?
+  city            String?
+  province        String?
+  phone           String?
+  email           String?
+  active          Boolean                  @default(true)
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  academicTerms   AcademicTerm[]
+  careers         CareerLocation[]
+  commissions     SubjectCommission[]
+  userPermissions UserLocationPermission[]
+
+  @@index([active])
+  @@map("locations")
+}
+
+model CareerLocation {
+  id         String   @id @default(cuid())
+  careerId   String
+  locationId String
+  createdAt  DateTime @default(now())
+  career     Career   @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([careerId, locationId])
+  @@index([careerId])
+  @@index([locationId])
+  @@map("career_locations")
+}
+
+model UserLocationPermission {
+  id         String   @id @default(cuid())
+  userId     String
+  locationId String
+  createdAt  DateTime @default(now())
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, locationId])
+  @@index([userId])
+  @@index([locationId])
+  @@map("user_location_permissions")
+}
+
+model AcademicTerm {
+  id          String              @id @default(cuid())
+  name        String
+  code        String              @unique
+  year        Int
+  termType    TermType
+  startDate   DateTime
+  endDate     DateTime
+  active      Boolean             @default(true)
+  locationId  String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  location    Location?           @relation(fields: [locationId], references: [id])
+  payments    Payment[]
+  charges     StudentCharge[]
+  commissions SubjectCommission[]
+  enrollments SubjectEnrollment[]
+
+  @@index([year, active])
+  @@index([locationId, active])
+  @@map("academic_terms")
+}
+
+model StudentDocument {
+  id         String       @id @default(cuid())
+  studentId  String
+  type       DocumentType
+  name       String
+  fileUrl    String
+  fileSize   Int?
+  mimeType   String?
+  uploadedBy String
+  verified   Boolean      @default(false)
+  verifiedBy String?
+  verifiedAt DateTime?
+  notes      String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  student    Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  uploader   User         @relation("UploadedBy", fields: [uploadedBy], references: [id])
+  verifier   User?        @relation("VerifiedBy", fields: [verifiedBy], references: [id])
+
+  @@index([studentId, type])
+  @@map("student_documents")
+}
+
+model StudentFollowUp {
+  id          String       @id @default(cuid())
+  studentId   String
+  type        FollowUpType
+  title       String
+  description String
+  date        DateTime     @default(now())
+  createdBy   String
+  isAlert     Boolean      @default(false)
+  isResolved  Boolean      @default(false)
+  resolvedAt  DateTime?
+  resolvedBy  String?
+  attachments String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  creator     User         @relation("FollowUpCreator", fields: [createdBy], references: [id])
+  resolver    User?        @relation("FollowUpResolver", fields: [resolvedBy], references: [id])
+  student     Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, date])
+  @@index([studentId, type])
+  @@map("student_followups")
+}
+
+model ClassMaterial {
+  id          String   @id @default(cuid())
+  subjectId   String
+  title       String
+  description String?
+  fileUrl     String
+  fileSize    Int?
+  mimeType    String?
+  uploadedBy  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  uploader    User     @relation("MaterialUploader", fields: [uploadedBy], references: [id])
+
+  @@index([subjectId])
+  @@index([uploadedBy])
+  @@map("class_materials")
+}
+
+model Evaluation {
+  id          String    @id @default(cuid())
+  subjectId   String
+  title       String
+  description String?
+  type        String
+  date        DateTime?
+  maxScore    Float     @default(10)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String
+  creator     User      @relation("EvaluationCreator", fields: [createdBy], references: [id])
+  subject     Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@index([subjectId])
+  @@index([createdBy])
+  @@map("evaluations")
+}
+
+model SubjectCommission {
+  id                String              @id @default(cuid())
+  code              String              @unique
+  subjectId         String
+  academicTermId    String?
+  careerId          String?
+  studyPlanId       String?
+  teacherId         String?
+  locationId        String?
+  maxCapacity       Int                 @default(40)
+  currentEnrolled   Int                 @default(0)
+  schedule          String?
+  scheduleJson      Json?
+  active            Boolean             @default(true)
+  observations      String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  attendanceRecords AttendanceRecord[]
+  academicTerm      AcademicTerm?       @relation(fields: [academicTermId], references: [id])
+  career            Career?             @relation(fields: [careerId], references: [id])
+  location          Location?           @relation(fields: [locationId], references: [id])
+  studyPlan         StudyPlan?          @relation(fields: [studyPlanId], references: [id])
+  subject           Subject             @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher           Teacher?            @relation(fields: [teacherId], references: [id])
+  enrollments       SubjectEnrollment[]
+
+  @@index([subjectId, active])
+  @@index([academicTermId, active])
+  @@index([careerId, active])
+  @@index([teacherId])
+  @@map("subject_commissions")
+}
+
+model SubjectEnrollment {
+  id                 String             @id @default(cuid())
+  studentId          String
+  subjectId          String
+  commissionId       String?
+  careerId           String
+  studyPlanId        String?
+  academicTermId     String?
+  status             EnrollmentStatus   @default(PENDING)
+  enrolledAt         DateTime           @default(now())
+  confirmedAt        DateTime?
+  cancelledAt        DateTime?
+  rejectedAt         DateTime?
+  rejectionReason    String?
+  cancellationReason String?
+  observations       String?
+  enrolledBy         String?
+  confirmedBy        String?
+  cancelledBy        String?
+  rejectedBy         String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  academicTerm       AcademicTerm?      @relation(fields: [academicTermId], references: [id])
+  career             Career             @relation(fields: [careerId], references: [id])
+  commission         SubjectCommission? @relation(fields: [commissionId], references: [id])
+  student            Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studyPlan          StudyPlan?         @relation(fields: [studyPlanId], references: [id])
+  subject            Subject            @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, subjectId, academicTermId])
+  @@index([studentId, status])
+  @@index([subjectId, status])
+  @@index([commissionId])
+  @@index([academicTermId, status])
+  @@map("subject_enrollments")
 }
 
 enum UserStatus {
@@ -556,24 +771,6 @@ enum AuditAction {
   DOWNLOAD
   BLOCKED_ATTEMPT
   EXPORT
-}
-
-// Permisos granulares por entidad (CRUD)
-model Permission {
-  id           String   @id @default(cuid())
-  roleCode     RoleCode
-  entity       String   // Ej: 'USER', 'STUDENT', 'CAREER', etc.
-  canCreate    Boolean  @default(false)
-  canRead      Boolean  @default(true)
-  canUpdate    Boolean  @default(false)
-  canDelete    Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@unique([roleCode, entity])
-  @@index([roleCode])
-  @@index([entity])
-  @@map("permissions")
 }
 
 enum StudentStatus {
@@ -618,35 +815,31 @@ enum ChargeStatus {
   CANCELLED
 }
 
-// ======================================================
-// CURRICULAR MODEL ENUMS
-// ======================================================
-
 enum TrainingField {
-  GENERAL        // Formación General
-  ESPECIFICA   // Formación Específica
-  PRACTICA     // Prácticas Profesionalizantes
-  EDI          // Espacios de Definición Institucional
+  GENERAL
+  ESPECIFICA
+  PRACTICA
+  EDI
 }
 
 enum SubjectType {
-  COMMON         // Común a todas las carreras
-  CAREER_SPECIFIC // Específica de una carrera
-  EDI            // Parte de Formación General pero identificable como EDI
+  COMMON
+  CAREER_SPECIFIC
+  EDI
 }
 
 enum CorrelativeType {
-  REGULAR          // Para cursar regular
-  APROBADO         // Para cursar (requiere aprobación final)
-  LIBRE            // Para cursar libre
-  EQUIVALENCIA     // Equivalencia con otra materia
-  APROBADO_APROBAR // Para aprobar deberá haber aprobado
+  REGULAR
+  APROBADO
+  LIBRE
+  EQUIVALENCIA
+  APROBADO_APROBAR
 }
 
 enum AccreditationMode {
-  PROMOCIONAL           // Promoción directa
-  EXAMEN_FINAL          // Requiere final
-  PROMOCIONAL_SIN_FINAL // Promoción + final obligatorio
+  PROMOCIONAL
+  EXAMEN_FINAL
+  PROMOCIONAL_SIN_FINAL
 }
 
 enum PaymentMethod {
@@ -674,116 +867,12 @@ enum DocumentType {
   OTHER
 }
 
-// ======================================================
-// LOCATION MODEL - Para separar sedes/localidades
-// ======================================================
-
-model Location {
-  id          String    @id @default(cuid())
-  name        String    @unique  // Ej: "Sede Central", "Anexo Norte"
-  code        String    @unique  // Código corto para referencias
-  address     String?
-  city        String?
-  province    String?
-  phone       String?
-  email       String?
-  active      Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  careers     CareerLocation[] // Relación N:M con carreras
-  userPermissions UserLocationPermission[]
-  academicTerms AcademicTerm[]
-  commissions SubjectCommission[]
-
-  @@index([active])
-  @@map("locations")
-}
-
-// Tabla intermedia para relación N:M Career-Location
-model CareerLocation {
-  id         String   @id @default(cuid())
-  careerId   String
-  locationId String
-  createdAt  DateTime @default(now())
-  career     Career   @relation(fields: [careerId], references: [id], onDelete: Cascade)
-  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
-
-  @@unique([careerId, locationId])
-  @@index([careerId])
-  @@index([locationId])
-  @@map("career_locations")
-}
-
-model UserLocationPermission {
-  id         String   @id @default(cuid())
-  userId     String
-  locationId String
-  createdAt  DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, locationId])
-  @@index([userId])
-  @@index([locationId])
-  @@map("user_location_permissions")
-}
-
-// ======================================================
-// ACADEMIC TERM MODEL - Períodos lectivos
-// ======================================================
-
-model AcademicTerm {
-  id          String          @id @default(cuid())
-  name        String          // Ej: "2024 - 1° Cuatrimestre"
-  code        String          @unique  // Ej: "2024-1C"
-  year        Int
-  termType    TermType        // ANUAL, 1C, 2C, etc.
-  startDate   DateTime
-  endDate     DateTime
-  active      Boolean         @default(true)
-  locationId  String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  charges     StudentCharge[]
-  payments    Payment[]
-  location    Location?       @relation(fields: [locationId], references: [id])
-  commissions SubjectCommission[]
-  enrollments SubjectEnrollment[]
-
-  @@index([year, active])
-  @@index([locationId, active])
-  @@map("academic_terms")
-}
-
 enum TermType {
-  ANUAL        // Año completo
-  PRIMER_CUATRIMESTRE  // 1° Cuatrimestre
-  SEGUNDO_CUATRIMESTRE // 2° Cuatrimestre
-  VERANO       // Curso de verano
-  ESPECIAL     // Período especial
-}
-
-model StudentDocument {
-  id          String       @id @default(cuid())
-  studentId   String
-  type        DocumentType
-  name        String
-  fileUrl     String
-  fileSize    Int?         // Tamaño en bytes
-  mimeType    String?      // Tipo MIME
-  uploadedBy  String
-  verified    Boolean      @default(false)
-  verifiedBy  String?
-  verifiedAt  DateTime?
-  notes       String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  student     Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  uploader    User         @relation("UploadedBy", fields: [uploadedBy], references: [id])
-  verifier    User?        @relation("VerifiedBy", fields: [verifiedBy], references: [id])
-
-  @@index([studentId, type])
-  @@map("student_documents")
+  ANUAL
+  PRIMER_CUATRIMESTRE
+  SEGUNDO_CUATRIMESTRE
+  VERANO
+  ESPECIAL
 }
 
 enum FollowUpType {
@@ -794,158 +883,4 @@ enum FollowUpType {
   INCIDENT
   ACHIEVEMENT
   NOTE
-}
-
-model StudentFollowUp {
-  id          String       @id @default(cuid())
-  studentId   String
-  type        FollowUpType
-  title       String
-  description String
-  date        DateTime     @default(now())
-  createdBy   String
-  isAlert     Boolean      @default(false)  // Destacar como alerta/importante
-  isResolved  Boolean      @default(false)   // Para alertas: ya fue resuelta
-  resolvedAt  DateTime?
-  resolvedBy  String?
-  attachments String?      // URLs de archivos adjuntos separados por coma
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  student     Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  creator     User         @relation("FollowUpCreator", fields: [createdBy], references: [id])
-  resolver    User?        @relation("FollowUpResolver", fields: [resolvedBy], references: [id])
-
-  @@index([studentId, date])
-  @@index([studentId, type])
-  @@map("student_followups")
-}
-
-model ClassMaterial {
-  id         String     @id @default(cuid())
-  subjectId  String
-  title      String
-  description String?
-  fileUrl    String
-  fileSize   Int?       // Tamaño en bytes
-  mimeType   String?    // Tipo MIME
-  uploadedBy String
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  subject    Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  uploader   User       @relation("MaterialUploader", fields: [uploadedBy], references: [id])
-
-  @@index([subjectId])
-  @@index([uploadedBy])
-  @@map("class_materials")
-}
-
-model Evaluation {
-  id         String     @id @default(cuid())
-  subjectId  String
-  title      String
-  description String?
-  type       String     // PARCIAL, FINAL, RECUPERATORIO, TRABAJO_PRACTICO, EXAMEN
-  date       DateTime?
-  maxScore   Float      @default(10)
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  subject    Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  createdBy  String
-  creator    User       @relation("EvaluationCreator", fields: [createdBy], references: [id])
-
-  @@index([subjectId])
-  @@index([createdBy])
-  @@map("evaluations")
-}
-
-// ======================================================
-// ENROLLMENT MODEL - Inscripciones a materias
-// ======================================================
-
-model SubjectCommission {
-  id              String              @id @default(cuid())
-  code            String              @unique // Código de comisión (ej: "A", "B", "C1")
-  subjectId       String
-  academicTermId  String?             // Período lectivo (opcional para flexibilidad)
-  careerId        String?             // Carrera específica (null si es común)
-  studyPlanId     String?             // Plan de estudio específico
-  teacherId       String?             // Docente responsable
-  locationId      String?             // Localidad/sede
-  
-  // Cupos
-  maxCapacity     Int                 @default(40) // Cupo máximo
-  currentEnrolled Int                 @default(0) // Inscriptos actuales
-  
-  // Horario
-  schedule        String?             // Descripción de horario (ej: "Lunes 14-18")
-  scheduleJson    Json?               // Horario estructurado para futura automatización
-  
-  // Estado
-  active          Boolean             @default(true)
-  observations    String?
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-  
-  // Relaciones
-  subject         Subject             @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  academicTerm    AcademicTerm?       @relation(fields: [academicTermId], references: [id])
-  career          Career?             @relation(fields: [careerId], references: [id])
-  studyPlan       StudyPlan?          @relation(fields: [studyPlanId], references: [id])
-  teacher         Teacher?            @relation(fields: [teacherId], references: [id])
-  location        Location?           @relation(fields: [locationId], references: [id])
-  enrollments     SubjectEnrollment[]
-  
-  @@index([subjectId, active])
-  @@index([academicTermId, active])
-  @@index([careerId, active])
-  @@index([teacherId])
-  @@map("subject_commissions")
-}
-
-model SubjectEnrollment {
-  id              String              @id @default(cuid())
-  studentId       String
-  subjectId       String
-  commissionId    String?             // Comisión asignada (null si no hay comisiones)
-  careerId        String
-  studyPlanId     String?
-  academicTermId  String?
-  
-  // Estado de inscripción
-  status          EnrollmentStatus    @default(PENDING)
-  
-  // Fechas
-  enrolledAt      DateTime            @default(now())
-  confirmedAt     DateTime?
-  cancelledAt     DateTime?
-  rejectedAt      DateTime?
-  
-  // Motivos
-  rejectionReason String?
-  cancellationReason String?
-  observations    String?
-  
-  // Quién realizó la acción
-  enrolledBy      String?             // Usuario que inscribió (null si auto-inscripción)
-  confirmedBy     String?
-  cancelledBy     String?
-  rejectedBy      String?
-  
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-  
-  // Relaciones
-  student         Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  subject         Subject             @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  commission      SubjectCommission?  @relation(fields: [commissionId], references: [id])
-  career          Career              @relation(fields: [careerId], references: [id])
-  studyPlan       StudyPlan?          @relation(fields: [studyPlanId], references: [id])
-  academicTerm    AcademicTerm?       @relation(fields: [academicTermId], references: [id])
-  
-  @@unique([studentId, subjectId, academicTermId])
-  @@index([studentId, status])
-  @@index([subjectId, status])
-  @@index([commissionId])
-  @@index([academicTermId, status])
-  @@map("subject_enrollments")
 }

@@ -4,18 +4,29 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	let selectedSubject = $state('');
+	let selectedCommission = $state('');
 	let selectedDate = $state(new Date().toISOString().split('T')[0]);
 	let attendanceData = $state<Array<{ studentId: string; present: boolean; notes?: string }>>([]);
 
 	// Inicializar datos de asistencia cuando se selecciona una materia
 	$effect(() => {
 		if (selectedSubject) {
-			attendanceData = data.students.map(s => ({
+			attendanceData = data.students.map((s: any) => ({
 				studentId: s.id,
 				present: true,
 				notes: ''
 			}));
 		}
+	});
+
+	// Reset commission when subject changes
+	$effect(() => {
+		selectedCommission = '';
+	});
+
+	// Commissions filtered by selected subject
+	let availableCommissions = $derived.by(() => {
+		return data.commissions?.filter((c: any) => c.subjectId === selectedSubject) || [];
 	});
 
 	function toggleAttendance(studentId: string) {
@@ -109,6 +120,25 @@
 					/>
 				</div>
 			</div>
+
+			{#if availableCommissions.length > 0}
+				<div class="mt-4">
+					<label for="commissionId" class="mb-2 block text-sm font-medium text-slate-300">Comisión (opcional)</label>
+					<select
+						id="commissionId"
+						name="commissionId"
+						bind:value={selectedCommission}
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+					>
+						<option value="">Sin comisión</option>
+						{#each availableCommissions as commission}
+							<option value={commission.id}>
+								{commission.code} - {commission.locationName || 'Sin localidad'} {commission.schedule ? `(${commission.schedule})` : ''}
+							</option>
+						{/each}
+					</select>
+				</div>
+			{/if}
 
 			{#if selectedSubject}
 				<div class="mt-4 flex gap-4">

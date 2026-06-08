@@ -4,6 +4,7 @@
 	let { data }: { data: PageData } = $props();
 
 	let selectedSubject = $state<string>('');
+	let selectedCommission = $state<string>('');
 	let selectedDate = $state<string>(new Date().toISOString().split('T')[0]);
 	let attendanceMap = $state<Map<string, boolean>>(new Map());
 	let notesMap = $state<Map<string, string>>(new Map());
@@ -22,11 +23,16 @@
 		}
 	});
 
+	// Reset commission when subject changes
+	$effect(() => {
+		selectedCommission = '';
+	});
+
 	// Initialize attendance map with all students present by default
 	$effect(() => {
 		if (data.students.length > 0) {
 			const newMap = new Map<string, boolean>();
-			data.students.forEach(student => {
+			data.students.forEach((student: any) => {
 				newMap.set(student.id, true);
 			});
 			attendanceMap = newMap;
@@ -39,9 +45,10 @@
 
 	function resetForm() {
 		selectedDate = new Date().toISOString().split('T')[0];
+		selectedCommission = '';
 		attendanceMap = new Map();
 		notesMap = new Map();
-		data.students.forEach(student => {
+		data.students.forEach((student: any) => {
 			attendanceMap.set(student.id, true);
 		});
 		formError = '';
@@ -84,7 +91,7 @@
 
 	function getAttendanceData() {
 		return JSON.stringify(
-			data.students.map(student => ({
+			data.students.map((student: any) => ({
 				studentId: student.id,
 				present: attendanceMap.get(student.id) ?? true,
 				notes: notesMap.get(student.id) || ''
@@ -98,6 +105,11 @@
 
 	let absentCount = $derived.by(() => {
 		return data.students.length - presentCount;
+	});
+
+	// Commissions filtered by selected subject
+	let availableCommissions = $derived.by(() => {
+		return data.commissions?.filter((c: any) => c.subjectId === selectedSubject) || [];
 	});
 </script>
 
@@ -155,6 +167,25 @@
 							/>
 						</div>
 					</div>
+
+					{#if availableCommissions.length > 0}
+						<div>
+							<label for="commission" class="mb-2 block text-sm font-medium text-slate-300">Comisión (opcional)</label>
+							<select
+								id="commission"
+								name="commissionId"
+								bind:value={selectedCommission}
+								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+							>
+								<option value="">Sin comisión</option>
+								{#each availableCommissions as commission}
+									<option value={commission.id}>
+										{commission.code} - {commission.locationName || 'Sin localidad'} {commission.schedule ? `(${commission.schedule})` : ''}
+									</option>
+								{/each}
+							</select>
+						</div>
+					{/if}
 
 					<!-- Resumen de asistencia -->
 					<div class="grid gap-4 md:grid-cols-2">

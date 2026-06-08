@@ -483,3 +483,133 @@ export async function getAvailableSubjects(studentId: string, careerId: string) 
 
   return available.sort((a, b) => a.yearLevel - b.yearLevel);
 }
+
+/**
+ * Umbral de asistencia para regularidad
+ * TODO: Configurable por institución, carrera o materia
+ * Por defecto: 75% de asistencia para ser regular
+ */
+const ATTENDANCE_THRESHOLD = 75;
+
+/**
+ * Calcula el porcentaje de asistencia de un estudiante en una materia
+ * Basado en los registros de AttendanceEntry y AttendanceRecord
+ */
+export async function calculateAttendancePercent(
+  studentId: string,
+  subjectId: string
+): Promise<number> {
+  // Obtener todos los registros de asistencia del estudiante en la materia
+  const attendanceEntries = await prisma.attendanceEntry.findMany({
+    where: {
+      studentId,
+      attendance: {
+        subjectId
+      }
+    },
+    include: {
+      attendance: true
+    }
+  });
+
+  if (attendanceEntries.length === 0) {
+    return 0;
+  }
+
+  // Contar presentes
+  const presentCount = attendanceEntries.filter(entry => entry.present).length;
+  const totalCount = attendanceEntries.length;
+
+  // Calcular porcentaje
+  const percent = (presentCount / totalCount) * 100;
+  return Math.round(percent * 100) / 100; // Redondear a 2 decimales
+}
+
+/**
+ * Actualiza el estado de regularidad basado en asistencia
+ * Debe llamarse automáticamente al cargar o editar asistencia
+ */
+export async function updateAttendanceStatus(
+  studentId: string,
+  subjectId: string
+): Promise<{
+  attendancePercent: number;
+  regularityStatus: 'REGULAR' | 'LIBRE';
+  previousStatus?: 'REGULAR' | 'LIBRE';
+  statusChanged: boolean;
+}> {
+  // Calcular porcentaje de asistencia
+  const attendancePercent = await calculateAttendancePercent(studentId, subjectId);
+
+  // Determinar estado de regularidad basado en umbral
+  const regularityStatus = attendancePercent >= ATTENDANCE_THRESHOLD ? 'REGULAR' : 'LIBRE';
+
+  // Obtener estado anterior
+  const existingStatus = await prisma.studentSubjectStatus.findUnique({
+    where: {
+      studentId_subjectId: {
+        studentId,
+        subjectId
+      }
+    }
+  });
+
+  const previousStatus = existingStatus?.regularityStatus;
+  const statusChanged = previousStatus !== regularityStatus;
+
+  // Actualizar o crear registro
+  if (existingStatus) {
+    await prisma.studentSubjectStatus.update({
+      where: {
+        studentId_subjectId: {
+          studentId,
+          subjectId
+        }
+      },
+      data: {
+        attendancePercent,
+        regularityStatus
+      }
+    });
+  } else {
+    await prisma.studentSubjectStatus.create({
+      data: {
+        studentId,
+        subjectId,
+        attendancePercent,
+        regularityStatus
+      }
+    });
+  }
+
+  return {
+    attendancePercent,
+    regularityStatus,
+    previousStatus,
+    statusChanged
+  };
+}
+
+/**
+ * Actualiza el estado de regularidad para todos los estudiantes de una materia
+ * Útil para recalcular después de correcciones manuales
+ */
+export async function updateAttendanceStatusForSubject(subjectId: string): Promise<void> {
+  // Obtener todos los estudiantes con registros de asistencia en la materia
+  const attendanceEntries = await prisma.attendanceEntry.findMany({
+    where: {
+      attendance: {
+        subjectId
+      }
+    },
+    select: {
+      studentId: true
+    },
+    distinct: ['studentId']
+  });
+
+  // Actualizar cada estudiante
+  for (const entry of attendanceEntries) {
+    await updateAttendanceStatus(entry.studentId, subjectId);
+  }
+}

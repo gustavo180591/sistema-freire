@@ -4,6 +4,7 @@ import { prisma } from '$lib/server/db/prisma';
 import { requireRole, getUserAllowedLocationIds } from '$lib/server/auth/authorization';
 import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
+import { updateAttendanceStatus } from '$lib/server/academic/plan-logic';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	requireRole(locals.user, ['DOCENTE']);
@@ -50,6 +51,20 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	const subjects = subjectTeachers.map(st => st.subject);
+
+	// Obtener comisiones para las materias del docente, filtrando por localidades permitidas
+	const commissions = await prisma.subjectCommission.findMany({
+		where: {
+			subjectId: { in: subjects.map(s => s.id) },
+			active: true,
+			locationId: { in: allowedLocationIds }
+		},
+		include: {
+			subject: true,
+			teacher: true,
+			location: true
+		}
+	});
 
 	// Obtener estudiantes de las carreras de las materias del docente
 	const careerIds = subjects.flatMap(s => s.careerSubjects.map(cs => cs.career.id));
@@ -102,6 +117,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 			yearLevel: s.yearLevel,
 			careers: s.careerSubjects.map(cs => cs.career.name)
 		})),
+		commissions: commissions.map(c => ({
+			id: c.id,
+			code: c.code,
+			subjectId: c.subjectId,
+			subjectName: c.subject.name,
+			teacherId: c.teacherId,
+			teacherName: c.teacher ? `${c.teacher.lastName}, ${c.teacher.firstName}` : null,
+			locationId: c.locationId,
+			locationName: c.location?.name || null,
+			schedule: c.schedule
+		})),
 		students: students.map(s => ({
 			id: s.id,
 			dni: s.dni,
@@ -138,6 +164,7 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const subjectId = data.get('subjectId')?.toString();
 		const date = data.get('date')?.toString();
+		const commissionId = data.get('commissionId')?.toString();
 		const attendanceData = data.get('attendanceData')?.toString();
 
 		if (!subjectId || !date || !attendanceData) {
@@ -175,11 +202,25 @@ export const actions: Actions = {
 			// Parsear datos de asistencia
 			const attendance = JSON.parse(attendanceData) as Array<{ studentId: string; present: boolean; notes?: string }>;
 
+			// Verificar si ya existe un registro de asistencia para esta materia, fecha y comisión
+			const existingRecord = await prisma.attendanceRecord.findFirst({
+				where: {
+					subjectId,
+					classDate: new Date(date),
+					commissionId: commissionId || null
+				}
+			});
+
+			if (existingRecord) {
+				return { error: 'Ya existe un registro de asistencia para esta materia en esta fecha' + (commissionId ? ' y comisión' : '') };
+			}
+
 			// Crear registro de asistencia
 			const attendanceRecord = await prisma.attendanceRecord.create({
 				data: {
 					subjectId,
 					classDate: new Date(date),
+					commissionId: commissionId || null,
 					createdByUserId: locals.user.id
 				}
 			});
@@ -197,6 +238,20 @@ export const actions: Actions = {
 				}))
 			});
 
+			// Actualizar estado de regularidad para cada estudiante
+			const regularityUpdates = [];
+			for (const a of attendance) {
+				const statusUpdate = await updateAttendanceStatus(a.studentId, subjectId);
+				if (statusUpdate.statusChanged) {
+					regularityUpdates.push({
+						studentId: a.studentId,
+						previousStatus: statusUpdate.previousStatus,
+						newStatus: statusUpdate.regularityStatus,
+						attendancePercent: statusUpdate.attendancePercent
+					});
+				}
+			}
+
 			// Registrar en auditoría
 			await auditLog({
 				userId: locals.user.id,
@@ -205,6 +260,19 @@ export const actions: Actions = {
 				entityId: attendanceRecord.id,
 				description: `Registro de asistencia: ${presentCount} presentes, ${absentCount} ausentes en ${subject?.name} el ${date}`
 			});
+
+			// Registrar cambios de regularidad en auditoría si hubo
+			if (regularityUpdates.length > 0) {
+				for (const update of regularityUpdates) {
+					await auditLog({
+						userId: locals.user.id,
+						action: AuditAction.UPDATE,
+						entityType: 'STUDENT_SUBJECT_STATUS',
+						entityId: `${update.studentId}_${subjectId}`,
+						description: `Cambio de regularidad por asistencia: ${update.previousStatus} → ${update.newStatus} (${update.attendancePercent}%) en ${subject?.name}`
+					});
+				}
+			}
 
 			return { success: 'Asistencia registrada exitosamente' };
 		} catch (error) {
@@ -282,6 +350,20 @@ export const actions: Actions = {
 			const presentCount = attendance.filter(a => a.present).length;
 			const absentCount = attendance.length - presentCount;
 
+			// Actualizar estado de regularidad para cada estudiante
+			const regularityUpdates = [];
+			for (const a of attendance) {
+				const statusUpdate = await updateAttendanceStatus(a.studentId, attendanceRecord.subjectId);
+				if (statusUpdate.statusChanged) {
+					regularityUpdates.push({
+						studentId: a.studentId,
+						previousStatus: statusUpdate.previousStatus,
+						newStatus: statusUpdate.regularityStatus,
+						attendancePercent: statusUpdate.attendancePercent
+					});
+				}
+			}
+
 			// Registrar en auditoría
 			await auditLog({
 				userId: locals.user.id,
@@ -290,6 +372,19 @@ export const actions: Actions = {
 				entityId: attendanceId,
 				description: `Edición de asistencia: ${presentCount} presentes, ${absentCount} ausentes en ${attendanceRecord.subject.name} el ${attendanceRecord.classDate.toLocaleDateString('es-AR')}`
 			});
+
+			// Registrar cambios de regularidad en auditoría si hubo
+			if (regularityUpdates.length > 0) {
+				for (const update of regularityUpdates) {
+					await auditLog({
+						userId: locals.user.id,
+						action: AuditAction.UPDATE,
+						entityType: 'STUDENT_SUBJECT_STATUS',
+						entityId: `${update.studentId}_${attendanceRecord.subjectId}`,
+						description: `Cambio de regularidad por asistencia: ${update.previousStatus} → ${update.newStatus} (${update.attendancePercent}%) en ${attendanceRecord.subject.name}`
+					});
+				}
+			}
 
 			return { success: 'Asistencia actualizada exitosamente' };
 		} catch (error) {

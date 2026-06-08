@@ -4,6 +4,7 @@ import { prisma } from '$lib/server/db/prisma';
 import { requireRole, getUserAllowedLocationIds } from '$lib/server/auth/authorization';
 import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
+import { updateAttendanceStatus } from '$lib/server/academic/plan-logic';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	requireRole(locals.user, ['PRECEPTOR']);
@@ -58,6 +59,20 @@ export const load: PageServerLoad = async ({ locals }) => {
 		orderBy: { name: 'asc' }
 	});
 
+	// Obtener comisiones para las materias, filtrando por localidades permitidas
+	const commissions = await prisma.subjectCommission.findMany({
+		where: {
+			subjectId: { in: subjects.map(s => s.id) },
+			active: true,
+			locationId: { in: allowedLocationIds }
+		},
+		include: {
+			subject: true,
+			teacher: true,
+			location: true
+		}
+	});
+
 	// Obtener registros de asistencia recientes filtrados por localidad
 	const recentAttendance = await prisma.attendanceRecord.findMany({
 		where: {
@@ -107,6 +122,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 			yearLevel: s.yearLevel,
 			careers: s.careerSubjects.map(cs => cs.career.name)
 		})),
+		commissions: commissions.map(c => ({
+			id: c.id,
+			code: c.code,
+			subjectId: c.subjectId,
+			subjectName: c.subject.name,
+			teacherId: c.teacherId,
+			teacherName: c.teacher ? `${c.teacher.lastName}, ${c.teacher.firstName}` : null,
+			locationId: c.locationId,
+			locationName: c.location?.name || null,
+			schedule: c.schedule
+		})),
 		recentAttendance: recentAttendance.map(r => ({
 			id: r.id,
 			date: r.classDate,
@@ -124,6 +150,7 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const subjectId = data.get('subjectId')?.toString();
 		const date = data.get('date')?.toString();
+		const commissionId = data.get('commissionId')?.toString();
 		const attendanceData = data.get('attendanceData')?.toString();
 
 		if (!subjectId || !date || !attendanceData) {
@@ -138,12 +165,26 @@ export const actions: Actions = {
 				where: { id: subjectId }
 			});
 
+			// Verificar si ya existe un registro de asistencia para esta materia, fecha y comisión
+			const existingRecord = await prisma.attendanceRecord.findFirst({
+				where: {
+					subjectId,
+					classDate: new Date(date),
+					commissionId: commissionId || null
+				}
+			});
+
+			if (existingRecord) {
+				return { error: 'Ya existe un registro de asistencia para esta materia en esta fecha' + (commissionId ? ' y comisión' : '') };
+			}
+
 			await prisma.$transaction(async (tx) => {
 				// Crear registro de asistencia
 				const attendanceRecord = await tx.attendanceRecord.create({
 					data: {
 						subjectId,
 						classDate: new Date(date),
+						commissionId: commissionId || null,
 						createdByUserId: locals.user!.id
 					}
 				});
@@ -161,6 +202,20 @@ export const actions: Actions = {
 				}
 			});
 
+			// Actualizar estado de regularidad para cada estudiante
+			const regularityUpdates = [];
+			for (const a of attendance) {
+				const statusUpdate = await updateAttendanceStatus(a.studentId, subjectId);
+				if (statusUpdate.statusChanged) {
+					regularityUpdates.push({
+						studentId: a.studentId,
+						previousStatus: statusUpdate.previousStatus,
+						newStatus: statusUpdate.regularityStatus,
+						attendancePercent: statusUpdate.attendancePercent
+					});
+				}
+			}
+
 			// Registrar en auditoría
 			await auditLog({
 				userId: locals.user!.id,
@@ -169,6 +224,19 @@ export const actions: Actions = {
 				entityId: subjectId,
 				description: `Registro de asistencia para ${subject?.name} el ${date} - ${attendance.length} estudiantes`
 			});
+
+			// Registrar cambios de regularidad en auditoría si hubo
+			if (regularityUpdates.length > 0) {
+				for (const update of regularityUpdates) {
+					await auditLog({
+						userId: locals.user!.id,
+						action: AuditAction.UPDATE,
+						entityType: 'STUDENT_SUBJECT_STATUS',
+						entityId: `${update.studentId}_${subjectId}`,
+						description: `Cambio de regularidad por asistencia: ${update.previousStatus} → ${update.newStatus} (${update.attendancePercent}%) en ${subject?.name}`
+					});
+				}
+			}
 
 			return { success: 'Asistencia registrada exitosamente' };
 		} catch (error) {

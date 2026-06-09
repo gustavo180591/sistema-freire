@@ -99,6 +99,7 @@
 		{ label: 'Usuarios', href: '/usuarios', icon: 'users-cog', description: 'Gestión de usuarios y roles', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA'] },
 		{ label: 'Carreras', href: '/carreras', icon: 'building-columns', description: 'Planes de estudio y carreras', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'] },
 		{ label: 'Materias', href: '/materias', icon: 'book-open', description: 'Materias y correlatividades', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE'] },
+		{ label: 'Asistencia', href: '/asistencia', icon: 'calendar', description: 'Gestión de asistencia', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'DOCENTE', 'PRECEPTOR', 'ALUMNO'] },
 		{ label: 'Finanzas', href: '/finanzas', icon: 'coins', description: 'Pagos, recibos y configuración', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS'] },
 		{ label: 'Reportes', href: '/reportes', icon: 'chart-bar', description: 'Reportes y estadísticas', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS'] },
 		{ label: 'Recibos', href: '/recibos', icon: 'receipt', description: 'Gestión de recibos', roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE', 'FINANZAS'] }

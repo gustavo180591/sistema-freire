@@ -8,9 +8,7 @@
 	let { children, data } = $props();
 
 	// Solo mostrar sidebar en rutas de la app (no en login, etc.)
-	const showSidebar = $derived(
-		data?.user && !page.url.pathname.startsWith('/login')
-	);
+	const showSidebar = $derived(data?.user && !page.url.pathname.startsWith('/login'));
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
@@ -21,7 +19,7 @@
 	{#if showSidebar}
 		<Sidebar user={data?.user} />
 	{/if}
-	<main class="flex-1 min-w-0">
+	<main class="min-w-0 flex-1">
 		{@render children()}
 	</main>
 </div>

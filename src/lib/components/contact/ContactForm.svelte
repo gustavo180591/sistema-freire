@@ -66,9 +66,7 @@
 		</div>
 
 		<div>
-			<label for="phone" class="mb-2 block text-sm font-medium text-slate-300">
-				Teléfono
-			</label>
+			<label for="phone" class="mb-2 block text-sm font-medium text-slate-300"> Teléfono </label>
 			<input
 				id="phone"
 				name="phone"
@@ -91,7 +89,7 @@
 				rows="5"
 				required
 				placeholder="Escribe tu mensaje aquí..."
-				class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 placeholder-slate-500 transition outline-none focus:border-slate-500 resize-none"
+				class="w-full resize-none rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 placeholder-slate-500 transition outline-none focus:border-slate-500"
 			></textarea>
 			{#if errors.message}
 				<p class="mt-1.5 text-sm text-red-400">{errors.message}</p>
@@ -100,7 +98,7 @@
 
 		<button
 			type="submit"
-			class="w-full rounded-2xl bg-slate-950 border border-slate-700 px-6 py-3 font-semibold text-white transition hover:border-slate-500"
+			class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-6 py-3 font-semibold text-white transition hover:border-slate-500"
 		>
 			Enviar Mensaje
 		</button>

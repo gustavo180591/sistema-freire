@@ -5,15 +5,15 @@ const prisma = new PrismaClient();
 
 /**
  * Script de migración para encriptar datos sensibles de alumnos
- * 
+ *
  * DATOS A ENCRIPTAR:
  * - Student.dni
  * - Student.phone
  * - Student.familyContactPhone
- * 
+ *
  * EJECUCIÓN:
  * npm run ts-node prisma/migrate-encryption.ts
- * 
+ *
  * IMPORTANTE:
  * - Hacer backup de la base de datos ANTES de ejecutar
  * - Verificar que ENCRYPTION_KEY y ENCRYPTION_KEY_IV estén configuradas
@@ -36,16 +36,19 @@ async function migrateStudentDni(studentId: string, dni: string): Promise<Migrat
 		});
 		return { success: true, studentId, field: 'dni' };
 	} catch (error) {
-		return { 
-			success: false, 
-			studentId, 
-			field: 'dni', 
-			error: error instanceof Error ? error.message : 'Unknown error' 
+		return {
+			success: false,
+			studentId,
+			field: 'dni',
+			error: error instanceof Error ? error.message : 'Unknown error'
 		};
 	}
 }
 
-async function migrateStudentPhone(studentId: string, phone: string | null): Promise<MigrationResult | null> {
+async function migrateStudentPhone(
+	studentId: string,
+	phone: string | null
+): Promise<MigrationResult | null> {
 	if (!phone) return null;
 	try {
 		const encrypted = await encrypt(phone);
@@ -55,16 +58,19 @@ async function migrateStudentPhone(studentId: string, phone: string | null): Pro
 		});
 		return { success: true, studentId, field: 'phone' };
 	} catch (error) {
-		return { 
-			success: false, 
-			studentId, 
-			field: 'phone', 
-			error: error instanceof Error ? error.message : 'Unknown error' 
+		return {
+			success: false,
+			studentId,
+			field: 'phone',
+			error: error instanceof Error ? error.message : 'Unknown error'
 		};
 	}
 }
 
-async function migrateFamilyContactPhone(studentId: string, phone: string | null): Promise<MigrationResult | null> {
+async function migrateFamilyContactPhone(
+	studentId: string,
+	phone: string | null
+): Promise<MigrationResult | null> {
 	if (!phone) return null;
 	try {
 		const encrypted = await encrypt(phone);
@@ -74,11 +80,11 @@ async function migrateFamilyContactPhone(studentId: string, phone: string | null
 		});
 		return { success: true, studentId, field: 'familyContactPhone' };
 	} catch (error) {
-		return { 
-			success: false, 
-			studentId, 
-			field: 'familyContactPhone', 
-			error: error instanceof Error ? error.message : 'Unknown error' 
+		return {
+			success: false,
+			studentId,
+			field: 'familyContactPhone',
+			error: error instanceof Error ? error.message : 'Unknown error'
 		};
 	}
 }
@@ -144,7 +150,10 @@ async function main() {
 
 		// Migrar familyContactPhone
 		if (student.familyContactPhone) {
-			const familyPhoneResult = await migrateFamilyContactPhone(student.id, student.familyContactPhone);
+			const familyPhoneResult = await migrateFamilyContactPhone(
+				student.id,
+				student.familyContactPhone
+			);
 			if (familyPhoneResult) results.push(familyPhoneResult);
 			if (familyPhoneResult?.success) {
 				console.log(`  ✅ Family contact phone encriptado`);
@@ -168,8 +177,8 @@ async function main() {
 
 	if (errorCount > 0) {
 		console.log('\n⚠️  ERRORES DETALLADOS:');
-		const errors = results.filter(r => !r.success);
-		errors.forEach(err => {
+		const errors = results.filter((r) => !r.success);
+		errors.forEach((err) => {
 			console.log(`  - Student ID: ${err.studentId}, Field: ${err.field}, Error: ${err.error}`);
 		});
 	}
@@ -178,7 +187,9 @@ async function main() {
 
 	if (errorCount === 0) {
 		console.log('✅ Migración completada exitosamente');
-		console.log('⚠️  Verifica que la aplicación funcione correctamente antes de eliminar el backup');
+		console.log(
+			'⚠️  Verifica que la aplicación funcione correctamente antes de eliminar el backup'
+		);
 	} else {
 		console.log('❌ Migración completada con errores');
 		console.log('⚠️  Revisa los errores y considera ejecutar el rollback');
@@ -187,8 +198,7 @@ async function main() {
 	await prisma.$disconnect();
 }
 
-main()
-	.catch((error) => {
-		console.error('Error fatal en migración:', error);
-		process.exit(1);
-	});
+main().catch((error) => {
+	console.error('Error fatal en migración:', error);
+	process.exit(1);
+});

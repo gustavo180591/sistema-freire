@@ -50,10 +50,15 @@
 			{#if data.canCreate}
 				<a
 					href="/comisiones/nueva"
-					class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-600 transition"
+					class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-600"
 				>
 					<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 4v16m8-8H4"
+						/>
 					</svg>
 					Nueva Comisión
 				</a>
@@ -66,8 +71,18 @@
 		<div class="rounded-2xl border border-emerald-800 bg-emerald-950/30 p-6">
 			<div class="flex items-center gap-3">
 				<div class="rounded-full bg-emerald-500/20 p-2">
-					<svg class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+					<svg
+						class="h-6 w-6 text-emerald-400"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M5 13l4 4L19 7"
+						/>
 					</svg>
 				</div>
 				<p class="font-semibold text-emerald-400">{form.message}</p>
@@ -134,13 +149,13 @@
 			<div class="flex items-end gap-2 md:col-span-4">
 				<button
 					type="submit"
-					class="rounded-xl bg-indigo-500 px-6 py-2.5 font-medium text-white hover:bg-indigo-600 transition"
+					class="rounded-xl bg-indigo-500 px-6 py-2.5 font-medium text-white transition hover:bg-indigo-600"
 				>
 					Filtrar
 				</button>
 				<a
 					href="/comisiones"
-					class="rounded-xl border border-slate-700 px-6 py-2.5 font-medium text-slate-300 hover:bg-slate-800 transition"
+					class="rounded-xl border border-slate-700 px-6 py-2.5 font-medium text-slate-300 transition hover:bg-slate-800"
 				>
 					Limpiar
 				</a>
@@ -176,7 +191,9 @@
 							</td>
 							<td class="px-6 py-4">
 								<p class="font-medium">{commission.subject.name}</p>
-								<p class="text-sm text-slate-400">{commission.subject.code} · Año {commission.subject.yearLevel}</p>
+								<p class="text-sm text-slate-400">
+									{commission.subject.code} · Año {commission.subject.yearLevel}
+								</p>
 							</td>
 							<td class="px-6 py-4">
 								{#if commission.career}
@@ -205,14 +222,14 @@
 								<div class="flex gap-2">
 									<a
 										href="/comisiones/{commission.id}"
-										class="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 transition"
+										class="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 transition hover:bg-slate-800"
 									>
 										Ver
 									</a>
 									{#if data.canUpdate}
 										<a
 											href="/comisiones/{commission.id}/editar"
-											class="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 transition"
+											class="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 transition hover:bg-slate-800"
 										>
 											Editar
 										</a>
@@ -222,7 +239,7 @@
 											<input type="hidden" name="commissionId" value={commission.id} />
 											<button
 												type="submit"
-												class="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 transition"
+												class="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 transition hover:bg-slate-800"
 											>
 												{commission.active ? 'Desactivar' : 'Activar'}
 											</button>
@@ -231,7 +248,7 @@
 									{#if data.canDelete && commission.enrollmentsCount === 0}
 										<button
 											onclick={() => initiateDelete(commission.id)}
-											class="rounded-lg border border-red-900/50 px-3 py-1.5 text-sm text-red-400 hover:bg-red-950/30 transition"
+											class="rounded-lg border border-red-900/50 px-3 py-1.5 text-sm text-red-400 transition hover:bg-red-950/30"
 										>
 											Eliminar
 										</button>
@@ -256,7 +273,7 @@
 				<div class="mt-6 flex gap-3">
 					<button
 						onclick={handleDelete}
-						class="flex-1 rounded-xl border border-slate-700 px-4 py-3 font-medium text-slate-300 hover:bg-slate-800 transition"
+						class="flex-1 rounded-xl border border-slate-700 px-4 py-3 font-medium text-slate-300 transition hover:bg-slate-800"
 					>
 						Cancelar
 					</button>
@@ -265,7 +282,7 @@
 							<input type="hidden" name="commissionId" value={selectedCommission} />
 							<button
 								type="submit"
-								class="flex-1 rounded-xl bg-red-500 px-4 py-3 font-medium text-white hover:bg-red-600 transition"
+								class="flex-1 rounded-xl bg-red-500 px-4 py-3 font-medium text-white transition hover:bg-red-600"
 							>
 								Eliminar
 							</button>

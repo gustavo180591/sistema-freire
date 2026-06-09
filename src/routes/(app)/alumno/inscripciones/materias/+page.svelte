@@ -30,9 +30,11 @@
 	};
 
 	const getEnrollmentStatus = (subject: any) => {
-		if (subject.isApproved) return { label: 'Aprobada', color: 'bg-emerald-950/50 text-emerald-400' };
+		if (subject.isApproved)
+			return { label: 'Aprobada', color: 'bg-emerald-950/50 text-emerald-400' };
 		if (subject.isEnrolled) return { label: 'Inscripto', color: 'bg-blue-950/50 text-blue-400' };
-		if (!subject.hasCommissions) return { label: 'Sin comisiones', color: 'bg-slate-950/50 text-slate-400' };
+		if (!subject.hasCommissions)
+			return { label: 'Sin comisiones', color: 'bg-slate-950/50 text-slate-400' };
 		return { label: 'Disponible', color: 'bg-green-950/50 text-green-400' };
 	};
 
@@ -70,12 +72,16 @@
 					{data.student.fullName} · {data.student.career} · Año {data.student.currentYear}
 				</p>
 				{#if data.activeTerm}
-					<div class="mt-4 inline-flex items-center gap-2 rounded-full bg-indigo-950/50 px-4 py-1.5 text-sm text-indigo-400">
+					<div
+						class="mt-4 inline-flex items-center gap-2 rounded-full bg-indigo-950/50 px-4 py-1.5 text-sm text-indigo-400"
+					>
 						<span class="h-2 w-2 rounded-full bg-indigo-400"></span>
 						{data.activeTerm.name}
 					</div>
 				{:else}
-					<div class="mt-4 inline-flex items-center gap-2 rounded-full bg-amber-950/50 px-4 py-1.5 text-sm text-amber-400">
+					<div
+						class="mt-4 inline-flex items-center gap-2 rounded-full bg-amber-950/50 px-4 py-1.5 text-sm text-amber-400"
+					>
 						<span class="h-2 w-2 rounded-full bg-amber-400"></span>
 						Sin período lectivo activo
 					</div>
@@ -93,14 +99,26 @@
 		<div class="rounded-2xl border border-emerald-800 bg-emerald-950/30 p-6">
 			<div class="flex items-center gap-3">
 				<div class="rounded-full bg-emerald-500/20 p-2">
-					<svg class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+					<svg
+						class="h-6 w-6 text-emerald-400"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M5 13l4 4L19 7"
+						/>
 					</svg>
 				</div>
 				<div>
 					<p class="font-semibold text-emerald-400">Inscripción completada</p>
 					<p class="text-sm text-slate-400">
-						{form.enrolled} materia{form.enrolled !== 1 ? 's' : ''} inscripta{form.enrolled !== 1 ? 's' : ''}
+						{form.enrolled} materia{form.enrolled !== 1 ? 's' : ''} inscripta{form.enrolled !== 1
+							? 's'
+							: ''}
 						{form.errors && form.errors > 0 ? `, ${form.errors} con errores` : ''}
 					</p>
 				</div>
@@ -127,7 +145,9 @@
 	{#if !data.activeTerm}
 		<div class="rounded-2xl border border-amber-800 bg-amber-950/30 p-8 text-center">
 			<p class="text-lg text-amber-400">No hay período lectivo activo</p>
-			<p class="mt-2 text-slate-400">Contactá a secretaría para habilitar el período de inscripciones.</p>
+			<p class="mt-2 text-slate-400">
+				Contactá a secretaría para habilitar el período de inscripciones.
+			</p>
 		</div>
 	{:else if data.subjects.length === 0}
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-8 text-center">
@@ -140,7 +160,9 @@
 				{@const status = getEnrollmentStatus(subject)}
 				{@const canSelect = canEnroll(subject)}
 				<div
-					class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition {selectedSubjects.has(subject.subject.id)
+					class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition {selectedSubjects.has(
+						subject.subject.id
+					)
 						? 'border-indigo-500 bg-indigo-950/20'
 						: 'hover:border-slate-700'}"
 				>
@@ -175,7 +197,8 @@
 									<p class="text-sm font-medium text-slate-300">Seleccioná una comisión:</p>
 									<div class="grid gap-2 md:grid-cols-2">
 										{#each subject.commissions as commission}
-											{@const isSelected = selectedCommissions.get(subject.subject.id) === commission.id}
+											{@const isSelected =
+												selectedCommissions.get(subject.subject.id) === commission.id}
 											<button
 												type="button"
 												onclick={() => selectCommission(subject.subject.id, commission.id)}
@@ -189,7 +212,8 @@
 														<p class="font-medium">Comisión {commission.code}</p>
 														{#if commission.teacher}
 															<p class="text-sm text-slate-400">
-																{commission.teacher.firstName} {commission.teacher.lastName}
+																{commission.teacher.firstName}
+																{commission.teacher.lastName}
 															</p>
 														{/if}
 														{#if commission.schedule}
@@ -216,10 +240,15 @@
 
 		<!-- Action Bar -->
 		{#if selectedSubjects.size > 0}
-			<div class="fixed bottom-0 left-0 right-0 border-t border-slate-800 bg-slate-900/95 p-4 backdrop-blur">
-				<div class="mx-auto max-w-7xl flex items-center justify-between">
+			<div
+				class="fixed right-0 bottom-0 left-0 border-t border-slate-800 bg-slate-900/95 p-4 backdrop-blur"
+			>
+				<div class="mx-auto flex max-w-7xl items-center justify-between">
 					<p class="text-slate-400">
-						{selectedSubjects.size} materia{selectedSubjects.size !== 1 ? 's' : ''} seleccionada{selectedSubjects.size !== 1 ? 's' : ''}
+						{selectedSubjects.size} materia{selectedSubjects.size !== 1 ? 's' : ''} seleccionada{selectedSubjects.size !==
+						1
+							? 's'
+							: ''}
 					</p>
 					<form method="POST" action="?/enroll" use:enhance>
 						{#each selectedSubjects as subjectId}
@@ -233,7 +262,7 @@
 						<button
 							type="button"
 							onclick={handleEnroll}
-							class="rounded-xl bg-indigo-500 px-6 py-3 font-medium text-white hover:bg-indigo-600 transition"
+							class="rounded-xl bg-indigo-500 px-6 py-3 font-medium text-white transition hover:bg-indigo-600"
 						>
 							Confirmar Inscripción
 						</button>
@@ -249,15 +278,19 @@
 			<div class="mx-4 max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-6">
 				<h2 class="text-xl font-bold">Confirmar Inscripción</h2>
 				<p class="mt-2 text-slate-400">
-					Estás por inscribirte a {selectedSubjects.size} materia{selectedSubjects.size !== 1 ? 's' : ''}.
+					Estás por inscribirte a {selectedSubjects.size} materia{selectedSubjects.size !== 1
+						? 's'
+						: ''}.
 				</p>
 				<div class="mt-4 space-y-2">
-					{#each data.subjects.filter(s => selectedSubjects.has(s.subject.id)) as subject}
+					{#each data.subjects.filter((s) => selectedSubjects.has(s.subject.id)) as subject}
 						<div class="flex items-center justify-between rounded-lg bg-slate-950 p-3">
 							<p class="font-medium">{subject.subject.name}</p>
 							{#if selectedCommissions.get(subject.subject.id)}
 								<p class="text-sm text-slate-400">
-									Comisión {subject.commissions.find(c => c.id === selectedCommissions.get(subject.subject.id))?.code}
+									Comisión {subject.commissions.find(
+										(c) => c.id === selectedCommissions.get(subject.subject.id)
+									)?.code}
 								</p>
 							{/if}
 						</div>
@@ -266,13 +299,13 @@
 				<div class="mt-6 flex gap-3">
 					<button
 						onclick={() => (showConfirmation = false)}
-						class="flex-1 rounded-xl border border-slate-700 px-4 py-3 font-medium text-slate-300 hover:bg-slate-800 transition"
+						class="flex-1 rounded-xl border border-slate-700 px-4 py-3 font-medium text-slate-300 transition hover:bg-slate-800"
 					>
 						Cancelar
 					</button>
 					<button
 						onclick={handleConfirm}
-						class="flex-1 rounded-xl bg-indigo-500 px-4 py-3 font-medium text-white hover:bg-indigo-600 transition"
+						class="flex-1 rounded-xl bg-indigo-500 px-4 py-3 font-medium text-white transition hover:bg-indigo-600"
 					>
 						Confirmar
 					</button>

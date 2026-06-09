@@ -56,7 +56,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			career: student.career.name,
 			email: student.user.email
 		},
-		documents: student.documents.map(d => ({
+		documents: student.documents.map((d) => ({
 			id: d.id,
 			type: d.type,
 			typeLabel: DOCUMENT_TYPE_LABELS[d.type],
@@ -100,7 +100,15 @@ export const actions: Actions = {
 		}
 
 		// Validar tipo
-		const validTypes = ['DNI', 'CERTIFICATE', 'CONSTANCY', 'SECONDARY_TITLE', 'PHOTO_ID', 'MEDICAL_CERTIFICATE', 'OTHER'];
+		const validTypes = [
+			'DNI',
+			'CERTIFICATE',
+			'CONSTANCY',
+			'SECONDARY_TITLE',
+			'PHOTO_ID',
+			'MEDICAL_CERTIFICATE',
+			'OTHER'
+		];
 		if (!validTypes.includes(type)) {
 			return fail(400, { error: 'Tipo de documento inválido' });
 		}

@@ -5,10 +5,10 @@ const prisma = new PrismaClient();
 
 /**
  * Script para crear usuario SUPERADMIN
- * 
+ *
  * IMPORTANTE: Este archivo es un template. NUNCA commitear con credenciales reales.
  * Copiar a prisma/seed-superadmin.ts (que está en .gitignore) y ejecutar:
- * 
+ *
  * npx tsx prisma/seed-superadmin.ts
  */
 

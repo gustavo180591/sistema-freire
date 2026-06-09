@@ -1,30 +1,30 @@
 <script lang="ts">
 	let { data } = $props();
-	
+
 	const career = $derived(data.career);
 	const subjectsByYear = $derived(data.subjectsByYear ?? {});
 	const totalSubjects = $derived(data.totalSubjects ?? 0);
 	const totalCorrelatives = $derived(data.totalCorrelatives ?? 0);
 	const plans = $derived(data.plans ?? []);
-	
+
 	function getYearName(year: number): string {
 		const years = ['Primer', 'Segundo', 'Tercer', 'Cuarto', 'Quinto', 'Sexto'];
 		return years[year - 1] || `Año ${year}`;
 	}
-	
+
 	const subjectTypeLabels: Record<string, string> = {
 		COMMON: 'Común',
 		CAREER_SPECIFIC: 'Específica',
 		EDI: 'EDI'
 	};
-	
+
 	const trainingFieldColors: Record<string, string> = {
 		GENERAL: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
 		ESPECIFICA: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
 		PRACTICA: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
 		EDI: 'bg-purple-500/20 text-purple-300 border-purple-500/30'
 	};
-	
+
 	const yearLevels = [1, 2, 3, 4];
 </script>
 
@@ -43,7 +43,7 @@
 				← Volver a {career.name}
 			</a>
 		</div>
-		<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+		<div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
 			<div>
 				<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Plan de Estudios</p>
 				<h1 class="mt-2 text-4xl font-bold tracking-tight">{career.name}</h1>
@@ -51,7 +51,9 @@
 			</div>
 			<div class="flex gap-2">
 				{#if plans.length > 0}
-					<span class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-400">
+					<span
+						class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-400"
+					>
 						Plan activo: {plans[0].version}
 					</span>
 				{/if}
@@ -131,15 +133,19 @@
 									<tr class="border-b border-slate-800 last:border-none hover:bg-slate-800/50">
 										<td class="px-4 py-4 font-mono text-sm text-slate-400">{cs.subject.code}</td>
 										<td class="px-4 py-4">
-											<a 
+											<a
 												href={`/materias/${cs.subject.id}`}
-												class="font-medium hover:text-blue-400 transition"
+												class="font-medium transition hover:text-blue-400"
 											>
 												{cs.subject.name}
 											</a>
 										</td>
 										<td class="px-4 py-4">
-											<span class="rounded-full border px-2 py-1 text-xs {trainingFieldColors[cs.subject.trainingField]}">
+											<span
+												class="rounded-full border px-2 py-1 text-xs {trainingFieldColors[
+													cs.subject.trainingField
+												]}"
+											>
 												{cs.subject.trainingField}
 											</span>
 										</td>
@@ -148,9 +154,9 @@
 										</td>
 										<td class="px-4 py-4 text-center">
 											{#if cs.subject.correlatives.length > 0}
-												<a 
+												<a
 													href={`/materias/${cs.subject.id}/correlativas`}
-													class="rounded-full bg-blue-500/20 text-blue-300 px-2 py-1 text-xs hover:bg-blue-500/30"
+													class="rounded-full bg-blue-500/20 px-2 py-1 text-xs text-blue-300 hover:bg-blue-500/30"
 												>
 													{cs.subject.correlatives.length}
 												</a>

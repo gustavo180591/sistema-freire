@@ -4,7 +4,7 @@
 	let { data }: { data: PageData } = $props();
 
 	const getAvailableExam = (subjectId: string) => {
-		return data.evaluations?.find(e => e.subjectId === subjectId);
+		return data.evaluations?.find((e) => e.subjectId === subjectId);
 	};
 </script>
 
@@ -20,7 +20,9 @@
 				<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Estudiante</p>
 				<h1 class="mt-2 text-3xl font-bold">{data.student.fullName}</h1>
 				<p class="mt-2 text-slate-400">{data.student.career}</p>
-				<div class="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-950/50 px-4 py-1.5 text-sm text-emerald-400">
+				<div
+					class="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-950/50 px-4 py-1.5 text-sm text-emerald-400"
+				>
 					<span class="h-2 w-2 rounded-full bg-emerald-400"></span>
 					{data.student.status}
 				</div>
@@ -34,11 +36,19 @@
 
 	<!-- Stats Grid -->
 	<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-		<a href="/alumno/historial" class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700">
+		<a
+			href="/alumno/historial"
+			class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700"
+		>
 			<div class="flex items-center gap-3">
 				<div class="rounded-xl bg-blue-950/50 p-3">
 					<svg class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+						/>
 					</svg>
 				</div>
 				<div>
@@ -46,14 +56,26 @@
 					<p class="text-2xl font-bold">{data.academic.currentSubjects.length}</p>
 				</div>
 			</div>
-			<p class="mt-4 text-sm text-slate-400 group-hover:text-slate-300">Ver historial académico →</p>
+			<p class="mt-4 text-sm text-slate-400 group-hover:text-slate-300">
+				Ver historial académico →
+			</p>
 		</a>
 
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
 			<div class="flex items-center gap-3">
 				<div class="rounded-xl bg-emerald-950/50 p-3">
-					<svg class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+					<svg
+						class="h-6 w-6 text-emerald-400"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+						/>
 					</svg>
 				</div>
 				<div>
@@ -68,7 +90,12 @@
 			<div class="flex items-center gap-3">
 				<div class="rounded-xl bg-amber-950/50 p-3">
 					<svg class="h-6 w-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+						/>
 					</svg>
 				</div>
 				<div>
@@ -83,12 +110,21 @@
 			<div class="flex items-center gap-3">
 				<div class="rounded-xl bg-red-950/50 p-3">
 					<svg class="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+						/>
 					</svg>
 				</div>
 				<div>
 					<p class="text-sm text-slate-400">Deuda total</p>
-					<p class="text-2xl font-bold {data.finances.totalDebt > 0 ? 'text-red-400' : 'text-emerald-400'}">
+					<p
+						class="text-2xl font-bold {data.finances.totalDebt > 0
+							? 'text-red-400'
+							: 'text-emerald-400'}"
+					>
 						${data.finances.totalDebt.toLocaleString()}
 					</p>
 				</div>
@@ -102,23 +138,25 @@
 	<!-- Materias Cursando -->
 	{#if data.academic.currentSubjects.length > 0}
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-			<h2 class="text-lg font-semibold mb-4">📚 Materias Cursando</h2>
+			<h2 class="mb-4 text-lg font-semibold">📚 Materias Cursando</h2>
 			<div class="space-y-3">
 				{#each data.academic.currentSubjects as subject}
 					{@const availableExam = getAvailableExam(subject.id)}
-					<div class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-4">
+					<div
+						class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-4"
+					>
 						<div>
 							<p class="font-medium">{subject.name}</p>
 							<p class="text-sm text-slate-400">{subject.code} - Año {subject.yearLevel}</p>
 						</div>
 						<div class="flex items-center gap-2">
-							<span class="rounded-full bg-amber-500/20 text-amber-400 px-3 py-1 text-xs">
+							<span class="rounded-full bg-amber-500/20 px-3 py-1 text-xs text-amber-400">
 								{subject.regularityStatus}
 							</span>
 							{#if availableExam}
 								<a
 									href="/evaluaciones/{availableExam.id}/inscribir"
-									class="rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-600 transition"
+									class="rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-blue-600"
 								>
 									Inscribir a mesa
 								</a>
@@ -133,21 +171,23 @@
 	<!-- Materias Cursadas -->
 	{#if data.academic.completedSubjects.length > 0}
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-			<h2 class="text-lg font-semibold mb-4">✅ Materias Cursadas</h2>
+			<h2 class="mb-4 text-lg font-semibold">✅ Materias Cursadas</h2>
 			<div class="space-y-3">
 				{#each data.academic.completedSubjects as subject}
-					<div class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-4">
+					<div
+						class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-4"
+					>
 						<div>
 							<p class="font-medium">{subject.name}</p>
 							<p class="text-sm text-slate-400">{subject.code} - Año {subject.yearLevel}</p>
 						</div>
 						<div class="flex items-center gap-2">
 							{#if subject.approved}
-								<span class="rounded-full bg-emerald-500/20 text-emerald-400 px-3 py-1 text-xs">
+								<span class="rounded-full bg-emerald-500/20 px-3 py-1 text-xs text-emerald-400">
 									Aprobada
 								</span>
 							{:else}
-								<span class="rounded-full bg-blue-500/20 text-blue-400 px-3 py-1 text-xs">
+								<span class="rounded-full bg-blue-500/20 px-3 py-1 text-xs text-blue-400">
 									Regular
 								</span>
 							{/if}
@@ -161,13 +201,17 @@
 	<!-- Últimos cargos -->
 	{#if data.finances.charges.length > 0}
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-			<h2 class="text-lg font-semibold mb-4">💰 Últimos Movimientos</h2>
+			<h2 class="mb-4 text-lg font-semibold">💰 Últimos Movimientos</h2>
 			<div class="space-y-3">
 				{#each data.finances.charges as charge}
-					<div class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-4">
+					<div
+						class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-4"
+					>
 						<div>
 							<p class="font-medium">{charge.concept?.name || 'Concepto'}</p>
-							<p class="text-sm text-slate-400">{new Date(charge.createdAt).toLocaleDateString('es-AR')}</p>
+							<p class="text-sm text-slate-400">
+								{new Date(charge.createdAt).toLocaleDateString('es-AR')}
+							</p>
 						</div>
 						<p class="font-semibold text-red-400">${Number(charge.amount).toLocaleString()}</p>
 					</div>
@@ -178,7 +222,10 @@
 
 	<!-- Navegación -->
 	<div class="grid gap-4 md:grid-cols-3">
-		<a href="/alumno/perfil" class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700">
+		<a
+			href="/alumno/perfil"
+			class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700"
+		>
 			<div class="flex items-center gap-3">
 				<span class="text-2xl">👤</span>
 				<div>
@@ -188,7 +235,10 @@
 			</div>
 		</a>
 
-		<a href="/alumno/asistencia" class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700">
+		<a
+			href="/alumno/asistencia"
+			class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700"
+		>
 			<div class="flex items-center gap-3">
 				<span class="text-2xl">📋</span>
 				<div>
@@ -198,7 +248,10 @@
 			</div>
 		</a>
 
-		<a href="/alumno/calificaciones" class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700">
+		<a
+			href="/alumno/calificaciones"
+			class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700"
+		>
 			<div class="flex items-center gap-3">
 				<span class="text-2xl">📝</span>
 				<div>

@@ -37,7 +37,7 @@ async function inspectAndBackup() {
 		{ name: 'careerSubjects', model: prisma.careerSubject },
 		{ name: 'studentSubjectStatuses', model: prisma.studentSubjectStatus },
 		{ name: 'teachers', model: prisma.teacher },
-		{ name: 'academicYearHistory', model: prisma.academicYearHistory },
+		{ name: 'academicYearHistory', model: prisma.academicYearHistory }
 	];
 
 	const report: any = {};
@@ -50,7 +50,7 @@ async function inspectAndBackup() {
 			if (count > 0) {
 				const data = await (table.model as any).findMany();
 				report[table.name].sample = data.slice(0, 3); // Guardar muestra de 3 registros
-				
+
 				// Exportar datos completos a JSON
 				const filePath = path.join(backupDir, `${table.name}.json`);
 				fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
@@ -74,7 +74,10 @@ async function inspectAndBackup() {
 	// Resumen
 	const totalTables = Object.keys(report).length;
 	const tablesWithData = Object.values(report).filter((t: any) => t.count > 0).length;
-	const totalRecords = Object.values(report).reduce((sum: number, t: any) => sum + (t.count || 0), 0);
+	const totalRecords = Object.values(report).reduce(
+		(sum: number, t: any) => sum + (t.count || 0),
+		0
+	);
 
 	console.log(`\n📈 Resumen:`);
 	console.log(`   - Tablas inspeccionadas: ${totalTables}`);

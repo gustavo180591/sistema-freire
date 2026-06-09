@@ -37,14 +37,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	const subjects = subjectTeachers.map(st => st.subject);
+	const subjects = subjectTeachers.map((st) => st.subject);
 
 	// Obtener materiales de clase del docente
 	const materials = await prisma.classMaterial.findMany({
 		where: {
 			uploadedBy: locals.user.id,
 			subjectId: {
-				in: subjects.map(s => s.id)
+				in: subjects.map((s) => s.id)
 			}
 		},
 		include: {
@@ -56,14 +56,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	return {
-		subjects: subjects.map(s => ({
+		subjects: subjects.map((s) => ({
 			id: s.id,
 			code: s.code,
 			name: s.name,
 			yearLevel: s.yearLevel,
-			careers: s.careerSubjects.map(cs => cs.career.name)
+			careers: s.careerSubjects.map((cs) => cs.career.name)
 		})),
-		materials: materials.map(m => ({
+		materials: materials.map((m) => ({
 			id: m.id,
 			title: m.title,
 			description: m.description,

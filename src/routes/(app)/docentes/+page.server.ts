@@ -13,10 +13,7 @@ export const load: PageServerLoad = async () => {
 				}
 			}
 		},
-		orderBy: [
-			{ lastName: 'asc' },
-			{ firstName: 'asc' }
-		]
+		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
 	});
 
 	type TeacherWithRelations = Prisma.TeacherGetPayload<{
@@ -41,8 +38,12 @@ export const load: PageServerLoad = async () => {
 			createdAt: t.createdAt,
 			subjects: t.subjects.map((st) => ({
 				...st.subject,
-				approvalThreshold: st.subject.approvalThreshold ? Number(st.subject.approvalThreshold) : null,
-				promotionThreshold: st.subject.promotionThreshold ? Number(st.subject.promotionThreshold) : null
+				approvalThreshold: st.subject.approvalThreshold
+					? Number(st.subject.approvalThreshold)
+					: null,
+				promotionThreshold: st.subject.promotionThreshold
+					? Number(st.subject.promotionThreshold)
+					: null
 			}))
 		}))
 	};

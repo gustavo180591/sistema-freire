@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function hashPassword(password: string): Promise<string> {
-  return await bcrypt.hash(password, 10);
+	return await bcrypt.hash(password, 10);
 }
 
 async function main() {

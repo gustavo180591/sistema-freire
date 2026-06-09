@@ -8,7 +8,7 @@ export const actions: Actions = {
 	default: async ({ cookies, locals }) => {
 		const userId = locals.user?.id;
 		const token = cookies.get('session');
-		
+
 		// Eliminar la sesión de la base de datos
 		if (token) {
 			await prisma.session.deleteMany({

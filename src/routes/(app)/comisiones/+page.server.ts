@@ -83,7 +83,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	});
 
 	return {
-		commissions: commissions.map(c => ({
+		commissions: commissions.map((c) => ({
 			id: c.id,
 			code: c.code,
 			subject: {
@@ -92,28 +92,38 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				code: c.subject.code,
 				yearLevel: c.subject.yearLevel
 			},
-			career: c.career ? {
-				id: c.career.id,
-				name: c.career.name
-			} : null,
-			studyPlan: c.studyPlan ? {
-				id: c.studyPlan.id,
-				name: c.studyPlan.name,
-				version: c.studyPlan.version
-			} : null,
-			teacher: c.teacher ? {
-				id: c.teacher.id,
-				name: `${c.teacher.firstName} ${c.teacher.lastName}`
-			} : null,
-			location: c.location ? {
-				id: c.location.id,
-				name: c.location.name
-			} : null,
-			academicTerm: c.academicTerm ? {
-				id: c.academicTerm.id,
-				name: c.academicTerm.name,
-				year: c.academicTerm.year
-			} : null,
+			career: c.career
+				? {
+						id: c.career.id,
+						name: c.career.name
+					}
+				: null,
+			studyPlan: c.studyPlan
+				? {
+						id: c.studyPlan.id,
+						name: c.studyPlan.name,
+						version: c.studyPlan.version
+					}
+				: null,
+			teacher: c.teacher
+				? {
+						id: c.teacher.id,
+						name: `${c.teacher.firstName} ${c.teacher.lastName}`
+					}
+				: null,
+			location: c.location
+				? {
+						id: c.location.id,
+						name: c.location.name
+					}
+				: null,
+			academicTerm: c.academicTerm
+				? {
+						id: c.academicTerm.id,
+						name: c.academicTerm.name,
+						year: c.academicTerm.year
+					}
+				: null,
 			maxCapacity: c.maxCapacity,
 			currentEnrolled: c.currentEnrolled,
 			enrollmentsCount: c._count.enrollments,
@@ -180,8 +190,8 @@ export const actions: Actions = {
 			});
 
 			if (activeEnrollments > 0) {
-				return fail(400, { 
-					error: 'No se puede desactivar una comisión con inscripciones activas' 
+				return fail(400, {
+					error: 'No se puede desactivar una comisión con inscripciones activas'
 				});
 			}
 		}
@@ -221,8 +231,8 @@ export const actions: Actions = {
 		});
 
 		if (enrollmentsCount > 0) {
-			return fail(400, { 
-				error: 'No se puede eliminar una comisión con inscripciones asociadas' 
+			return fail(400, {
+				error: 'No se puede eliminar una comisión con inscripciones asociadas'
 			});
 		}
 

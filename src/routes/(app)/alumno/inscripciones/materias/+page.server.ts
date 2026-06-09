@@ -62,10 +62,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			where: {
 				subjectId: subject.subject.id,
 				active: true,
-				OR: [
-					{ careerId: null },
-					{ careerId: student.careerId }
-				],
+				OR: [{ careerId: null }, { careerId: student.careerId }],
 				...(activeTerm ? { academicTermId: activeTerm.id } : {})
 			},
 			include: {
@@ -87,7 +84,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		include: { subject: true }
 	});
 
-	const approvedSubjectIds = subjectStatuses.filter(s => s.approved).map(s => s.subjectId);
+	const approvedSubjectIds = subjectStatuses.filter((s) => s.approved).map((s) => s.subjectId);
 
 	// Preparar datos de materias con estado de disponibilidad
 	const subjectsWithStatus = availableSubjects.map((item) => {
@@ -298,7 +295,6 @@ export const actions: Actions = {
 					enrollmentId: enrollment.id,
 					status: 'success'
 				});
-
 			} catch (error) {
 				console.error('Error en inscripción:', error);
 				errors.push({

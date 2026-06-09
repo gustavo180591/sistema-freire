@@ -4,7 +4,7 @@
 	import { invalidateAll } from '$app/navigation';
 
 	let { data, form }: { data: PageData; form?: any } = $props();
-	
+
 	let showCreateModal = $state(false);
 	let deletingFollowUp = $state<string | null>(null);
 	let selectedType = $state('NOTE');
@@ -30,7 +30,11 @@
 		WARNING: { bg: 'bg-amber-950/50', border: 'border-amber-800', text: 'text-amber-400' },
 		MEETING: { bg: 'bg-purple-950/50', border: 'border-purple-800', text: 'text-purple-400' },
 		INCIDENT: { bg: 'bg-red-950/50', border: 'border-red-800', text: 'text-red-400' },
-		ACHIEVEMENT: { bg: 'bg-emerald-950/50', border: 'border-emerald-800', text: 'text-emerald-400' },
+		ACHIEVEMENT: {
+			bg: 'bg-emerald-950/50',
+			border: 'border-emerald-800',
+			text: 'text-emerald-400'
+		},
 		NOTE: { bg: 'bg-gray-800', border: 'border-gray-700', text: 'text-gray-400' }
 	};
 
@@ -83,9 +87,7 @@
 	}
 
 	const filteredFollowUps = $derived(
-		filterType === 'ALL' 
-			? data.followUps 
-			: data.followUps.filter(f => f.type === filterType)
+		filterType === 'ALL' ? data.followUps : data.followUps.filter((f) => f.type === filterType)
 	);
 </script>
 
@@ -96,26 +98,34 @@
 <div class="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
 	<!-- Header -->
 	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-		<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+		<div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
 			<div>
-				<div class="flex items-center gap-2 mb-2">
-					<a href="/alumnos/{data.student.id}/historial" class="text-sm text-slate-400 hover:text-white transition">
+				<div class="mb-2 flex items-center gap-2">
+					<a
+						href="/alumnos/{data.student.id}/historial"
+						class="text-sm text-slate-400 transition hover:text-white"
+					>
 						← Volver al historial
 					</a>
 				</div>
 				<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Seguimiento Individual</p>
-				<h1 class="mt-2 text-2xl md:text-3xl font-bold">{data.student.fullName}</h1>
+				<h1 class="mt-2 text-2xl font-bold md:text-3xl">{data.student.fullName}</h1>
 				<p class="mt-1 text-sm text-slate-400">
 					DNI: {data.student.dni} · {data.student.career}
 				</p>
 			</div>
 			{#if data.canCreate}
 				<button
-					onclick={() => showCreateModal = true}
-					class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 flex items-center gap-2"
+					onclick={() => (showCreateModal = true)}
+					class="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500"
 				>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 4v16m8-8H4"
+						/>
 					</svg>
 					Nuevo Seguimiento
 				</button>
@@ -131,11 +141,15 @@
 		</div>
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
 			<p class="text-sm text-slate-400">Alertas</p>
-			<p class="mt-1 text-2xl font-bold {data.stats.alerts > 0 ? 'text-amber-400' : ''}">{data.stats.alerts}</p>
+			<p class="mt-1 text-2xl font-bold {data.stats.alerts > 0 ? 'text-amber-400' : ''}">
+				{data.stats.alerts}
+			</p>
 		</div>
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
 			<p class="text-sm text-slate-400">Alertas pendientes</p>
-			<p class="mt-1 text-2xl font-bold {data.stats.unresolvedAlerts > 0 ? 'text-red-400' : ''}">{data.stats.unresolvedAlerts}</p>
+			<p class="mt-1 text-2xl font-bold {data.stats.unresolvedAlerts > 0 ? 'text-red-400' : ''}">
+				{data.stats.unresolvedAlerts}
+			</p>
 		</div>
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
 			<p class="text-sm text-slate-400">Último seguimiento</p>
@@ -150,7 +164,12 @@
 		<div class="rounded-xl border border-red-800 bg-red-950/30 p-4 text-sm text-red-400">
 			<div class="flex items-center gap-2">
 				<svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+					/>
 				</svg>
 				<p>{form.error}</p>
 			</div>
@@ -158,10 +177,17 @@
 	{/if}
 
 	{#if form?.success}
-		<div class="rounded-xl border border-emerald-800 bg-emerald-950/30 p-4 text-sm text-emerald-400">
+		<div
+			class="rounded-xl border border-emerald-800 bg-emerald-950/30 p-4 text-sm text-emerald-400"
+		>
 			<div class="flex items-center gap-2">
 				<svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M5 13l4 4L19 7"
+					/>
 				</svg>
 				<p>{form.message}</p>
 			</div>
@@ -171,76 +197,101 @@
 	<!-- Filtros -->
 	<div class="flex flex-wrap gap-2">
 		<button
-			onclick={() => filterType = 'ALL'}
-			class="rounded-full px-3 py-1.5 text-sm transition {filterType === 'ALL' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}"
+			onclick={() => (filterType = 'ALL')}
+			class="rounded-full px-3 py-1.5 text-sm transition {filterType === 'ALL'
+				? 'bg-indigo-600 text-white'
+				: 'bg-slate-800 text-slate-400 hover:bg-slate-700'}"
 		>
 			Todos
 		</button>
 		{#each Object.entries(data.typeLabels) as [type, label]}
 			<button
-				onclick={() => filterType = type}
-				class="rounded-full px-3 py-1.5 text-sm transition {filterType === type ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}"
+				onclick={() => (filterType = type)}
+				class="rounded-full px-3 py-1.5 text-sm transition {filterType === type
+					? 'bg-indigo-600 text-white'
+					: 'bg-slate-800 text-slate-400 hover:bg-slate-700'}"
 			>
-				{typeIcons[type]} {label}
+				{typeIcons[type]}
+				{label}
 			</button>
 		{/each}
 	</div>
 
 	<!-- Timeline -->
 	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-		<h2 class="text-lg font-semibold mb-6">Timeline de Seguimiento ({filteredFollowUps.length})</h2>
-		
+		<h2 class="mb-6 text-lg font-semibold">Timeline de Seguimiento ({filteredFollowUps.length})</h2>
+
 		{#if filteredFollowUps.length === 0}
-			<div class="text-center py-12">
-				<div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-800">
+			<div class="py-12 text-center">
+				<div
+					class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-800"
+				>
 					<svg class="h-8 w-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+						/>
 					</svg>
 				</div>
 				<p class="text-slate-400">No hay seguimientos registrados</p>
 				{#if data.canCreate}
-					<p class="text-sm text-slate-500 mt-1">Hacé click en "Nuevo Seguimiento" para agregar el primero</p>
+					<p class="mt-1 text-sm text-slate-500">
+						Hacé click en "Nuevo Seguimiento" para agregar el primero
+					</p>
 				{/if}
 			</div>
 		{:else}
 			<div class="relative">
 				<!-- Línea vertical -->
-				<div class="absolute left-4 md:left-6 top-0 bottom-0 w-0.5 bg-slate-700"></div>
-				
+				<div class="absolute top-0 bottom-0 left-4 w-0.5 bg-slate-700 md:left-6"></div>
+
 				<div class="space-y-6">
 					{#each filteredFollowUps as followUp}
 						{@const colors = typeColors[followUp.type]}
 						<div class="relative flex gap-4 md:gap-6">
 							<!-- Ícono en la línea -->
-							<div class="relative z-10 flex h-8 w-8 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-full border-2 {colors.bg} {colors.border}">
+							<div
+								class="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 md:h-12 md:w-12 {colors.bg} {colors.border}"
+							>
 								<span class="text-sm md:text-lg">{typeIcons[followUp.type]}</span>
 							</div>
-							
+
 							<!-- Contenido -->
-							<div class="flex-1 min-w-0">
-								<div class="rounded-2xl border border-slate-800 bg-slate-800/50 p-4 {followUp.isAlert && !followUp.isResolved ? 'border-l-4 border-l-red-500' : ''}">
+							<div class="min-w-0 flex-1">
+								<div
+									class="rounded-2xl border border-slate-800 bg-slate-800/50 p-4 {followUp.isAlert &&
+									!followUp.isResolved
+										? 'border-l-4 border-l-red-500'
+										: ''}"
+								>
 									<!-- Header del item -->
-									<div class="flex flex-wrap items-start justify-between gap-2 mb-3">
+									<div class="mb-3 flex flex-wrap items-start justify-between gap-2">
 										<div class="flex items-center gap-2">
-											<span class="rounded-full px-2 py-0.5 text-xs font-medium {colors.bg} {colors.text} border {colors.border}">
+											<span
+												class="rounded-full px-2 py-0.5 text-xs font-medium {colors.bg} {colors.text} border {colors.border}"
+											>
 												{followUp.typeLabel}
 											</span>
 											{#if followUp.isAlert}
-												<span class="rounded-full bg-red-950/50 px-2 py-0.5 text-xs text-red-400 border border-red-800">
+												<span
+													class="rounded-full border border-red-800 bg-red-950/50 px-2 py-0.5 text-xs text-red-400"
+												>
 													{followUp.isResolved ? 'Resuelta' : 'Alerta'}
 												</span>
 											{/if}
 										</div>
 										<span class="text-xs text-slate-500">{formatDate(followUp.date)}</span>
 									</div>
-									
+
 									<!-- Título y descripción -->
-									<h3 class="font-semibold text-white mb-2">{followUp.title}</h3>
-									<p class="text-sm text-slate-400 whitespace-pre-wrap">{followUp.description}</p>
-									
+									<h3 class="mb-2 font-semibold text-white">{followUp.title}</h3>
+									<p class="text-sm whitespace-pre-wrap text-slate-400">{followUp.description}</p>
+
 									<!-- Resuelto por -->
 									{#if followUp.isResolved && followUp.resolvedBy}
-										<div class="mt-3 p-2 rounded-lg bg-emerald-950/30 border border-emerald-800/50">
+										<div class="mt-3 rounded-lg border border-emerald-800/50 bg-emerald-950/30 p-2">
 											<p class="text-xs text-emerald-400">
 												✓ Resuelto por {followUp.resolvedBy}
 												{#if followUp.resolvedAt}
@@ -249,32 +300,48 @@
 											</p>
 										</div>
 									{/if}
-									
+
 									<!-- Footer -->
-									<div class="mt-4 pt-3 border-t border-slate-700/50 flex items-center justify-between">
+									<div
+										class="mt-4 flex items-center justify-between border-t border-slate-700/50 pt-3"
+									>
 										<span class="text-xs text-slate-500">Por {followUp.createdBy}</span>
-										
+
 										<div class="flex items-center gap-2">
 											{#if followUp.isAlert && !followUp.isResolved && data.canResolve}
-												<form method="POST" action="?/resolve" use:enhance={() => handleResolve(followUp.id)}>
+												<form
+													method="POST"
+													action="?/resolve"
+													use:enhance={() => handleResolve(followUp.id)}
+												>
 													<input type="hidden" name="followUpId" value={followUp.id} />
 													<button
 														type="submit"
-														class="rounded-lg px-3 py-1.5 text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-500 transition"
+														class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-emerald-500"
 													>
 														Marcar resuelto
 													</button>
 												</form>
 											{/if}
-											
+
 											{#if data.canCreate}
 												<button
-													onclick={() => deletingFollowUp = followUp.id}
-													class="rounded-lg p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-950/30 transition"
+													onclick={() => (deletingFollowUp = followUp.id)}
+													class="rounded-lg p-1.5 text-slate-400 transition hover:bg-red-950/30 hover:text-red-400"
 													title="Eliminar"
 												>
-													<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+													<svg
+														class="h-4 w-4"
+														fill="none"
+														stroke="currentColor"
+														viewBox="0 0 24 24"
+													>
+														<path
+															stroke-linecap="round"
+															stroke-linejoin="round"
+															stroke-width="2"
+															d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+														/>
 													</svg>
 												</button>
 											{/if}
@@ -294,8 +361,8 @@
 {#if showCreateModal}
 	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
 		<div class="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-6">
-			<h3 class="text-lg font-semibold mb-4">Nuevo Seguimiento</h3>
-			
+			<h3 class="mb-4 text-lg font-semibold">Nuevo Seguimiento</h3>
+
 			<form method="POST" action="?/create" use:enhance={handleCreate} class="space-y-4">
 				<div>
 					<label for="fu-type" class="mb-2 block text-sm font-medium text-slate-300">Tipo</label>
@@ -306,7 +373,7 @@
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-white outline-none focus:border-indigo-500"
 					>
 						{#each Object.entries(data.typeLabels) as [value, label]}
-							<option value={value}>{typeIcons[value]} {label}</option>
+							<option {value}>{typeIcons[value]} {label}</option>
 						{/each}
 					</select>
 				</div>
@@ -338,7 +405,9 @@
 				</div>
 
 				<div>
-					<label for="fu-description" class="mb-2 block text-sm font-medium text-slate-300">Descripción</label>
+					<label for="fu-description" class="mb-2 block text-sm font-medium text-slate-300"
+						>Descripción</label
+					>
 					<textarea
 						id="fu-description"
 						name="description"
@@ -369,7 +438,7 @@
 				<div class="flex gap-3 pt-4">
 					<button
 						type="button"
-						onclick={() => showCreateModal = false}
+						onclick={() => (showCreateModal = false)}
 						class="flex-1 rounded-xl border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
 					>
 						Cancelar
@@ -377,7 +446,7 @@
 					<button
 						type="submit"
 						disabled={!followUpTitle.trim() || !followUpDescription.trim()}
-						class="flex-1 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+						class="flex-1 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						Guardar
 					</button>
@@ -391,20 +460,23 @@
 {#if deletingFollowUp}
 	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
 		<div class="w-full max-w-md rounded-2xl border border-red-900/50 bg-slate-900 p-6">
-			<div class="flex items-center gap-3 mb-4">
+			<div class="mb-4 flex items-center gap-3">
 				<div class="flex h-10 w-10 items-center justify-center rounded-full bg-red-950/50">
 					<svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-				</svg>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+						/>
+					</svg>
 				</div>
 				<h3 class="text-lg font-semibold">¿Eliminar seguimiento?</h3>
 			</div>
-			<p class="text-sm text-slate-400 mb-6">
-				Esta acción no se puede deshacer.
-			</p>
+			<p class="mb-6 text-sm text-slate-400">Esta acción no se puede deshacer.</p>
 			<div class="flex gap-3">
 				<button
-					onclick={() => deletingFollowUp = null}
+					onclick={() => (deletingFollowUp = null)}
 					class="flex-1 rounded-xl border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
 				>
 					Cancelar

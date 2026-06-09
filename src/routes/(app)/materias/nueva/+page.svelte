@@ -61,11 +61,7 @@
 	</section>
 
 	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
-		<form
-			method="POST"
-			use:enhance
-			class="space-y-6"
-		>
+		<form method="POST" use:enhance class="space-y-6">
 			{#if !success && errors.general}
 				<div class="rounded-2xl border border-red-900 bg-red-900/10 p-4 text-sm text-red-400">
 					{errors.general}
@@ -178,9 +174,7 @@
 				</div>
 
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">
-						Horas semanales
-					</label>
+					<label class="mb-2 block text-sm font-medium text-slate-300"> Horas semanales </label>
 					<input
 						name="hoursPerWeek"
 						type="number"
@@ -212,9 +206,7 @@
 				</div>
 
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">
-						Umbral de promoción
-					</label>
+					<label class="mb-2 block text-sm font-medium text-slate-300"> Umbral de promoción </label>
 					<input
 						name="promotionThreshold"
 						type="number"
@@ -231,9 +223,7 @@
 			</div>
 
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">
-					Descripción
-				</label>
+				<label class="mb-2 block text-sm font-medium text-slate-300"> Descripción </label>
 				<textarea
 					name="description"
 					rows="3"
@@ -243,13 +233,13 @@
 			</div>
 
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">
-					Asociar a carreras
-				</label>
+				<label class="mb-2 block text-sm font-medium text-slate-300"> Asociar a carreras </label>
 				{#if data.careers && data.careers.length > 0}
 					<div class="grid gap-2 md:grid-cols-2">
 						{#each data.careers as career}
-							<label class="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-950 p-3 transition hover:border-slate-500">
+							<label
+								class="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-950 p-3 transition hover:border-slate-500"
+							>
 								<input
 									name="careerIds"
 									type="checkbox"
@@ -308,7 +298,9 @@
 					/>
 					<span class="text-sm text-slate-300">Materia activa</span>
 				</label>
-				<p class="mt-2 text-sm text-slate-500">Las materias activas estarán disponibles para asignar a planes de estudio.</p>
+				<p class="mt-2 text-sm text-slate-500">
+					Las materias activas estarán disponibles para asignar a planes de estudio.
+				</p>
 			</div>
 
 			<div class="flex gap-4 pt-4">

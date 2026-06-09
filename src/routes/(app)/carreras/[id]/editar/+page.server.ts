@@ -35,7 +35,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	return {
 		career,
 		locations,
-		careerLocationIds: career.locations.map(cl => cl.locationId)
+		careerLocationIds: career.locations.map((cl) => cl.locationId)
 	};
 };
 

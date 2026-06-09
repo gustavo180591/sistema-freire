@@ -75,7 +75,7 @@ async function main() {
 
 	// Crear un período académico inicial para 2026
 	console.log('Seeding initial academic term...');
-	const alemLocation = createdLocations.find(l => l.code === 'ALEM');
+	const alemLocation = createdLocations.find((l) => l.code === 'ALEM');
 	if (alemLocation) {
 		await prisma.academicTerm.upsert({
 			where: { code: '2026-ANUAL' },

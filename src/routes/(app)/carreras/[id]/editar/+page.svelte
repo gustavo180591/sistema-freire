@@ -53,7 +53,9 @@
 				</div>
 
 				<div>
-					<label for="resolution" class="mb-2 block text-sm font-medium text-slate-300">Resolución</label>
+					<label for="resolution" class="mb-2 block text-sm font-medium text-slate-300"
+						>Resolución</label
+					>
 					<input
 						id="resolution"
 						name="resolution"
@@ -64,7 +66,9 @@
 				</div>
 
 				<div>
-					<label for="durationYears" class="mb-2 block text-sm font-medium text-slate-300">Duración (años)</label>
+					<label for="durationYears" class="mb-2 block text-sm font-medium text-slate-300"
+						>Duración (años)</label
+					>
 					<input
 						id="durationYears"
 						name="durationYears"
@@ -77,10 +81,14 @@
 				</div>
 
 				<div>
-					<label for="locationIds" class="mb-2 block text-sm font-medium text-slate-300">Localidades</label>
+					<label for="locationIds" class="mb-2 block text-sm font-medium text-slate-300"
+						>Localidades</label
+					>
 					<div class="space-y-2">
 						{#each data.locations as location}
-							<label class="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950 p-3 cursor-pointer hover:bg-slate-800 transition">
+							<label
+								class="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-700 bg-slate-950 p-3 transition hover:bg-slate-800"
+							>
 								<input
 									type="checkbox"
 									name="locationIds"
@@ -116,7 +124,7 @@
 			<button
 				type="submit"
 				disabled={loading}
-				class="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+				class="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
 			>
 				{loading ? 'Guardando...' : 'Guardar cambios'}
 			</button>

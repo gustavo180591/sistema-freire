@@ -73,8 +73,18 @@
 		<div class="rounded-2xl border border-emerald-800 bg-emerald-950/30 p-6">
 			<div class="flex items-center gap-3">
 				<div class="rounded-full bg-emerald-500/20 p-2">
-					<svg class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+					<svg
+						class="h-6 w-6 text-emerald-400"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M5 13l4 4L19 7"
+						/>
 					</svg>
 				</div>
 				<p class="font-semibold text-emerald-400">{form.message}</p>
@@ -95,7 +105,8 @@
 					<option value="PENDING" selected={data.filters.status === 'PENDING'}>Pendiente</option>
 					<option value="ACTIVE" selected={data.filters.status === 'ACTIVE'}>Activa</option>
 					<option value="REJECTED" selected={data.filters.status === 'REJECTED'}>Rechazada</option>
-					<option value="CANCELLED" selected={data.filters.status === 'CANCELLED'}>Cancelada</option>
+					<option value="CANCELLED" selected={data.filters.status === 'CANCELLED'}>Cancelada</option
+					>
 				</select>
 			</div>
 			<div>
@@ -139,13 +150,13 @@
 			<div class="flex items-end gap-2 md:col-span-4">
 				<button
 					type="submit"
-					class="rounded-xl bg-indigo-500 px-6 py-2.5 font-medium text-white hover:bg-indigo-600 transition"
+					class="rounded-xl bg-indigo-500 px-6 py-2.5 font-medium text-white transition hover:bg-indigo-600"
 				>
 					Filtrar
 				</button>
 				<a
 					href="/inscripciones"
-					class="rounded-xl border border-slate-700 px-6 py-2.5 font-medium text-slate-300 hover:bg-slate-800 transition"
+					class="rounded-xl border border-slate-700 px-6 py-2.5 font-medium text-slate-300 transition hover:bg-slate-800"
 				>
 					Limpiar
 				</a>
@@ -181,7 +192,9 @@
 							</td>
 							<td class="px-6 py-4">
 								<p class="font-medium">{enrollment.subject.name}</p>
-								<p class="text-sm text-slate-400">{enrollment.subject.code} · Año {enrollment.subject.yearLevel}</p>
+								<p class="text-sm text-slate-400">
+									{enrollment.subject.code} · Año {enrollment.subject.yearLevel}
+								</p>
 							</td>
 							<td class="px-6 py-4">
 								{#if enrollment.commission}
@@ -208,7 +221,7 @@
 											<input type="hidden" name="enrollmentId" value={enrollment.id} />
 											<button
 												type="submit"
-												class="rounded-lg border border-emerald-900/50 px-3 py-1.5 text-sm text-emerald-400 hover:bg-emerald-950/30 transition"
+												class="rounded-lg border border-emerald-900/50 px-3 py-1.5 text-sm text-emerald-400 transition hover:bg-emerald-950/30"
 											>
 												Confirmar
 											</button>
@@ -217,7 +230,7 @@
 									{#if enrollment.status === 'PENDING' && data.canUpdate}
 										<button
 											onclick={() => initiateReject(enrollment.id)}
-											class="rounded-lg border border-red-900/50 px-3 py-1.5 text-sm text-red-400 hover:bg-red-950/30 transition"
+											class="rounded-lg border border-red-900/50 px-3 py-1.5 text-sm text-red-400 transition hover:bg-red-950/30"
 										>
 											Rechazar
 										</button>
@@ -225,7 +238,7 @@
 									{#if enrollment.status === 'ACTIVE' && data.canUpdate}
 										<button
 											onclick={() => initiateCancel(enrollment.id)}
-											class="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 transition"
+											class="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 transition hover:bg-slate-800"
 										>
 											Cancelar
 										</button>
@@ -254,7 +267,7 @@
 				<div class="mt-6 flex gap-3">
 					<button
 						onclick={handleReject}
-						class="flex-1 rounded-xl border border-slate-700 px-4 py-3 font-medium text-slate-300 hover:bg-slate-800 transition"
+						class="flex-1 rounded-xl border border-slate-700 px-4 py-3 font-medium text-slate-300 transition hover:bg-slate-800"
 					>
 						Cancelar
 					</button>
@@ -264,7 +277,7 @@
 							<input type="hidden" name="reason" value={rejectReason} />
 							<button
 								type="submit"
-								class="flex-1 rounded-xl bg-red-500 px-4 py-3 font-medium text-white hover:bg-red-600 transition"
+								class="flex-1 rounded-xl bg-red-500 px-4 py-3 font-medium text-white transition hover:bg-red-600"
 							>
 								Rechazar
 							</button>
@@ -290,7 +303,7 @@
 				<div class="mt-6 flex gap-3">
 					<button
 						onclick={handleCancel}
-						class="flex-1 rounded-xl border border-slate-700 px-4 py-3 font-medium text-slate-300 hover:bg-slate-800 transition"
+						class="flex-1 rounded-xl border border-slate-700 px-4 py-3 font-medium text-slate-300 transition hover:bg-slate-800"
 					>
 						Cancelar
 					</button>
@@ -300,7 +313,7 @@
 							<input type="hidden" name="reason" value={rejectReason} />
 							<button
 								type="submit"
-								class="flex-1 rounded-xl bg-slate-700 px-4 py-3 font-medium text-white hover:bg-slate-600 transition"
+								class="flex-1 rounded-xl bg-slate-700 px-4 py-3 font-medium text-white transition hover:bg-slate-600"
 							>
 								Cancelar Inscripción
 							</button>

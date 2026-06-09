@@ -4,7 +4,7 @@
 	import { invalidateAll } from '$app/navigation';
 
 	let { data, form }: { data: PageData; form?: any } = $props();
-	
+
 	let showUploadModal = $state(false);
 	let deletingDoc = $state<string | null>(null);
 	let selectedType = $state('DNI');
@@ -97,26 +97,34 @@
 <div class="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
 	<!-- Header -->
 	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-		<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+		<div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
 			<div>
-				<div class="flex items-center gap-2 mb-2">
-					<a href="/alumnos/{data.student.id}/historial" class="text-sm text-slate-400 hover:text-white transition">
+				<div class="mb-2 flex items-center gap-2">
+					<a
+						href="/alumnos/{data.student.id}/historial"
+						class="text-sm text-slate-400 transition hover:text-white"
+					>
 						← Volver al historial
 					</a>
 				</div>
 				<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Gestión Documental</p>
-				<h1 class="mt-2 text-2xl md:text-3xl font-bold">{data.student.fullName}</h1>
+				<h1 class="mt-2 text-2xl font-bold md:text-3xl">{data.student.fullName}</h1>
 				<p class="mt-1 text-sm text-slate-400">
 					DNI: {data.student.dni} · {data.student.career}
 				</p>
 			</div>
 			{#if data.canUpload}
 				<button
-					onclick={() => showUploadModal = true}
-					class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 flex items-center gap-2"
+					onclick={() => (showUploadModal = true)}
+					class="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500"
 				>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 4v16m8-8H4"
+						/>
 					</svg>
 					Subir Documento
 				</button>
@@ -129,7 +137,12 @@
 		<div class="rounded-xl border border-red-800 bg-red-950/30 p-4 text-sm text-red-400">
 			<div class="flex items-center gap-2">
 				<svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+					/>
 				</svg>
 				<p>{form.error}</p>
 			</div>
@@ -137,10 +150,17 @@
 	{/if}
 
 	{#if form?.success}
-		<div class="rounded-xl border border-emerald-800 bg-emerald-950/30 p-4 text-sm text-emerald-400">
+		<div
+			class="rounded-xl border border-emerald-800 bg-emerald-950/30 p-4 text-sm text-emerald-400"
+		>
 			<div class="flex items-center gap-2">
 				<svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M5 13l4 4L19 7"
+					/>
 				</svg>
 				<p>{form.message}</p>
 			</div>
@@ -149,46 +169,69 @@
 
 	<!-- Documentos -->
 	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-		<h2 class="text-lg font-semibold mb-4">Documentos del Alumno ({data.documents.length})</h2>
-		
+		<h2 class="mb-4 text-lg font-semibold">Documentos del Alumno ({data.documents.length})</h2>
+
 		{#if data.documents.length === 0}
-			<div class="text-center py-12">
-				<div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-800">
+			<div class="py-12 text-center">
+				<div
+					class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-800"
+				>
 					<svg class="h-8 w-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+						/>
 					</svg>
 				</div>
 				<p class="text-slate-400">No hay documentos cargados</p>
 				{#if data.canUpload}
-					<p class="text-sm text-slate-500 mt-1">Hacé click en "Subir Documento" para agregar el primero</p>
+					<p class="mt-1 text-sm text-slate-500">
+						Hacé click en "Subir Documento" para agregar el primero
+					</p>
 				{/if}
 			</div>
 		{:else}
 			<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 				{#each data.documents as doc}
-					<div class="rounded-2xl border border-slate-800 bg-slate-800/50 p-4 group hover:border-slate-700 transition">
+					<div
+						class="group rounded-2xl border border-slate-800 bg-slate-800/50 p-4 transition hover:border-slate-700"
+					>
 						<div class="flex items-start gap-3">
-							<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border {typeColors[doc.type]}">
+							<div
+								class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border {typeColors[
+									doc.type
+								]}"
+							>
 								<span class="text-xl">{typeIcons[doc.type]}</span>
 							</div>
 							<div class="min-w-0 flex-1">
-								<p class="font-medium truncate">{doc.name}</p>
-								<p class="text-xs text-slate-400 mt-1">{doc.typeLabel}</p>
-								<p class="text-xs text-slate-500 mt-1">{formatFileSize(doc.fileSize)}</p>
+								<p class="truncate font-medium">{doc.name}</p>
+								<p class="mt-1 text-xs text-slate-400">{doc.typeLabel}</p>
+								<p class="mt-1 text-xs text-slate-500">{formatFileSize(doc.fileSize)}</p>
 							</div>
 						</div>
 
 						<div class="mt-4 flex items-center justify-between">
 							<div class="flex items-center gap-2">
 								{#if doc.verified}
-									<span class="inline-flex items-center gap-1 rounded-full bg-emerald-950/50 px-2 py-1 text-xs text-emerald-400">
+									<span
+										class="inline-flex items-center gap-1 rounded-full bg-emerald-950/50 px-2 py-1 text-xs text-emerald-400"
+									>
 										<svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-											<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+											<path
+												fill-rule="evenodd"
+												d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+												clip-rule="evenodd"
+											/>
 										</svg>
 										Verificado
 									</span>
 								{:else}
-									<span class="inline-flex items-center gap-1 rounded-full bg-slate-800 px-2 py-1 text-xs text-slate-400">
+									<span
+										class="inline-flex items-center gap-1 rounded-full bg-slate-800 px-2 py-1 text-xs text-slate-400"
+									>
 										<span class="h-1.5 w-1.5 rounded-full bg-slate-500"></span>
 										Pendiente
 									</span>
@@ -197,16 +240,27 @@
 
 							<div class="flex items-center gap-2">
 								{#if data.canVerify}
-									<form method="POST" action="?/verify" use:enhance={() => handleVerify(doc.id, !doc.verified)}>
+									<form
+										method="POST"
+										action="?/verify"
+										use:enhance={() => handleVerify(doc.id, !doc.verified)}
+									>
 										<input type="hidden" name="documentId" value={doc.id} />
 										<input type="hidden" name="verified" value={(!doc.verified).toString()} />
 										<button
 											type="submit"
-											class="rounded-lg p-1.5 transition {doc.verified ? 'text-emerald-400 hover:bg-emerald-950/30' : 'text-slate-400 hover:bg-slate-700'}"
+											class="rounded-lg p-1.5 transition {doc.verified
+												? 'text-emerald-400 hover:bg-emerald-950/30'
+												: 'text-slate-400 hover:bg-slate-700'}"
 											title={doc.verified ? 'Desverificar' : 'Verificar'}
 										>
 											<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+												/>
 											</svg>
 										</button>
 									</form>
@@ -215,23 +269,38 @@
 								<a
 									href={doc.fileUrl}
 									target="_blank"
-									class="rounded-lg p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 transition"
+									class="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-700 hover:text-white"
 									title="Ver documento"
 								>
 									<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+										/>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+										/>
 									</svg>
 								</a>
 
 								{#if data.canUpload}
 									<button
-										onclick={() => deletingDoc = doc.id}
-										class="rounded-lg p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-950/30 transition"
+										onclick={() => (deletingDoc = doc.id)}
+										class="rounded-lg p-1.5 text-slate-400 transition hover:bg-red-950/30 hover:text-red-400"
 										title="Eliminar"
 									>
 										<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+											/>
 										</svg>
 									</button>
 								{/if}
@@ -239,10 +308,12 @@
 						</div>
 
 						{#if doc.notes}
-							<p class="mt-3 text-xs text-slate-500 line-clamp-2">{doc.notes}</p>
+							<p class="mt-3 line-clamp-2 text-xs text-slate-500">{doc.notes}</p>
 						{/if}
 
-						<div class="mt-3 pt-3 border-t border-slate-700/50 flex items-center justify-between text-xs text-slate-500">
+						<div
+							class="mt-3 flex items-center justify-between border-t border-slate-700/50 pt-3 text-xs text-slate-500"
+						>
 							<span>Subido: {formatDate(doc.createdAt)}</span>
 							<span>por {doc.uploadedBy}</span>
 						</div>
@@ -263,11 +334,19 @@
 {#if showUploadModal}
 	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
 		<div class="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-6">
-			<h3 class="text-lg font-semibold mb-4">Subir Documento</h3>
-			
-			<form method="POST" action="?/upload" use:enhance={handleUpload} enctype="multipart/form-data" class="space-y-4">
+			<h3 class="mb-4 text-lg font-semibold">Subir Documento</h3>
+
+			<form
+				method="POST"
+				action="?/upload"
+				use:enhance={handleUpload}
+				enctype="multipart/form-data"
+				class="space-y-4"
+			>
 				<div>
-					<label for="doc-type" class="mb-2 block text-sm font-medium text-slate-300">Tipo de documento</label>
+					<label for="doc-type" class="mb-2 block text-sm font-medium text-slate-300"
+						>Tipo de documento</label
+					>
 					<select
 						id="doc-type"
 						name="type"
@@ -275,13 +354,15 @@
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-white outline-none focus:border-indigo-500"
 					>
 						{#each Object.entries(data.documentTypeLabels) as [value, label]}
-							<option value={value}>{label}</option>
+							<option {value}>{label}</option>
 						{/each}
 					</select>
 				</div>
 
 				<div>
-					<label for="doc-name" class="mb-2 block text-sm font-medium text-slate-300">Nombre del documento</label>
+					<label for="doc-name" class="mb-2 block text-sm font-medium text-slate-300"
+						>Nombre del documento</label
+					>
 					<input
 						id="doc-name"
 						type="text"
@@ -294,7 +375,8 @@
 				</div>
 
 				<div>
-					<label for="doc-file" class="mb-2 block text-sm font-medium text-slate-300">Archivo</label>
+					<label for="doc-file" class="mb-2 block text-sm font-medium text-slate-300">Archivo</label
+					>
 					<input
 						id="doc-file"
 						type="file"
@@ -308,7 +390,9 @@
 				</div>
 
 				<div>
-					<label for="doc-notes" class="mb-2 block text-sm font-medium text-slate-300">Notas (opcional)</label>
+					<label for="doc-notes" class="mb-2 block text-sm font-medium text-slate-300"
+						>Notas (opcional)</label
+					>
 					<textarea
 						id="doc-notes"
 						name="notes"
@@ -322,7 +406,7 @@
 				<div class="flex gap-3 pt-4">
 					<button
 						type="button"
-						onclick={() => showUploadModal = false}
+						onclick={() => (showUploadModal = false)}
 						class="flex-1 rounded-xl border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
 					>
 						Cancelar
@@ -330,7 +414,7 @@
 					<button
 						type="submit"
 						disabled={!selectedFile || !documentName}
-						class="flex-1 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+						class="flex-1 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						Subir Documento
 					</button>
@@ -344,20 +428,25 @@
 {#if deletingDoc}
 	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
 		<div class="w-full max-w-md rounded-2xl border border-red-900/50 bg-slate-900 p-6">
-			<div class="flex items-center gap-3 mb-4">
+			<div class="mb-4 flex items-center gap-3">
 				<div class="flex h-10 w-10 items-center justify-center rounded-full bg-red-950/50">
 					<svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+						/>
 					</svg>
 				</div>
 				<h3 class="text-lg font-semibold">¿Eliminar documento?</h3>
 			</div>
-			<p class="text-sm text-slate-400 mb-6">
+			<p class="mb-6 text-sm text-slate-400">
 				Esta acción no se puede deshacer. El documento se eliminará permanentemente.
 			</p>
 			<div class="flex gap-3">
 				<button
-					onclick={() => deletingDoc = null}
+					onclick={() => (deletingDoc = null)}
 					class="flex-1 rounded-xl border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
 				>
 					Cancelar

@@ -36,11 +36,16 @@
 		<div class="flex items-center gap-4">
 			<a
 				href="/comisiones/{data.commission.id}"
-				class="rounded-xl border border-slate-700 p-2 text-slate-400 hover:bg-slate-800 transition"
+				class="rounded-xl border border-slate-700 p-2 text-slate-400 transition hover:bg-slate-800"
 				aria-label="Volver al detalle de comisión"
 			>
 				<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M15 19l-7-7 7-7"
+					/>
 				</svg>
 			</a>
 			<div>
@@ -56,7 +61,12 @@
 			<div class="flex items-center gap-3">
 				<div class="rounded-full bg-red-500/20 p-2">
 					<svg class="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M6 18L18 6M6 6l12 12"
+						/>
 					</svg>
 				</div>
 				<p class="font-semibold text-red-400">{form.error}</p>
@@ -70,7 +80,9 @@
 			<div class="grid gap-6 md:grid-cols-2">
 				<!-- Código -->
 				<div>
-					<label for="code" class="mb-2 block text-sm font-medium text-slate-300">Código <span class="text-red-400">*</span></label>
+					<label for="code" class="mb-2 block text-sm font-medium text-slate-300"
+						>Código <span class="text-red-400">*</span></label
+					>
 					<input
 						id="code"
 						type="text"
@@ -84,7 +96,9 @@
 
 				<!-- Materia -->
 				<div>
-					<label for="subjectId" class="mb-2 block text-sm font-medium text-slate-300">Materia <span class="text-red-400">*</span></label>
+					<label for="subjectId" class="mb-2 block text-sm font-medium text-slate-300"
+						>Materia <span class="text-red-400">*</span></label
+					>
 					<select
 						id="subjectId"
 						name="subjectId"
@@ -102,7 +116,8 @@
 
 				<!-- Carrera -->
 				<div>
-					<label for="careerId" class="mb-2 block text-sm font-medium text-slate-300">Carrera</label>
+					<label for="careerId" class="mb-2 block text-sm font-medium text-slate-300">Carrera</label
+					>
 					<select
 						id="careerId"
 						name="careerId"
@@ -120,7 +135,9 @@
 
 				<!-- Plan de Estudio -->
 				<div>
-					<label for="studyPlanId" class="mb-2 block text-sm font-medium text-slate-300">Plan de Estudio</label>
+					<label for="studyPlanId" class="mb-2 block text-sm font-medium text-slate-300"
+						>Plan de Estudio</label
+					>
 					<select
 						id="studyPlanId"
 						name="studyPlanId"
@@ -139,7 +156,9 @@
 
 				<!-- Período Lectivo -->
 				<div>
-					<label for="academicTermId" class="mb-2 block text-sm font-medium text-slate-300">Período Lectivo <span class="text-red-400">*</span></label>
+					<label for="academicTermId" class="mb-2 block text-sm font-medium text-slate-300"
+						>Período Lectivo <span class="text-red-400">*</span></label
+					>
 					<select
 						id="academicTermId"
 						name="academicTermId"
@@ -157,7 +176,9 @@
 
 				<!-- Docente -->
 				<div>
-					<label for="teacherId" class="mb-2 block text-sm font-medium text-slate-300">Docente</label>
+					<label for="teacherId" class="mb-2 block text-sm font-medium text-slate-300"
+						>Docente</label
+					>
 					<select
 						id="teacherId"
 						name="teacherId"
@@ -166,7 +187,8 @@
 						<option value="">Sin asignar</option>
 						{#each data.teachers as teacher}
 							<option value={teacher.id} selected={data.commission.teacherId === teacher.id}>
-								{teacher.lastName} {teacher.firstName}
+								{teacher.lastName}
+								{teacher.firstName}
 							</option>
 						{/each}
 					</select>
@@ -174,7 +196,9 @@
 
 				<!-- Localidad -->
 				<div>
-					<label for="locationId" class="mb-2 block text-sm font-medium text-slate-300">Localidad</label>
+					<label for="locationId" class="mb-2 block text-sm font-medium text-slate-300"
+						>Localidad</label
+					>
 					<select
 						id="locationId"
 						name="locationId"
@@ -191,7 +215,9 @@
 
 				<!-- Cupo Máximo -->
 				<div>
-					<label for="maxCapacity" class="mb-2 block text-sm font-medium text-slate-300">Cupo Máximo <span class="text-red-400">*</span></label>
+					<label for="maxCapacity" class="mb-2 block text-sm font-medium text-slate-300"
+						>Cupo Máximo <span class="text-red-400">*</span></label
+					>
 					<input
 						id="maxCapacity"
 						type="number"
@@ -233,27 +259,30 @@
 
 			<!-- Observaciones -->
 			<div>
-				<label for="observations" class="mb-2 block text-sm font-medium text-slate-300">Observaciones</label>
+				<label for="observations" class="mb-2 block text-sm font-medium text-slate-300"
+					>Observaciones</label
+				>
 				<textarea
 					id="observations"
 					name="observations"
 					placeholder="Notas adicionales sobre la comisión..."
 					rows="3"
 					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
-				>{data.commission.observations || ''}</textarea>
+					>{data.commission.observations || ''}</textarea
+				>
 			</div>
 
 			<!-- Actions -->
 			<div class="flex gap-3">
 				<a
 					href="/comisiones/{data.commission.id}"
-					class="flex-1 rounded-xl border border-slate-700 px-6 py-3 font-medium text-slate-300 hover:bg-slate-800 transition text-center"
+					class="flex-1 rounded-xl border border-slate-700 px-6 py-3 text-center font-medium text-slate-300 transition hover:bg-slate-800"
 				>
 					Cancelar
 				</a>
 				<button
 					type="submit"
-					class="flex-1 rounded-xl bg-indigo-500 px-6 py-3 font-medium text-white hover:bg-indigo-600 transition"
+					class="flex-1 rounded-xl bg-indigo-500 px-6 py-3 font-medium text-white transition hover:bg-indigo-600"
 				>
 					Guardar Cambios
 				</button>

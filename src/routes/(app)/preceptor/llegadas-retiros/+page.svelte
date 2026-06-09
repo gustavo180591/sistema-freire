@@ -26,7 +26,7 @@
 	<!-- Formulario -->
 	<form
 		method="POST"
-		class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-6"
+		class="space-y-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-6"
 		use:enhance={() => {
 			if (form?.success) {
 				selectedStudent = '';
@@ -50,7 +50,9 @@
 
 		<div class="grid gap-6 md:grid-cols-2">
 			<div>
-				<label for="studentId" class="mb-2 block text-sm font-medium text-slate-300">Estudiante</label>
+				<label for="studentId" class="mb-2 block text-sm font-medium text-slate-300"
+					>Estudiante</label
+				>
 				<select
 					id="studentId"
 					name="studentId"
@@ -127,7 +129,9 @@
 		</div>
 
 		<div>
-			<label for="notes" class="mb-2 block text-sm font-medium text-slate-300">Notas (opcional)</label>
+			<label for="notes" class="mb-2 block text-sm font-medium text-slate-300"
+				>Notas (opcional)</label
+			>
 			<textarea
 				id="notes"
 				name="notes"
@@ -159,7 +163,7 @@
 							<p class="font-semibold text-white">{record.studentName}</p>
 							<p class="text-sm text-slate-400">DNI: {record.studentDni}</p>
 							<p class="text-sm text-slate-400">{record.subject}</p>
-							<p class="text-xs text-slate-500 mt-1">
+							<p class="mt-1 text-xs text-slate-500">
 								Fecha: {new Date(record.date).toLocaleDateString('es-AR')}
 							</p>
 							<p class="mt-2 text-sm text-amber-400">
@@ -176,7 +180,10 @@
 	</div>
 
 	<div class="flex justify-start">
-		<a href="/preceptor" class="rounded-2xl border border-slate-700 px-6 py-3 transition hover:bg-slate-800">
+		<a
+			href="/preceptor"
+			class="rounded-2xl border border-slate-700 px-6 py-3 transition hover:bg-slate-800"
+		>
 			← Volver al panel
 		</a>
 	</div>

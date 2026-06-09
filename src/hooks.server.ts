@@ -21,68 +21,66 @@ const routePermissions: Record<string, string[]> = {
 };
 
 export const handle: Handle = async ({ event, resolve }) => {
-    const token = event.cookies.get('session');
+	const token = event.cookies.get('session');
 
-    if (!token) {
-        // Permitir acceso a rutas de autenticación sin sesión
-        if (event.url.pathname.startsWith('/login') || event.url.pathname.startsWith('/verify-2fa')) {
-            return resolve(event);
-        }
+	if (!token) {
+		// Permitir acceso a rutas de autenticación sin sesión
+		if (event.url.pathname.startsWith('/login') || event.url.pathname.startsWith('/verify-2fa')) {
+			return resolve(event);
+		}
 
-        throw redirect(303, '/login');
-    }
+		throw redirect(303, '/login');
+	}
 
-    const session = await prisma.session.findFirst({
-        where: {
-            tokenHash: token,
-            expiresAt: {
-                gt: new Date()
-            }
-        },
-        include: {
-            user: {
-                include: {
-                    roles: {
-                        include: {
-                            role: true
-                        }
-                    }
-                }
-            }
-        }
-    });
+	const session = await prisma.session.findFirst({
+		where: {
+			tokenHash: token,
+			expiresAt: {
+				gt: new Date()
+			}
+		},
+		include: {
+			user: {
+				include: {
+					roles: {
+						include: {
+							role: true
+						}
+					}
+				}
+			}
+		}
+	});
 
-    if (!session) {
-        event.cookies.delete('session', { path: '/' });
-        throw redirect(303, '/login');
-    }
+	if (!session) {
+		event.cookies.delete('session', { path: '/' });
+		throw redirect(303, '/login');
+	}
 
-    const roles = session.user.roles.map((r) => r.role.code);
+	const roles = session.user.roles.map((r) => r.role.code);
 
-    event.locals.user = {
-        id: session.user.id,
-        email: session.user.email,
-        firstName: session.user.firstName,
-        lastName: session.user.lastName,
-        roles
-    };
+	event.locals.user = {
+		id: session.user.id,
+		email: session.user.email,
+		firstName: session.user.firstName,
+		lastName: session.user.lastName,
+		roles
+	};
 
-    // Ordenar rutas por longitud descendente para evitar matching parcial
-    // Ej: /alumnos debe evaluarse antes que /alumno
-    const sortedRoutes = Object.keys(routePermissions).sort((a, b) => b.length - a.length);
+	// Ordenar rutas por longitud descendente para evitar matching parcial
+	// Ej: /alumnos debe evaluarse antes que /alumno
+	const sortedRoutes = Object.keys(routePermissions).sort((a, b) => b.length - a.length);
 
-    const matchedRoute = sortedRoutes.find((route) =>
-        event.url.pathname.startsWith(route)
-    );
+	const matchedRoute = sortedRoutes.find((route) => event.url.pathname.startsWith(route));
 
-    if (matchedRoute) {
-        const allowedRoles = routePermissions[matchedRoute];
-        const hasAccess = roles.some((role) => allowedRoles.includes(role));
+	if (matchedRoute) {
+		const allowedRoles = routePermissions[matchedRoute];
+		const hasAccess = roles.some((role) => allowedRoles.includes(role));
 
-        if (!hasAccess) {
-            throw redirect(303, '/');
-        }
-    }
+		if (!hasAccess) {
+			throw redirect(303, '/');
+		}
+	}
 
-    return resolve(event);
+	return resolve(event);
 };

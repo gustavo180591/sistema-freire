@@ -8,29 +8,31 @@
 	let saving = $state<Record<string, boolean>>({});
 
 	const roleLabels: Record<string, string> = {
-		'DIRECTOR': 'Director',
-		'SECRETARIA': 'Secretaría',
-		'DOCENTE': 'Docente',
-		'FINANZAS': 'Finanzas',
-		'ALUMNO': 'Alumno',
-		'APODERADO': 'Apoderado',
-		'PRECEPTOR': 'Preceptor'
+		DIRECTOR: 'Director',
+		SECRETARIA: 'Secretaría',
+		DOCENTE: 'Docente',
+		FINANZAS: 'Finanzas',
+		ALUMNO: 'Alumno',
+		APODERADO: 'Apoderado',
+		PRECEPTOR: 'Preceptor'
 	};
 
 	function getPermissionForRole(role: string, entity: string) {
 		const perms = data.permissionsByRole[role] || [];
-		return perms.find(p => p.entity === entity) || {
-			canCreate: false,
-			canRead: entity === 'AUDIT_LOG' || entity === 'PERMISSION' ? false : true,
-			canUpdate: false,
-			canDelete: false
-		};
+		return (
+			perms.find((p) => p.entity === entity) || {
+				canCreate: false,
+				canRead: entity === 'AUDIT_LOG' || entity === 'PERMISSION' ? false : true,
+				canUpdate: false,
+				canDelete: false
+			}
+		);
 	}
 
 	function togglePermission(role: string, entity: string, field: string, value: boolean) {
 		const key = `${role}-${entity}`;
 		saving[key] = true;
-		
+
 		// Submit form
 		const form = document.getElementById(`form-${key}`) as HTMLFormElement;
 		if (form) {
@@ -46,7 +48,7 @@
 		return async ({ result }: { result: any }) => {
 			const key = `${role}-${entity}`;
 			saving[key] = false;
-			
+
 			if (result.type === 'success') {
 				await invalidateAll();
 			}
@@ -62,17 +64,17 @@
 	<!-- Header -->
 	<div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
 		<div>
-			<p class="text-xs md:text-sm tracking-[0.2em] text-slate-400 uppercase">Seguridad</p>
-			<h1 class="text-2xl md:text-3xl font-bold tracking-tight">Gestión de Permisos</h1>
+			<p class="text-xs tracking-[0.2em] text-slate-400 uppercase md:text-sm">Seguridad</p>
+			<h1 class="text-2xl font-bold tracking-tight md:text-3xl">Gestión de Permisos</h1>
 			<p class="mt-1 text-sm text-slate-400">
 				Configurar permisos granulares CRUD por rol y entidad.
 			</p>
 		</div>
-		
+
 		<form method="POST" action="?/reset" use:enhance>
-			<button 
+			<button
 				type="submit"
-				class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 transition"
+				class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
 			>
 				Restablecer por defecto
 			</button>
@@ -95,8 +97,10 @@
 	<div class="flex flex-wrap gap-2">
 		{#each data.roleCodes as role}
 			<button
-				onclick={() => selectedRole = selectedRole === role ? null : role}
-				class="rounded-xl px-4 py-2 text-sm font-medium transition {selectedRole === role ? 'bg-white text-slate-950' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}"
+				onclick={() => (selectedRole = selectedRole === role ? null : role)}
+				class="rounded-xl px-4 py-2 text-sm font-medium transition {selectedRole === role
+					? 'bg-white text-slate-950'
+					: 'bg-slate-800 text-slate-300 hover:bg-slate-700'}"
 			>
 				{roleLabels[role]}
 			</button>
@@ -110,9 +114,13 @@
 				<tr>
 					<th class="px-4 py-3 text-sm font-semibold">Entidad</th>
 					{#each data.roleCodes as role}
-						<th class="px-4 py-3 text-sm font-semibold {selectedRole && selectedRole !== role ? 'hidden md:table-cell' : ''}">
+						<th
+							class="px-4 py-3 text-sm font-semibold {selectedRole && selectedRole !== role
+								? 'hidden md:table-cell'
+								: ''}"
+						>
 							<div class="text-center">{roleLabels[role]}</div>
-							<div class="flex justify-center gap-1 mt-1 text-[10px] text-slate-500">
+							<div class="mt-1 flex justify-center gap-1 text-[10px] text-slate-500">
 								<span>C</span>
 								<span>L</span>
 								<span>E</span>
@@ -127,16 +135,20 @@
 					<tr class="border-b border-slate-800 last:border-none hover:bg-slate-800/30">
 						<td class="px-4 py-3 text-sm font-medium">
 							{data.entityLabels[entity] || entity}
-							<span class="text-xs text-slate-500 block">{entity}</span>
+							<span class="block text-xs text-slate-500">{entity}</span>
 						</td>
 						{#each data.roleCodes as role}
 							{@const perm = getPermissionForRole(role, entity)}
 							{@const key = `${role}-${entity}`}
-							<td class="px-4 py-3 {selectedRole && selectedRole !== role ? 'hidden md:table-cell' : ''}">
-								<form 
+							<td
+								class="px-4 py-3 {selectedRole && selectedRole !== role
+									? 'hidden md:table-cell'
+									: ''}"
+							>
+								<form
 									id="form-{key}"
-									method="POST" 
-									action="?/update" 
+									method="POST"
+									action="?/update"
 									use:enhance={() => handleSubmit(role, entity)}
 									class="flex justify-center gap-2"
 								>
@@ -153,7 +165,9 @@
 											disabled={saving[key]}
 											onclick={() => {
 												const newValue = !perm[field];
-												const input = document.querySelector(`#form-${key} [name="${field}"]`) as HTMLInputElement;
+												const input = document.querySelector(
+													`#form-${key} [name="${field}"]`
+												) as HTMLInputElement;
 												if (input) input.value = newValue.toString();
 												const form = document.getElementById(`form-${key}`) as HTMLFormElement;
 												if (form) {
@@ -161,11 +175,15 @@
 													form.requestSubmit();
 												}
 											}}
-											class="h-6 w-6 rounded transition {perm[field] ? 'bg-emerald-500 hover:bg-emerald-400' : 'bg-slate-700 hover:bg-slate-600'} disabled:opacity-50"
-											aria-label="{field}"
+											class="h-6 w-6 rounded transition {perm[field]
+												? 'bg-emerald-500 hover:bg-emerald-400'
+												: 'bg-slate-700 hover:bg-slate-600'} disabled:opacity-50"
+											aria-label={field}
 										>
 											{#if saving[key]}
-												<span class="block h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mx-auto"></span>
+												<span
+													class="mx-auto block h-4 w-4 animate-spin rounded-full border-2 border-slate-400 border-t-transparent"
+												></span>
 											{:else}
 												{perm[field] ? '✓' : ''}
 											{/if}
@@ -182,11 +200,20 @@
 
 	<!-- Leyenda -->
 	<div class="rounded-xl border border-slate-800 bg-slate-900/50 p-4 text-sm">
-		<p class="font-medium mb-2">Leyenda:</p>
+		<p class="mb-2 font-medium">Leyenda:</p>
 		<div class="flex flex-wrap gap-4">
-			<span class="flex items-center gap-2"><span class="h-5 w-5 rounded bg-emerald-500 flex items-center justify-center text-xs text-white">✓</span> Permiso habilitado</span>
-			<span class="flex items-center gap-2"><span class="h-5 w-5 rounded bg-slate-700"></span> Permiso deshabilitado</span>
-			<span class="flex items-center gap-2 text-slate-400">C = Crear, L = Leer, E = Editar, X = Eliminar</span>
+			<span class="flex items-center gap-2"
+				><span
+					class="flex h-5 w-5 items-center justify-center rounded bg-emerald-500 text-xs text-white"
+					>✓</span
+				> Permiso habilitado</span
+			>
+			<span class="flex items-center gap-2"
+				><span class="h-5 w-5 rounded bg-slate-700"></span> Permiso deshabilitado</span
+			>
+			<span class="flex items-center gap-2 text-slate-400"
+				>C = Crear, L = Leer, E = Editar, X = Eliminar</span
+			>
 		</div>
 	</div>
 

@@ -19,10 +19,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			user: true,
 			career: true
 		},
-		orderBy: [
-			{ lastName: 'asc' },
-			{ firstName: 'asc' }
-		]
+		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
 	});
 
 	// Obtener incidencias recientes (usando StudentFollowUp con tipo INCIDENT)
@@ -42,14 +39,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	return {
-		students: students.map(s => ({
+		students: students.map((s) => ({
 			id: s.id,
 			dni: s.dni,
 			firstName: s.firstName,
 			lastName: s.lastName,
 			career: s.career.name
 		})),
-		recentIncidents: recentIncidents.map(i => ({
+		recentIncidents: recentIncidents.map((i) => ({
 			id: i.id,
 			studentName: `${i.student.lastName}, ${i.student.firstName}`,
 			studentDni: i.student.dni,

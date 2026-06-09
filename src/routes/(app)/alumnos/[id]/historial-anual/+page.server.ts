@@ -60,7 +60,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			currentYear: student.currentYear,
 			status: student.status
 		},
-		academicHistory: student.academicHistory.map(h => ({
+		academicHistory: student.academicHistory.map((h) => ({
 			id: h.id,
 			year: h.year,
 			status: h.status,
@@ -107,7 +107,14 @@ export const actions: Actions = {
 		}
 
 		// Validar estado
-		const validStatuses: AcademicYearStatus[] = ['ENROLLED', 'ACTIVE', 'PROMOTED', 'REPEATED', 'DROPPED_OUT', 'GRADUATED'];
+		const validStatuses: AcademicYearStatus[] = [
+			'ENROLLED',
+			'ACTIVE',
+			'PROMOTED',
+			'REPEATED',
+			'DROPPED_OUT',
+			'GRADUATED'
+		];
 		if (!validStatuses.includes(status as AcademicYearStatus)) {
 			return fail(400, { error: 'Estado inválido' });
 		}
@@ -182,7 +189,14 @@ export const actions: Actions = {
 		}
 
 		// Validar estado
-		const validStatuses: AcademicYearStatus[] = ['ENROLLED', 'ACTIVE', 'PROMOTED', 'REPEATED', 'DROPPED_OUT', 'GRADUATED'];
+		const validStatuses: AcademicYearStatus[] = [
+			'ENROLLED',
+			'ACTIVE',
+			'PROMOTED',
+			'REPEATED',
+			'DROPPED_OUT',
+			'GRADUATED'
+		];
 		if (!validStatuses.includes(status as AcademicYearStatus)) {
 			return fail(400, { error: 'Estado inválido' });
 		}

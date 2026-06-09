@@ -31,10 +31,7 @@
 			if (!searchQuery.trim()) return true;
 			const query = searchQuery.toLowerCase();
 			const fullName = `${director.lastName} ${director.firstName}`.toLowerCase();
-			return (
-				fullName.includes(query) ||
-				director.email.toLowerCase().includes(query)
-			);
+			return fullName.includes(query) || director.email.toLowerCase().includes(query);
 		})
 	);
 
@@ -71,17 +68,30 @@
 	<!-- Encabezado -->
 	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 		<div class="space-y-1">
-			<p class="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">Gestión Académica</p>
+			<p class="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">
+				Gestión Académica
+			</p>
 			<h1 class="text-3xl font-bold tracking-tight text-white">Directores</h1>
 			<p class="text-sm text-slate-400">Administración del cuerpo directivo del instituto</p>
 		</div>
 		{#if canManageDirectors()}
 			<a
 				href="/usuarios/nuevo?type=DIRECTOR"
-				class="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 transition-all hover:bg-slate-100 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-white/50"
+				class="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 transition-all hover:scale-[1.02] hover:bg-slate-100 focus:ring-2 focus:ring-white/50 focus:outline-none"
 			>
-				<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+				<svg
+					class="h-4 w-4"
+					fill="none"
+					stroke="currentColor"
+					viewBox="0 0 24 24"
+					aria-hidden="true"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M12 4v16m8-8H4"
+					/>
 				</svg>
 				Agregar Director
 			</a>
@@ -90,11 +100,24 @@
 
 	<!-- Métricas -->
 	<div class="grid gap-4 sm:grid-cols-3">
-		<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:bg-slate-900/70">
+		<div
+			class="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:bg-slate-900/70"
+		>
 			<div class="flex items-center gap-3">
 				<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10">
-					<svg class="h-5 w-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+					<svg
+						class="h-5 w-5 text-purple-400"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						aria-hidden="true"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+						/>
 					</svg>
 				</div>
 				<div>
@@ -103,11 +126,24 @@
 				</div>
 			</div>
 		</div>
-		<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:bg-slate-900/70">
+		<div
+			class="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:bg-slate-900/70"
+		>
 			<div class="flex items-center gap-3">
 				<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
-					<svg class="h-5 w-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+					<svg
+						class="h-5 w-5 text-emerald-400"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						aria-hidden="true"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+						/>
 					</svg>
 				</div>
 				<div>
@@ -116,10 +152,18 @@
 				</div>
 			</div>
 		</div>
-		<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:bg-slate-900/70">
+		<div
+			class="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:bg-slate-900/70"
+		>
 			<div class="flex items-center gap-3">
 				<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-500/10">
-					<svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+					<svg
+						class="h-5 w-5 text-slate-400"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						aria-hidden="true"
+					>
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
 					</svg>
 				</div>
@@ -135,24 +179,46 @@
 	<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
 		<div class="relative">
 			<label for="search" class="sr-only">Buscar directores</label>
-			<svg class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+			<svg
+				class="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-slate-500"
+				fill="none"
+				stroke="currentColor"
+				viewBox="0 0 24 24"
+				aria-hidden="true"
+			>
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+				/>
 			</svg>
 			<input
 				id="search"
 				type="text"
 				placeholder="Buscar por nombre o email"
 				bind:value={searchQuery}
-				class="w-full rounded-xl border border-slate-700 bg-slate-950 py-2.5 pl-12 pr-10 text-sm text-slate-300 placeholder-slate-500 transition-all outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
+				class="w-full rounded-xl border border-slate-700 bg-slate-950 py-2.5 pr-10 pl-12 text-sm text-slate-300 placeholder-slate-500 transition-all outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
 			/>
 			{#if searchQuery}
 				<button
 					onclick={clearSearch}
-					class="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-300"
+					class="absolute top-1/2 right-3 -translate-y-1/2 rounded-lg p-1 text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-300"
 					aria-label="Limpiar búsqueda"
 				>
-					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+					<svg
+						class="h-4 w-4"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						aria-hidden="true"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M6 18L18 6M6 6l12 12"
+						/>
 					</svg>
 				</button>
 			{/if}
@@ -165,19 +231,29 @@
 			<table class="w-full">
 				<thead class="border-b border-slate-800 bg-slate-800/30">
 					<tr>
-						<th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">
+						<th
+							class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+						>
 							Director
 						</th>
-						<th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">
+						<th
+							class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+						>
 							Email
 						</th>
-						<th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">
+						<th
+							class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+						>
 							Estado
 						</th>
-						<th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">
+						<th
+							class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+						>
 							Fecha Alta
 						</th>
-						<th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-400">
+						<th
+							class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-slate-400 uppercase"
+						>
 							Acciones
 						</th>
 					</tr>
@@ -188,21 +264,45 @@
 							<td colspan="5" class="px-4 py-12 text-center">
 								<div class="flex flex-col items-center gap-4">
 									<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-800">
-										<svg class="h-8 w-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+										<svg
+											class="h-8 w-8 text-slate-500"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+											aria-hidden="true"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+											/>
 										</svg>
 									</div>
 									<div class="space-y-1">
 										<p class="text-sm font-medium text-white">No hay directores registrados</p>
-										<p class="text-sm text-slate-400">Comienza agregando el primer director al sistema</p>
+										<p class="text-sm text-slate-400">
+											Comienza agregando el primer director al sistema
+										</p>
 									</div>
 									{#if canManageDirectors()}
 										<a
 											href="/usuarios/nuevo?type=DIRECTOR"
 											class="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition-all hover:bg-slate-100"
 										>
-											<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+											<svg
+												class="h-4 w-4"
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+												aria-hidden="true"
+											>
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M12 4v16m8-8H4"
+												/>
 											</svg>
 											Agregar Director
 										</a>
@@ -215,20 +315,44 @@
 							<td colspan="5" class="px-4 py-12 text-center">
 								<div class="flex flex-col items-center gap-4">
 									<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-800">
-										<svg class="h-8 w-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+										<svg
+											class="h-8 w-8 text-slate-500"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+											aria-hidden="true"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+											/>
 										</svg>
 									</div>
 									<div class="space-y-1">
 										<p class="text-sm font-medium text-white">No se encontraron resultados</p>
-										<p class="text-sm text-slate-400">No hay directores que coincidan con "{searchQuery}"</p>
+										<p class="text-sm text-slate-400">
+											No hay directores que coincidan con "{searchQuery}"
+										</p>
 									</div>
 									<button
 										onclick={clearSearch}
 										class="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 transition-all hover:bg-slate-700"
 									>
-										<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+										<svg
+											class="h-4 w-4"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+											aria-hidden="true"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M6 18L18 6M6 6l12 12"
+											/>
 										</svg>
 										Limpiar búsqueda
 									</button>
@@ -241,11 +365,16 @@
 							<tr class="transition-colors hover:bg-slate-800/30">
 								<td class="px-4 py-3">
 									<div class="flex items-center gap-3">
-										<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-purple-500 to-indigo-600 text-sm font-semibold text-white">
+										<div
+											class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-purple-500 to-indigo-600 text-sm font-semibold text-white"
+										>
 											{getInitials(director.firstName, director.lastName)}
 										</div>
 										<div class="min-w-0">
-											<p class="text-sm font-medium text-white truncate" title={`${director.lastName}, ${director.firstName}`}>
+											<p
+												class="truncate text-sm font-medium text-white"
+												title={`${director.lastName}, ${director.firstName}`}
+											>
 												{director.lastName}, {director.firstName}
 											</p>
 											<p class="text-xs text-slate-500">ID: {director.dni}</p>
@@ -253,47 +382,91 @@
 									</div>
 								</td>
 								<td class="px-4 py-3">
-									<p class="text-sm text-slate-300 truncate" title={director.email}>{director.email}</p>
+									<p class="truncate text-sm text-slate-300" title={director.email}>
+										{director.email}
+									</p>
 								</td>
 								<td class="px-4 py-3">
-									<span class="inline-flex items-center rounded-lg border px-2.5 py-1 text-xs font-medium {statusBadge.class}">
+									<span
+										class="inline-flex items-center rounded-lg border px-2.5 py-1 text-xs font-medium {statusBadge.class}"
+									>
 										{statusBadge.text}
 									</span>
 								</td>
 								<td class="px-4 py-3">
-									<p class="text-sm text-slate-300">{new Date(director.createdAt).toLocaleDateString('es-AR')}</p>
+									<p class="text-sm text-slate-300">
+										{new Date(director.createdAt).toLocaleDateString('es-AR')}
+									</p>
 								</td>
 								<td class="px-4 py-3 text-right">
 									<div class="flex items-center justify-end gap-1">
 										<a
 											href="/usuarios/{director.id}"
-											class="rounded-lg p-2 text-emerald-400 transition-colors hover:bg-emerald-500/10 hover:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+											class="rounded-lg p-2 text-emerald-400 transition-colors hover:bg-emerald-500/10 hover:text-emerald-300 focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
 											aria-label="Ver director"
 											title="Ver director"
 										>
-											<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+											<svg
+												class="h-4 w-4"
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+												aria-hidden="true"
+											>
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+												/>
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+												/>
 											</svg>
 										</a>
 										<a
 											href="/usuarios/{director.id}/editar"
-											class="rounded-lg p-2 text-blue-400 transition-colors hover:bg-blue-500/10 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+											class="rounded-lg p-2 text-blue-400 transition-colors hover:bg-blue-500/10 hover:text-blue-300 focus:ring-2 focus:ring-blue-500/50 focus:outline-none"
 											aria-label="Editar director"
 											title="Editar director"
 										>
-											<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+											<svg
+												class="h-4 w-4"
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+												aria-hidden="true"
+											>
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+												/>
 											</svg>
 										</a>
 										<button
-											onclick={() => deletingDirector = director}
-											class="rounded-lg p-2 text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+											onclick={() => (deletingDirector = director)}
+											class="rounded-lg p-2 text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300 focus:ring-2 focus:ring-red-500/50 focus:outline-none"
 											aria-label="Eliminar director"
 											title="Eliminar director"
 										>
-											<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+											<svg
+												class="h-4 w-4"
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+												aria-hidden="true"
+											>
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+												/>
 											</svg>
 										</button>
 									</div>
@@ -309,26 +482,43 @@
 	<!-- Modal de Eliminación -->
 	{#if deletingDirector}
 		<div
-			class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+			class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="delete-modal-title"
 		>
 			<div class="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
-				<div class="flex items-start gap-4 mb-6">
+				<div class="mb-6 flex items-start gap-4">
 					<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-500/10">
-						<svg class="h-6 w-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+						<svg
+							class="h-6 w-6 text-red-400"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							aria-hidden="true"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+							/>
 						</svg>
 					</div>
 					<div class="flex-1">
-						<h2 id="delete-modal-title" class="text-lg font-semibold text-white">Eliminar Director</h2>
-						<p class="mt-1 text-sm text-slate-400">Esta acción no se puede deshacer. Se eliminará el rol de director del usuario.</p>
+						<h2 id="delete-modal-title" class="text-lg font-semibold text-white">
+							Eliminar Director
+						</h2>
+						<p class="mt-1 text-sm text-slate-400">
+							Esta acción no se puede deshacer. Se eliminará el rol de director del usuario.
+						</p>
 					</div>
 				</div>
 
 				<div class="mb-6 rounded-xl border border-slate-800 bg-slate-800/50 p-4">
-					<p class="font-medium text-white">{deletingDirector.lastName}, {deletingDirector.firstName}</p>
+					<p class="font-medium text-white">
+						{deletingDirector.lastName}, {deletingDirector.firstName}
+					</p>
 					<p class="text-sm text-slate-400">{deletingDirector.email}</p>
 				</div>
 
@@ -347,14 +537,14 @@
 					<div class="flex justify-end gap-3">
 						<button
 							type="button"
-							onclick={() => deletingDirector = null}
-							class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/50"
+							onclick={() => (deletingDirector = null)}
+							class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800 focus:ring-2 focus:ring-slate-500/50 focus:outline-none"
 						>
 							Cancelar
 						</button>
 						<button
 							type="submit"
-							class="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+							class="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600 focus:ring-2 focus:ring-red-500/50 focus:outline-none"
 						>
 							Eliminar Director
 						</button>

@@ -12,10 +12,14 @@
 	function getStatusColor(status: string, promoted?: boolean): string {
 		if (promoted) return 'text-purple-400 bg-purple-950/50';
 		switch (status) {
-			case 'REGULAR': return 'text-amber-400 bg-amber-950/50';
-			case 'APROBADO': return 'text-emerald-400 bg-emerald-950/50';
-			case 'LIBRE': return 'text-red-400 bg-red-950/50';
-			default: return 'text-slate-400 bg-slate-800';
+			case 'REGULAR':
+				return 'text-amber-400 bg-amber-950/50';
+			case 'APROBADO':
+				return 'text-emerald-400 bg-emerald-950/50';
+			case 'LIBRE':
+				return 'text-red-400 bg-red-950/50';
+			default:
+				return 'text-slate-400 bg-slate-800';
 		}
 	}
 </script>
@@ -32,7 +36,8 @@
 				<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Calificaciones</p>
 				<h1 class="mt-2 text-3xl font-bold">Mis notas</h1>
 				<p class="mt-2 text-slate-400">
-					{data.student.firstName} {data.student.lastName}
+					{data.student.firstName}
+					{data.student.lastName}
 				</p>
 			</div>
 			<div class="text-right">
@@ -60,7 +65,9 @@
 								<p class="font-medium">{subject.name}</p>
 								<p class="text-sm text-slate-400">{subject.code}</p>
 							</div>
-							<span class="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs bg-blue-950/50 text-blue-400">
+							<span
+								class="inline-flex items-center gap-1 rounded-full bg-blue-950/50 px-2 py-1 text-xs text-blue-400"
+							>
 								{subject.yearLevel}° año
 							</span>
 						</div>
@@ -70,7 +77,9 @@
 							{:else}
 								<span class="rounded-full bg-slate-800 px-2 py-1 text-slate-300">Optativa</span>
 							{/if}
-							<span class="rounded-full bg-slate-800 px-2 py-1 text-slate-300">{subject.accreditationMode}</span>
+							<span class="rounded-full bg-slate-800 px-2 py-1 text-slate-300"
+								>{subject.accreditationMode}</span
+							>
 						</div>
 						{#if subject.correlatives.length > 0}
 							<div class="mt-3 rounded-lg bg-slate-900/50 p-2">
@@ -95,7 +104,10 @@
 	{:else}
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
 			<h2 class="mb-4 text-lg font-semibold">📖 Materias disponibles para cursar</h2>
-			<p class="text-slate-400">No hay materias disponibles para cursar en este momento. Completa las correlatividades para acceder a más materias.</p>
+			<p class="text-slate-400">
+				No hay materias disponibles para cursar en este momento. Completa las correlatividades para
+				acceder a más materias.
+			</p>
 		</div>
 	{/if}
 
@@ -109,14 +121,23 @@
 						<div class="flex items-start justify-between">
 							<div>
 								<p class="font-medium">{status.subject}</p>
-								<span class="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs {getStatusColor(status.status, status.promoted)}">
+								<span
+									class="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs {getStatusColor(
+										status.status,
+										status.promoted
+									)}"
+								>
 									{#if status.promoted}⭐ PROMOCIONADO{:else}{status.status}{/if}
 								</span>
 							</div>
 							<div class="text-right">
 								<p class="text-sm text-slate-400">Asistencia</p>
-								<p class="font-semibold {status.attendancePercent >= 80 ? 'text-emerald-400' : 'text-amber-400'}">
-									{status.attendancePercent}%
+								<p
+									class="font-semibold {(status.attendancePercent ?? 0) >= 80
+										? 'text-emerald-400'
+										: 'text-amber-400'}"
+								>
+									{status.attendancePercent ?? 0}%
 								</p>
 							</div>
 						</div>
@@ -129,7 +150,9 @@
 									</p>
 								</div>
 								{#if status.promoted}
-									<span class="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs text-purple-400 bg-purple-950/50">
+									<span
+										class="inline-flex items-center gap-1 rounded-full bg-purple-950/50 px-2 py-1 text-xs text-purple-400"
+									>
 										⭐ Promocionado
 									</span>
 								{/if}
@@ -138,7 +161,12 @@
 						{#if status.approved && !status.promoted}
 							<div class="mt-3 flex items-center gap-2 text-emerald-400">
 								<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+									/>
 								</svg>
 								<span class="text-sm font-medium">Aprobado con final</span>
 							</div>
@@ -153,7 +181,7 @@
 	{#if data.subjects.length > 0}
 		<div class="space-y-6">
 			<h2 class="text-lg font-semibold">📝 Evaluaciones detalladas</h2>
-			
+
 			{#each data.subjects as subject}
 				<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
 					<div class="mb-4 flex items-center justify-between">
@@ -177,7 +205,10 @@
 								</p>
 								<p class="mt-1 text-sm text-slate-400">{grade.type}</p>
 								<p class="text-xs text-slate-500">
-									{new Date(grade.date).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
+									{new Date(grade.date).toLocaleDateString('es-AR', {
+										day: 'numeric',
+										month: 'short'
+									})}
 								</p>
 							</div>
 						{/each}
@@ -192,7 +223,10 @@
 	{/if}
 
 	<div class="flex justify-start">
-		<a href="/alumno" class="rounded-2xl border border-slate-700 px-6 py-3 transition hover:bg-slate-800">
+		<a
+			href="/alumno"
+			class="rounded-2xl border border-slate-700 px-6 py-3 transition hover:bg-slate-800"
+		>
 			← Volver al panel
 		</a>
 	</div>

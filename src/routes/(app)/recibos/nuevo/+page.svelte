@@ -93,7 +93,8 @@
 		<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Docentes · Haberes</p>
 		<h1 class="mt-2 text-4xl font-bold tracking-tight">Cargar recibo de sueldo</h1>
 		<p class="mt-3 text-sm text-slate-400">
-			Complete el formulario para cargar un nuevo recibo de sueldo. El archivo PDF se almacenará de forma segura y solo podrá ser accedido por el docente correspondiente.
+			Complete el formulario para cargar un nuevo recibo de sueldo. El archivo PDF se almacenará de
+			forma segura y solo podrá ser accedido por el docente correspondiente.
 		</p>
 	</section>
 
@@ -211,15 +212,29 @@
 				{#if selectedFile}
 					<div class="flex items-center justify-between p-6">
 						<div class="flex items-center gap-3">
-							<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-950/50 text-indigo-400">
-								<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<div
+								class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-950/50 text-indigo-400"
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="20"
+									height="20"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								>
 									<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
 									<polyline points="14 2 14 8 20 8" />
 								</svg>
 							</div>
 							<div>
 								<p class="text-sm font-medium text-slate-200">{selectedFile.name}</p>
-								<p class="text-xs text-slate-400">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+								<p class="text-xs text-slate-400">
+									{(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+								</p>
 							</div>
 						</div>
 						<button
@@ -232,8 +247,20 @@
 					</div>
 				{:else}
 					<div class="flex flex-col items-center justify-center p-8">
-						<div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-800 text-slate-400">
-							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<div
+							class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-800 text-slate-400"
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="24"
+								height="24"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
 								<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
 								<polyline points="17 8 12 3 7 8" />
 								<line x1="12" y1="3" x2="12" y2="15" />
@@ -243,7 +270,12 @@
 							Arrastra un archivo PDF aquí o
 							<label class="cursor-pointer text-indigo-400 hover:text-indigo-300">
 								haz clic para seleccionar
-								<input type="file" accept=".pdf,application/pdf" oninput={handleFileSelect} class="hidden" />
+								<input
+									type="file"
+									accept=".pdf,application/pdf"
+									oninput={handleFileSelect}
+									class="hidden"
+								/>
 							</label>
 						</p>
 						<p class="mt-2 text-xs text-slate-500">Máximo 10MB</p>
@@ -260,7 +292,7 @@
 				bind:value={notes}
 				rows="3"
 				placeholder="Observaciones adicionales sobre el recibo..."
-				class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition outline-none focus:border-indigo-500 resize-none"
+				class="w-full resize-none rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition outline-none focus:border-indigo-500"
 			></textarea>
 		</div>
 

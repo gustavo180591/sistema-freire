@@ -24,7 +24,7 @@
 	<!-- Formulario de Comunicado -->
 	<form
 		method="POST"
-		class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-6"
+		class="space-y-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-6"
 		use:enhance={() => {
 			if (form?.success) {
 				selectedStudent = '';
@@ -46,7 +46,8 @@
 		{/if}
 
 		<div>
-			<label for="studentId" class="mb-2 block text-sm font-medium text-slate-300">Estudiante</label>
+			<label for="studentId" class="mb-2 block text-sm font-medium text-slate-300">Estudiante</label
+			>
 			<select
 				id="studentId"
 				name="studentId"
@@ -91,7 +92,9 @@
 		</div>
 
 		<div>
-			<label for="description" class="mb-2 block text-sm font-medium text-slate-300">Descripción</label>
+			<label for="description" class="mb-2 block text-sm font-medium text-slate-300"
+				>Descripción</label
+			>
 			<textarea
 				id="description"
 				name="description"
@@ -123,15 +126,17 @@
 						<div class="flex-1">
 							<div class="flex items-center gap-2">
 								<p class="font-semibold text-white">{comm.title}</p>
-								<span class="inline-flex items-center gap-1 rounded-full bg-blue-950/50 px-2 py-0.5 text-xs text-blue-400">
+								<span
+									class="inline-flex items-center gap-1 rounded-full bg-blue-950/50 px-2 py-0.5 text-xs text-blue-400"
+								>
 									{comm.type === 'MEETING' ? 'Reunión' : 'Nota'}
 								</span>
 							</div>
-							<p class="text-sm text-slate-400 mt-1">
+							<p class="mt-1 text-sm text-slate-400">
 								{comm.studentName} - DNI: {comm.studentDni}
 							</p>
-							<p class="text-sm text-slate-300 mt-2">{comm.description}</p>
-							<p class="text-xs text-slate-500 mt-2">
+							<p class="mt-2 text-sm text-slate-300">{comm.description}</p>
+							<p class="mt-2 text-xs text-slate-500">
 								{new Date(comm.createdAt).toLocaleDateString('es-AR', {
 									day: '2-digit',
 									month: '2-digit',
@@ -159,11 +164,11 @@
 					<div class="flex items-start justify-between gap-4">
 						<div class="flex-1">
 							<p class="font-semibold text-white">{doc.fileName}</p>
-							<p class="text-sm text-slate-400 mt-1">
+							<p class="mt-1 text-sm text-slate-400">
 								{doc.studentName} - DNI: {doc.studentDni}
 							</p>
 							<p class="text-sm text-slate-400">Tipo: {doc.documentType}</p>
-							<p class="text-xs text-slate-500 mt-2">
+							<p class="mt-2 text-xs text-slate-500">
 								Subido: {new Date(doc.uploadedAt).toLocaleDateString('es-AR', {
 									day: '2-digit',
 									month: '2-digit',
@@ -173,7 +178,9 @@
 								})}
 							</p>
 						</div>
-						<span class="inline-flex items-center gap-1 rounded-full bg-amber-950/50 px-3 py-1 text-xs text-amber-400">
+						<span
+							class="inline-flex items-center gap-1 rounded-full bg-amber-950/50 px-3 py-1 text-xs text-amber-400"
+						>
 							Pendiente
 						</span>
 					</div>
@@ -186,7 +193,10 @@
 	</div>
 
 	<div class="flex justify-start">
-		<a href="/preceptor" class="rounded-2xl border border-slate-700 px-6 py-3 transition hover:bg-slate-800">
+		<a
+			href="/preceptor"
+			class="rounded-2xl border border-slate-700 px-6 py-3 transition hover:bg-slate-800"
+		>
 			← Volver al panel
 		</a>
 	</div>

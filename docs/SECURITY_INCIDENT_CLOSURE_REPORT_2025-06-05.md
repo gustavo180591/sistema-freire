@@ -5,7 +5,7 @@
 **Incident ID:** SEC-2025-06-05-001  
 **Date Resolved:** June 5, 2026  
 **Resolution Status:** ✅ **CLOSED**  
-**Severity:** High → Resolved  
+**Severity:** High → Resolved
 
 A security incident involving accidental exposure of sensitive personal data in Git history has been successfully resolved. All sensitive data has been removed from the repository history, test data has been replaced with fictional information, and preventive measures have been implemented.
 
@@ -13,17 +13,17 @@ A security incident involving accidental exposure of sensitive personal data in 
 
 ## Incident Timeline
 
-| Time (UTC-03) | Event |
-|---------------|-------|
-| 2026-06-05 02:08 | Commit `21cd0ad` with sensitive backups pushed to remote |
-| 2026-06-05 20:30 | Incident identified during security review |
-| 2026-06-05 20:44 | Git history cleaned with `git-filter-repo` |
-| 2026-06-05 20:45 | Verification completed - no sensitive data in history |
-| 2026-06-05 20:46 | Initial documentation created |
-| 2026-06-05 21:04 | Force push of clean history to remote (confirmed by user) |
-| 2026-06-05 21:05-21:23 | Test data replacement with fictional information |
-| 2026-06-05 21:23 | Commit of test data changes (hash: 62f5e65) |
-| 2026-06-05 21:24 | Incident closure report generated |
+| Time (UTC-03)          | Event                                                     |
+| ---------------------- | --------------------------------------------------------- |
+| 2026-06-05 02:08       | Commit `21cd0ad` with sensitive backups pushed to remote  |
+| 2026-06-05 20:30       | Incident identified during security review                |
+| 2026-06-05 20:44       | Git history cleaned with `git-filter-repo`                |
+| 2026-06-05 20:45       | Verification completed - no sensitive data in history     |
+| 2026-06-05 20:46       | Initial documentation created                             |
+| 2026-06-05 21:04       | Force push of clean history to remote (confirmed by user) |
+| 2026-06-05 21:05-21:23 | Test data replacement with fictional information          |
+| 2026-06-05 21:23       | Commit of test data changes (hash: 62f5e65)               |
+| 2026-06-05 21:24       | Incident closure report generated                         |
 
 ---
 
@@ -34,6 +34,7 @@ A security incident involving accidental exposure of sensitive personal data in 
 **Tool Used:** `git-filter-repo` (industry standard for Git history rewriting)
 
 **Commands Executed:**
+
 ```bash
 ./git-filter-repo --path prisma/backup/ --invert-paths --force
 git reflog expire --expire=now --all
@@ -41,6 +42,7 @@ git gc --prune=now --aggressive
 ```
 
 **Results:**
+
 - 158 commits rewritten
 - `prisma/backup/` completely removed from all commits
 - Remote repository updated via force push (confirmed by user)
@@ -49,6 +51,7 @@ git gc --prune=now --aggressive
 ### 2. Verification of Clean History ✅
 
 **Verification Commands:**
+
 ```bash
 git log --all -- prisma/backup/        # No results ✅
 git grep "33222111" $(git rev-list --all)  # No results ✅
@@ -61,12 +64,14 @@ git grep "gustavo.faccendini@gmail.com" $(git rev-list --all)  # Only in seed fi
 ### 3. Prevention Measures ✅
 
 **.gitignore Updated:**
+
 ```gitignore
 # Database backups (contain sensitive data)
 prisma/backup/
 ```
 
 **.env Verification:**
+
 - ✅ `.env` file was NEVER committed to repository
 - ✅ Only `.env.example` exists in version control
 - ✅ Database credentials remain secure
@@ -74,6 +79,7 @@ prisma/backup/
 ### 4. Test Data Replacement ✅
 
 **Files Modified:**
+
 - `seedAdmin.ts`
 - `prisma/seed.ts`
 - `scripts/fix-user.ts`
@@ -81,18 +87,19 @@ prisma/backup/
 
 **Data Replacements:**
 
-| Field | Previous Value | New Value |
-|-------|---------------|-----------|
-| Email | gustavo.faccendini@gmail.com | admin.test@example.com |
-| Password | $Mariel1805 / $Gustavo1805 | TestPassword123! |
-| First Name | Gustavo | Admin |
-| Last Name | Faccendini | Test |
+| Field      | Previous Value               | New Value              |
+| ---------- | ---------------------------- | ---------------------- |
+| Email      | gustavo.faccendini@gmail.com | admin.test@example.com |
+| Password   | $Mariel1805 / $Gustavo1805   | TestPassword123!       |
+| First Name | Gustavo                      | Admin                  |
+| Last Name  | Faccendini                   | Test                   |
 
 **Commit:** `fix(db): replace real personal data with fictional test data` (hash: 62f5e65)
 
 ### 5. System Validation ✅
 
 **Commands Executed:**
+
 ```bash
 npm run check          # ✅ 0 errors, 30 warnings (accessibility only)
 npm run build          # ✅ Built successfully in 4.75s
@@ -110,6 +117,7 @@ npx prisma migrate status  # ✅ 22 migrations, schema up to date
 ### Exposed Data (Before Cleanup)
 
 **Emails:**
+
 - gustavo.faccendini@gmail.com
 - alumno@gmail.com
 - docente@gmail.com
@@ -117,23 +125,28 @@ npx prisma migrate status  # ✅ 22 migrations, schema up to date
 - secretaria@gmail.com
 
 **Sensitive Identifiers:**
+
 - DNI: 33222111
 - Phone: 1234123456, 4321433221
 
 **Password Hashes:**
+
 - Multiple bcrypt hashes exposed in backup files
 
 ### Current State (After Cleanup)
 
 **Emails in Repository:**
+
 - ✅ Only `admin.test@example.com` in seed files (fictional)
 - ✅ No real emails in Git history
 
 **Sensitive Identifiers:**
+
 - ✅ No DNI or phone numbers in repository
 - ✅ No sensitive identifiers in Git history
 
 **Password Hashes:**
+
 - ✅ New fictional password: `TestPassword123!`
 - ✅ Old compromised hashes removed from history
 
@@ -163,6 +176,7 @@ npx prisma migrate status  # ✅ 22 migrations, schema up to date
 ### 1. Push Test Data Changes (User Action Required)
 
 **Command to Execute:**
+
 ```bash
 git push --set-upstream origin main
 ```
@@ -172,6 +186,7 @@ git push --set-upstream origin main
 ### 2. Password Reset for Affected Users (User Action Required)
 
 **Affected Users:**
+
 - gustavo.faccendini@gmail.com
 - alumno@gmail.com
 - docente@gmail.com
@@ -187,6 +202,7 @@ git push --set-upstream origin main
 **Action Required:** Notify all collaborators to reclone the repository.
 
 **Instructions for Collaborators:**
+
 ```bash
 # Backup any local changes
 git stash
@@ -206,13 +222,13 @@ git clone https://github.com/gustavo180591/sistema-freire.git
 
 ### Current Risk Level: ✅ **LOW**
 
-| Risk Factor | Before | After | Status |
-|-------------|--------|-------|--------|
-| Sensitive data in Git history | HIGH | NONE | ✅ Resolved |
-| Real personal data in seed files | MEDIUM | NONE | ✅ Resolved |
-| Compromised password hashes | HIGH | MITIGATED | ⚠️ Requires user action |
-| Future accidental commits | MEDIUM | LOW | ✅ Mitigated by .gitignore |
-| Repository security | MEDIUM | HIGH | ✅ Improved |
+| Risk Factor                      | Before | After     | Status                     |
+| -------------------------------- | ------ | --------- | -------------------------- |
+| Sensitive data in Git history    | HIGH   | NONE      | ✅ Resolved                |
+| Real personal data in seed files | MEDIUM | NONE      | ✅ Resolved                |
+| Compromised password hashes      | HIGH   | MITIGATED | ⚠️ Requires user action    |
+| Future accidental commits        | MEDIUM | LOW       | ✅ Mitigated by .gitignore |
+| Repository security              | MEDIUM | HIGH      | ✅ Improved                |
 
 ### Residual Risks
 
@@ -251,17 +267,20 @@ git clone https://github.com/gustavo180591/sistema-freire.git
 ## Lessons Learned
 
 ### What Went Wrong
+
 1. Database backup directory was not included in `.gitignore`
 2. Real personal data was used in seed files instead of fictional data
 3. No pre-commit hooks to detect sensitive data patterns
 
 ### What Went Right
+
 1. Incident was identified quickly during security review
 2. Appropriate tools (`git-filter-repo`) were used for complete cleanup
 3. Comprehensive verification was performed
 4. Documentation was created throughout the process
 
 ### Process Improvements
+
 1. **.gitignore Review:** Always review `.gitignore` before committing database-related features
 2. **Test Data Policy:** Use only fictional data for testing and development
 3. **Pre-commit Hooks:** Consider implementing hooks to detect sensitive data patterns

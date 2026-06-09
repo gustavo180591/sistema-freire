@@ -23,7 +23,7 @@
 	{#if selectedEntry}
 		<form
 			method="POST"
-			class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-6"
+			class="space-y-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-6"
 			use:enhance={() => {
 				if (form?.success) {
 					selectedEntry = '';
@@ -46,7 +46,9 @@
 			<input type="hidden" name="entryId" value={selectedEntry} />
 
 			<div>
-				<label for="justification" class="mb-2 block text-sm font-medium text-slate-300">Justificación</label>
+				<label for="justification" class="mb-2 block text-sm font-medium text-slate-300"
+					>Justificación</label
+				>
 				<textarea
 					id="justification"
 					name="justification"
@@ -90,7 +92,7 @@
 							<p class="font-semibold text-white">{absence.studentName}</p>
 							<p class="text-sm text-slate-400">DNI: {absence.studentDni}</p>
 							<p class="text-sm text-slate-400">{absence.subject}</p>
-							<p class="text-xs text-slate-500 mt-1">
+							<p class="mt-1 text-xs text-slate-500">
 								Fecha: {new Date(absence.date).toLocaleDateString('es-AR')}
 							</p>
 							{#if absence.notes}
@@ -111,7 +113,9 @@
 								Justificar
 							</button>
 						{:else}
-							<span class="inline-flex items-center gap-1 rounded-full bg-emerald-950/50 px-3 py-1 text-xs text-emerald-400">
+							<span
+								class="inline-flex items-center gap-1 rounded-full bg-emerald-950/50 px-3 py-1 text-xs text-emerald-400"
+							>
 								Justificado
 							</span>
 						{/if}
@@ -125,7 +129,10 @@
 	</div>
 
 	<div class="flex justify-start">
-		<a href="/preceptor" class="rounded-2xl border border-slate-700 px-6 py-3 transition hover:bg-slate-800">
+		<a
+			href="/preceptor"
+			class="rounded-2xl border border-slate-700 px-6 py-3 transition hover:bg-slate-800"
+		>
 			← Volver al panel
 		</a>
 	</div>

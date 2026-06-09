@@ -34,7 +34,7 @@ export const actions = {
 		const now = new Date();
 		if (user.lockedUntil && user.lockedUntil > now) {
 			const minutesLeft = Math.ceil((user.lockedUntil.getTime() - now.getTime()) / 60000);
-			
+
 			// Registrar intento bloqueado
 			await prisma.auditLog.create({
 				data: {
@@ -45,8 +45,8 @@ export const actions = {
 					userId: user.id
 				}
 			});
-			
-			return fail(403, { 
+
+			return fail(403, {
 				error: `Cuenta temporalmente bloqueada. Intente nuevamente en ${minutesLeft} minutos.`,
 				locked: true,
 				minutesLeft
@@ -66,7 +66,9 @@ export const actions = {
 		}
 
 		if (user.status !== 'ACTIVE') {
-			return fail(403, { error: 'El usuario se encuentra inactivo o bloqueado' } satisfies ActionData);
+			return fail(403, {
+				error: 'El usuario se encuentra inactivo o bloqueado'
+			} satisfies ActionData);
 		}
 
 		const validPassword = await bcrypt.compare(password, user.passwordHash);
@@ -75,13 +77,13 @@ export const actions = {
 			// Incrementar contador de intentos fallidos
 			const newAttempts = (user.failedLoginAttempts || 0) + 1;
 			const shouldLock = newAttempts >= MAX_FAILED_ATTEMPTS;
-			
+
 			await prisma.user.update({
 				where: { id: user.id },
 				data: {
 					failedLoginAttempts: newAttempts,
 					lastFailedAttempt: now,
-					lockedUntil: shouldLock 
+					lockedUntil: shouldLock
 						? new Date(now.getTime() + LOCK_DURATION_MINUTES * 60000)
 						: user.lockedUntil
 				}
@@ -100,15 +102,15 @@ export const actions = {
 
 			// Mensaje diferente si es el intento que bloquea
 			if (shouldLock) {
-				return fail(403, { 
+				return fail(403, {
 					error: `Demasiados intentos fallidos. Cuenta bloqueada por ${LOCK_DURATION_MINUTES} minutos.`,
 					locked: true,
 					minutesLeft: LOCK_DURATION_MINUTES
 				} satisfies ActionData);
 			}
 
-			return fail(400, { 
-				error: 'Credenciales inválidas', 
+			return fail(400, {
+				error: 'Credenciales inválidas',
 				incorrect: true,
 				attemptsLeft: MAX_FAILED_ATTEMPTS - newAttempts
 			} satisfies ActionData);
@@ -156,7 +158,7 @@ export const actions = {
 			maxAge: 60 * 60 * 24 * 30 // 30 días
 		});
 
-		const roles = user.roles.map(r => r.role.code);
+		const roles = user.roles.map((r) => r.role.code);
 		let redirectUrl = '/';
 
 		if (roles.some((r) => ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'].includes(r))) {

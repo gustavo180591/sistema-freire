@@ -34,17 +34,14 @@
 			<h1 class="mt-2 text-4xl font-bold tracking-tight">Editar plan de estudio</h1>
 			<p class="mt-2 font-mono text-sm text-slate-400">{data.plan.career.code}</p>
 			<p class="mt-4 max-w-3xl text-sm text-slate-400">
-				Actualizar información del plan curricular {data.plan.name} de la carrera {data.plan.career.name}.
+				Actualizar información del plan curricular {data.plan.name} de la carrera {data.plan.career
+					.name}.
 			</p>
 		</div>
 	</section>
 
 	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
-		<form
-			method="POST"
-			use:enhance
-			class="space-y-6"
-		>
+		<form method="POST" use:enhance class="space-y-6">
 			{#if !success && errors.general}
 				<div class="rounded-2xl border border-red-900 bg-red-900/10 p-4 text-sm text-red-400">
 					{errors.general}

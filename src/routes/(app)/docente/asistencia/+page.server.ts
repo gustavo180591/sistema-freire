@@ -50,12 +50,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	const subjects = subjectTeachers.map(st => st.subject);
+	const subjects = subjectTeachers.map((st) => st.subject);
 
 	// Obtener comisiones para las materias del docente, filtrando por localidades permitidas
 	const commissions = await prisma.subjectCommission.findMany({
 		where: {
-			subjectId: { in: subjects.map(s => s.id) },
+			subjectId: { in: subjects.map((s) => s.id) },
 			active: true,
 			locationId: { in: allowedLocationIds }
 		},
@@ -67,7 +67,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	// Obtener estudiantes de las carreras de las materias del docente
-	const careerIds = subjects.flatMap(s => s.careerSubjects.map(cs => cs.career.id));
+	const careerIds = subjects.flatMap((s) => s.careerSubjects.map((cs) => cs.career.id));
 	const students = await prisma.student.findMany({
 		where: {
 			status: 'ACTIVE',
@@ -79,10 +79,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			user: true,
 			career: true
 		},
-		orderBy: [
-			{ lastName: 'asc' },
-			{ firstName: 'asc' }
-		]
+		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
 	});
 
 	// Obtener registros de asistencia recientes del docente
@@ -90,7 +87,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		where: {
 			createdByUserId: locals.user.id,
 			subjectId: {
-				in: subjects.map(s => s.id)
+				in: subjects.map((s) => s.id)
 			}
 		},
 		include: {
@@ -110,14 +107,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	return {
-		subjects: subjects.map(s => ({
+		subjects: subjects.map((s) => ({
 			id: s.id,
 			code: s.code,
 			name: s.name,
 			yearLevel: s.yearLevel,
-			careers: s.careerSubjects.map(cs => cs.career.name)
+			careers: s.careerSubjects.map((cs) => cs.career.name)
 		})),
-		commissions: commissions.map(c => ({
+		commissions: commissions.map((c) => ({
 			id: c.id,
 			code: c.code,
 			subjectId: c.subjectId,
@@ -128,7 +125,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			locationName: c.location?.name || null,
 			schedule: c.schedule
 		})),
-		students: students.map(s => ({
+		students: students.map((s) => ({
 			id: s.id,
 			dni: s.dni,
 			firstName: s.firstName,
@@ -136,7 +133,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			career: s.career.name,
 			currentYear: s.currentYear
 		})),
-		recentAttendance: recentAttendance.map(a => ({
+		recentAttendance: recentAttendance.map((a) => ({
 			id: a.id,
 			date: a.classDate,
 			subject: a.subject.name,
@@ -200,7 +197,11 @@ export const actions: Actions = {
 			});
 
 			// Parsear datos de asistencia
-			const attendance = JSON.parse(attendanceData) as Array<{ studentId: string; present: boolean; notes?: string }>;
+			const attendance = JSON.parse(attendanceData) as Array<{
+				studentId: string;
+				present: boolean;
+				notes?: string;
+			}>;
 
 			// Verificar si ya existe un registro de asistencia para esta materia, fecha y comisión
 			const existingRecord = await prisma.attendanceRecord.findFirst({
@@ -212,7 +213,11 @@ export const actions: Actions = {
 			});
 
 			if (existingRecord) {
-				return { error: 'Ya existe un registro de asistencia para esta materia en esta fecha' + (commissionId ? ' y comisión' : '') };
+				return {
+					error:
+						'Ya existe un registro de asistencia para esta materia en esta fecha' +
+						(commissionId ? ' y comisión' : '')
+				};
 			}
 
 			// Crear registro de asistencia
@@ -226,11 +231,11 @@ export const actions: Actions = {
 			});
 
 			// Crear entradas de asistencia para cada estudiante
-			const presentCount = attendance.filter(a => a.present).length;
+			const presentCount = attendance.filter((a) => a.present).length;
 			const absentCount = attendance.length - presentCount;
 
 			await prisma.attendanceEntry.createMany({
-				data: attendance.map(a => ({
+				data: attendance.map((a) => ({
 					attendanceId: attendanceRecord.id,
 					studentId: a.studentId,
 					present: a.present,
@@ -314,7 +319,11 @@ export const actions: Actions = {
 			}
 
 			// Parsear datos de asistencia
-			const attendance = JSON.parse(attendanceData) as Array<{ studentId: string; present: boolean; notes?: string }>;
+			const attendance = JSON.parse(attendanceData) as Array<{
+				studentId: string;
+				present: boolean;
+				notes?: string;
+			}>;
 
 			// Actualizar o crear entradas de asistencia
 			for (const a of attendance) {
@@ -347,7 +356,7 @@ export const actions: Actions = {
 				}
 			}
 
-			const presentCount = attendance.filter(a => a.present).length;
+			const presentCount = attendance.filter((a) => a.present).length;
 			const absentCount = attendance.length - presentCount;
 
 			// Actualizar estado de regularidad para cada estudiante

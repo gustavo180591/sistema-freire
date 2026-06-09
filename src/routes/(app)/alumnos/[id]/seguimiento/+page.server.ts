@@ -57,8 +57,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	// Calcular estadísticas
 	const totalFollowUps = student.followUps.length;
-	const alertsCount = student.followUps.filter(f => f.isAlert).length;
-	const unresolvedAlerts = student.followUps.filter(f => f.isAlert && !f.isResolved).length;
+	const alertsCount = student.followUps.filter((f) => f.isAlert).length;
+	const unresolvedAlerts = student.followUps.filter((f) => f.isAlert && !f.isResolved).length;
 	const lastFollowUp = student.followUps[0]?.date ?? null;
 
 	return {
@@ -69,7 +69,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			career: student.career.name,
 			email: student.user.email
 		},
-		followUps: student.followUps.map(f => ({
+		followUps: student.followUps.map((f) => ({
 			id: f.id,
 			type: f.type,
 			typeLabel: FOLLOW_UP_TYPE_LABELS[f.type],
@@ -121,7 +121,15 @@ export const actions: Actions = {
 		}
 
 		// Validar tipo
-		const validTypes = ['INTERVIEW', 'OBSERVATION', 'WARNING', 'MEETING', 'INCIDENT', 'ACHIEVEMENT', 'NOTE'];
+		const validTypes = [
+			'INTERVIEW',
+			'OBSERVATION',
+			'WARNING',
+			'MEETING',
+			'INCIDENT',
+			'ACHIEVEMENT',
+			'NOTE'
+		];
 		if (!validTypes.includes(type)) {
 			return fail(400, { error: 'Tipo de seguimiento inválido' });
 		}

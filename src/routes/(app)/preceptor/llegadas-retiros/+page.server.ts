@@ -19,10 +19,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			user: true,
 			career: true
 		},
-		orderBy: [
-			{ lastName: 'asc' },
-			{ firstName: 'asc' }
-		]
+		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
 	});
 
 	// Obtener materias
@@ -40,10 +37,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// Obtener registros recientes de llegadas tarde y retiros
 	const recentRecords = await prisma.attendanceEntry.findMany({
 		where: {
-			OR: [
-				{ notes: { contains: 'LLEGADA_TARDE' } },
-				{ notes: { contains: 'RETIRO_ANTICIPADO' } }
-			]
+			OR: [{ notes: { contains: 'LLEGADA_TARDE' } }, { notes: { contains: 'RETIRO_ANTICIPADO' } }]
 		},
 		include: {
 			student: {
@@ -66,21 +60,21 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	return {
-		students: students.map(s => ({
+		students: students.map((s) => ({
 			id: s.id,
 			dni: s.dni,
 			firstName: s.firstName,
 			lastName: s.lastName,
 			career: s.career.name
 		})),
-		subjects: subjects.map(s => ({
+		subjects: subjects.map((s) => ({
 			id: s.id,
 			code: s.code,
 			name: s.name,
 			yearLevel: s.yearLevel,
-			careers: s.careerSubjects.map(cs => cs.career.name)
+			careers: s.careerSubjects.map((cs) => cs.career.name)
 		})),
-		recentRecords: recentRecords.map(r => ({
+		recentRecords: recentRecords.map((r) => ({
 			id: r.id,
 			studentName: `${r.student.lastName}, ${r.student.firstName}`,
 			studentDni: r.student.dni,

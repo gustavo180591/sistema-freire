@@ -21,6 +21,7 @@ Los siguientes datos del modelo `Teacher` son sensibles y deberían encriptarse:
 ## Plan de Implementación
 
 ### Fase 1: Preparación
+
 1. **Backup de datos**
    - Exportar tabla `teachers` a JSON
    - Verificar integridad del backup
@@ -32,13 +33,15 @@ Los siguientes datos del modelo `Teacher` son sensibles y deberían encriptarse:
    - Configurar en `.env` (no en `.env.example`)
 
 ### Fase 2: Modificación del Schema
+
 1. **Agregar campos encriptados al modelo Teacher**
+
    ```prisma
    model Teacher {
      // Campos existentes
      dni         String              @unique
      phone       String?
-     
+
      // Campos encriptados (agregar)
      dniEncrypted String?            @map("dni_encrypted")
      phoneEncrypted String?          @map("phone_encrypted")
@@ -50,6 +53,7 @@ Los siguientes datos del modelo `Teacher` son sensibles y deberían encriptarse:
    - Crear índices para búsqueda eficiente
 
 ### Fase 3: Migración de Datos
+
 1. **Ejecutar script de encriptación**
    - Leer registros existentes
    - Encriptar DNI y teléfono
@@ -62,6 +66,7 @@ Los siguientes datos del modelo `Teacher` son sensibles y deberían encriptarse:
    - Validar búsquedas
 
 ### Fase 4: Actualización de Código
+
 1. **Modificación de endpoints de lectura**
    - Desencriptar datos al leer de la base
    - Usar `encryption.decrypt()` en todos los `findMany` y `findUnique`
@@ -75,6 +80,7 @@ Los siguientes datos del modelo `Teacher` son sensibles y deberían encriptarse:
    - Ajustar búsquedas por DNI
 
 ### Fase 5: Limpieza
+
 1. **Eliminar campos en texto plano** (opcional, después de validación completa)
    - Eliminar `dni` y `phone` del schema
    - Crear migración de limpieza
@@ -83,12 +89,14 @@ Los siguientes datos del modelo `Teacher` son sensibles y deberían encriptarse:
 ## Riesgos y Consideraciones
 
 ### Riesgos
+
 - **Pérdida de datos** si falla la encriptación
 - **Problemas de rendimiento** por desencriptación masiva
 - **Errores en migración** si hay datos corruptos
 - **Compatibilidad** con código existente
 
 ### Mitigaciones
+
 - **Backup completo** antes de migración
 - **Validación paso a paso** con pruebas
 - **Rollback plan** disponible
@@ -127,6 +135,7 @@ Los siguientes datos del modelo `Teacher` son sensibles y deberían encriptarse:
 **Prioridad:** MEDIA - Mejora de seguridad
 
 **Bloqueantes:**
+
 - Aprobación de ventana de mantenimiento
 - Configuración de variables de entorno
 - Definición de plan de pruebas

@@ -45,7 +45,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const restrictedRoles = ['SUPERADMIN', 'SECRETARIA', 'DIRECTOR', 'APODERADO'];
 
 	if (isSecretary) {
-		const hasRestrictedRole = user.roles.some(ur => restrictedRoles.includes(ur.role.code));
+		const hasRestrictedRole = user.roles.some((ur) => restrictedRoles.includes(ur.role.code));
 		if (hasRestrictedRole) {
 			throw error(403, 'No tienes permiso para editar usuarios con roles administrativos');
 		}
@@ -57,10 +57,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const subjects = await prisma.subject.findMany({
 		where: { active: true },
-		orderBy: [
-			{ yearLevel: 'asc' },
-			{ name: 'asc' }
-		]
+		orderBy: [{ yearLevel: 'asc' }, { name: 'asc' }]
 	});
 
 	const careers = await prisma.career.findMany({
@@ -77,7 +74,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		user,
 		currentUserRoles: currentUser.roles,
 		roles,
-		subjects: subjects.map(s => ({
+		subjects: subjects.map((s) => ({
 			...s,
 			approvalThreshold: s.approvalThreshold ? Number(s.approvalThreshold) : null,
 			promotionThreshold: s.promotionThreshold ? Number(s.promotionThreshold) : null
@@ -115,9 +112,13 @@ export const actions: Actions = {
 		const restrictedRoles = ['SUPERADMIN', 'SECRETARIA', 'DIRECTOR', 'APODERADO', 'FINANZAS'];
 
 		if (isSecretary) {
-			const hasRestrictedRole = targetUser.roles.some(ur => restrictedRoles.includes(ur.role.code));
+			const hasRestrictedRole = targetUser.roles.some((ur) =>
+				restrictedRoles.includes(ur.role.code)
+			);
 			if (hasRestrictedRole) {
-				return fail(403, { error: 'No tienes permiso para editar usuarios con roles administrativos' });
+				return fail(403, {
+					error: 'No tienes permiso para editar usuarios con roles administrativos'
+				});
 			}
 		}
 
@@ -190,7 +191,9 @@ export const actions: Actions = {
 							dni: dni || teacher.dni,
 							firstName,
 							lastName,
-							status: teacherStatus ? teacherStatus as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'RESIGNED' : teacher.status,
+							status: teacherStatus
+								? (teacherStatus as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'RESIGNED')
+								: teacher.status,
 							hireDate: hireDate ? new Date(hireDate) : teacher.hireDate,
 							observations: observations !== undefined ? observations : teacher.observations
 						}
@@ -245,7 +248,7 @@ export const actions: Actions = {
 
 	updateRoles: async ({ request, params }) => {
 		const formData = await request.formData();
-		const roleIds = formData.getAll('roleIds').map(r => r.toString());
+		const roleIds = formData.getAll('roleIds').map((r) => r.toString());
 
 		try {
 			// Eliminar roles actuales
@@ -256,7 +259,7 @@ export const actions: Actions = {
 			// Agregar nuevos roles
 			if (roleIds.length > 0) {
 				await prisma.userRole.createMany({
-					data: roleIds.map(roleId => ({
+					data: roleIds.map((roleId) => ({
 						userId: params.id,
 						roleId
 					}))
@@ -347,7 +350,9 @@ export const actions: Actions = {
 
 		// Prevenir auto-revocación (un usuario no puede revocar sus propias sesiones)
 		if (currentUser.id === params.id) {
-			return fail(400, { error: 'No puedes revocar tus propias sesiones. Usa la función de logout normal.' });
+			return fail(400, {
+				error: 'No puedes revocar tus propias sesiones. Usa la función de logout normal.'
+			});
 		}
 
 		try {

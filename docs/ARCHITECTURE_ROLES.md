@@ -51,6 +51,7 @@ El sistema usa la tabla `Permission` para configurar permisos CRUD por entidad:
 ### Gestión de Roles
 
 **No se recomienda agregar CRUD de roles** porque:
+
 - Los roles son conceptos de negocio estables
 - La flexibilidad requerida se logra mediante permisos granulares
 - Agregar gestión dinámica de roles aumenta el riesgo de configuración incorrecta

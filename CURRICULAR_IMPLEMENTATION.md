@@ -40,6 +40,7 @@ enum CorrelativeType {
 ### 2. Modelo Career Mejorado (Líneas 81-97)
 
 Agregados campos:
+
 - `trainingField: TrainingField` - Campo de formación
 - `resolution: String?` - Resolución ministerial
 - `durationYears: Int` - Duración (default: 4)
@@ -49,6 +50,7 @@ Agregados campos:
 ### 3. Modelo Subject Mejorado (Líneas 165-200)
 
 Agregados campos:
+
 - `subjectType: SubjectType` - Tipo de materia
 - `trainingField: TrainingField` - Campo formativo
 - `hoursPerWeek: Int?` - Horas cátedra
@@ -61,6 +63,7 @@ Agregados campos:
 ### 4. Modelo SubjectCorrelative Mejorado (Líneas 257-283)
 
 Agregados campos:
+
 - `correlativeType: CorrelativeType` - Tipo de correlatividad
 - `careerId: String?` - Opcional: correlativa específica por carrera
 - `isActive: Boolean` - Para desactivar sin borrar
@@ -71,6 +74,7 @@ Agregados campos:
 ### 5. Nuevo Modelo CareerSubject (Líneas 286-304)
 
 Relación N:M entre Carrera y Materia:
+
 - `careerId` + `subjectId` - Claves foráneas
 - `isMandatory: Boolean` - Obligatoria u optativa
 - `yearLevel: Int` - Año específico en la carrera
@@ -106,31 +110,28 @@ Relación N:M entre Carrera y Materia:
 
 ```typescript
 const curriculum = await prisma.careerSubject.findMany({
-  where: { careerId: 'matematica-id' },
-  include: {
-    subject: {
-      include: {
-        correlatives: {
-          include: { requiredSubject: true }
-        }
-      }
-    }
-  },
-  orderBy: [
-    { yearLevel: 'asc' },
-    { subject: { code: 'asc' } }
-  ]
+	where: { careerId: 'matematica-id' },
+	include: {
+		subject: {
+			include: {
+				correlatives: {
+					include: { requiredSubject: true }
+				}
+			}
+		}
+	},
+	orderBy: [{ yearLevel: 'asc' }, { subject: { code: 'asc' } }]
 });
 
 // Agrupar por año
 const byYear = curriculum.reduce((acc, cs) => {
-  const year = cs.yearLevel;
-  if (!acc[year]) acc[year] = [];
-  acc[year].push({
-    ...cs.subject,
-    isMandatory: cs.isMandatory
-  });
-  return acc;
+	const year = cs.yearLevel;
+	if (!acc[year]) acc[year] = [];
+	acc[year].push({
+		...cs.subject,
+		isMandatory: cs.isMandatory
+	});
+	return acc;
 }, {});
 ```
 
@@ -138,53 +139,52 @@ const byYear = curriculum.reduce((acc, cs) => {
 
 ```typescript
 async function validateCorrelatives(
-  studentId: string,
-  subjectId: string,
-  careerId: string
+	studentId: string,
+	subjectId: string,
+	careerId: string
 ): Promise<{ canEnroll: boolean; pending: string[] }> {
-  
-  // 1. Obtener correlativas requeridas
-  const correlatives = await prisma.subjectCorrelative.findMany({
-    where: {
-      subjectId,
-      isActive: true,
-      OR: [
-        { careerId: null },      // Globales
-        { careerId }             // Específicas de carrera
-      ]
-    }
-  });
+	// 1. Obtener correlativas requeridas
+	const correlatives = await prisma.subjectCorrelative.findMany({
+		where: {
+			subjectId,
+			isActive: true,
+			OR: [
+				{ careerId: null }, // Globales
+				{ careerId } // Específicas de carrera
+			]
+		}
+	});
 
-  // 2. Obtener estados del alumno
-  const statuses = await prisma.studentSubjectStatus.findMany({
-    where: {
-      studentId,
-      subjectId: {
-        in: correlatives.map(c => c.requiredSubjectId)
-      }
-    }
-  });
-  
-  const statusMap = new Map(statuses.map(s => [s.subjectId, s.status]));
+	// 2. Obtener estados del alumno
+	const statuses = await prisma.studentSubjectStatus.findMany({
+		where: {
+			studentId,
+			subjectId: {
+				in: correlatives.map((c) => c.requiredSubjectId)
+			}
+		}
+	});
 
-  // 3. Verificar cada correlativa
-  const pending: string[] = [];
-  
-  for (const cor of correlatives) {
-    const status = statusMap.get(cor.requiredSubjectId);
-    
-    const satisfied = {
-      'REGULAR': ['PASSED', 'ACCREDITED'].includes(status),
-      'APROBADO': status === 'FINAL_APPROVED',
-      'LIBRE': status !== 'FAILED' && status !== null
-    }[cor.correlativeType];
-    
-    if (!satisfied) {
-      pending.push(cor.requiredSubjectId);
-    }
-  }
+	const statusMap = new Map(statuses.map((s) => [s.subjectId, s.status]));
 
-  return { canEnroll: pending.length === 0, pending };
+	// 3. Verificar cada correlativa
+	const pending: string[] = [];
+
+	for (const cor of correlatives) {
+		const status = statusMap.get(cor.requiredSubjectId);
+
+		const satisfied = {
+			REGULAR: ['PASSED', 'ACCREDITED'].includes(status),
+			APROBADO: status === 'FINAL_APPROVED',
+			LIBRE: status !== 'FAILED' && status !== null
+		}[cor.correlativeType];
+
+		if (!satisfied) {
+			pending.push(cor.requiredSubjectId);
+		}
+	}
+
+	return { canEnroll: pending.length === 0, pending };
 }
 ```
 
@@ -193,25 +193,22 @@ async function validateCorrelatives(
 ```typescript
 // Materias de Formación General (incluye EDIs)
 const generalSubjects = await prisma.subject.findMany({
-  where: {
-    trainingField: 'GENERAL',
-    OR: [
-      { subjectType: 'COMMON' },
-      { subjectType: 'EDI' }
-    ],
-    active: true
-  },
-  orderBy: { yearLevel: 'asc' }
+	where: {
+		trainingField: 'GENERAL',
+		OR: [{ subjectType: 'COMMON' }, { subjectType: 'EDI' }],
+		active: true
+	},
+	orderBy: { yearLevel: 'asc' }
 });
 
 // Materias específicas de una carrera
 const specificSubjects = await prisma.subject.findMany({
-  where: {
-    subjectType: 'CAREER_SPECIFIC',
-    careerSubjects: {
-      some: { careerId: 'lengua-literatura-id' }
-    }
-  }
+	where: {
+		subjectType: 'CAREER_SPECIFIC',
+		careerSubjects: {
+			some: { careerId: 'lengua-literatura-id' }
+		}
+	}
 });
 ```
 
@@ -221,10 +218,10 @@ const specificSubjects = await prisma.subject.findMany({
 
 ### Estructura esperada del archivo Excel:
 
-| Carrera | Código Materia | Nombre | Año | Tipo | Campo | Correlativa 1 | Tipo Corr 1 | Correlativa 2 | Tipo Corr 2 |
-|---------|---------------|--------|-----|------|-------|---------------|-------------|---------------|-------------|
-| Lengua  | MAT101        | Matemática I | 1 | COMMON | GENERAL | - | - | - | - |
-| Lengua  | LIT201        | Literatura II | 2 | CAREER_SPECIFIC | ESPECIFICA | LIT101 | REGULAR | - | - |
+| Carrera | Código Materia | Nombre        | Año | Tipo            | Campo      | Correlativa 1 | Tipo Corr 1 | Correlativa 2 | Tipo Corr 2 |
+| ------- | -------------- | ------------- | --- | --------------- | ---------- | ------------- | ----------- | ------------- | ----------- |
+| Lengua  | MAT101         | Matemática I  | 1   | COMMON          | GENERAL    | -             | -           | -             | -           |
+| Lengua  | LIT201         | Literatura II | 2   | CAREER_SPECIFIC | ESPECIFICA | LIT101        | REGULAR     | -             | -           |
 
 ### Script de importación:
 
@@ -232,83 +229,83 @@ const specificSubjects = await prisma.subject.findMany({
 import * as XLSX from 'xlsx';
 
 async function importCurriculumFromExcel(filePath: string) {
-  const workbook = XLSX.readFile(filePath);
-  const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(worksheet);
+	const workbook = XLSX.readFile(filePath);
+	const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+	const rows = XLSX.utils.sheet_to_json(worksheet);
 
-  for (const row of rows) {
-    // 1. Crear/actualizar materia
-    const subject = await prisma.subject.upsert({
-      where: { code: row['Código Materia'] },
-      update: {
-        name: row['Nombre'],
-        subjectType: row['Tipo'],
-        trainingField: row['Campo'],
-        yearLevel: row['Año']
-      },
-      create: {
-        code: row['Código Materia'],
-        name: row['Nombre'],
-        subjectType: row['Tipo'],
-        trainingField: row['Campo'],
-        yearLevel: row['Año']
-      }
-    });
+	for (const row of rows) {
+		// 1. Crear/actualizar materia
+		const subject = await prisma.subject.upsert({
+			where: { code: row['Código Materia'] },
+			update: {
+				name: row['Nombre'],
+				subjectType: row['Tipo'],
+				trainingField: row['Campo'],
+				yearLevel: row['Año']
+			},
+			create: {
+				code: row['Código Materia'],
+				name: row['Nombre'],
+				subjectType: row['Tipo'],
+				trainingField: row['Campo'],
+				yearLevel: row['Año']
+			}
+		});
 
-    // 2. Vincular a carrera (si es específica)
-    if (row['Tipo'] === 'CAREER_SPECIFIC') {
-      const career = await prisma.career.findFirst({
-        where: { name: row['Carrera'] }
-      });
-      
-      if (career) {
-        await prisma.careerSubject.upsert({
-          where: {
-            careerId_subjectId: {
-              careerId: career.id,
-              subjectId: subject.id
-            }
-          },
-          update: { yearLevel: row['Año'] },
-          create: {
-            careerId: career.id,
-            subjectId: subject.id,
-            yearLevel: row['Año']
-          }
-        });
-      }
-    }
+		// 2. Vincular a carrera (si es específica)
+		if (row['Tipo'] === 'CAREER_SPECIFIC') {
+			const career = await prisma.career.findFirst({
+				where: { name: row['Carrera'] }
+			});
 
-    // 3. Procesar correlativas
-    for (let i = 1; i <= 5; i++) {
-      const corrCode = row[`Correlativa ${i}`];
-      const corrType = row[`Tipo Corr ${i}`] || 'REGULAR';
-      
-      if (!corrCode) continue;
+			if (career) {
+				await prisma.careerSubject.upsert({
+					where: {
+						careerId_subjectId: {
+							careerId: career.id,
+							subjectId: subject.id
+						}
+					},
+					update: { yearLevel: row['Año'] },
+					create: {
+						careerId: career.id,
+						subjectId: subject.id,
+						yearLevel: row['Año']
+					}
+				});
+			}
+		}
 
-      const requiredSubject = await prisma.subject.findUnique({
-        where: { code: corrCode }
-      });
+		// 3. Procesar correlativas
+		for (let i = 1; i <= 5; i++) {
+			const corrCode = row[`Correlativa ${i}`];
+			const corrType = row[`Tipo Corr ${i}`] || 'REGULAR';
 
-      if (requiredSubject) {
-        await prisma.subjectCorrelative.upsert({
-          where: {
-            subjectId_requiredSubjectId_careerId: {
-              subjectId: subject.id,
-              requiredSubjectId: requiredSubject.id,
-              careerId: null // Global
-            }
-          },
-          update: { correlativeType: corrType },
-          create: {
-            subjectId: subject.id,
-            requiredSubjectId: requiredSubject.id,
-            correlativeType: corrType
-          }
-        });
-      }
-    }
-  }
+			if (!corrCode) continue;
+
+			const requiredSubject = await prisma.subject.findUnique({
+				where: { code: corrCode }
+			});
+
+			if (requiredSubject) {
+				await prisma.subjectCorrelative.upsert({
+					where: {
+						subjectId_requiredSubjectId_careerId: {
+							subjectId: subject.id,
+							requiredSubjectId: requiredSubject.id,
+							careerId: null // Global
+						}
+					},
+					update: { correlativeType: corrType },
+					create: {
+						subjectId: subject.id,
+						requiredSubjectId: requiredSubject.id,
+						correlativeType: corrType
+					}
+				});
+			}
+		}
+	}
 }
 ```
 

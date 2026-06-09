@@ -13,10 +13,7 @@ export const load: PageServerLoad = async () => {
 				}
 			}
 		},
-		orderBy: [
-			{ lastName: 'asc' },
-			{ firstName: 'asc' }
-		]
+		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
 	});
 
 	return {

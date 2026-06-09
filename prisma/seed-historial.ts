@@ -47,7 +47,7 @@ async function main() {
 		{ name: 'Didáctica de la Lengua IV', code: 'LEN_DID_IV', yearLevel: 4 },
 		{ name: 'Práctica Docente I', code: 'LEN_PRAC_I', yearLevel: 4 },
 		{ name: 'Práctica Docente II', code: 'LEN_PRAC_II', yearLevel: 4 },
-		{ name: 'Trabajo Final de Grado', code: 'LEN_TFG', yearLevel: 4 },
+		{ name: 'Trabajo Final de Grado', code: 'LEN_TFG', yearLevel: 4 }
 	];
 
 	console.log('\n📚 Creando materias...');
@@ -71,7 +71,9 @@ async function main() {
 	});
 
 	if (!alumnoRole) {
-		throw new Error('Rol ALUMNO no encontrado. Ejecuta primero: npx prisma db seed -- --schema prisma/seed.ts');
+		throw new Error(
+			'Rol ALUMNO no encontrado. Ejecuta primero: npx prisma db seed -- --schema prisma/seed.ts'
+		);
 	}
 
 	// 4. Crear usuario y alumno de ejemplo
@@ -152,8 +154,8 @@ async function main() {
 	let createdStatuses = 0;
 
 	for (const config of yearConfigs) {
-		const yearSubjects = subjects.filter(s => s.yearLevel === config.year);
-		
+		const yearSubjects = subjects.filter((s) => s.yearLevel === config.year);
+
 		let approvedCount = 0;
 		let regularCount = 0;
 		let libreCount = 0;
@@ -315,7 +317,7 @@ async function main() {
 	const debt = Number(totalDebt._sum.amount || 0) - Number(totalDebt._sum.paidAmount || 0);
 
 	console.log('\n📊 RESUMEN DEL HISTORIAL:');
-	console.log('=' .repeat(50));
+	console.log('='.repeat(50));
 	console.log(`👤 Alumno: ${student.firstName} ${student.lastName}`);
 	console.log(`🎓 Carrera: ${career.name}`);
 	console.log(`📚 Materias en historial: ${createdStatuses}`);
@@ -323,7 +325,7 @@ async function main() {
 	console.log(`📋 Regulares: ${yearConfigs.reduce((acc, y) => acc + y.regular, 0)}`);
 	console.log(`⚠️ Libres: ${yearConfigs.reduce((acc, y) => acc + y.libre, 0)}`);
 	console.log(`💰 Deuda total: $${debt.toLocaleString('es-AR')}`);
-	console.log('=' .repeat(50));
+	console.log('='.repeat(50));
 	console.log('\n✅ Seed completado exitosamente!');
 	console.log(`\n🔗 URL de historial: http://localhost:5174/alumnos/${student.id}/historial`);
 }

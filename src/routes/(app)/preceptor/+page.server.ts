@@ -29,10 +29,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			user: true,
 			career: true
 		},
-		orderBy: [
-			{ lastName: 'asc' },
-			{ firstName: 'asc' }
-		]
+		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
 	});
 
 	// Obtener carreras disponibles filtradas por localidad
@@ -72,7 +69,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		user: locals.user,
-		students: students.map(s => ({
+		students: students.map((s) => ({
 			id: s.id,
 			dni: s.dni,
 			firstName: s.firstName,
@@ -84,12 +81,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 			currentYear: s.currentYear
 		})),
 		careers,
-		subjects: subjects.map(s => ({
+		subjects: subjects.map((s) => ({
 			id: s.id,
 			code: s.code,
 			name: s.name,
 			yearLevel: s.yearLevel,
-			careers: s.careerSubjects.map(cs => cs.career.name)
+			careers: s.careerSubjects.map((cs) => cs.career.name)
 		}))
 	};
 };

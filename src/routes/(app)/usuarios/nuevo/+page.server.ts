@@ -53,7 +53,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		});
 
 		if (userWithPermissions && userWithPermissions.locationPermissions.length > 0) {
-			locations = userWithPermissions.locationPermissions.map(lp => lp.location);
+			locations = userWithPermissions.locationPermissions.map((lp) => lp.location);
 			secretaryLocationCode = userWithPermissions.locationPermissions[0].location.code;
 		} else {
 			locations = await prisma.location.findMany({
@@ -72,7 +72,13 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
 	const type = url.searchParams.get('type') || 'ALUMNO';
 
-	return { careers, locations, type, isSecretary: currentUser.roles.includes('SECRETARIA'), secretaryLocationCode };
+	return {
+		careers,
+		locations,
+		type,
+		isSecretary: currentUser.roles.includes('SECRETARIA'),
+		secretaryLocationCode
+	};
 };
 
 export const actions: Actions = {
@@ -90,13 +96,15 @@ export const actions: Actions = {
 		const dni = data.get('dni')?.toString();
 		const careerId = data.get('careerId')?.toString();
 		const alumnoType = data.get('alumnoType')?.toString() || 'normal';
-		
+
 		// Verificar permisos: SECRETARIA solo puede crear DOCENTE, ALUMNO, PRECEPTOR
 		const isSecretary = currentUser.roles.includes('SECRETARIA');
 		const allowedRolesForSecretary = ['DOCENTE', 'ALUMNO', 'PRECEPTOR'];
 
 		if (isSecretary && type && !allowedRolesForSecretary.includes(type)) {
-			return fail(403, { error: 'Como SECRETARIA solo puedes crear DOCENTES, ALUMNOS y PRECEPTORES' });
+			return fail(403, {
+				error: 'Como SECRETARIA solo puedes crear DOCENTES, ALUMNOS y PRECEPTORES'
+			});
 		}
 
 		// Si es SECRETARIA, verificar que la localidad seleccionada esté en sus permisos
@@ -116,7 +124,9 @@ export const actions: Actions = {
 				return fail(403, { error: 'No tienes permisos de localidad asignados' });
 			}
 
-			const allowedLocationCodes = userWithPermissions.locationPermissions.map(lp => lp.location.code);
+			const allowedLocationCodes = userWithPermissions.locationPermissions.map(
+				(lp) => lp.location.code
+			);
 			const selectedLocality = data.get('locality')?.toString();
 
 			if (selectedLocality && !allowedLocationCodes.includes(selectedLocality)) {
@@ -142,12 +152,17 @@ export const actions: Actions = {
 
 			// Verificar si el DNI ya existe (para alumnos y docentes)
 			if (type === 'ALUMNO' || type === 'DOCENTE') {
-				const existingDni = await prisma.student.findUnique({
-					where: { dni }
-				}).catch(() => null) || 
-				await prisma.teacher.findUnique({
-					where: { dni }
-				}).catch(() => null);
+				const existingDni =
+					(await prisma.student
+						.findUnique({
+							where: { dni }
+						})
+						.catch(() => null)) ||
+					(await prisma.teacher
+						.findUnique({
+							where: { dni }
+						})
+						.catch(() => null));
 
 				if (existingDni) {
 					return fail(400, { error: 'El DNI ya está registrado', exists: true });
@@ -202,9 +217,15 @@ export const actions: Actions = {
 					const locality = data.get('locality')?.toString();
 					const postalCode = data.get('postalCode')?.toString();
 					const highSchool = data.get('highSchool')?.toString();
-					const highSchoolYear = data.get('highSchoolYear')?.toString() ? parseInt(data.get('highSchoolYear')?.toString() || '0') : null;
-					const instituteYear = data.get('instituteYear')?.toString() ? parseInt(data.get('instituteYear')?.toString() || '0') : null;
-					const currentYear = data.get('currentYear')?.toString() ? parseInt(data.get('currentYear')?.toString() || '1') : 1;
+					const highSchoolYear = data.get('highSchoolYear')?.toString()
+						? parseInt(data.get('highSchoolYear')?.toString() || '0')
+						: null;
+					const instituteYear = data.get('instituteYear')?.toString()
+						? parseInt(data.get('instituteYear')?.toString() || '0')
+						: null;
+					const currentYear = data.get('currentYear')?.toString()
+						? parseInt(data.get('currentYear')?.toString() || '1')
+						: 1;
 					const familyContactName = data.get('familyContactName')?.toString();
 					const familyContactPhone = data.get('familyContactPhone')?.toString();
 					const familyRelationship = data.get('familyRelationship')?.toString();
@@ -287,7 +308,7 @@ export const actions: Actions = {
 				// Si es PRECEPTOR, capturar localidad y asignar permiso
 				if (type === 'PRECEPTOR') {
 					const locality = data.get('locality')?.toString();
-					
+
 					// Asignar permiso de localidad si se seleccionó
 					if (locality) {
 						const location = await tx.location.findUnique({
@@ -307,7 +328,7 @@ export const actions: Actions = {
 				// Si es SECRETARIA, asignar permiso de localidad
 				if (type === 'SECRETARIA') {
 					const locality = data.get('locality')?.toString();
-					
+
 					// Asignar permiso de localidad si se seleccionó
 					if (locality) {
 						const location = await tx.location.findUnique({
@@ -340,7 +361,9 @@ export const actions: Actions = {
 
 			// TODO: Enviar email con la contraseña temporal
 
-			return { success: `Usuario creado exitosamente. ID: ${result.id}, Contraseña temporal: 12345678` };
+			return {
+				success: `Usuario creado exitosamente. ID: ${result.id}, Contraseña temporal: 12345678`
+			};
 		} catch (error) {
 			console.error('Error al crear usuario:', error);
 			const message = error instanceof Error ? error.message : 'Error al crear el usuario';

@@ -50,31 +50,41 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 				code: commission.subject.code,
 				yearLevel: commission.subject.yearLevel
 			},
-			career: commission.career ? {
-				id: commission.career.id,
-				name: commission.career.name
-			} : null,
-			studyPlan: commission.studyPlan ? {
-				id: commission.studyPlan.id,
-				name: commission.studyPlan.name,
-				version: commission.studyPlan.version
-			} : null,
-			teacher: commission.teacher ? {
-				id: commission.teacher.id,
-				name: `${commission.teacher.firstName} ${commission.teacher.lastName}`
-			} : null,
-			location: commission.location ? {
-				id: commission.location.id,
-				name: commission.location.name,
-				address: commission.location.address
-			} : null,
-			academicTerm: commission.academicTerm ? {
-				id: commission.academicTerm.id,
-				name: commission.academicTerm.name,
-				year: commission.academicTerm.year,
-				startDate: commission.academicTerm.startDate,
-				endDate: commission.academicTerm.endDate
-			} : null,
+			career: commission.career
+				? {
+						id: commission.career.id,
+						name: commission.career.name
+					}
+				: null,
+			studyPlan: commission.studyPlan
+				? {
+						id: commission.studyPlan.id,
+						name: commission.studyPlan.name,
+						version: commission.studyPlan.version
+					}
+				: null,
+			teacher: commission.teacher
+				? {
+						id: commission.teacher.id,
+						name: `${commission.teacher.firstName} ${commission.teacher.lastName}`
+					}
+				: null,
+			location: commission.location
+				? {
+						id: commission.location.id,
+						name: commission.location.name,
+						address: commission.location.address
+					}
+				: null,
+			academicTerm: commission.academicTerm
+				? {
+						id: commission.academicTerm.id,
+						name: commission.academicTerm.name,
+						year: commission.academicTerm.year,
+						startDate: commission.academicTerm.startDate,
+						endDate: commission.academicTerm.endDate
+					}
+				: null,
 			maxCapacity: commission.maxCapacity,
 			currentEnrolled: commission.currentEnrolled,
 			schedule: commission.schedule,
@@ -84,7 +94,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			createdAt: commission.createdAt,
 			updatedAt: commission.updatedAt
 		},
-		enrollments: commission.enrollments.map(e => ({
+		enrollments: commission.enrollments.map((e) => ({
 			id: e.id,
 			student: {
 				id: e.student.id,

@@ -6,7 +6,7 @@
 	const plan = $derived(data?.plan);
 	const metrics = $derived(data?.metrics ?? { totalSubjects: 0, totalYears: 0 });
 
-	let removingSubject = $state<typeof plan.subjects[0] | null>(null);
+	let removingSubject = $state<(typeof plan.subjects)[0] | null>(null);
 
 	const groupedSubjects = $derived(() => {
 		const groups: Record<number, typeof plan.subjects> = {};
@@ -48,8 +48,8 @@
 				<h1 class="mt-2 text-4xl font-bold tracking-tight">{plan.name}</h1>
 				<p class="mt-2 font-mono text-sm text-slate-400">Versión {plan.version}</p>
 				<p class="mt-4 max-w-3xl text-sm text-slate-400">
-					Plan curricular de la carrera {plan.career.name} con {metrics.totalSubjects} materias
-					distribuidas en {metrics.totalYears} años.
+					Plan curricular de la carrera {plan.career.name} con {metrics.totalSubjects} materias distribuidas
+					en {metrics.totalYears} años.
 				</p>
 			</div>
 
@@ -132,7 +132,7 @@
 											</a>
 											{#if canManageCareers()}
 												<button
-													onclick={() => removingSubject = subject}
+													onclick={() => (removingSubject = subject)}
 													class="rounded-xl border border-red-900/50 bg-red-500/10 px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/20"
 												>
 													Eliminar
@@ -155,7 +155,8 @@
 		<div class="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-8">
 			<h2 class="text-2xl font-bold">Eliminar materia del plan</h2>
 			<p class="mt-4 text-sm text-slate-400">
-				¿Estás seguro de que deseas eliminar <strong>{removingSubject.name}</strong> ({removingSubject.code}) del plan de estudio?
+				¿Estás seguro de que deseas eliminar <strong>{removingSubject.name}</strong>
+				({removingSubject.code}) del plan de estudio?
 			</p>
 			<p class="mt-2 text-sm text-slate-500">
 				Esta acción no elimina la materia del sistema, solo la desvincula de este plan.
@@ -167,16 +168,11 @@
 				</div>
 			{/if}
 
-			<form
-				method="POST"
-				action="?/removeSubject"
-				use:enhance
-				class="mt-6 flex gap-4"
-			>
+			<form method="POST" action="?/removeSubject" use:enhance class="mt-6 flex gap-4">
 				<input type="hidden" name="subjectId" value={removingSubject.id} />
 				<button
 					type="button"
-					onclick={() => removingSubject = null}
+					onclick={() => (removingSubject = null)}
 					class="rounded-2xl border border-slate-700 px-6 py-3 text-sm font-semibold transition hover:border-slate-500"
 				>
 					Cancelar

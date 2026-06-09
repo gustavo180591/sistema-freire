@@ -362,7 +362,7 @@ async function main() {
 		// Crear Teacher asociado al usuario docente
 		const teacher = await prisma.teacher.upsert({
 			where: { userId: docenteUser.id },
-			update: { 
+			update: {
 				status: 'ACTIVE',
 				dni: '12345678',
 				firstName: 'Juan',

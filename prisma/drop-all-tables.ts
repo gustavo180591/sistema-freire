@@ -43,7 +43,6 @@ async function dropAllTables() {
 		}
 
 		console.log(`\n✅ Todas las tablas y tipos eliminados exitosamente`);
-
 	} catch (error) {
 		console.error('❌ Error:', error);
 		throw error;

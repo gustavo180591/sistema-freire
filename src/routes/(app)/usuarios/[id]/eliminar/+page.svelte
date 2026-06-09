@@ -26,17 +26,23 @@
 		<div class="flex items-start space-x-4">
 			<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-500/20">
 				<svg class="h-6 w-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+					/>
 				</svg>
 			</div>
 			<div class="flex-1">
 				<h2 class="text-xl font-bold text-white">¿Estás seguro?</h2>
 				<p class="mt-2 text-slate-300">
-					Estás a punto de eliminar al usuario <strong class="text-white">{data.user.firstName} {data.user.lastName}</strong> ({data.user.email}).
+					Estás a punto de eliminar al usuario <strong class="text-white"
+						>{data.user.firstName} {data.user.lastName}</strong
+					>
+					({data.user.email}).
 				</p>
-				<p class="mt-2 text-sm text-slate-400">
-					Esta acción eliminará permanentemente:
-				</p>
+				<p class="mt-2 text-sm text-slate-400">Esta acción eliminará permanentemente:</p>
 				<ul class="mt-2 list-inside list-disc space-y-1 text-sm text-slate-400">
 					<li>El usuario y sus roles</li>
 					<li>Permisos de localidad asignados</li>
@@ -47,9 +53,7 @@
 						<li>Registro de docente asociado</li>
 					{/if}
 				</ul>
-				<p class="mt-4 text-sm font-medium text-red-400">
-					Esta acción no se puede deshacer.
-				</p>
+				<p class="mt-4 text-sm font-medium text-red-400">Esta acción no se puede deshacer.</p>
 			</div>
 		</div>
 

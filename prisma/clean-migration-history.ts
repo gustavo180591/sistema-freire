@@ -17,7 +17,7 @@ async function cleanMigrationHistory() {
 		`;
 
 		console.log(`✅ ${result} migraciones eliminadas del historial`);
-		
+
 		// Verificar migraciones restantes
 		const remaining = await prisma.$queryRaw`
 			SELECT "migration_name", "started_at" 
@@ -29,7 +29,6 @@ async function cleanMigrationHistory() {
 		for (const m of remaining as any[]) {
 			console.log(`   - ${m.migration_name}`);
 		}
-
 	} catch (error) {
 		console.error('❌ Error:', error);
 		throw error;

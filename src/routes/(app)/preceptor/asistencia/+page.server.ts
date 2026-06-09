@@ -32,10 +32,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			user: true,
 			career: true
 		},
-		orderBy: [
-			{ lastName: 'asc' },
-			{ firstName: 'asc' }
-		]
+		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
 	});
 
 	// Obtener materias filtradas por localidad
@@ -62,7 +59,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// Obtener comisiones para las materias, filtrando por localidades permitidas
 	const commissions = await prisma.subjectCommission.findMany({
 		where: {
-			subjectId: { in: subjects.map(s => s.id) },
+			subjectId: { in: subjects.map((s) => s.id) },
 			active: true,
 			locationId: { in: allowedLocationIds }
 		},
@@ -107,7 +104,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	return {
-		students: students.map(s => ({
+		students: students.map((s) => ({
 			id: s.id,
 			dni: s.dni,
 			firstName: s.firstName,
@@ -115,14 +112,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 			career: s.career.name,
 			currentYear: s.currentYear
 		})),
-		subjects: subjects.map(s => ({
+		subjects: subjects.map((s) => ({
 			id: s.id,
 			code: s.code,
 			name: s.name,
 			yearLevel: s.yearLevel,
-			careers: s.careerSubjects.map(cs => cs.career.name)
+			careers: s.careerSubjects.map((cs) => cs.career.name)
 		})),
-		commissions: commissions.map(c => ({
+		commissions: commissions.map((c) => ({
 			id: c.id,
 			code: c.code,
 			subjectId: c.subjectId,
@@ -133,7 +130,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			locationName: c.location?.name || null,
 			schedule: c.schedule
 		})),
-		recentAttendance: recentAttendance.map(r => ({
+		recentAttendance: recentAttendance.map((r) => ({
 			id: r.id,
 			date: r.classDate,
 			subject: r.subject.name,
@@ -158,7 +155,11 @@ export const actions: Actions = {
 		}
 
 		try {
-			const attendance = JSON.parse(attendanceData) as Array<{ studentId: string; present: boolean; notes?: string }>;
+			const attendance = JSON.parse(attendanceData) as Array<{
+				studentId: string;
+				present: boolean;
+				notes?: string;
+			}>;
 
 			// Obtener datos de la materia para auditoría
 			const subject = await prisma.subject.findUnique({
@@ -175,7 +176,11 @@ export const actions: Actions = {
 			});
 
 			if (existingRecord) {
-				return { error: 'Ya existe un registro de asistencia para esta materia en esta fecha' + (commissionId ? ' y comisión' : '') };
+				return {
+					error:
+						'Ya existe un registro de asistencia para esta materia en esta fecha' +
+						(commissionId ? ' y comisión' : '')
+				};
 			}
 
 			await prisma.$transaction(async (tx) => {

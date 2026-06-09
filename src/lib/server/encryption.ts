@@ -66,12 +66,7 @@ export async function encrypt(text: string): Promise<string> {
 		const tag = cipher.getAuthTag();
 
 		// Combinar: salt + iv + tag + encrypted
-		const combined = Buffer.concat([
-			salt,
-			iv,
-			tag,
-			Buffer.from(encrypted, 'hex')
-		]);
+		const combined = Buffer.concat([salt, iv, tag, Buffer.from(encrypted, 'hex')]);
 
 		// Retornar en base64
 		return combined.toString('base64');

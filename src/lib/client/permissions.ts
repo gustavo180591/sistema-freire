@@ -8,21 +8,21 @@ export function hasRole(role: string | string[]): boolean {
 	if (typeof role === 'string') {
 		return roles.includes(role);
 	}
-	return role.some(r => roles.includes(r));
+	return role.some((r) => roles.includes(r));
 }
 
 // Función para verificar si el usuario tiene alguno de los roles permitidos
 export function hasAnyRole(roles: string[]): boolean {
 	const pageData = get(page);
 	const userRoles = pageData.data?.user?.roles || [];
-	return roles.some(r => userRoles.includes(r));
+	return roles.some((r) => userRoles.includes(r));
 }
 
 // Función para verificar si el usuario tiene todos los roles requeridos
 export function hasAllRoles(roles: string[]): boolean {
 	const pageData = get(page);
 	const userRoles = pageData.data?.user?.roles || [];
-	return roles.every(r => userRoles.includes(r));
+	return roles.every((r) => userRoles.includes(r));
 }
 
 // Store derivado para acceso fácil a roles del usuario
@@ -115,7 +115,7 @@ export function canEditUser(targetRoles: string[]): boolean {
 	if (isSuperAdmin()) return true;
 	if (isSecretary()) {
 		const restrictedRoles = ['SUPERADMIN', 'SECRETARIA', 'DIRECTOR', 'APODERADO', 'FINANZAS'];
-		return !targetRoles.some(r => restrictedRoles.includes(r));
+		return !targetRoles.some((r) => restrictedRoles.includes(r));
 	}
 	return isAdmin();
 }
@@ -125,7 +125,7 @@ export function canDeleteUser(targetRoles: string[]): boolean {
 	if (isSuperAdmin()) return true;
 	if (isSecretary()) {
 		const restrictedRoles = ['SUPERADMIN', 'SECRETARIA', 'DIRECTOR', 'APODERADO'];
-		return !targetRoles.some(r => restrictedRoles.includes(r));
+		return !targetRoles.some((r) => restrictedRoles.includes(r));
 	}
 	return isAdmin();
 }

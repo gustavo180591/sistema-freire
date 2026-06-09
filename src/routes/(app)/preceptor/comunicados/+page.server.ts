@@ -19,10 +19,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			user: true,
 			career: true
 		},
-		orderBy: [
-			{ lastName: 'asc' },
-			{ firstName: 'asc' }
-		]
+		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
 	});
 
 	// Obtener comunicados recientes (usando StudentFollowUp con tipo MEETING o NOTE)
@@ -62,14 +59,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	return {
-		students: students.map(s => ({
+		students: students.map((s) => ({
 			id: s.id,
 			dni: s.dni,
 			firstName: s.firstName,
 			lastName: s.lastName,
 			career: s.career.name
 		})),
-		recentCommunications: recentCommunications.map(c => ({
+		recentCommunications: recentCommunications.map((c) => ({
 			id: c.id,
 			studentName: `${c.student.lastName}, ${c.student.firstName}`,
 			studentDni: c.student.dni,
@@ -78,7 +75,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			description: c.description,
 			createdAt: c.createdAt
 		})),
-		pendingDocuments: pendingDocuments.map(d => ({
+		pendingDocuments: pendingDocuments.map((d) => ({
 			id: d.id,
 			studentName: `${d.student.lastName}, ${d.student.firstName}`,
 			studentDni: d.student.dni,

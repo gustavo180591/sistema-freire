@@ -40,33 +40,37 @@
 </script>
 
 <div class="min-h-screen bg-slate-950 text-white">
-	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+	<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 		<!-- Header -->
 		<div class="mb-8">
-			<h1 class="text-3xl font-bold text-white mb-2">Materiales de Clase</h1>
+			<h1 class="mb-2 text-3xl font-bold text-white">Materiales de Clase</h1>
 			<p class="text-slate-400">Subir y gestionar recursos para tus materias</p>
 		</div>
 
 		<!-- Formulario de Subida -->
 		<div class="mb-8">
-			<div class="bg-slate-900 rounded-2xl border border-slate-800 p-6">
-				<h2 class="text-xl font-semibold text-white mb-6">Subir Nuevo Material</h2>
+			<div class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+				<h2 class="mb-6 text-xl font-semibold text-white">Subir Nuevo Material</h2>
 
 				{#if formError}
-					<div class="mb-4 p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-400">
+					<div class="mb-4 rounded-xl border border-red-500/50 bg-red-500/20 p-4 text-red-400">
 						{formError}
 					</div>
 				{/if}
 
 				{#if formSuccess}
-					<div class="mb-4 p-4 bg-green-500/20 border border-green-500/50 rounded-xl text-green-400">
+					<div
+						class="mb-4 rounded-xl border border-green-500/50 bg-green-500/20 p-4 text-green-400"
+					>
 						{formSuccess}
 					</div>
 				{/if}
 
 				<form method="POST" class="space-y-6" enctype="multipart/form-data">
 					<div>
-						<label for="subject" class="mb-2 block text-sm font-medium text-slate-300">Materia</label>
+						<label for="subject" class="mb-2 block text-sm font-medium text-slate-300"
+							>Materia</label
+						>
 						<select
 							id="subject"
 							name="subjectId"
@@ -95,7 +99,9 @@
 					</div>
 
 					<div>
-						<label for="description" class="mb-2 block text-sm font-medium text-slate-300">Descripción (opcional)</label>
+						<label for="description" class="mb-2 block text-sm font-medium text-slate-300"
+							>Descripción (opcional)</label
+						>
 						<textarea
 							id="description"
 							name="description"
@@ -143,10 +149,10 @@
 
 		<!-- Materiales Existentes -->
 		<div>
-			<h2 class="text-xl font-semibold text-white mb-4">Materiales Subidos</h2>
+			<h2 class="mb-4 text-xl font-semibold text-white">Materiales Subidos</h2>
 			<div class="space-y-4">
 				{#each data.materials as material}
-					<div class="bg-slate-900 rounded-2xl border border-slate-800 p-6">
+					<div class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
 						<div class="mb-4 flex items-start justify-between">
 							<div class="flex-1">
 								<h3 class="font-semibold text-white">{material.title}</h3>
@@ -157,7 +163,9 @@
 							</div>
 							<div class="text-right">
 								<p class="text-sm text-slate-400">{formatFileSize(material.fileSize)}</p>
-								<p class="text-xs text-slate-500">{new Date(material.createdAt).toLocaleDateString()}</p>
+								<p class="text-xs text-slate-500">
+									{new Date(material.createdAt).toLocaleDateString()}
+								</p>
 							</div>
 						</div>
 						<div class="flex items-center justify-between">
@@ -173,7 +181,9 @@
 					</div>
 				{/each}
 				{#if data.materials.length === 0}
-					<div class="bg-slate-900 rounded-2xl border border-slate-800 p-8 text-center text-slate-400">
+					<div
+						class="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-400"
+					>
 						No hay materiales subidos aún
 					</div>
 				{/if}

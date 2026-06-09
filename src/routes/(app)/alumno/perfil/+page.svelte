@@ -15,7 +15,10 @@
 				<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Perfil institucional</p>
 				<h1 class="mt-2 text-3xl font-bold">Mis datos</h1>
 			</div>
-			<a href="/alumno" class="rounded-2xl border border-slate-700 px-4 py-2 text-sm transition hover:bg-slate-800">
+			<a
+				href="/alumno"
+				class="rounded-2xl border border-slate-700 px-4 py-2 text-sm transition hover:bg-slate-800"
+			>
 				← Volver al panel
 			</a>
 		</div>
@@ -48,7 +51,9 @@
 			</div>
 
 			<div>
-				<label for="email" class="mb-2 block text-sm font-medium text-slate-300">Correo electrónico</label>
+				<label for="email" class="mb-2 block text-sm font-medium text-slate-300"
+					>Correo electrónico</label
+				>
 				<input
 					id="email"
 					name="email"
@@ -85,7 +90,9 @@
 
 			<div>
 				<span class="mb-2 block text-sm font-medium text-slate-300">Estado</span>
-				<div class="inline-flex items-center gap-2 rounded-full bg-emerald-950/50 px-4 py-2 text-emerald-400">
+				<div
+					class="inline-flex items-center gap-2 rounded-full bg-emerald-950/50 px-4 py-2 text-emerald-400"
+				>
 					<span class="h-2 w-2 rounded-full bg-emerald-400"></span>
 					{data.student.status}
 				</div>

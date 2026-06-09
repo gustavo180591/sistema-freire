@@ -91,12 +91,14 @@
 		</div>
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
 			<p class="text-sm text-slate-400">Asistencia Promedio</p>
-			<p class="text-2xl font-bold {getAttendanceColor(stats.avgAttendance)}">{stats.avgAttendance}%</p>
+			<p class="text-2xl font-bold {getAttendanceColor(stats.avgAttendance)}">
+				{stats.avgAttendance}%
+			</p>
 		</div>
 	</div>
 
 	<!-- Tabla de estudiantes -->
-	<div class="rounded-2xl border border-slate-800 bg-slate-900/50 overflow-hidden">
+	<div class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/50">
 		<div class="border-b border-slate-800 bg-slate-800/50 px-6 py-4">
 			<h2 class="text-lg font-semibold text-white">Asistencia por Estudiante</h2>
 		</div>
@@ -159,7 +161,7 @@
 
 	<!-- Historial de registros de asistencia -->
 	{#if attendanceRecords.length > 0}
-		<div class="rounded-2xl border border-slate-800 bg-slate-900/50 overflow-hidden">
+		<div class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/50">
 			<div class="border-b border-slate-800 bg-slate-800/50 px-6 py-4">
 				<h2 class="text-lg font-semibold text-white">Historial de Registros</h2>
 			</div>

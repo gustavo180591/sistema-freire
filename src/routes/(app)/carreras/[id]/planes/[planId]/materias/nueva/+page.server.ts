@@ -37,10 +37,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		where: {
 			active: true
 		},
-		orderBy: [
-			{ yearLevel: 'asc' },
-			{ name: 'asc' }
-		]
+		orderBy: [{ yearLevel: 'asc' }, { name: 'asc' }]
 	});
 
 	// Get subjects already in this plan

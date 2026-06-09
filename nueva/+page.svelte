@@ -31,11 +31,7 @@
 	</section>
 
 	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
-		<form
-			method="POST"
-			use:enhance
-			class="space-y-6"
-		>
+		<form method="POST" use:enhance class="space-y-6">
 			{#if !success && errors.general}
 				<div class="rounded-2xl border border-red-900 bg-red-900/10 p-4 text-sm text-red-400">
 					{errors.general}
@@ -105,7 +101,9 @@
 					/>
 					<span class="text-sm text-slate-300">Materia activa</span>
 				</label>
-				<p class="mt-2 text-sm text-slate-500">Las materias activas estarán disponibles para asignar a planes de estudio.</p>
+				<p class="mt-2 text-sm text-slate-500">
+					Las materias activas estarán disponibles para asignar a planes de estudio.
+				</p>
 			</div>
 
 			<div class="flex gap-4 pt-4">

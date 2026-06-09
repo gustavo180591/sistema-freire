@@ -4,7 +4,13 @@ import { prisma } from '$lib/server/db/prisma';
 import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
 
-export const load: PageServerLoad = async ({ params, locals }: { params: { id: string }; locals: any }) => {
+export const load: PageServerLoad = async ({
+	params,
+	locals
+}: {
+	params: { id: string };
+	locals: any;
+}) => {
 	const currentUser = locals.user;
 	if (!currentUser) {
 		throw redirect(303, '/login');
@@ -32,9 +38,11 @@ export const load: PageServerLoad = async ({ params, locals }: { params: { id: s
 	const restrictedRoles = ['SUPERADMIN', 'SECRETARIA', 'DIRECTOR', 'APODERADO'];
 
 	if (isSecretary) {
-		const hasRestrictedRole = user.roles.some(ur => restrictedRoles.includes(ur.role.code));
+		const hasRestrictedRole = user.roles.some((ur) => restrictedRoles.includes(ur.role.code));
 		if (hasRestrictedRole) {
-			throw fail(403, { error: 'No tienes permiso para eliminar usuarios con roles administrativos' });
+			throw fail(403, {
+				error: 'No tienes permiso para eliminar usuarios con roles administrativos'
+			});
 		}
 	}
 
@@ -71,9 +79,11 @@ export const actions: Actions = {
 			const restrictedRoles = ['SUPERADMIN', 'SECRETARIA', 'DIRECTOR', 'APODERADO'];
 
 			if (isSecretary) {
-				const hasRestrictedRole = user.roles.some(ur => restrictedRoles.includes(ur.role.code));
+				const hasRestrictedRole = user.roles.some((ur) => restrictedRoles.includes(ur.role.code));
 				if (hasRestrictedRole) {
-					return fail(403, { error: 'No tienes permiso para eliminar usuarios con roles administrativos' });
+					return fail(403, {
+						error: 'No tienes permiso para eliminar usuarios con roles administrativos'
+					});
 				}
 			}
 

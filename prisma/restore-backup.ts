@@ -25,14 +25,49 @@ async function restoreBackup(backupPath: string, dryRun: boolean = true) {
 	// Orden de restauración respetando dependencias de foreign keys
 	// NOTA: roles y users NO se restauran porque el seed ya los crea
 	const restorePlan: RestorePlan[] = [
-		{ table: 'locations', dependsOn: [], count: 0, filePath: path.join(backupPath, 'locations.json') },
+		{
+			table: 'locations',
+			dependsOn: [],
+			count: 0,
+			filePath: path.join(backupPath, 'locations.json')
+		},
 		{ table: 'careers', dependsOn: [], count: 0, filePath: path.join(backupPath, 'careers.json') },
-		{ table: 'careerLocations', dependsOn: ['careers', 'locations'], count: 0, filePath: path.join(backupPath, 'careerLocations.json') },
-		{ table: 'academicTerms', dependsOn: ['locations'], count: 0, filePath: path.join(backupPath, 'academicTerms.json') },
-		{ table: 'subjects', dependsOn: [], count: 0, filePath: path.join(backupPath, 'subjects.json') },
-		{ table: 'careerSubjects', dependsOn: ['careers', 'subjects'], count: 0, filePath: path.join(backupPath, 'careerSubjects.json') },
-		{ table: 'teachers', dependsOn: ['users'], count: 0, filePath: path.join(backupPath, 'teachers.json') },
-		{ table: 'userLocationPermissions', dependsOn: ['users', 'locations'], count: 0, filePath: path.join(backupPath, 'userLocationPermissions.json') },
+		{
+			table: 'careerLocations',
+			dependsOn: ['careers', 'locations'],
+			count: 0,
+			filePath: path.join(backupPath, 'careerLocations.json')
+		},
+		{
+			table: 'academicTerms',
+			dependsOn: ['locations'],
+			count: 0,
+			filePath: path.join(backupPath, 'academicTerms.json')
+		},
+		{
+			table: 'subjects',
+			dependsOn: [],
+			count: 0,
+			filePath: path.join(backupPath, 'subjects.json')
+		},
+		{
+			table: 'careerSubjects',
+			dependsOn: ['careers', 'subjects'],
+			count: 0,
+			filePath: path.join(backupPath, 'careerSubjects.json')
+		},
+		{
+			table: 'teachers',
+			dependsOn: ['users'],
+			count: 0,
+			filePath: path.join(backupPath, 'teachers.json')
+		},
+		{
+			table: 'userLocationPermissions',
+			dependsOn: ['users', 'locations'],
+			count: 0,
+			filePath: path.join(backupPath, 'userLocationPermissions.json')
+		}
 	];
 
 	const dryRunReport: DryRunReport[] = [];
@@ -67,7 +102,7 @@ async function restoreBackup(backupPath: string, dryRun: boolean = true) {
 			if (dep === 'users') {
 				continue;
 			}
-			const depPlan = restorePlan.find(p => p.table === dep);
+			const depPlan = restorePlan.find((p) => p.table === dep);
 			if (!depPlan || depPlan.count === 0) {
 				report.status = 'MISSING_DEPENDENCY';
 				report.issues.push(`Dependencia faltante: ${dep}`);
@@ -78,21 +113,25 @@ async function restoreBackup(backupPath: string, dryRun: boolean = true) {
 		// Las referencias se validarán durante la restauración real
 		if (data.length > 0) {
 			const sample = data[0];
-			
+
 			// Validar que los campos obligatorios existan
 			if (plan.table === 'userRoles') {
 				const missingFields = data.filter((r: any) => !r.userId || !r.roleId);
 				if (missingFields.length > 0) {
 					report.status = 'INVALID_REFERENCE';
-					report.issues.push(`${missingFields.length} registros con campos faltantes (userId o roleId)`);
+					report.issues.push(
+						`${missingFields.length} registros con campos faltantes (userId o roleId)`
+					);
 				}
 			}
-			
+
 			if (plan.table === 'careerLocations') {
 				const missingFields = data.filter((r: any) => !r.careerId || !r.locationId);
 				if (missingFields.length > 0) {
 					report.status = 'INVALID_REFERENCE';
-					report.issues.push(`${missingFields.length} registros con campos faltantes (careerId o locationId)`);
+					report.issues.push(
+						`${missingFields.length} registros con campos faltantes (careerId o locationId)`
+					);
 				}
 			}
 
@@ -100,7 +139,9 @@ async function restoreBackup(backupPath: string, dryRun: boolean = true) {
 				const missingFields = data.filter((r: any) => !r.name || !r.code || !r.year);
 				if (missingFields.length > 0) {
 					report.status = 'INVALID_REFERENCE';
-					report.issues.push(`${missingFields.length} registros con campos faltantes (name, code o year)`);
+					report.issues.push(
+						`${missingFields.length} registros con campos faltantes (name, code o year)`
+					);
 				}
 			}
 
@@ -108,7 +149,9 @@ async function restoreBackup(backupPath: string, dryRun: boolean = true) {
 				const missingFields = data.filter((r: any) => !r.careerId || !r.subjectId);
 				if (missingFields.length > 0) {
 					report.status = 'INVALID_REFERENCE';
-					report.issues.push(`${missingFields.length} registros con campos faltantes (careerId o subjectId)`);
+					report.issues.push(
+						`${missingFields.length} registros con campos faltantes (careerId o subjectId)`
+					);
 				}
 			}
 
@@ -116,7 +159,9 @@ async function restoreBackup(backupPath: string, dryRun: boolean = true) {
 				const missingFields = data.filter((r: any) => !r.userId || !r.dni);
 				if (missingFields.length > 0) {
 					report.status = 'INVALID_REFERENCE';
-					report.issues.push(`${missingFields.length} registros con campos faltantes (userId o dni)`);
+					report.issues.push(
+						`${missingFields.length} registros con campos faltantes (userId o dni)`
+					);
 				}
 			}
 
@@ -124,7 +169,9 @@ async function restoreBackup(backupPath: string, dryRun: boolean = true) {
 				const missingFields = data.filter((r: any) => !r.userId || !r.locationId);
 				if (missingFields.length > 0) {
 					report.status = 'INVALID_REFERENCE';
-					report.issues.push(`${missingFields.length} registros con campos faltantes (userId o locationId)`);
+					report.issues.push(
+						`${missingFields.length} registros con campos faltantes (userId o locationId)`
+					);
 				}
 			}
 		}
@@ -141,8 +188,10 @@ async function restoreBackup(backupPath: string, dryRun: boolean = true) {
 	for (const report of dryRunReport) {
 		const deps = report.dependsOn.join(', ') || '-';
 		const status = report.status === 'OK' ? '✅ OK' : `❌ ${report.status}`;
-		console.log(`│ ${report.table.padEnd(27)} │ ${String(report.count).padEnd(6)} │ ${deps.padEnd(24)} │ ${status.padEnd(8)} │`);
-		
+		console.log(
+			`│ ${report.table.padEnd(27)} │ ${String(report.count).padEnd(6)} │ ${deps.padEnd(24)} │ ${status.padEnd(8)} │`
+		);
+
 		if (report.issues.length > 0) {
 			for (const issue of report.issues) {
 				console.log(`│   ⚠️ ${issue.padEnd(79)} │`);
@@ -154,7 +203,7 @@ async function restoreBackup(backupPath: string, dryRun: boolean = true) {
 
 	// Resumen
 	const totalRecords = dryRunReport.reduce((sum, r) => sum + r.count, 0);
-	const tablesWithIssues = dryRunReport.filter(r => r.status !== 'OK').length;
+	const tablesWithIssues = dryRunReport.filter((r) => r.status !== 'OK').length;
 
 	console.log(`📈 Resumen:`);
 	console.log(`   - Total de registros a restaurar: ${totalRecords}`);
@@ -162,13 +211,17 @@ async function restoreBackup(backupPath: string, dryRun: boolean = true) {
 	console.log(`   - Tablas OK: ${dryRunReport.length - tablesWithIssues}`);
 
 	if (tablesWithIssues > 0) {
-		console.log(`\n❌ DRY-RUN FALLÓ: Hay ${tablesWithIssues} tablas con problemas. No se puede proceder con la restauración.`);
+		console.log(
+			`\n❌ DRY-RUN FALLÓ: Hay ${tablesWithIssues} tablas con problemas. No se puede proceder con la restauración.`
+		);
 		await prisma.$disconnect();
 		process.exit(1);
 	}
 
 	if (dryRun) {
-		console.log(`\n✅ DRY-RUN EXITOSO: El script está listo para restaurar ${totalRecords} registros.`);
+		console.log(
+			`\n✅ DRY-RUN EXITOSO: El script está listo para restaurar ${totalRecords} registros.`
+		);
 		console.log(`\nPara ejecutar la restauración real, usa:`);
 		console.log(`   npx tsx prisma/restore-backup.ts ${backupPath} --execute`);
 		await prisma.$disconnect();
@@ -212,10 +265,15 @@ async function restoreBackup(backupPath: string, dryRun: boolean = true) {
 				case 'userLocationPermissions':
 					// Filtrar para solo restaurar permisos de usuarios que existen
 					const existingUsers = await prisma.user.findMany({ select: { id: true } });
-					const existingUserIds = new Set(existingUsers.map(u => u.id));
+					const existingUserIds = new Set(existingUsers.map((u) => u.id));
 					const validPermissions = data.filter((p: any) => existingUserIds.has(p.userId));
-					await prisma.userLocationPermission.createMany({ data: validPermissions, skipDuplicates: true });
-					console.log(`   ✅ userLocationPermissions: ${validPermissions.length}/${data.length} registros restaurados (filtrados por usuarios existentes)`);
+					await prisma.userLocationPermission.createMany({
+						data: validPermissions,
+						skipDuplicates: true
+					});
+					console.log(
+						`   ✅ userLocationPermissions: ${validPermissions.length}/${data.length} registros restaurados (filtrados por usuarios existentes)`
+					);
 					break;
 			}
 			console.log(`   ✅ ${plan.table}: ${plan.count} registros restaurados`);

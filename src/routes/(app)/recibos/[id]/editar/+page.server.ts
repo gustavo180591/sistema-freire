@@ -2,7 +2,12 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { AuditAction } from '@prisma/client';
-import { getPayslipById, updatePayslip, replacePayslipFile, deletePayslip } from '$lib/server/services/payroll/payslip.service';
+import {
+	getPayslipById,
+	updatePayslip,
+	replacePayslipFile,
+	deletePayslip
+} from '$lib/server/services/payroll/payslip.service';
 import { auditLog } from '$lib/server/audit';
 import { requirePermission } from '$lib/server/auth/permissions-granular';
 

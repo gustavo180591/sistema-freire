@@ -23,7 +23,9 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	const hasGlobalAccess = allowedLocationIds.length === allLocations.length;
 
 	// Filtrar localidades a mostrar en el selector
-	const filterableLocations = hasGlobalAccess ? allLocations : allLocations.filter(l => allowedLocationIds.includes(l.id));
+	const filterableLocations = hasGlobalAccess
+		? allLocations
+		: allLocations.filter((l) => allowedLocationIds.includes(l.id));
 
 	// Determinar localidades a usar en el filtro
 	let effectiveLocationIds = allowedLocationIds;
@@ -31,7 +33,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
 	// Si el usuario tiene acceso global y seleccionó una localidad específica
 	if (hasGlobalAccess && locationIdParam) {
-		const selectedLocation = allLocations.find(l => l.id === locationIdParam);
+		const selectedLocation = allLocations.find((l) => l.id === locationIdParam);
 		if (selectedLocation) {
 			effectiveLocationIds = [selectedLocation.id];
 			selectedLocationId = selectedLocation.id;
@@ -50,17 +52,14 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			}
 		};
 	}
-	
+
 	const students = await prisma.student.findMany({
 		where,
 		include: {
 			user: true,
 			career: true
 		},
-		orderBy: [
-			{ lastName: 'asc' },
-			{ firstName: 'asc' }
-		]
+		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
 	});
 
 	const careers = await prisma.career.findMany({
@@ -85,7 +84,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	if (careerId && students.length > 0) {
 		careerName = students[0].career.name;
 	}
-	
+
 	return {
 		students: students.map((s: StudentWithRelations) => ({
 			id: s.id,
@@ -121,4 +120,4 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		selectedLocationId,
 		filter: careerId ? { careerId, careerName } : null
 	};
-}
+};

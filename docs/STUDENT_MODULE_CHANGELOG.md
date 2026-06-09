@@ -1,6 +1,7 @@
 # Changelog - Módulo de Gestión de Alumnos
 
 ## Versión: 1.0.0
+
 **Fecha:** 2026-06-05
 **Estado:** ✅ 100% COMPLETO - APROBADO PARA PRODUCCIÓN
 
@@ -9,6 +10,7 @@
 ## Funcionalidades Implementadas
 
 ### 1. Gestión de Estados Académicos
+
 - **Cambio de estado académico** desde UI (ACTIVE, INACTIVE, SUSPENDED, GRADUATED)
 - **Validación backend** con reglas de negocio (no egresar sin materias aprobadas)
 - **Motivo obligatorio** para cambios a estados no-ACTIVE
@@ -17,6 +19,7 @@
 - **Visualización mejorada** con badges coloreados en listados y detalles
 
 ### 2. Historial Académico por Ciclo Lectivo
+
 - **Modelo Prisma** `AcademicYearHistory` con campos: id, studentId, year, careerId, status, observations, timestamps
 - **Enum Prisma** `AcademicYearStatus` (ENROLLED, ACTIVE, PROMOTED, REPEATED, DROPPED_OUT, GRADUATED)
 - **CRUD completo** con validaciones, permisos y auditoría
@@ -26,6 +29,7 @@
 - **Índices optimizados** para consultas
 
 ### 3. Protección de Datos Sensibles (Infraestructura)
+
 - **Módulo de encriptación** AES-256-GCM (`src/lib/server/encryption.ts`)
 - **Variables de entorno** documentadas (ENCRYPTION_KEY, ENCRYPTION_KEY_IV)
 - **Script de migración** (`prisma/migrate-encryption.ts`)
@@ -34,6 +38,7 @@
 - **Estado:** Infraestructura lista, migración NO ejecutada (requiere aprobación y backup)
 
 ### 4. Documentación
+
 - **Guía de estados académicos** (`docs/STUDENT_STATUS_GUIDE.md`)
 - **Plan de ejecución de encriptación** (`docs/ENCRYPTION_EXECUTION_PLAN.md`)
 - **Changelog del módulo** (este archivo)
@@ -43,19 +48,23 @@
 ## Archivos Creados
 
 ### Backend
+
 - `src/lib/server/encryption.ts` - Módulo de encriptación AES-256-GCM
 - `src/routes/(app)/alumnos/[id]/historial-anual/+page.server.ts` - Server load y actions para historial anual
 - `src/routes/(app)/alumnos/[id]/historial-anual/+page.svelte` - UI de historial anual
 
 ### Frontend
+
 - `src/routes/(app)/alumnos/[id]/historial-anual/+page.svelte` - UI completa con timeline, modales y validaciones
 
 ### Documentación
+
 - `docs/STUDENT_STATUS_GUIDE.md` - Guía de estados académicos
 - `docs/ENCRYPTION_EXECUTION_PLAN.md` - Plan de ejecución de encriptación
 - `docs/STUDENT_MODULE_CHANGELOG.md` - Changelog del módulo
 
 ### Scripts de Base de Datos
+
 - `prisma/migrate-encryption.ts` - Script de migración de encriptación
 - `prisma/rollback-encryption.ts` - Script de rollback de encriptación
 - `prisma/inspect-and-backup.ts` - Script de inspección y backup
@@ -64,12 +73,14 @@
 - `prisma/clean-migration-history.ts` - Script de limpieza de historial
 
 ### Migraciones
+
 - `prisma/migrations/20260605011106_add_user_phone/migration.sql` - Campo phone en users
 - `prisma/migrations/20260605011107_add_locations_and_academic_terms/migration.sql` - Tablas locations, academic_terms, career_locations
 - `prisma/migrations/20260605011108_add_annual_grade_thresholds/migration.sql` - Umbrales de calificación en subjects
 - `prisma/migrations/20260605042346_add_academic_year_history/migration.sql` - Tabla academic_year_history y enum AcademicYearStatus
 
 ### Configuración
+
 - `.env.example` - Variables de encriptación documentadas
 
 ---
@@ -77,11 +88,13 @@
 ## Archivos Modificados
 
 ### Backend
+
 - `prisma/schema.prisma` - Modelo AcademicYearHistory, enum AcademicYearStatus, relación Student → AcademicYearHistory
 - `src/routes/(app)/alumnos/editar/+page.server.ts` - Lógica de cambio de estado académico con validaciones
 - `src/routes/(app)/alumnos/[id]/historial/+page.svelte` - Link a historial anual, mejora de visualización de estado
 
 ### Frontend
+
 - `src/routes/(app)/alumnos/+page.svelte` - Selector de estado académico, motivo obligatorio, badges coloreados
 
 ---
@@ -147,6 +160,7 @@
 ## Comandos Ejecutados
 
 ### Resolución de Drift
+
 ```bash
 npx tsx prisma/inspect-and-backup.ts                          # Backup inicial
 npx tsx prisma/drop-all-tables.ts                             # Eliminar tablas corruptas
@@ -160,11 +174,13 @@ npx tsx prisma/restore-backup.ts --execute                    # Restaurar datos 
 ```
 
 ### Migración Formal
+
 ```bash
 npx prisma migrate dev --name add_academic_year_history        # Crear migración formal
 ```
 
 ### Validaciones
+
 ```bash
 npx prisma validate                                            # Validar schema
 npx prisma generate                                            # Regenerar Prisma Client
@@ -178,6 +194,7 @@ npm run build                                                  # Build de produc
 ## Resultado Final de Validación
 
 ### Prisma
+
 - ✅ `npx prisma validate` - Schema válido
 - ✅ `npx prisma generate` - Prisma Client regenerado
 - ✅ `npx prisma migrate status` - "Database schema is up to date!"
@@ -185,14 +202,17 @@ npm run build                                                  # Build de produc
 - ✅ 0 drift detectado
 
 ### TypeScript
+
 - ✅ 0 errores en módulo de alumnos
 - ⚠️ 12 errores en otros módulos (finanzas, materias, usuarios) - NO BLOQUEANTES
 - ⚠️ 30 warnings de accesibilidad - NO BLOQUEANTES
 
 ### Build
+
 - ✅ `npm run build` - Build exitoso (124.31 kB)
 
 ### Base de Datos
+
 - ✅ 172 registros totales
 - ✅ 160 registros restaurados desde backup
 - ✅ 12 registros creados por seed
@@ -203,18 +223,21 @@ npm run build                                                  # Build de produc
 ## Riesgos Pendientes No Bloqueantes
 
 ### 1. Migración de Encriptación
+
 - **Estado:** Infraestructura completa, migración NO ejecutada
 - **Riesgo:** BAJO - Migración requiere aprobación explícita y backup previo
 - **Acción requerida:** Ejecutar en ventana de mantenimiento con backup completo
 - **Documentación:** `docs/ENCRYPTION_EXECUTION_PLAN.md`
 
 ### 2. Errores TypeScript Externos
+
 - **Estado:** 12 errores en módulos finanzas, materias, usuarios
 - **Riesgo:** BAJO - No afectan módulo de alumnos
 - **Acción requerida:** Corregir antes de producción completa del sistema
 - **Prioridad:** MEDIA - Recomendado para estabilidad del sistema
 
 ### 3. Warnings de Accesibilidad
+
 - **Estado:** 30 warnings de labels sin asociación
 - **Riesgo:** MUY BAJO - Solo warnings de UX
 - **Acción requerida:** Opcional para mejora de accesibilidad
@@ -229,6 +252,7 @@ npm run build                                                  # Build de produc
 **Bloqueantes:** ❌ **NINGUNO**
 
 **Notas:**
+
 - El módulo está funcional y técnicamente listo para producción
 - Los errores TypeScript restantes son exclusivos de otros módulos
 - La migración de encriptación queda pendiente para ventana de mantenimiento futura

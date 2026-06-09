@@ -97,12 +97,12 @@ export const actions: Actions = {
 			throw redirect(303, `/carreras/${params.id}`);
 		} catch (e) {
 			console.error('Error creating study plan - Full error:', e);
-			
+
 			// Handle Prisma specific errors
 			if (e instanceof PrismaClientKnownRequestError) {
 				console.error('Prisma error code:', e.code);
 				console.error('Prisma meta:', e.meta);
-				
+
 				if (e.code === 'P2002') {
 					return {
 						success: false,
@@ -127,7 +127,7 @@ export const actions: Actions = {
 					}
 				};
 			}
-			
+
 			if (e instanceof Error) {
 				if (e.message.includes('redirect')) {
 					throw e;
@@ -136,7 +136,7 @@ export const actions: Actions = {
 				console.error('Error name:', e.name);
 				console.error('Error message:', e.message);
 				console.error('Error stack:', e.stack);
-				
+
 				return {
 					success: false,
 					errors: {

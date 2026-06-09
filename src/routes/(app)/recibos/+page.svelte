@@ -120,10 +120,7 @@
 		<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<div class="mb-4 flex items-center justify-between">
 				<h3 class="text-lg font-semibold">Filtros</h3>
-				<button
-					onclick={clearFilters}
-					class="text-sm text-indigo-400 hover:text-indigo-300"
-				>
+				<button onclick={clearFilters} class="text-sm text-indigo-400 hover:text-indigo-300">
 					Limpiar filtros
 				</button>
 			</div>

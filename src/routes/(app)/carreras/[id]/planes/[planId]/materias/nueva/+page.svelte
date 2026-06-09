@@ -40,17 +40,14 @@
 			<h1 class="mt-2 text-4xl font-bold tracking-tight">Agregar materia al plan</h1>
 			<p class="mt-2 font-mono text-sm text-slate-400">{data.plan.career.code}</p>
 			<p class="mt-4 max-w-3xl text-sm text-slate-400">
-				Selecciona una materia para agregarla al plan {data.plan.name} de la carrera {data.plan.career.name}.
+				Selecciona una materia para agregarla al plan {data.plan.name} de la carrera {data.plan
+					.career.name}.
 			</p>
 		</div>
 	</section>
 
 	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
-		<form
-			method="POST"
-			use:enhance
-			class="space-y-6"
-		>
+		<form method="POST" use:enhance class="space-y-6">
 			{#if !success && errors.general}
 				<div class="rounded-2xl border border-red-900 bg-red-900/10 p-4 text-sm text-red-400">
 					{errors.general}
@@ -76,7 +73,9 @@
 								<h3 class="mb-3 text-lg font-semibold">Año {year}</h3>
 								<div class="grid gap-3">
 									{#each subjects as subject}
-										<label class="flex cursor-pointer rounded-2xl border border-slate-700 bg-slate-950 p-4 transition hover:border-slate-500">
+										<label
+											class="flex cursor-pointer rounded-2xl border border-slate-700 bg-slate-950 p-4 transition hover:border-slate-500"
+										>
 											<input
 												name="subjectId"
 												type="radio"

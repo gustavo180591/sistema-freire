@@ -84,9 +84,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	// Agrupar datos por estudiante
 	const studentsData = enrollments.map((enrollment: { student: any; studentId: string }) => {
-		const status = subjectStatuses.find((s: { studentId: string }) => s.studentId === enrollment.studentId);
-		const studentAttendance = attendanceRecords.flatMap((ar: { entries: any[] }) => 
-			ar.entries.filter((e: { studentId: string; present: boolean }) => e.studentId === enrollment.studentId)
+		const status = subjectStatuses.find(
+			(s: { studentId: string }) => s.studentId === enrollment.studentId
+		);
+		const studentAttendance = attendanceRecords.flatMap((ar: { entries: any[] }) =>
+			ar.entries.filter(
+				(e: { studentId: string; present: boolean }) => e.studentId === enrollment.studentId
+			)
 		);
 
 		const presentCount = studentAttendance.filter((e: { present: boolean }) => e.present).length;
@@ -100,29 +104,42 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			totalClasses: totalCount,
 			presentClasses: presentCount,
 			absentClasses: totalCount - presentCount,
-			isCritical: (status ? Number(status.attendancePercent) : attendancePercent) < 75 && totalCount > 0
+			isCritical:
+				(status ? Number(status.attendancePercent) : attendancePercent) < 75 && totalCount > 0
 		};
 	});
 
 	// Calcular estadísticas generales de la comisión
 	const totalStudents = studentsData.length;
-	const regularStudents = studentsData.filter((s: { regularityStatus: string }) => s.regularityStatus === 'REGULAR').length;
-	const libreStudents = studentsData.filter((s: { regularityStatus: string }) => s.regularityStatus === 'LIBRE').length;
+	const regularStudents = studentsData.filter(
+		(s: { regularityStatus: string }) => s.regularityStatus === 'REGULAR'
+	).length;
+	const libreStudents = studentsData.filter(
+		(s: { regularityStatus: string }) => s.regularityStatus === 'LIBRE'
+	).length;
 	const criticalStudents = studentsData.filter((s: { isCritical: boolean }) => s.isCritical).length;
-	const avgAttendance = totalStudents > 0 
-		? Math.round(studentsData.reduce((sum: number, s: { attendancePercent: number }) => sum + s.attendancePercent, 0) / totalStudents)
-		: 0;
+	const avgAttendance =
+		totalStudents > 0
+			? Math.round(
+					studentsData.reduce(
+						(sum: number, s: { attendancePercent: number }) => sum + s.attendancePercent,
+						0
+					) / totalStudents
+				)
+			: 0;
 
 	return {
 		commission,
 		students: studentsData,
-		attendanceRecords: attendanceRecords.map((ar: { id: string; classDate: Date; subject: { name: string }; entries: any[] }) => ({
-			id: ar.id,
-			date: ar.classDate,
-			subject: ar.subject.name,
-			totalStudents: ar.entries.length,
-			presentStudents: ar.entries.filter((e: { present: boolean }) => e.present).length
-		})),
+		attendanceRecords: attendanceRecords.map(
+			(ar: { id: string; classDate: Date; subject: { name: string }; entries: any[] }) => ({
+				id: ar.id,
+				date: ar.classDate,
+				subject: ar.subject.name,
+				totalStudents: ar.entries.length,
+				presentStudents: ar.entries.filter((e: { present: boolean }) => e.present).length
+			})
+		),
 		stats: {
 			totalStudents,
 			regularStudents,

@@ -3,16 +3,16 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const isTeacher = $derived(
-		data.user.roles.some((ur) => ur.role.code === 'DOCENTE')
-	);
+	const isTeacher = $derived(data.user.roles.some((ur) => ur.role.code === 'DOCENTE'));
 
 	const canViewEvaluations = $derived(
 		data.user.roles.some((ur) => ['SUPERADMIN', 'DIRECTOR', 'DOCENTE'].includes(ur.role.code))
 	);
 
 	const isAdministrative = $derived(
-		data.user.roles.some((ur) => ['SECRETARIA', 'PRECEPTOR', 'FINANZAS', 'APODERADO'].includes(ur.role.code))
+		data.user.roles.some((ur) =>
+			['SECRETARIA', 'PRECEPTOR', 'FINANZAS', 'APODERADO'].includes(ur.role.code)
+		)
 	);
 </script>
 
@@ -37,7 +37,7 @@
 
 	<div class="grid gap-6 md:grid-cols-2">
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<h2 class="text-xl font-bold mb-4">Información Personal</h2>
+			<h2 class="mb-4 text-xl font-bold">Información Personal</h2>
 			<div class="space-y-3">
 				<div>
 					<p class="text-sm text-slate-400">Nombre</p>
@@ -53,7 +53,9 @@
 				</div>
 				<div>
 					<p class="text-sm text-slate-400">Estado</p>
-					<p class="font-medium {data.user.status === 'ACTIVE' ? 'text-green-400' : 'text-red-400'}">
+					<p
+						class="font-medium {data.user.status === 'ACTIVE' ? 'text-green-400' : 'text-red-400'}"
+					>
 						{data.user.status === 'ACTIVE' ? 'Activo' : 'Inactivo'}
 					</p>
 				</div>
@@ -61,7 +63,7 @@
 		</div>
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<h2 class="text-xl font-bold mb-4">Roles</h2>
+			<h2 class="mb-4 text-xl font-bold">Roles</h2>
 			<div class="space-y-2">
 				{#if data.user.roles.length > 0}
 					{#each data.user.roles as userRole}
@@ -79,7 +81,7 @@
 
 	{#if data.user.student}
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<h2 class="text-xl font-bold mb-4">Datos de Estudiante</h2>
+			<h2 class="mb-4 text-xl font-bold">Datos de Estudiante</h2>
 			<div class="space-y-3">
 				<div>
 					<p class="text-sm text-slate-400">DNI</p>
@@ -99,7 +101,7 @@
 
 	{#if data.user.teacher}
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<h2 class="text-xl font-bold mb-4">Datos de Docente</h2>
+			<h2 class="mb-4 text-xl font-bold">Datos de Docente</h2>
 			<div class="space-y-3">
 				<div>
 					<p class="text-sm text-slate-400">DNI</p>
@@ -111,7 +113,7 @@
 
 	{#if isAdministrative}
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<h2 class="text-xl font-bold mb-4">Datos Administrativos</h2>
+			<h2 class="mb-4 text-xl font-bold">Datos Administrativos</h2>
 			<div class="space-y-3">
 				{#if data.user.phone}
 					<div>
@@ -135,7 +137,7 @@
 
 	{#if isTeacher && data.user.teacher}
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<h2 class="text-xl font-bold mb-4">Materias Asignadas</h2>
+			<h2 class="mb-4 text-xl font-bold">Materias Asignadas</h2>
 			{#if data.user.teacher.subjects.length > 0}
 				<div class="space-y-3">
 					{#each data.user.teacher.subjects as subjectTeacher}
@@ -143,11 +145,13 @@
 							<div class="flex items-center justify-between">
 								<div>
 									<p class="font-medium">{subjectTeacher.subject.name}</p>
-									<p class="text-sm text-slate-400">{subjectTeacher.subject.code} - Año {subjectTeacher.subject.yearLevel}</p>
+									<p class="text-sm text-slate-400">
+										{subjectTeacher.subject.code} - Año {subjectTeacher.subject.yearLevel}
+									</p>
 								</div>
 								<a
 									href="/materias/{subjectTeacher.subject.id}"
-									class="text-blue-400 hover:text-blue-300 text-sm"
+									class="text-sm text-blue-400 hover:text-blue-300"
 								>
 									Ver materia
 								</a>
@@ -163,14 +167,16 @@
 
 	{#if canViewEvaluations && data.evaluations && data.evaluations.length > 0}
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<h2 class="text-xl font-bold mb-4">Evaluaciones Creadas</h2>
+			<h2 class="mb-4 text-xl font-bold">Evaluaciones Creadas</h2>
 			<div class="space-y-3">
 				{#each data.evaluations as evaluation}
 					<div class="rounded-xl border border-slate-800 bg-slate-800/50 p-4">
 						<div class="flex items-center justify-between">
 							<div>
 								<p class="font-medium">{evaluation.title}</p>
-								<p class="text-sm text-slate-400">{evaluation.subject} ({evaluation.subjectCode}) - {evaluation.type}</p>
+								<p class="text-sm text-slate-400">
+									{evaluation.subject} ({evaluation.subjectCode}) - {evaluation.type}
+								</p>
 								{#if evaluation.date}
 									<p class="text-sm text-slate-400">
 										Fecha: {new Date(evaluation.date).toLocaleDateString('es-AR')}

@@ -13,12 +13,12 @@
 	// Verificar si el usuario tiene los roles requeridos
 	const hasAccess = $derived(() => {
 		if (!roles) return true;
-		
+
 		if (requireAll) {
 			if (typeof roles === 'string') return hasRole(roles);
-			return roles.every(r => hasRole(r));
+			return roles.every((r) => hasRole(r));
 		}
-		
+
 		if (typeof roles === 'string') return hasRole(roles);
 		return hasAnyRole(roles);
 	});

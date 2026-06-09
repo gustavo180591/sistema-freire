@@ -21,26 +21,28 @@
 </script>
 
 <div class="min-h-screen bg-slate-950 text-white">
-	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+	<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 		<!-- Header -->
 		<div class="mb-8">
-			<h1 class="text-3xl font-bold text-white mb-2">Comunicados</h1>
+			<h1 class="mb-2 text-3xl font-bold text-white">Comunicados</h1>
 			<p class="text-slate-400">Enviar avisos y comunicaciones a tus alumnos</p>
 		</div>
 
 		<!-- Formulario de Comunicado -->
 		<div class="mb-8">
-			<div class="bg-slate-900 rounded-2xl border border-slate-800 p-6">
-				<h2 class="text-xl font-semibold text-white mb-6">Nuevo Comunicado</h2>
+			<div class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+				<h2 class="mb-6 text-xl font-semibold text-white">Nuevo Comunicado</h2>
 
 				{#if formError}
-					<div class="mb-4 p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-400">
+					<div class="mb-4 rounded-xl border border-red-500/50 bg-red-500/20 p-4 text-red-400">
 						{formError}
 					</div>
 				{/if}
 
 				{#if formSuccess}
-					<div class="mb-4 p-4 bg-green-500/20 border border-green-500/50 rounded-xl text-green-400">
+					<div
+						class="mb-4 rounded-xl border border-green-500/50 bg-green-500/20 p-4 text-green-400"
+					>
 						{formSuccess}
 					</div>
 				{/if}
@@ -48,7 +50,9 @@
 				<form method="POST" class="space-y-6">
 					<div class="grid gap-6 md:grid-cols-2">
 						<div>
-							<label for="student" class="mb-2 block text-sm font-medium text-slate-300">Alumno</label>
+							<label for="student" class="mb-2 block text-sm font-medium text-slate-300"
+								>Alumno</label
+							>
 							<select
 								id="student"
 								name="studentId"
@@ -91,7 +95,9 @@
 					</div>
 
 					<div>
-						<label for="description" class="mb-2 block text-sm font-medium text-slate-300">Mensaje</label>
+						<label for="description" class="mb-2 block text-sm font-medium text-slate-300"
+							>Mensaje</label
+						>
 						<textarea
 							id="description"
 							name="description"
@@ -123,20 +129,25 @@
 
 		<!-- Comunicados Recientes -->
 		<div>
-			<h2 class="text-xl font-semibold text-white mb-4">Comunicados Enviados</h2>
+			<h2 class="mb-4 text-xl font-semibold text-white">Comunicados Enviados</h2>
 			<div class="space-y-4">
 				{#each data.recentCommunications as communication}
-					<div class="bg-slate-900 rounded-2xl border border-slate-800 p-6">
+					<div class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
 						<div class="mb-4 flex items-start justify-between">
 							<div class="flex-1">
 								<div class="mb-2">
-									<span class="px-2 py-1 text-xs font-semibold rounded-full bg-slate-700 text-slate-300">{communication.type}</span>
+									<span
+										class="rounded-full bg-slate-700 px-2 py-1 text-xs font-semibold text-slate-300"
+										>{communication.type}</span
+									>
 								</div>
 								<h3 class="font-semibold text-white">{communication.title}</h3>
 								<p class="text-sm text-slate-400">{communication.studentName}</p>
 							</div>
 							<div class="text-right">
-								<p class="text-sm text-slate-400">{new Date(communication.date).toLocaleDateString()}</p>
+								<p class="text-sm text-slate-400">
+									{new Date(communication.date).toLocaleDateString()}
+								</p>
 								<p class="text-xs text-slate-500">Por {communication.creatorName}</p>
 							</div>
 						</div>
@@ -144,7 +155,9 @@
 					</div>
 				{/each}
 				{#if data.recentCommunications.length === 0}
-					<div class="bg-slate-900 rounded-2xl border border-slate-800 p-8 text-center text-slate-400">
+					<div
+						class="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-400"
+					>
 						No hay comunicados enviados aún
 					</div>
 				{/if}

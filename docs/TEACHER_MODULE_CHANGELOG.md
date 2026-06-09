@@ -1,12 +1,14 @@
 # Changelog - Módulo de Gestión de Docentes
 
 ## Versión Final
+
 **Fecha:** 5 de junio de 2026
 **Estado:** ✅ 100% Completo - Aprobado para Producción
 
 ## Funcionalidades Implementadas
 
 ### 1. Asignación de Docentes a Materias
+
 - UI completa para asignar y quitar materias a docentes
 - Validación de duplicados en backend
 - Validación de permisos (DIRECTOR, SECRETARIA)
@@ -16,6 +18,7 @@
 - Botón de acceso desde lista de docentes
 
 ### 2. Registro Administrativo Básico de Docentes
+
 - Enum TeacherStatus (ACTIVE, INACTIVE, SUSPENDED, RESIGNED)
 - Campo de estado laboral con valor por defecto ACTIVE
 - Campo de fecha de ingreso (nullable)
@@ -25,6 +28,7 @@
 - Auditoría de creación de docente
 
 ### 3. Edición Visual de Asistencias
+
 - Modal de edición con lista de estudiantes del registro
 - Toggle de presente/ausente por estudiante
 - Campo de notas por estudiante
@@ -35,6 +39,7 @@
 - Mensajes de éxito/error visuales
 
 ### 4. Edición Visual de Calificaciones
+
 - Modal de edición con nota y tipo de evaluación
 - Validación de rango (0-10)
 - Select de tipo de evaluación
@@ -45,6 +50,7 @@
 - Mensajes de éxito/error visuales
 
 ### 5. Edición de Estado del Docente
+
 - Select de estado laboral (TeacherStatus)
 - Input de fecha de ingreso
 - Textarea de observaciones
@@ -54,6 +60,7 @@
 - Preservación de valores existentes
 
 ### 6. Auditoría Completa
+
 - Creación de docente: CREATE en TEACHER
 - Eliminación de docente: DELETE en TEACHER
 - Asignación de materia: CREATE en SUBJECT_TEACHER
@@ -74,6 +81,7 @@
 ## Archivos Modificados
 
 ### Backend (Server)
+
 1. `src/routes/(app)/docentes/+page.server.ts` - Agregada auditoría de eliminación
 2. `src/routes/(app)/docente/asistencia/+page.server.ts` - Agregada acción editAttendance y campo studentDni
 3. `src/routes/(app)/docente/calificaciones/+page.server.ts` - Agregada acción editGrade y campo id
@@ -81,6 +89,7 @@
 5. `src/routes/(app)/usuarios/[id]/editar/+page.server.ts` - Agregados campos teacherStatus, hireDate, observations
 
 ### Frontend (Svelte)
+
 1. `src/routes/(app)/docentes/+page.svelte` - Agregado botón de asignación de materias
 2. `src/routes/(app)/docente/asistencia/+page.svelte` - Agregado modal de edición de asistencia
 3. `src/routes/(app)/docente/calificaciones/+page.svelte` - Agregado modal de edición de calificación
@@ -88,6 +97,7 @@
 5. `src/routes/(app)/usuarios/[id]/editar/+page.svelte` - Agregados campos de edición de estado docente
 
 ### Schema
+
 1. `prisma/schema.prisma` - Agregado enum TeacherStatus y campos al modelo Teacher
 
 ## Migraciones Creadas
@@ -119,17 +129,18 @@
 
 ## Comandos Ejecutados
 
-| Comando | Resultado | Detalles |
-|---------|-----------|----------|
-| `npx prisma validate` | ✅ Exitoso | Schema válido |
-| `npx prisma generate` | ✅ Exitoso | Prisma Client regenerado (v6.19.2) |
-| `npx prisma migrate status` | ✅ Exitoso | 22 migraciones, schema sincronizado |
-| `npm run check` | ⚠️ Con errores | 12 errores TypeScript, 30 warnings (NINGUNO en módulo docente) |
-| `npm run build` | ✅ Exitoso | Build completado en 5.12s |
+| Comando                     | Resultado      | Detalles                                                       |
+| --------------------------- | -------------- | -------------------------------------------------------------- |
+| `npx prisma validate`       | ✅ Exitoso     | Schema válido                                                  |
+| `npx prisma generate`       | ✅ Exitoso     | Prisma Client regenerado (v6.19.2)                             |
+| `npx prisma migrate status` | ✅ Exitoso     | 22 migraciones, schema sincronizado                            |
+| `npm run check`             | ⚠️ Con errores | 12 errores TypeScript, 30 warnings (NINGUNO en módulo docente) |
+| `npm run build`             | ✅ Exitoso     | Build completado en 5.12s                                      |
 
 ## Resultado Final de Validación
 
 ### Errores en Módulo Docente
+
 - **TypeScript:** ✅ 0 errores
 - **Svelte:** ✅ 0 errores
 - **Prisma:** ✅ 0 errores
@@ -139,10 +150,12 @@
 - **Funcionalidades simuladas:** ✅ 0 (todas conectadas a datos reales)
 
 ### Errores en Otros Módulos (no afectan docentes)
+
 - 3 errores TypeScript en `finanzas/pagos/nuevo/+page.svelte`
 - 30 warnings de accesibilidad en varios módulos (finanzas, materias, usuarios, preceptor, auth)
 
 ### Estado de Compilación
+
 - ✅ Build exitoso (5.12s)
 - ✅ Prisma validado
 - ✅ Migraciones sincronizadas
@@ -151,6 +164,7 @@
 ## Riesgos Pendientes No Bloqueantes
 
 ### Riesgos de Baja Prioridad
+
 1. **Sin restricción de períodos cerrados** para edición de asistencia y calificaciones
    - **Impacto:** BAJO
    - **Mitigación:** Se puede agregar validación de períodos en el futuro
@@ -172,6 +186,7 @@
    - **Bloqueante:** NO
 
 ### Riesgos de Media Prioridad
+
 1. **Datos sensibles sin encriptación** - DNI en texto plano
    - **Impacto:** MEDIO
    - **Estado:** Planificado, documentado, no ejecutado (por solicitud del usuario)

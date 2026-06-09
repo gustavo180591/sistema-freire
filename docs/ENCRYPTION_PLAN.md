@@ -11,19 +11,23 @@
 ### En Texto Plano Actualmente
 
 **Tabla `User`:**
+
 - `phone` (String, opcional)
 
 **Tabla `Student`:**
+
 - `dni` (String, único, obligatorio)
 - `phone` (String, opcional)
 - `familyContactPhone` (String, opcional)
 
 **Tabla `Teacher`:**
+
 - `dni` (String, único, obligatorio)
 
 ## Estrategia Recomendada: AES-256-GCM
 
 ### Algoritmo
+
 - **AES-256-GCM** (Galois/Counter Mode)
 - **Ventajas:**
   - Autenticación integrada (detecta manipulaciones)
@@ -55,34 +59,34 @@ const SALT_LENGTH = 16;
 const TAG_LENGTH = 16;
 
 export function encrypt(text: string): string {
-  const key = Buffer.from(process.env.ENCRYPTION_KEY || '', 'hex');
-  const iv = Buffer.from(process.env.ENCRYPTION_KEY_IV || '', 'hex');
-  
-  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
-  let encrypted = cipher.update(text, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
-  
-  const authTag = cipher.getAuthTag();
-  
-  // Formato: iv:authTag:encrypted
-  return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+	const key = Buffer.from(process.env.ENCRYPTION_KEY || '', 'hex');
+	const iv = Buffer.from(process.env.ENCRYPTION_KEY_IV || '', 'hex');
+
+	const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+	let encrypted = cipher.update(text, 'utf8', 'hex');
+	encrypted += cipher.final('hex');
+
+	const authTag = cipher.getAuthTag();
+
+	// Formato: iv:authTag:encrypted
+	return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
 }
 
 export function decrypt(encrypted: string): string {
-  const key = Buffer.from(process.env.ENCRYPTION_KEY || '', 'hex');
-  
-  const parts = encrypted.split(':');
-  const iv = Buffer.from(parts[0], 'hex');
-  const authTag = Buffer.from(parts[1], 'hex');
-  const encryptedText = parts[2];
-  
-  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
-  decipher.setAuthTag(authTag);
-  
-  let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  
-  return decrypted;
+	const key = Buffer.from(process.env.ENCRYPTION_KEY || '', 'hex');
+
+	const parts = encrypted.split(':');
+	const iv = Buffer.from(parts[0], 'hex');
+	const authTag = Buffer.from(parts[1], 'hex');
+	const encryptedText = parts[2];
+
+	const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+	decipher.setAuthTag(authTag);
+
+	let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+	decrypted += decipher.final('utf8');
+
+	return decrypted;
 }
 ```
 
@@ -94,46 +98,48 @@ import { prisma } from '$lib/server/db/prisma';
 import { encrypt } from '$lib/server/encryption';
 
 async function migrate() {
-  console.log('Iniciando migración de datos sensibles...');
-  
-  // Migrar Student.dni y Student.phone
-  const students = await prisma.student.findMany();
-  for (const student of students) {
-    if (student.dni && !student.dni.includes(':')) {
-      await prisma.student.update({
-        where: { id: student.id },
-        data: {
-          dni: encrypt(student.dni),
-          phone: student.phone ? encrypt(student.phone) : null,
-          familyContactPhone: student.familyContactPhone ? encrypt(student.familyContactPhone) : null
-        }
-      });
-    }
-  }
-  
-  // Migrar Teacher.dni
-  const teachers = await prisma.teacher.findMany();
-  for (const teacher of teachers) {
-    if (teacher.dni && !teacher.dni.includes(':')) {
-      await prisma.teacher.update({
-        where: { id: teacher.id },
-        data: { dni: encrypt(teacher.dni) }
-      });
-    }
-  }
-  
-  // Migrar User.phone
-  const users = await prisma.user.findMany();
-  for (const user of users) {
-    if (user.phone && !user.phone.includes(':')) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { phone: encrypt(user.phone) }
-      });
-    }
-  }
-  
-  console.log('Migración completada');
+	console.log('Iniciando migración de datos sensibles...');
+
+	// Migrar Student.dni y Student.phone
+	const students = await prisma.student.findMany();
+	for (const student of students) {
+		if (student.dni && !student.dni.includes(':')) {
+			await prisma.student.update({
+				where: { id: student.id },
+				data: {
+					dni: encrypt(student.dni),
+					phone: student.phone ? encrypt(student.phone) : null,
+					familyContactPhone: student.familyContactPhone
+						? encrypt(student.familyContactPhone)
+						: null
+				}
+			});
+		}
+	}
+
+	// Migrar Teacher.dni
+	const teachers = await prisma.teacher.findMany();
+	for (const teacher of teachers) {
+		if (teacher.dni && !teacher.dni.includes(':')) {
+			await prisma.teacher.update({
+				where: { id: teacher.id },
+				data: { dni: encrypt(teacher.dni) }
+			});
+		}
+	}
+
+	// Migrar User.phone
+	const users = await prisma.user.findMany();
+	for (const user of users) {
+		if (user.phone && !user.phone.includes(':')) {
+			await prisma.user.update({
+				where: { id: user.id },
+				data: { phone: encrypt(user.phone) }
+			});
+		}
+	}
+
+	console.log('Migración completada');
 }
 
 migrate().catch(console.error);
@@ -142,39 +148,43 @@ migrate().catch(console.error);
 #### 4. Modificación de Puntos de Escritura
 
 **Archivos a modificar:**
+
 - `src/routes/(app)/usuarios/nuevo/+page.server.ts` - Encriptar al crear
 - `src/routes/(app)/usuarios/[id]/editar/+page.server.ts` - Encriptar al actualizar
 
 **Ejemplo:**
+
 ```typescript
 import { encrypt } from '$lib/server/encryption';
 
 // Al crear estudiante
 await tx.student.create({
-  data: {
-    dni: encrypt(dni),
-    phone: phone ? encrypt(phone) : null,
-    // ... otros campos
-  }
+	data: {
+		dni: encrypt(dni),
+		phone: phone ? encrypt(phone) : null
+		// ... otros campos
+	}
 });
 ```
 
 #### 5. Modificación de Puntos de Lectura
 
 **Archivos a modificar:**
+
 - `src/routes/(app)/alumnos/+page.server.ts` - Desencriptar al listar
 - `src/routes/(app)/docente/+page.server.ts` - Desencriptar al listar
 - Cualquier reporte o exportación
 
 **Ejemplo:**
+
 ```typescript
 import { decrypt } from '$lib/server/encryption';
 
 const students = await prisma.student.findMany();
-const decryptedStudents = students.map(s => ({
-  ...s,
-  dni: decrypt(s.dni),
-  phone: s.phone ? decrypt(s.phone) : null
+const decryptedStudents = students.map((s) => ({
+	...s,
+	dni: decrypt(s.dni),
+	phone: s.phone ? decrypt(s.phone) : null
 }));
 ```
 
@@ -185,31 +195,35 @@ Las búsquedas por DNI requieren encriptar el valor de búsqueda:
 ```typescript
 const searchDni = encrypt(formData.get('dni')?.toString());
 const student = await prisma.student.findUnique({
-  where: { dni: searchDni }
+	where: { dni: searchDni }
 });
 ```
 
 ## Plan de Ejecución
 
 ### Fase 1: Preparación (Sin tocar datos)
+
 - [ ] Crear módulo `src/lib/server/encryption.ts`
 - [ ] Agregar variables de entorno `ENCRYPTION_KEY` y `ENCRYPTION_KEY_IV`
 - [ ] Generar claves seguras con `openssl rand -hex 32` y `openssl rand -hex 12`
 - [ ] Documentar el proceso
 
 ### Fase 2: Backup Obligatorio
+
 - [ ] Backup completo de la base de datos PostgreSQL
 - [ ] Verificar integridad del backup
 - [ ] Almacenar backup en ubicación segura
 - [ ] Documentar procedimiento de rollback
 
 ### Fase 3: Implementación Gradual
+
 - [ ] Modificar puntos de escritura para encriptar
 - [ ] Modificar puntos de lectura para desencriptar
 - [ ] Actualizar búsquedas por DNI
 - [ ] Actualizar validaciones de unicidad
 
 ### Fase 4: Migración de Datos
+
 - [ ] Ejecutar script de migración en ambiente de desarrollo
 - [ ] Verificar que todos los datos se encriptaron correctamente
 - [ ] Probar operaciones CRUD completas
@@ -217,6 +231,7 @@ const student = await prisma.student.findUnique({
 - [ ] Probar reportes y exportaciones
 
 ### Fase 5: Validación en Producción
+
 - [ ] Ejecutar backup de producción
 - [ ] Desplegar cambios en horario de bajo tráfico
 - [ ] Monitorear logs de errores
@@ -224,6 +239,7 @@ const student = await prisma.student.findUnique({
 - [ ] Tener plan de rollback listo
 
 ### Fase 6: Limpieza
+
 - [ ] Eliminar datos en texto plano de backups antiguos
 - [ ] Rotar claves de encriptación (opcional, futuro)
 - [ ] Documentar procedimiento de rotación de claves
@@ -250,11 +266,13 @@ const student = await prisma.student.findUnique({
 ## Pruebas Requeridas
 
 ### Unitarias
+
 - [ ] Test de encriptación/desencriptación
 - [ ] Test de integridad (autenticación GCM)
 - [ ] Test de manejo de errores
 
 ### Integración
+
 - [ ] Test de creación de usuario con DNI encriptado
 - [ ] Test de actualización de usuario con phone encriptado
 - [ ] Test de búsqueda por DNI encriptado
@@ -262,6 +280,7 @@ const student = await prisma.student.findUnique({
 - [ ] Test de reportes con datos desencriptados
 
 ### End-to-End
+
 - [ ] Flujo completo de alta de alumno
 - [ ] Flujo completo de búsqueda de alumno por DNI
 - [ ] Flujo completo de exportación de datos

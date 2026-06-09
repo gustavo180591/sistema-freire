@@ -59,7 +59,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			fullName: `${student.firstName} ${student.lastName}`,
 			career: student.career.name
 		},
-		enrollments: enrollments.map(e => ({
+		enrollments: enrollments.map((e) => ({
 			id: e.id,
 			subject: {
 				id: e.subject.id,
@@ -67,28 +67,38 @@ export const load: PageServerLoad = async ({ locals }) => {
 				code: e.subject.code,
 				yearLevel: e.subject.yearLevel
 			},
-			commission: e.commission ? {
-				id: e.commission.id,
-				code: e.commission.code,
-				schedule: e.commission.schedule,
-				teacher: e.commission.teacher ? {
-					name: `${e.commission.teacher.firstName} ${e.commission.teacher.lastName}`
-				} : null,
-				location: e.commission.location ? {
-					name: e.commission.location.name
-				} : null
-			} : null,
+			commission: e.commission
+				? {
+						id: e.commission.id,
+						code: e.commission.code,
+						schedule: e.commission.schedule,
+						teacher: e.commission.teacher
+							? {
+									name: `${e.commission.teacher.firstName} ${e.commission.teacher.lastName}`
+								}
+							: null,
+						location: e.commission.location
+							? {
+									name: e.commission.location.name
+								}
+							: null
+					}
+				: null,
 			career: {
 				name: e.career.name
 			},
-			studyPlan: e.studyPlan ? {
-				name: e.studyPlan.name,
-				version: e.studyPlan.version
-			} : null,
-			academicTerm: e.academicTerm ? {
-				name: e.academicTerm.name,
-				year: e.academicTerm.year
-			} : null,
+			studyPlan: e.studyPlan
+				? {
+						name: e.studyPlan.name,
+						version: e.studyPlan.version
+					}
+				: null,
+			academicTerm: e.academicTerm
+				? {
+						name: e.academicTerm.name,
+						year: e.academicTerm.year
+					}
+				: null,
 			status: e.status,
 			enrolledAt: e.enrolledAt,
 			confirmedAt: e.confirmedAt,
@@ -96,7 +106,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			rejectedAt: e.rejectedAt,
 			rejectionReason: e.rejectionReason,
 			cancellationReason: e.cancellationReason,
-			canCancel: e.status === EnrollmentStatus.ACTIVE && (!activeTerm || e.academicTermId === activeTerm.id)
+			canCancel:
+				e.status === EnrollmentStatus.ACTIVE && (!activeTerm || e.academicTermId === activeTerm.id)
 		})),
 		activeTerm
 	};

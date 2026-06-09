@@ -16,7 +16,8 @@
 	const getCapacityStatus = () => {
 		const percentage = (data.commission.currentEnrolled / data.commission.maxCapacity) * 100;
 		if (percentage >= 100) return { label: 'Completo', color: 'bg-red-950/50 text-red-400' };
-		if (percentage >= 80) return { label: 'Casi completo', color: 'bg-amber-950/50 text-amber-400' };
+		if (percentage >= 80)
+			return { label: 'Casi completo', color: 'bg-amber-950/50 text-amber-400' };
 		return { label: 'Disponible', color: 'bg-green-950/50 text-green-400' };
 	};
 </script>
@@ -32,10 +33,15 @@
 			<div class="flex items-center gap-4">
 				<a
 					href="/comisiones"
-					class="rounded-xl border border-slate-700 p-2 text-slate-400 hover:bg-slate-800 transition"
+					class="rounded-xl border border-slate-700 p-2 text-slate-400 transition hover:bg-slate-800"
 				>
 					<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M15 19l-7-7 7-7"
+						/>
 					</svg>
 				</a>
 				<div>
@@ -48,10 +54,15 @@
 				{#if data.canUpdate}
 					<a
 						href="/comisiones/{data.commission.id}/editar"
-						class="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 transition"
+						class="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
 					>
 						<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+							/>
 						</svg>
 						Editar
 					</a>
@@ -63,9 +74,9 @@
 	<!-- Commission Details -->
 	<div class="grid gap-6 lg:grid-cols-3">
 		<!-- Info Card -->
-		<div class="lg:col-span-2 space-y-6">
+		<div class="space-y-6 lg:col-span-2">
 			<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-				<h2 class="text-xl font-bold mb-4">Información de la Comisión</h2>
+				<h2 class="mb-4 text-xl font-bold">Información de la Comisión</h2>
 				<div class="grid gap-4 md:grid-cols-2">
 					<div>
 						<p class="text-sm text-slate-400">Código</p>
@@ -73,14 +84,20 @@
 					</div>
 					<div>
 						<p class="text-sm text-slate-400">Estado</p>
-						<span class="inline-flex rounded-full {data.commission.active ? 'bg-green-950/50 text-green-400' : 'bg-slate-950/50 text-slate-400'} px-3 py-1 text-xs">
+						<span
+							class="inline-flex rounded-full {data.commission.active
+								? 'bg-green-950/50 text-green-400'
+								: 'bg-slate-950/50 text-slate-400'} px-3 py-1 text-xs"
+						>
 							{data.commission.active ? 'Activa' : 'Inactiva'}
 						</span>
 					</div>
 					<div>
 						<p class="text-sm text-slate-400">Materia</p>
 						<p class="font-medium">{data.commission.subject.name}</p>
-						<p class="text-sm text-slate-400">{data.commission.subject.code} · Año {data.commission.subject.yearLevel}</p>
+						<p class="text-sm text-slate-400">
+							{data.commission.subject.code} · Año {data.commission.subject.yearLevel}
+						</p>
 					</div>
 					<div>
 						<p class="text-sm text-slate-400">Carrera</p>
@@ -125,7 +142,7 @@
 
 			<!-- Enrollments -->
 			<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-				<h2 class="text-xl font-bold mb-4">Alumnos Inscriptos ({data.enrollments.length})</h2>
+				<h2 class="mb-4 text-xl font-bold">Alumnos Inscriptos ({data.enrollments.length})</h2>
 				{#if data.enrollments.length === 0}
 					<p class="text-slate-400">No hay alumnos inscriptos en esta comisión</p>
 				{:else}
@@ -168,7 +185,7 @@
 		<!-- Capacity Card -->
 		<div class="space-y-6">
 			<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-				<h2 class="text-xl font-bold mb-4">Capacidad</h2>
+				<h2 class="mb-4 text-xl font-bold">Capacidad</h2>
 				{#if true}
 					{@const capacityStatus = getCapacityStatus()}
 					<div class="mb-4">
@@ -180,22 +197,25 @@
 				{/if}
 				<div class="mb-4">
 					<p class="text-sm text-slate-400">Ocupación</p>
-					<p class="text-3xl font-bold">{data.commission.currentEnrolled} / {data.commission.maxCapacity}</p>
+					<p class="text-3xl font-bold">
+						{data.commission.currentEnrolled} / {data.commission.maxCapacity}
+					</p>
 				</div>
-				<div class="h-4 rounded-full bg-slate-800 overflow-hidden">
+				<div class="h-4 overflow-hidden rounded-full bg-slate-800">
 					<div
 						class="h-full bg-indigo-500 transition-all"
 						style="width: {(data.commission.currentEnrolled / data.commission.maxCapacity) * 100}%"
 					></div>
 				</div>
 				<p class="mt-2 text-sm text-slate-400">
-					{Math.round((data.commission.currentEnrolled / data.commission.maxCapacity) * 100)}% ocupado
+					{Math.round((data.commission.currentEnrolled / data.commission.maxCapacity) * 100)}%
+					ocupado
 				</p>
 			</div>
 
 			<!-- Metadata -->
 			<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-				<h2 class="text-xl font-bold mb-4">Metadatos</h2>
+				<h2 class="mb-4 text-xl font-bold">Metadatos</h2>
 				<div class="space-y-3">
 					<div>
 						<p class="text-sm text-slate-400">Creado</p>

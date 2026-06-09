@@ -14,10 +14,7 @@ export const load: PageServerLoad = async () => {
 					include: { career: true }
 				}
 			},
-			orderBy: [
-				{ yearLevel: 'asc' },
-				{ name: 'asc' }
-			]
+			orderBy: [{ yearLevel: 'asc' }, { name: 'asc' }]
 		}),
 		prisma.career.findMany({
 			where: { active: true },
@@ -31,16 +28,16 @@ export const load: PageServerLoad = async () => {
 		name: subject.name,
 		yearLevel: subject.yearLevel,
 		accreditationMode: subject.accreditationMode,
-		careers: subject.careerSubjects.map(cs => cs.career),
+		careers: subject.careerSubjects.map((cs) => cs.career),
 		correlativesRegular: subject.correlatives
-			.filter(c => c.correlativeType === 'REGULAR')
-			.map(c => `${c.requiredSubject.code} - ${c.requiredSubject.name}`),
+			.filter((c) => c.correlativeType === 'REGULAR')
+			.map((c) => `${c.requiredSubject.code} - ${c.requiredSubject.name}`),
 		correlativesAprobadoCursar: subject.correlatives
-			.filter(c => c.correlativeType === 'APROBADO')
-			.map(c => `${c.requiredSubject.code} - ${c.requiredSubject.name}`),
+			.filter((c) => c.correlativeType === 'APROBADO')
+			.map((c) => `${c.requiredSubject.code} - ${c.requiredSubject.name}`),
 		correlativesAprobadoAprobar: subject.correlatives
-			.filter(c => c.correlativeType === 'APROBADO_APROBAR')
-			.map(c => `${c.requiredSubject.code} - ${c.requiredSubject.name}`)
+			.filter((c) => c.correlativeType === 'APROBADO_APROBAR')
+			.map((c) => `${c.requiredSubject.code} - ${c.requiredSubject.name}`)
 	}));
 
 	return {
@@ -77,7 +74,8 @@ export const actions: Actions = {
 			}
 
 			const correlative = subject.correlatives.find(
-				c => c.requiredSubject.name === requiredSubjectName && c.correlativeType === correlativeType
+				(c) =>
+					c.requiredSubject.name === requiredSubjectName && c.correlativeType === correlativeType
 			);
 
 			if (!correlative) {
@@ -154,7 +152,15 @@ export const actions: Actions = {
 		const subjectType = formData.get('subjectType') as string;
 		const trainingField = formData.get('trainingField') as string;
 
-		if (!code || !name || !yearLevel || !accreditationMode || !careerId || !subjectType || !trainingField) {
+		if (
+			!code ||
+			!name ||
+			!yearLevel ||
+			!accreditationMode ||
+			!careerId ||
+			!subjectType ||
+			!trainingField
+		) {
 			return fail(400, { error: 'Faltan datos requeridos' });
 		}
 

@@ -35,11 +35,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	const subjects = subjectTeachers.map(st => st.subject);
-	const subjectIds = subjects.map(s => s.id);
+	const subjects = subjectTeachers.map((st) => st.subject);
+	const subjectIds = subjects.map((s) => s.id);
 
 	// Obtener estudiantes de las carreras de las materias del docente
-	const careerIds = subjects.flatMap(s => s.careerSubjects.map(cs => cs.career.id));
+	const careerIds = subjects.flatMap((s) => s.careerSubjects.map((cs) => cs.career.id));
 	const students = await prisma.student.findMany({
 		where: {
 			status: 'ACTIVE',
@@ -52,24 +52,49 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	const studentIds = students.map(s => s.id);
+	const studentIds = students.map((s) => s.id);
 
-	// Calificaciones por materia
-	const gradesBySubject = await prisma.grade.groupBy({
-		by: ['subjectId'],
+	// Calificaciones por materia (nuevo modelo Grade → Evaluation → Subject)
+	const grades = await prisma.grade.findMany({
 		where: {
 			studentId: {
 				in: studentIds
 			},
-			subjectId: {
-				in: subjectIds
+			evaluation: {
+				subjectId: {
+					in: subjectIds
+				}
 			}
 		},
-		_count: true,
-		_avg: {
-			value: true
+		include: {
+			evaluation: {
+				include: {
+					subject: true
+				}
+			}
 		}
 	});
+
+	// Agrupar calificaciones por materia
+	const gradesBySubjectMap = new Map();
+	for (const grade of grades) {
+		const subjectId = grade.evaluation.subjectId;
+		if (!gradesBySubjectMap.has(subjectId)) {
+			gradesBySubjectMap.set(subjectId, {
+				subjectId,
+				_count: 0,
+				_avg: { value: null }
+			});
+		}
+		const data = gradesBySubjectMap.get(subjectId);
+		data._count++;
+		if (grade.value !== null) {
+			const currentAvg = data._avg.value ? Number(data._avg.value) : 0;
+			const count = data._count;
+			data._avg.value = (currentAvg * (count - 1) + Number(grade.value)) / count;
+		}
+	}
+	const gradesBySubject = Array.from(gradesBySubjectMap.values());
 
 	// Asistencia por materia
 	const attendanceRecords = await prisma.attendanceRecord.findMany({
@@ -83,10 +108,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	const attendanceBySubject = subjectIds.map(subjectId => {
-		const records = attendanceRecords.filter(r => r.subjectId === subjectId);
+	const attendanceBySubject = subjectIds.map((subjectId) => {
+		const records = attendanceRecords.filter((r) => r.subjectId === subjectId);
 		const totalEntries = records.reduce((sum, r) => sum + r.entries.length, 0);
-		const presentEntries = records.reduce((sum, r) => sum + r.entries.filter((e: any) => e.present).length, 0);
+		const presentEntries = records.reduce(
+			(sum, r) => sum + r.entries.filter((e: any) => e.present).length,
+			0
+		);
 		const attendanceRate = totalEntries > 0 ? (presentEntries / totalEntries) * 100 : 0;
 
 		return {
@@ -99,20 +127,20 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	// Combinar datos por materia
-	const subjectReports = subjects.map(subject => {
-		const gradesData = gradesBySubject.find(g => g.subjectId === subject.id);
-		const attendanceData = attendanceBySubject.find(a => a.subjectId === subject.id);
-		const subjectStudents = students.filter(s => careerIds.includes(s.careerId));
+	const subjectReports = subjects.map((subject) => {
+		const gradesData = gradesBySubject.find((g) => g.subjectId === subject.id);
+		const attendanceData = attendanceBySubject.find((a) => a.subjectId === subject.id);
+		const subjectStudents = students.filter((s) => careerIds.includes(s.careerId));
 
 		const avgValue = gradesData?._avg.value;
-		const averageGrade = avgValue ? Math.round(Number(avgValue) * 100) / 100 : 0;
+		const averageGrade = avgValue !== null ? Math.round(Number(avgValue) * 100) / 100 : 0;
 
 		return {
 			id: subject.id,
 			code: subject.code,
 			subject: subject.name,
 			yearLevel: subject.yearLevel,
-			careers: subject.careerSubjects.map(cs => cs.career.name),
+			careers: subject.careerSubjects.map((cs) => cs.career.name),
 			totalStudents: subjectStudents.length,
 			totalGrades: gradesData?._count || 0,
 			averageGrade,

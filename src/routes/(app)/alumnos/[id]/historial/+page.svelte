@@ -25,7 +25,7 @@
 <div class="space-y-8">
 	<!-- Header -->
 	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
-		<div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+		<div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
 			<div>
 				<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Legajo digital</p>
 				<h1 class="mt-2 text-4xl font-bold tracking-tight">
@@ -54,7 +54,12 @@
 					class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500"
 				>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+						/>
 					</svg>
 					Documentos
 				</a>
@@ -63,7 +68,12 @@
 					class="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-500"
 				>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+						/>
 					</svg>
 					Seguimiento
 				</a>
@@ -163,12 +173,17 @@
 
 <!-- Modal de confirmación para restablecer contraseña -->
 {#if showResetModal}
-	<div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-		<div class="bg-slate-900 rounded-3xl border border-slate-800 p-8 max-w-md w-full">
-			<div class="flex items-center space-x-4 mb-6">
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+		<div class="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-8">
+			<div class="mb-6 flex items-center space-x-4">
 				<div class="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/20">
 					<svg class="h-6 w-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+						/>
 					</svg>
 				</div>
 				<div>
@@ -177,10 +192,10 @@
 				</div>
 			</div>
 
-			<div class="bg-slate-800/50 rounded-2xl p-4 mb-6">
-				<p class="text-white font-medium">{student.fullName}</p>
+			<div class="mb-6 rounded-2xl bg-slate-800/50 p-4">
+				<p class="font-medium text-white">{student.fullName}</p>
 				<p class="text-sm text-slate-400">DNI: {student.dni}</p>
-				<p class="text-sm text-amber-400 mt-2">La contraseña se restablecerá a: 12345678</p>
+				<p class="mt-2 text-sm text-amber-400">La contraseña se restablecerá a: 12345678</p>
 			</div>
 
 			<form
@@ -189,14 +204,20 @@
 				use:enhance={() => {
 					return async ({ result, update }) => {
 						if (result.type === 'success' && result.data) {
-							resetMessage = { type: 'success', text: (result.data as any).message || 'Contraseña restablecida' };
+							resetMessage = {
+								type: 'success',
+								text: (result.data as any).message || 'Contraseña restablecida'
+							};
 							showResetModal = false;
 							await update();
-							setTimeout(() => resetMessage = null, 3000);
+							setTimeout(() => (resetMessage = null), 3000);
 						} else if (result.type === 'failure' && result.data) {
-							resetMessage = { type: 'error', text: (result.data as any).error || 'Error al restablecer contraseña' };
+							resetMessage = {
+								type: 'error',
+								text: (result.data as any).error || 'Error al restablecer contraseña'
+							};
 							await update();
-							setTimeout(() => resetMessage = null, 3000);
+							setTimeout(() => (resetMessage = null), 3000);
 						}
 					};
 				}}
@@ -204,7 +225,7 @@
 				<div class="flex justify-end space-x-4">
 					<button
 						type="button"
-						onclick={() => showResetModal = false}
+						onclick={() => (showResetModal = false)}
 						class="rounded-2xl border border-slate-700 px-6 py-3 font-semibold text-white transition hover:bg-slate-800"
 					>
 						Cancelar
@@ -223,7 +244,11 @@
 
 <!-- Mensaje de éxito/error -->
 {#if resetMessage}
-	<div class="fixed bottom-4 right-4 rounded-2xl px-6 py-4 {resetMessage.type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white font-medium shadow-lg">
+	<div
+		class="fixed right-4 bottom-4 rounded-2xl px-6 py-4 {resetMessage.type === 'success'
+			? 'bg-green-500'
+			: 'bg-red-500'} font-medium text-white shadow-lg"
+	>
 		{resetMessage.text}
 	</div>
 {/if}

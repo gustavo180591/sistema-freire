@@ -37,10 +37,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	const subjects = subjectTeachers.map(st => st.subject);
+	const subjects = subjectTeachers.map((st) => st.subject);
 
 	// Obtener estudiantes de las carreras de las materias del docente
-	const careerIds = subjects.flatMap(s => s.careerSubjects.map(cs => cs.career.id));
+	const careerIds = subjects.flatMap((s) => s.careerSubjects.map((cs) => cs.career.id));
 	const students = await prisma.student.findMany({
 		where: {
 			status: 'ACTIVE',
@@ -52,10 +52,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			user: true,
 			career: true
 		},
-		orderBy: [
-			{ lastName: 'asc' },
-			{ firstName: 'asc' }
-		]
+		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
 	});
 
 	// Obtener comunicados recientes del docente
@@ -84,14 +81,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	return {
-		subjects: subjects.map(s => ({
+		subjects: subjects.map((s) => ({
 			id: s.id,
 			code: s.code,
 			name: s.name,
 			yearLevel: s.yearLevel,
-			careers: s.careerSubjects.map(cs => cs.career.name)
+			careers: s.careerSubjects.map((cs) => cs.career.name)
 		})),
-		students: students.map(s => ({
+		students: students.map((s) => ({
 			id: s.id,
 			dni: s.dni,
 			firstName: s.firstName,
@@ -99,7 +96,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			career: s.career.name,
 			currentYear: s.currentYear
 		})),
-		recentCommunications: recentCommunications.map(c => ({
+		recentCommunications: recentCommunications.map((c) => ({
 			id: c.id,
 			studentId: c.studentId,
 			studentName: `${c.student.lastName}, ${c.student.firstName}`,
@@ -155,7 +152,9 @@ export const actions: Actions = {
 				}
 			});
 
-			const careerIds = subjectTeachers.flatMap(st => st.subject.careerSubjects.map(cs => cs.career.id));
+			const careerIds = subjectTeachers.flatMap((st) =>
+				st.subject.careerSubjects.map((cs) => cs.career.id)
+			);
 			const student = await prisma.student.findUnique({
 				where: { id: studentId }
 			});

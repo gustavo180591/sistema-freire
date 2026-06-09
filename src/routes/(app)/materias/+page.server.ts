@@ -87,13 +87,10 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 					include: { requiredSubject: true }
 				}
 			},
-			orderBy: [
-				{ yearLevel: 'asc' },
-				{ name: 'asc' }
-			]
+			orderBy: [{ yearLevel: 'asc' }, { name: 'asc' }]
 		}),
 		prisma.career.findMany({
-			where: { 
+			where: {
 				active: true,
 				locations: {
 					some: {
@@ -117,17 +114,17 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		isElective: subject.isElective,
 		isRemedial: subject.isRemedial,
 		active: subject.active,
-		careers: subject.careerSubjects.map(cs => cs.career),
+		careers: subject.careerSubjects.map((cs) => cs.career),
 		correlativesCount: subject.correlatives.length,
 		correlativesRegular: subject.correlatives
-			.filter(c => c.correlativeType === 'REGULAR')
-			.map(c => c.requiredSubject.name),
+			.filter((c) => c.correlativeType === 'REGULAR')
+			.map((c) => c.requiredSubject.name),
 		correlativesAprobadoCursar: subject.correlatives
-			.filter(c => c.correlativeType === 'APROBADO')
-			.map(c => c.requiredSubject.name),
+			.filter((c) => c.correlativeType === 'APROBADO')
+			.map((c) => c.requiredSubject.name),
 		correlativesAprobadoAprobar: subject.correlatives
-			.filter(c => c.correlativeType === 'APROBADO_APROBAR')
-			.map(c => c.requiredSubject.name)
+			.filter((c) => c.correlativeType === 'APROBADO_APROBAR')
+			.map((c) => c.requiredSubject.name)
 	}));
 
 	return {
@@ -142,7 +139,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		},
 		metrics: {
 			totalSubjects: normalizedSubjects.length,
-			totalWithCorrelatives: normalizedSubjects.filter(s => s.correlativesCount > 0).length
+			totalWithCorrelatives: normalizedSubjects.filter((s) => s.correlativesCount > 0).length
 		},
 		// Opciones para filtros
 		subjectTypes: Object.values(SubjectType),

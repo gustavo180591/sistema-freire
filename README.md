@@ -1,4 +1,3 @@
-
 npx sv create my-app
 
 Tailwind CSS 4
@@ -27,8 +26,6 @@ npm i -D @commitlint/cli @commitlint/config-conventional
 
 Variables de entorno
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/app"
-
-
 
 docker-compose up -d
 docker-compose up --build -d

@@ -47,7 +47,9 @@
 
 		<div class="grid gap-6 md:grid-cols-2">
 			<div>
-				<label for="code" class="mb-2 block text-sm font-medium text-slate-300">Código <span class="text-red-400">*</span></label>
+				<label for="code" class="mb-2 block text-sm font-medium text-slate-300"
+					>Código <span class="text-red-400">*</span></label
+				>
 				<input
 					bind:value={code}
 					name="code"
@@ -59,7 +61,9 @@
 			</div>
 
 			<div>
-				<label for="trainingField" class="mb-2 block text-sm font-medium text-slate-300">Campo de formación <span class="text-red-400">*</span></label>
+				<label for="trainingField" class="mb-2 block text-sm font-medium text-slate-300"
+					>Campo de formación <span class="text-red-400">*</span></label
+				>
 				<select
 					bind:value={trainingField}
 					name="trainingField"
@@ -74,7 +78,9 @@
 			</div>
 
 			<div>
-				<label for="durationYears" class="mb-2 block text-sm font-medium text-slate-300">Duración (años) <span class="text-red-400">*</span></label>
+				<label for="durationYears" class="mb-2 block text-sm font-medium text-slate-300"
+					>Duración (años) <span class="text-red-400">*</span></label
+				>
 				<input
 					bind:value={durationYears}
 					name="durationYears"
@@ -89,7 +95,9 @@
 			</div>
 
 			<div>
-				<label for="active" class="mb-2 block text-sm font-medium text-slate-300">Estado inicial</label>
+				<label for="active" class="mb-2 block text-sm font-medium text-slate-300"
+					>Estado inicial</label
+				>
 				<select
 					bind:value={isActive}
 					name="active"
@@ -103,7 +111,9 @@
 		</div>
 
 		<div>
-			<label for="name" class="mb-2 block text-sm font-medium text-slate-300">Nombre de la carrera <span class="text-red-400">*</span></label>
+			<label for="name" class="mb-2 block text-sm font-medium text-slate-300"
+				>Nombre de la carrera <span class="text-red-400">*</span></label
+			>
 			<input
 				bind:value={name}
 				name="name"
@@ -115,7 +125,9 @@
 		</div>
 
 		<div>
-			<label for="resolution" class="mb-2 block text-sm font-medium text-slate-300">Resolución</label>
+			<label for="resolution" class="mb-2 block text-sm font-medium text-slate-300"
+				>Resolución</label
+			>
 			<input
 				bind:value={resolution}
 				name="resolution"
@@ -126,10 +138,14 @@
 		</div>
 
 		<div>
-			<label for="locationIds" class="mb-2 block text-sm font-medium text-slate-300">Localidades</label>
+			<label for="locationIds" class="mb-2 block text-sm font-medium text-slate-300"
+				>Localidades</label
+			>
 			<div class="space-y-2">
 				{#each data.locations as location}
-					<label class="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950 p-3 cursor-pointer hover:bg-slate-800 transition">
+					<label
+						class="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-700 bg-slate-950 p-3 transition hover:bg-slate-800"
+					>
 						<input
 							type="checkbox"
 							name="locationIds"
@@ -146,7 +162,9 @@
 		</div>
 
 		<div>
-			<label for="description" class="mb-2 block text-sm font-medium text-slate-300">Descripción</label>
+			<label for="description" class="mb-2 block text-sm font-medium text-slate-300"
+				>Descripción</label
+			>
 			<textarea
 				bind:value={description}
 				name="description"

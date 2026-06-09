@@ -22,7 +22,7 @@
 <div class="space-y-8">
 	<!-- Header -->
 	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
-		<div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+		<div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
 			<div>
 				<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Legajo digital</p>
 				<h1 class="mt-2 text-4xl font-bold tracking-tight">

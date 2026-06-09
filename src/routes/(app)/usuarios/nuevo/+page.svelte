@@ -6,9 +6,7 @@
 	let userType = $state(data.type || 'ALUMNO');
 	let loading = $state(false);
 
-	const emailLabel = $derived(
-		userType === 'ALUMNO' ? 'Correo' : 'Correo institucional'
-	);
+	const emailLabel = $derived(userType === 'ALUMNO' ? 'Correo' : 'Correo institucional');
 </script>
 
 <svelte:head>
@@ -52,7 +50,9 @@
 			<h2 class="text-lg font-semibold text-white">Datos de usuario</h2>
 			<div class="grid gap-6 md:grid-cols-2">
 				<div>
-					<label for="type" class="mb-2 block text-sm font-medium text-slate-300">Tipo de usuario</label>
+					<label for="type" class="mb-2 block text-sm font-medium text-slate-300"
+						>Tipo de usuario</label
+					>
 					<select
 						id="type"
 						bind:value={userType}
@@ -76,7 +76,9 @@
 				</div>
 
 				<div>
-					<label for="email" class="mb-2 block text-sm font-medium text-slate-300">{emailLabel}</label>
+					<label for="email" class="mb-2 block text-sm font-medium text-slate-300"
+						>{emailLabel}</label
+					>
 					<input
 						id="email"
 						name="email"
@@ -86,7 +88,8 @@
 				</div>
 
 				<div>
-					<label for="firstName" class="mb-2 block text-sm font-medium text-slate-300">Nombre</label>
+					<label for="firstName" class="mb-2 block text-sm font-medium text-slate-300">Nombre</label
+					>
 					<input
 						id="firstName"
 						name="firstName"
@@ -95,7 +98,9 @@
 				</div>
 
 				<div>
-					<label for="lastName" class="mb-2 block text-sm font-medium text-slate-300">Apellido</label>
+					<label for="lastName" class="mb-2 block text-sm font-medium text-slate-300"
+						>Apellido</label
+					>
 					<input
 						id="lastName"
 						name="lastName"
@@ -116,373 +121,412 @@
 
 		<!-- 2. Datos personales -->
 		{#if userType === 'ALUMNO' || userType === 'PRECEPTOR' || userType === 'DOCENTE' || userType === 'SECRETARIA'}
-		<section class="space-y-4">
-			<h2 class="text-lg font-semibold text-white">Datos personales</h2>
-			<div class="grid gap-6 md:grid-cols-2">
-				{#if userType === 'ALUMNO'}
-				<div>
-					<label for="birthDate" class="mb-2 block text-sm font-medium text-slate-300">Fecha de nacimiento</label>
-					<input
-						id="birthDate"
-						name="birthDate"
-						type="date"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-					/>
-				</div>
+			<section class="space-y-4">
+				<h2 class="text-lg font-semibold text-white">Datos personales</h2>
+				<div class="grid gap-6 md:grid-cols-2">
+					{#if userType === 'ALUMNO'}
+						<div>
+							<label for="birthDate" class="mb-2 block text-sm font-medium text-slate-300"
+								>Fecha de nacimiento</label
+							>
+							<input
+								id="birthDate"
+								name="birthDate"
+								type="date"
+								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+							/>
+						</div>
 
-				<div>
-					<label for="bloodType" class="mb-2 block text-sm font-medium text-slate-300">Grupo sanguíneo</label>
-					<select
-						id="bloodType"
-						name="bloodType"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-					>
-						<option value="">Seleccionar...</option>
-						<option value="O+">O+</option>
-						<option value="O-">O-</option>
-						<option value="A+">A+</option>
-						<option value="A-">A-</option>
-						<option value="B+">B+</option>
-						<option value="B-">B-</option>
-						<option value="AB+">AB+</option>
-						<option value="AB-">AB-</option>
-					</select>
-				</div>
-				{/if}
+						<div>
+							<label for="bloodType" class="mb-2 block text-sm font-medium text-slate-300"
+								>Grupo sanguíneo</label
+							>
+							<select
+								id="bloodType"
+								name="bloodType"
+								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+							>
+								<option value="">Seleccionar...</option>
+								<option value="O+">O+</option>
+								<option value="O-">O-</option>
+								<option value="A+">A+</option>
+								<option value="A-">A-</option>
+								<option value="B+">B+</option>
+								<option value="B-">B-</option>
+								<option value="AB+">AB+</option>
+								<option value="AB-">AB-</option>
+							</select>
+						</div>
+					{/if}
 
-				<div>
-					<label for="phone" class="mb-2 block text-sm font-medium text-slate-300">Teléfono/Celular</label>
-					<input
-						id="phone"
-						name="phone"
-						type="tel"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-					/>
-				</div>
+					<div>
+						<label for="phone" class="mb-2 block text-sm font-medium text-slate-300"
+							>Teléfono/Celular</label
+						>
+						<input
+							id="phone"
+							name="phone"
+							type="tel"
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						/>
+					</div>
 
-				{#if userType !== 'ALUMNO'}
-				<div>
-					<label for="locality" class="mb-2 block text-sm font-medium text-slate-300">Localidad de trabajo</label>
-					<select
-						id="locality"
-						name="locality"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-						disabled={data.isSecretary && data.secretaryLocationCode ? true : undefined}
-					>
-						{#if data.isSecretary && data.secretaryLocationCode}
-							<option value={data.secretaryLocationCode} selected>
-								{data.secretaryLocationCode}
-							</option>
-						{:else}
-							<option value="">Seleccionar localidad</option>
-							{#each data.locations as location}
-								<option value={location.code}>{location.name}</option>
-							{/each}
-						{/if}
-					</select>
-					{#if data.isSecretary && data.secretaryLocationCode}
-						<p class="mt-1 text-xs text-slate-500">
-							Localidad asignada automáticamente según tu permiso de trabajo. Contacta a un administrador para cambiarla.
-						</p>
-					{:else}
-						<p class="mt-1 text-xs text-slate-500">
-							El usuario tendrá acceso a los datos de esta localidad
-						</p>
+					{#if userType !== 'ALUMNO'}
+						<div>
+							<label for="locality" class="mb-2 block text-sm font-medium text-slate-300"
+								>Localidad de trabajo</label
+							>
+							<select
+								id="locality"
+								name="locality"
+								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+								disabled={data.isSecretary && data.secretaryLocationCode ? true : undefined}
+							>
+								{#if data.isSecretary && data.secretaryLocationCode}
+									<option value={data.secretaryLocationCode} selected>
+										{data.secretaryLocationCode}
+									</option>
+								{:else}
+									<option value="">Seleccionar localidad</option>
+									{#each data.locations as location}
+										<option value={location.code}>{location.name}</option>
+									{/each}
+								{/if}
+							</select>
+							{#if data.isSecretary && data.secretaryLocationCode}
+								<p class="mt-1 text-xs text-slate-500">
+									Localidad asignada automáticamente según tu permiso de trabajo. Contacta a un
+									administrador para cambiarla.
+								</p>
+							{:else}
+								<p class="mt-1 text-xs text-slate-500">
+									El usuario tendrá acceso a los datos de esta localidad
+								</p>
+							{/if}
+						</div>
 					{/if}
 				</div>
-				{/if}
-			</div>
-		</section>
+			</section>
 		{/if}
 
 		<!-- Domicilio -->
 		{#if userType === 'ALUMNO'}
-		<section class="space-y-4">
-			<h2 class="text-lg font-semibold text-white">Domicilio</h2>
-			<div class="grid gap-6 md:grid-cols-2">
-				<div>
-					<label for="address" class="mb-2 block text-sm font-medium text-slate-300">Dirección</label>
-					<input
-						id="address"
-						name="address"
-						type="text"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-					/>
+			<section class="space-y-4">
+				<h2 class="text-lg font-semibold text-white">Domicilio</h2>
+				<div class="grid gap-6 md:grid-cols-2">
+					<div>
+						<label for="address" class="mb-2 block text-sm font-medium text-slate-300"
+							>Dirección</label
+						>
+						<input
+							id="address"
+							name="address"
+							type="text"
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						/>
+					</div>
+					<div>
+						<label for="postalCode" class="mb-2 block text-sm font-medium text-slate-300"
+							>Código postal</label
+						>
+						<input
+							id="postalCode"
+							name="postalCode"
+							type="text"
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						/>
+					</div>
 				</div>
-				<div>
-					<label for="postalCode" class="mb-2 block text-sm font-medium text-slate-300">Código postal</label>
-					<input
-						id="postalCode"
-						name="postalCode"
-						type="text"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-					/>
-				</div>
-			</div>
-		</section>
+			</section>
 		{/if}
 
 		<!-- 3. Datos académicos -->
 		{#if userType === 'ALUMNO'}
-		<section class="space-y-4">
-			<h2 class="text-lg font-semibold text-white">Datos académicos</h2>
-			<div class="grid gap-6 md:grid-cols-2">
-				<div>
-					<label for="locality" class="mb-2 block text-sm font-medium text-slate-300">Localidad</label>
-					<select
-						id="locality"
-						name="locality"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-						disabled={data.isSecretary && data.secretaryLocationCode ? true : undefined}
-					>
+			<section class="space-y-4">
+				<h2 class="text-lg font-semibold text-white">Datos académicos</h2>
+				<div class="grid gap-6 md:grid-cols-2">
+					<div>
+						<label for="locality" class="mb-2 block text-sm font-medium text-slate-300"
+							>Localidad</label
+						>
+						<select
+							id="locality"
+							name="locality"
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+							disabled={data.isSecretary && data.secretaryLocationCode ? true : undefined}
+						>
+							{#if data.isSecretary && data.secretaryLocationCode}
+								<option value={data.secretaryLocationCode} selected>
+									{data.secretaryLocationCode}
+								</option>
+							{:else}
+								<option value="">Seleccionar localidad</option>
+								{#each data.locations as location}
+									<option value={location.code}>{location.name}</option>
+								{/each}
+							{/if}
+						</select>
 						{#if data.isSecretary && data.secretaryLocationCode}
-							<option value={data.secretaryLocationCode} selected>
-								{data.secretaryLocationCode}
-							</option>
-						{:else}
-							<option value="">Seleccionar localidad</option>
-							{#each data.locations as location}
-								<option value={location.code}>{location.name}</option>
-							{/each}
+							<p class="mt-1 text-xs text-slate-400">Localidad asignada por permisos</p>
 						{/if}
-					</select>
-					{#if data.isSecretary && data.secretaryLocationCode}
-						<p class="mt-1 text-xs text-slate-400">Localidad asignada por permisos</p>
-					{/if}
-				</div>
+					</div>
 
-				<div>
-					<label for="careerId" class="mb-2 block text-sm font-medium text-slate-300">Carrera</label>
-					<select
-						id="careerId"
-						name="careerId"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-						required
-					>
-						<option value="">Seleccionar carrera</option>
-						{#each data.careers as career}
-							<option value={career.id}>{career.name}</option>
-						{/each}
-					</select>
-				</div>
+					<div>
+						<label for="careerId" class="mb-2 block text-sm font-medium text-slate-300"
+							>Carrera</label
+						>
+						<select
+							id="careerId"
+							name="careerId"
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+							required
+						>
+							<option value="">Seleccionar carrera</option>
+							{#each data.careers as career}
+								<option value={career.id}>{career.name}</option>
+							{/each}
+						</select>
+					</div>
 
-				<div>
-					<label for="currentYear" class="mb-2 block text-sm font-medium text-slate-300">Año de carrera</label>
-					<select
-						id="currentYear"
-						name="currentYear"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-					>
-						<option value="1">1° Año</option>
-						<option value="2">2° Año</option>
-						<option value="3">3° Año</option>
-						<option value="4">4° Año</option>
-					</select>
-				</div>
+					<div>
+						<label for="currentYear" class="mb-2 block text-sm font-medium text-slate-300"
+							>Año de carrera</label
+						>
+						<select
+							id="currentYear"
+							name="currentYear"
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						>
+							<option value="1">1° Año</option>
+							<option value="2">2° Año</option>
+							<option value="3">3° Año</option>
+							<option value="4">4° Año</option>
+						</select>
+					</div>
 
-				<div>
-					<label for="highSchool" class="mb-2 block text-sm font-medium text-slate-300">Escuela secundaria</label>
-					<input
-						id="highSchool"
-						name="highSchool"
-						type="text"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-					/>
-				</div>
+					<div>
+						<label for="highSchool" class="mb-2 block text-sm font-medium text-slate-300"
+							>Escuela secundaria</label
+						>
+						<input
+							id="highSchool"
+							name="highSchool"
+							type="text"
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						/>
+					</div>
 
-				<div>
-					<label for="highSchoolYear" class="mb-2 block text-sm font-medium text-slate-300">Año de egreso secundario</label>
-					<input
-						id="highSchoolYear"
-						name="highSchoolYear"
-						type="number"
-						min="1950"
-						max={new Date().getFullYear()}
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-					/>
-				</div>
+					<div>
+						<label for="highSchoolYear" class="mb-2 block text-sm font-medium text-slate-300"
+							>Año de egreso secundario</label
+						>
+						<input
+							id="highSchoolYear"
+							name="highSchoolYear"
+							type="number"
+							min="1950"
+							max={new Date().getFullYear()}
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						/>
+					</div>
 
-				<div class="md:col-span-2">
-					<label for="instituteYear" class="mb-2 block text-sm font-medium text-slate-300">Año de ingreso al instituto</label>
-					<input
-						id="instituteYear"
-						name="instituteYear"
-						type="number"
-						min="1950"
-						max={new Date().getFullYear() + 1}
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-					/>
+					<div class="md:col-span-2">
+						<label for="instituteYear" class="mb-2 block text-sm font-medium text-slate-300"
+							>Año de ingreso al instituto</label
+						>
+						<input
+							id="instituteYear"
+							name="instituteYear"
+							type="number"
+							min="1950"
+							max={new Date().getFullYear() + 1}
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						/>
+					</div>
 				</div>
-			</div>
-		</section>
+			</section>
 		{/if}
 
 		<!-- 3. Datos laborales (DOCENTE) -->
 		{#if userType === 'DOCENTE'}
-		<section class="space-y-4">
-			<h2 class="text-lg font-semibold text-white">Datos laborales</h2>
-			<div class="grid gap-6 md:grid-cols-2">
-				<div>
-					<label for="locality" class="mb-2 block text-sm font-medium text-slate-300">Localidad</label>
-					<select
-						id="locality"
-						name="locality"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-						disabled={data.isSecretary && data.secretaryLocationCode ? true : undefined}
-					>
+			<section class="space-y-4">
+				<h2 class="text-lg font-semibold text-white">Datos laborales</h2>
+				<div class="grid gap-6 md:grid-cols-2">
+					<div>
+						<label for="locality" class="mb-2 block text-sm font-medium text-slate-300"
+							>Localidad</label
+						>
+						<select
+							id="locality"
+							name="locality"
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+							disabled={data.isSecretary && data.secretaryLocationCode ? true : undefined}
+						>
+							{#if data.isSecretary && data.secretaryLocationCode}
+								<option value={data.secretaryLocationCode} selected>
+									{data.secretaryLocationCode}
+								</option>
+							{:else}
+								<option value="">Seleccionar localidad</option>
+								{#each data.locations as location}
+									<option value={location.code}>{location.name}</option>
+								{/each}
+							{/if}
+						</select>
 						{#if data.isSecretary && data.secretaryLocationCode}
-							<option value={data.secretaryLocationCode} selected>
-								{data.secretaryLocationCode}
-							</option>
-						{:else}
-							<option value="">Seleccionar localidad</option>
-							{#each data.locations as location}
-								<option value={location.code}>{location.name}</option>
-							{/each}
+							<p class="mt-1 text-xs text-slate-400">Localidad asignada por permisos</p>
 						{/if}
-					</select>
-					{#if data.isSecretary && data.secretaryLocationCode}
-						<p class="mt-1 text-xs text-slate-400">Localidad asignada por permisos</p>
-					{/if}
-				</div>
+					</div>
 
-				<div>
-					<label for="hireDate" class="mb-2 block text-sm font-medium text-slate-300">Fecha de ingreso</label>
-					<input
-						id="hireDate"
-						name="hireDate"
-						type="date"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-					/>
-				</div>
+					<div>
+						<label for="hireDate" class="mb-2 block text-sm font-medium text-slate-300"
+							>Fecha de ingreso</label
+						>
+						<input
+							id="hireDate"
+							name="hireDate"
+							type="date"
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						/>
+					</div>
 
-				<div class="md:col-span-2">
-					<label for="observations" class="mb-2 block text-sm font-medium text-slate-300">Observaciones</label>
-					<textarea
-						id="observations"
-						name="observations"
-						rows="3"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-						placeholder="Notas adicionales sobre el docente..."
-					></textarea>
+					<div class="md:col-span-2">
+						<label for="observations" class="mb-2 block text-sm font-medium text-slate-300"
+							>Observaciones</label
+						>
+						<textarea
+							id="observations"
+							name="observations"
+							rows="3"
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+							placeholder="Notas adicionales sobre el docente..."
+						></textarea>
+					</div>
 				</div>
-			</div>
-		</section>
+			</section>
 		{/if}
 
 		<!-- 3. Datos laborales (PRECEPTOR) -->
 		{#if userType === 'PRECEPTOR'}
-		<section class="space-y-4">
-			<h2 class="text-lg font-semibold text-white">Datos laborales</h2>
-			<div class="grid gap-6 md:grid-cols-2">
-				<div>
-					<label for="locality" class="mb-2 block text-sm font-medium text-slate-300">Localidad</label>
-					<select
-						id="locality"
-						name="locality"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-						disabled={data.isSecretary && data.secretaryLocationCode ? true : undefined}
-					>
+			<section class="space-y-4">
+				<h2 class="text-lg font-semibold text-white">Datos laborales</h2>
+				<div class="grid gap-6 md:grid-cols-2">
+					<div>
+						<label for="locality" class="mb-2 block text-sm font-medium text-slate-300"
+							>Localidad</label
+						>
+						<select
+							id="locality"
+							name="locality"
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+							disabled={data.isSecretary && data.secretaryLocationCode ? true : undefined}
+						>
+							{#if data.isSecretary && data.secretaryLocationCode}
+								<option value={data.secretaryLocationCode} selected>
+									{data.secretaryLocationCode}
+								</option>
+							{:else}
+								<option value="">Seleccionar localidad</option>
+								{#each data.locations as location}
+									<option value={location.code}>{location.name}</option>
+								{/each}
+							{/if}
+						</select>
 						{#if data.isSecretary && data.secretaryLocationCode}
-							<option value={data.secretaryLocationCode} selected>
-								{data.secretaryLocationCode}
-							</option>
-						{:else}
-							<option value="">Seleccionar localidad</option>
-							{#each data.locations as location}
-								<option value={location.code}>{location.name}</option>
-							{/each}
+							<p class="mt-1 text-xs text-slate-400">Localidad asignada por permisos</p>
 						{/if}
-					</select>
-					{#if data.isSecretary && data.secretaryLocationCode}
-						<p class="mt-1 text-xs text-slate-400">Localidad asignada por permisos</p>
-					{/if}
+					</div>
 				</div>
-			</div>
-		</section>
+			</section>
 		{/if}
 
 		<!-- 4. Tipo de alumno (solo para ALUMNO) -->
 		{#if userType === 'ALUMNO'}
-		<div class="space-y-3">
-			<h3 class="text-sm font-medium text-slate-300">Tipo de alumno</h3>
-			<div class="flex items-center space-x-6">
-				<label class="flex items-center space-x-3 cursor-pointer">
-					<input
-						id="alumnoNormal"
-						name="alumnoType"
-						type="radio"
-						value="normal"
-						checked
-						class="h-4 w-4 border-slate-600 bg-slate-950 text-blue-600 focus:ring-blue-500 focus:ring-2"
-					/>
-					<span class="text-sm text-slate-300">Normal</span>
-				</label>
-				<label class="flex items-center space-x-3 cursor-pointer">
-					<input
-						id="alumnoBecado"
-						name="alumnoType"
-						type="radio"
-						value="becado"
-						class="h-4 w-4 border-slate-600 bg-slate-950 text-blue-600 focus:ring-blue-500 focus:ring-2"
-					/>
-					<span class="text-sm text-slate-300">Becado</span>
-				</label>
-				<label class="flex items-center space-x-3 cursor-pointer">
-					<input
-						id="alumnoRecursante"
-						name="alumnoType"
-						type="radio"
-						value="recursante"
-						class="h-4 w-4 border-slate-600 bg-slate-950 text-blue-600 focus:ring-blue-500 focus:ring-2"
-					/>
-					<span class="text-sm text-slate-300">Recursante</span>
-				</label>
+			<div class="space-y-3">
+				<h3 class="text-sm font-medium text-slate-300">Tipo de alumno</h3>
+				<div class="flex items-center space-x-6">
+					<label class="flex cursor-pointer items-center space-x-3">
+						<input
+							id="alumnoNormal"
+							name="alumnoType"
+							type="radio"
+							value="normal"
+							checked
+							class="h-4 w-4 border-slate-600 bg-slate-950 text-blue-600 focus:ring-2 focus:ring-blue-500"
+						/>
+						<span class="text-sm text-slate-300">Normal</span>
+					</label>
+					<label class="flex cursor-pointer items-center space-x-3">
+						<input
+							id="alumnoBecado"
+							name="alumnoType"
+							type="radio"
+							value="becado"
+							class="h-4 w-4 border-slate-600 bg-slate-950 text-blue-600 focus:ring-2 focus:ring-blue-500"
+						/>
+						<span class="text-sm text-slate-300">Becado</span>
+					</label>
+					<label class="flex cursor-pointer items-center space-x-3">
+						<input
+							id="alumnoRecursante"
+							name="alumnoType"
+							type="radio"
+							value="recursante"
+							class="h-4 w-4 border-slate-600 bg-slate-950 text-blue-600 focus:ring-2 focus:ring-blue-500"
+						/>
+						<span class="text-sm text-slate-300">Recursante</span>
+					</label>
+				</div>
 			</div>
-		</div>
 		{/if}
 
 		<!-- 4. Contacto familiar -->
 		{#if userType === 'ALUMNO'}
-		<section class="space-y-4">
-			<h2 class="text-lg font-semibold text-white">Contacto familiar</h2>
-			<div class="grid gap-6 md:grid-cols-3">
-				<div>
-					<label for="familyContactName" class="mb-2 block text-sm font-medium text-slate-300">Nombre del familiar</label>
-					<input
-						id="familyContactName"
-						name="familyContactName"
-						type="text"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-					/>
+			<section class="space-y-4">
+				<h2 class="text-lg font-semibold text-white">Contacto familiar</h2>
+				<div class="grid gap-6 md:grid-cols-3">
+					<div>
+						<label for="familyContactName" class="mb-2 block text-sm font-medium text-slate-300"
+							>Nombre del familiar</label
+						>
+						<input
+							id="familyContactName"
+							name="familyContactName"
+							type="text"
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						/>
+					</div>
+					<div>
+						<label for="familyContactPhone" class="mb-2 block text-sm font-medium text-slate-300"
+							>Teléfono del familiar</label
+						>
+						<input
+							id="familyContactPhone"
+							name="familyContactPhone"
+							type="tel"
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						/>
+					</div>
+					<div>
+						<label for="familyRelationship" class="mb-2 block text-sm font-medium text-slate-300"
+							>Parentesco</label
+						>
+						<select
+							id="familyRelationship"
+							name="familyRelationship"
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						>
+							<option value="">Seleccionar...</option>
+							<option value="PADRE">Padre</option>
+							<option value="MADRE">Madre</option>
+							<option value="TUTOR">Tutor</option>
+							<option value="HERMANO">Hermano/a</option>
+							<option value="ABUELO">Abuelo/a</option>
+							<option value="OTRO">Otro</option>
+						</select>
+					</div>
 				</div>
-				<div>
-					<label for="familyContactPhone" class="mb-2 block text-sm font-medium text-slate-300">Teléfono del familiar</label>
-					<input
-						id="familyContactPhone"
-						name="familyContactPhone"
-						type="tel"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-					/>
-				</div>
-				<div>
-					<label for="familyRelationship" class="mb-2 block text-sm font-medium text-slate-300">Parentesco</label>
-					<select
-						id="familyRelationship"
-						name="familyRelationship"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-					>
-						<option value="">Seleccionar...</option>
-						<option value="PADRE">Padre</option>
-						<option value="MADRE">Madre</option>
-						<option value="TUTOR">Tutor</option>
-						<option value="HERMANO">Hermano/a</option>
-						<option value="ABUELO">Abuelo/a</option>
-						<option value="OTRO">Otro</option>
-					</select>
-				</div>
-			</div>
-		</section>
+			</section>
 		{/if}
 
 		<!-- 5. Información del sistema -->

@@ -4,163 +4,181 @@ import { redirect } from '@sveltejs/kit';
 import { CorrelativeType } from '@prisma/client';
 
 export const load: PageServerLoad = async ({ locals }) => {
-    const user = locals.user;
+	const user = locals.user;
 
-    if (!user || !user.roles.includes('ALUMNO')) {
-        throw redirect(303, '/login');
-    }
+	if (!user || !user.roles.includes('ALUMNO')) {
+		throw redirect(303, '/login');
+	}
 
-    const student = await prisma.student.findFirst({
-        where: { userId: user.id },
-        include: {
-            career: true,
-            grades: {
-                include: {
-                    subject: true
-                },
-                orderBy: {
-                    gradedAt: 'desc'
-                }
-            },
-            subjectStatuses: {
-                include: {
-                    subject: true
-                }
-            }
-        }
-    });
+	const student = await prisma.student.findFirst({
+		where: { userId: user.id },
+		include: {
+			career: true,
+			grades: {
+				include: {
+					evaluation: {
+						include: {
+							subject: true
+						}
+					}
+				},
+				orderBy: {
+					createdAt: 'desc'
+				}
+			},
+			subjectStatuses: {
+				include: {
+					subject: true
+				}
+			}
+		}
+	});
 
-    if (!student) {
-        throw redirect(303, '/dashboard');
-    }
+	if (!student) {
+		throw redirect(303, '/dashboard');
+	}
 
-    // Agrupar calificaciones por materia
-    const gradesBySubject = new Map();
-    
-    for (const grade of student.grades) {
-        const subjectName = grade.subject?.name || 'Sin materia';
-        const key = subjectName;
-        
-        if (!gradesBySubject.has(key)) {
-            gradesBySubject.set(key, {
-                subject: subjectName,
-                grades: [],
-                average: 0
-            });
-        }
-        
-        const data = gradesBySubject.get(key);
-        data.grades.push({
-            value: Number(grade.value),
-            type: grade.gradeType,
-            date: grade.gradedAt
-        });
-    }
+	// Agrupar calificaciones por materia (nuevo modelo Grade → Evaluation → Subject)
+	const gradesBySubject = new Map();
 
-    // Calcular promedios
-    const subjects = Array.from(gradesBySubject.values()).map(s => {
-        const sum = s.grades.reduce((acc: number, g: { value: number }) => acc + g.value, 0);
-        s.average = s.grades.length > 0 ? Math.round((sum / s.grades.length) * 100) / 100 : 0;
-        return s;
-    });
+	for (const grade of student.grades) {
+		const subjectName = grade.evaluation?.subject?.name || 'Sin materia';
+		const key = subjectName;
 
-    // Incluir materias sin calificaciones pero con estado
-    const subjectStatuses = student.subjectStatuses.map(status => ({
-        subject: status.subject.name,
-        status: status.regularityStatus,
-        approved: status.approved,
-        promoted: status.promoted,
-        finalGrade: status.finalGrade ? Number(status.finalGrade) : null,
-        promotionDate: status.promotionDate,
-        attendancePercent: Number(status.attendancePercent)
-    }));
+		if (!gradesBySubject.has(key)) {
+			gradesBySubject.set(key, {
+				subject: subjectName,
+				grades: [],
+				average: 0
+			});
+		}
 
-    // Calcular promedio general
-    const allGrades = student.grades.map(g => Number(g.value));
-    const overallAverage = allGrades.length > 0 
-        ? Math.round((allGrades.reduce((a, b) => a + b, 0) / allGrades.length) * 100) / 100
-        : 0;
+		const data = gradesBySubject.get(key);
+		data.grades.push({
+			value: grade.value !== null ? Number(grade.value) : null,
+			status: grade.status || 'UNKNOWN',
+			type: grade.evaluation?.type || 'UNKNOWN',
+			title: grade.evaluation?.title || 'Sin título',
+			date: grade.evaluation?.evaluationDate || grade.createdAt,
+			maxScore: grade.evaluation?.maxScore ? Number(grade.evaluation.maxScore) : 10,
+			minPassingScore: grade.evaluation?.minPassingScore
+				? Number(grade.evaluation.minPassingScore)
+				: 6
+		});
+	}
 
-    // Obtener materias que puede cursar basado en correlatividades
-    const approvedSubjectIds = student.subjectStatuses
-        .filter(s => s.approved)
-        .map(s => s.subjectId);
-    
-    const regularSubjectIds = student.subjectStatuses
-        .filter(s => s.regularityStatus === 'REGULAR')
-        .map(s => s.subjectId);
+	// Calcular promedios (solo notas PRESENT con valor)
+	const subjects = Array.from(gradesBySubject.values()).map((s) => {
+		const validGrades = s.grades.filter((g: any) => g.status === 'PRESENT' && g.value !== null);
+		const sum = validGrades.reduce((acc: number, g: { value: number }) => acc + g.value, 0);
+		s.average = validGrades.length > 0 ? Math.round((sum / validGrades.length) * 100) / 100 : 0;
+		return s;
+	});
 
-    // Obtener todas las materias de la carrera para el año actual del alumno
-    const careerSubjects = await prisma.careerSubject.findMany({
-        where: {
-            careerId: student.careerId,
-            yearLevel: student.currentYear
-        },
-        include: {
-            subject: {
-                include: {
-                    correlatives: {
-                        where: {
-                            careerId: student.careerId,
-                            isActive: true
-                        }
-                    }
-                }
-            }
-        },
-        orderBy: {
-            yearLevel: 'asc'
-        }
-    });
+	// Incluir materias sin calificaciones pero con estado (nuevos campos)
+	const subjectStatuses = student.subjectStatuses.map((status) => ({
+		subject: status.subject.name,
+		status: status.regularityStatus,
+		approved: status.approved,
+		promoted: status.promoted,
+		finalGrade: status.finalGrade ? Number(status.finalGrade) : null,
+		promotionDate: status.promotionDate,
+		attendancePercent: status.attendancePercent ? Number(status.attendancePercent) : null,
+		// Nuevos campos del modelo
+		courseAverage: status.courseAverage ? Number(status.courseAverage) : null,
+		courseStatus: status.courseStatus || 'UNKNOWN',
+		finalExamStatus: status.finalExamStatus || 'UNKNOWN',
+		academicStatus: status.academicStatus || 'UNKNOWN'
+	}));
 
-    // Determinar qué materias puede cursar
-    const availableSubjects = careerSubjects
-        .filter(cs => {
-            // Excluir materias ya aprobadas
-            if (approvedSubjectIds.includes(cs.subjectId)) return false;
-            
-            // Verificar correlatividades
-            const canEnroll = cs.subject.correlatives.every((correlative: any) => {
-                const requiredSubjectId = correlative.requiredSubjectId;
-                
-                switch (correlative.correlativeType) {
-                    case CorrelativeType.REGULAR:
-                        return regularSubjectIds.includes(requiredSubjectId);
-                    case CorrelativeType.APROBADO:
-                    case CorrelativeType.APROBADO_APROBAR:
-                        return approvedSubjectIds.includes(requiredSubjectId);
-                    default:
-                        return true;
-                }
-            });
-            
-            return canEnroll;
-        })
-        .map(cs => ({
-            id: cs.subject.id,
-            name: cs.subject.name,
-            code: cs.subject.code,
-            yearLevel: cs.yearLevel,
-            isMandatory: cs.isMandatory,
-            accreditationMode: cs.subject.accreditationMode,
-            correlatives: cs.subject.correlatives.map((c: any) => ({
-                type: c.correlativeType,
-                requiredSubjectId: c.requiredSubjectId
-            }))
-        }));
+	// Calcular promedio general (solo notas PRESENT con valor)
+	const validGrades = student.grades.filter((g) => g.status === 'PRESENT' && g.value !== null);
+	const allGrades = validGrades.map((g) => Number(g.value));
+	const overallAverage =
+		allGrades.length > 0
+			? Math.round((allGrades.reduce((a, b) => a + b, 0) / allGrades.length) * 100) / 100
+			: 0;
 
-    return {
-        student: {
-            id: student.id,
-            firstName: student.firstName,
-            lastName: student.lastName,
-            currentYear: student.currentYear
-        },
-        subjects,
-        subjectStatuses,
-        overallAverage,
-        totalGrades: allGrades.length,
-        approvedCount: student.subjectStatuses.filter(s => s.approved).length,
-        availableSubjects
-    };
+	// Obtener materias que puede cursar basado en correlatividades
+	const approvedSubjectIds = student.subjectStatuses
+		.filter((s) => s.approved)
+		.map((s) => s.subjectId);
+
+	const regularSubjectIds = student.subjectStatuses
+		.filter((s) => s.regularityStatus === 'REGULAR')
+		.map((s) => s.subjectId);
+
+	// Obtener todas las materias de la carrera para el año actual del alumno
+	const careerSubjects = await prisma.careerSubject.findMany({
+		where: {
+			careerId: student.careerId,
+			yearLevel: student.currentYear
+		},
+		include: {
+			subject: {
+				include: {
+					correlatives: {
+						where: {
+							careerId: student.careerId,
+							isActive: true
+						}
+					}
+				}
+			}
+		},
+		orderBy: {
+			yearLevel: 'asc'
+		}
+	});
+
+	// Determinar qué materias puede cursar
+	const availableSubjects = careerSubjects
+		.filter((cs) => {
+			// Excluir materias ya aprobadas
+			if (approvedSubjectIds.includes(cs.subjectId)) return false;
+
+			// Verificar correlatividades
+			const canEnroll = cs.subject.correlatives.every((correlative: any) => {
+				const requiredSubjectId = correlative.requiredSubjectId;
+
+				switch (correlative.correlativeType) {
+					case CorrelativeType.REGULAR:
+						return regularSubjectIds.includes(requiredSubjectId);
+					case CorrelativeType.APROBADO:
+					case CorrelativeType.APROBADO_APROBAR:
+						return approvedSubjectIds.includes(requiredSubjectId);
+					default:
+						return true;
+				}
+			});
+
+			return canEnroll;
+		})
+		.map((cs) => ({
+			id: cs.subject.id,
+			name: cs.subject.name,
+			code: cs.subject.code,
+			yearLevel: cs.yearLevel,
+			isMandatory: cs.isMandatory,
+			accreditationMode: cs.subject.accreditationMode,
+			correlatives: cs.subject.correlatives.map((c: any) => ({
+				type: c.correlativeType,
+				requiredSubjectId: c.requiredSubjectId
+			}))
+		}));
+
+	return {
+		student: {
+			id: student.id,
+			firstName: student.firstName,
+			lastName: student.lastName,
+			currentYear: student.currentYear
+		},
+		subjects,
+		subjectStatuses,
+		overallAverage,
+		totalGrades: allGrades.length,
+		approvedCount: student.subjectStatuses.filter((s) => s.approved).length,
+		availableSubjects
+	};
 };

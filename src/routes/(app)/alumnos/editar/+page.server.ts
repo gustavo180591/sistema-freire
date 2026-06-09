@@ -26,7 +26,9 @@ export const actions: Actions = {
 		const alumnoType = data.get('alumnoType')?.toString() || 'normal';
 		const newPassword = data.get('newPassword')?.toString();
 		const careerId = data.get('careerId')?.toString();
-		const currentYear = data.get('currentYear')?.toString() ? parseInt(data.get('currentYear')?.toString() || '1') : null;
+		const currentYear = data.get('currentYear')?.toString()
+			? parseInt(data.get('currentYear')?.toString() || '1')
+			: null;
 		const status = data.get('status')?.toString();
 		const statusReason = data.get('statusReason')?.toString();
 
@@ -92,11 +94,11 @@ export const actions: Actions = {
 				}
 
 				const totalSubjects = student.career.careerSubjects.length;
-				const approvedSubjects = student.subjectStatuses.filter(s => s.approved).length;
+				const approvedSubjects = student.subjectStatuses.filter((s) => s.approved).length;
 
 				if (approvedSubjects < totalSubjects) {
-					return fail(400, { 
-						error: `El alumno no puede egresar. Tiene ${approvedSubjects} de ${totalSubjects} materias aprobadas.` 
+					return fail(400, {
+						error: `El alumno no puede egresar. Tiene ${approvedSubjects} de ${totalSubjects} materias aprobadas.`
 					});
 				}
 			}
@@ -154,7 +156,7 @@ export const actions: Actions = {
 
 			// Registrar en auditoría
 			let auditDescription = `Actualización de alumno: ${firstName} ${lastName} (${email})`;
-			
+
 			if (statusChanged) {
 				auditDescription += ` - Cambio de estado: ${currentStudent.status} → ${status}`;
 				if (statusReason) {
@@ -170,9 +172,10 @@ export const actions: Actions = {
 				description: auditDescription
 			});
 
-			const successMessage = newPassword && newPassword.trim().length > 0
-				? 'Alumno actualizado exitosamente (incluyendo contraseña)'
-				: 'Alumno actualizado exitosamente';
+			const successMessage =
+				newPassword && newPassword.trim().length > 0
+					? 'Alumno actualizado exitosamente (incluyendo contraseña)'
+					: 'Alumno actualizado exitosamente';
 
 			return { success: successMessage };
 		} catch (error) {

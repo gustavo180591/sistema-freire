@@ -3,93 +3,94 @@ import type { PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 
 export const load: PageServerLoad = async ({ params }) => {
-    const career = await prisma.career.findUnique({
-        where: {
-            id: params.id
-        },
-        include: {
-            studyPlans: {
-                orderBy: {
-                    version: 'desc'
-                }
-            },
-            careerSubjects: {
-                where: {
-                    isMandatory: true
-                },
-                include: {
-                    subject: {
-                        include: {
-                            correlatives: {
-                                where: {
-                                    OR: [
-                                        { careerId: null },
-                                        { careerId: params.id }
-                                    ]
-                                },
-                                include: {
-                                    requiredSubject: {
-                                        select: {
-                                            id: true,
-                                            code: true,
-                                            name: true
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                orderBy: {
-                    yearLevel: 'asc'
-                }
-            }
-        }
-    });
+	const career = await prisma.career.findUnique({
+		where: {
+			id: params.id
+		},
+		include: {
+			studyPlans: {
+				orderBy: {
+					version: 'desc'
+				}
+			},
+			careerSubjects: {
+				where: {
+					isMandatory: true
+				},
+				include: {
+					subject: {
+						include: {
+							correlatives: {
+								where: {
+									OR: [{ careerId: null }, { careerId: params.id }]
+								},
+								include: {
+									requiredSubject: {
+										select: {
+											id: true,
+											code: true,
+											name: true
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				orderBy: {
+					yearLevel: 'asc'
+				}
+			}
+		}
+	});
 
-    if (!career) {
-        throw error(404, 'Carrera no encontrada');
-    }
+	if (!career) {
+		throw error(404, 'Carrera no encontrada');
+	}
 
-    // Agrupar materias por año y convertir Decimals a números
-    const subjectsByYear: Record<number, any[]> = {};
-    
-    career.careerSubjects.forEach((cs) => {
-        const year = cs.yearLevel;
-        if (!subjectsByYear[year]) {
-            subjectsByYear[year] = [];
-        }
-        // Convertir Decimals a números
-        subjectsByYear[year].push({
-            ...cs,
-            subject: {
-                ...cs.subject,
-                approvalThreshold: cs.subject.approvalThreshold ? Number(cs.subject.approvalThreshold) : null,
-                promotionThreshold: cs.subject.promotionThreshold ? Number(cs.subject.promotionThreshold) : null
-            }
-        });
-    });
+	// Agrupar materias por año y convertir Decimals a números
+	const subjectsByYear: Record<number, any[]> = {};
 
-    // Calcular totales
-    const totalSubjects = career.careerSubjects.length;
-    const totalCorrelatives = career.careerSubjects.reduce(
-        (acc, cs) => acc + cs.subject.correlatives.length, 
-        0
-    );
+	career.careerSubjects.forEach((cs) => {
+		const year = cs.yearLevel;
+		if (!subjectsByYear[year]) {
+			subjectsByYear[year] = [];
+		}
+		// Convertir Decimals a números
+		subjectsByYear[year].push({
+			...cs,
+			subject: {
+				...cs.subject,
+				approvalThreshold: cs.subject.approvalThreshold
+					? Number(cs.subject.approvalThreshold)
+					: null,
+				promotionThreshold: cs.subject.promotionThreshold
+					? Number(cs.subject.promotionThreshold)
+					: null
+			}
+		});
+	});
 
-    return {
-        career: {
-            id: career.id,
-            code: career.code,
-            name: career.name,
-            trainingField: career.trainingField,
-            resolution: career.resolution,
-            durationYears: career.durationYears,
-            active: career.active
-        },
-        subjectsByYear,
-        totalSubjects,
-        totalCorrelatives,
-        plans: career.studyPlans
-    };
+	// Calcular totales
+	const totalSubjects = career.careerSubjects.length;
+	const totalCorrelatives = career.careerSubjects.reduce(
+		(acc, cs) => acc + cs.subject.correlatives.length,
+		0
+	);
+
+	return {
+		career: {
+			id: career.id,
+			code: career.code,
+			name: career.name,
+			trainingField: career.trainingField,
+			resolution: career.resolution,
+			durationYears: career.durationYears,
+			active: career.active
+		},
+		subjectsByYear,
+		totalSubjects,
+		totalCorrelatives,
+		plans: career.studyPlans
+	};
 };

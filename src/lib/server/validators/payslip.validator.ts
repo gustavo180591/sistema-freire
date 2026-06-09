@@ -48,7 +48,7 @@ export class PayslipValidator {
 	 */
 	static validateStatus(status: string): PayslipStatus {
 		const validStatuses = Object.values(PayslipStatus);
-		
+
 		if (!validStatuses.includes(status as PayslipStatus)) {
 			throw new Error(`Estado inválido. Debe ser uno de: ${validStatuses.join(', ')}`);
 		}

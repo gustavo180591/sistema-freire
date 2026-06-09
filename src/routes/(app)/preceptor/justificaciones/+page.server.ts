@@ -19,10 +19,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			user: true,
 			career: true
 		},
-		orderBy: [
-			{ lastName: 'asc' },
-			{ firstName: 'asc' }
-		]
+		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
 	});
 
 	// Obtener entradas de asistencia con ausencias sin justificar
@@ -49,14 +46,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	return {
-		students: students.map(s => ({
+		students: students.map((s) => ({
 			id: s.id,
 			dni: s.dni,
 			firstName: s.firstName,
 			lastName: s.lastName,
 			career: s.career.name
 		})),
-		unexcusedAbsences: unexcusedAbsences.map(a => ({
+		unexcusedAbsences: unexcusedAbsences.map((a) => ({
 			id: a.id,
 			studentId: a.studentId,
 			studentName: `${a.student.lastName}, ${a.student.firstName}`,

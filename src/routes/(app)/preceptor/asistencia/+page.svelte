@@ -30,25 +30,25 @@
 	});
 
 	function toggleAttendance(studentId: string) {
-		const entry = attendanceData.find(e => e.studentId === studentId);
+		const entry = attendanceData.find((e) => e.studentId === studentId);
 		if (entry) {
 			entry.present = !entry.present;
 		}
 	}
 
 	function updateNotes(studentId: string, notes: string) {
-		const entry = attendanceData.find(e => e.studentId === studentId);
+		const entry = attendanceData.find((e) => e.studentId === studentId);
 		if (entry) {
 			entry.notes = notes;
 		}
 	}
 
 	function markAllPresent() {
-		attendanceData.forEach(e => e.present = true);
+		attendanceData.forEach((e) => (e.present = true));
 	}
 
 	function markAllAbsent() {
-		attendanceData.forEach(e => e.present = false);
+		attendanceData.forEach((e) => (e.present = false));
 	}
 </script>
 
@@ -91,7 +91,9 @@
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
 			<div class="grid gap-6 md:grid-cols-2">
 				<div>
-					<label for="subjectId" class="mb-2 block text-sm font-medium text-slate-300">Materia</label>
+					<label for="subjectId" class="mb-2 block text-sm font-medium text-slate-300"
+						>Materia</label
+					>
 					<select
 						id="subjectId"
 						name="subjectId"
@@ -123,7 +125,9 @@
 
 			{#if availableCommissions.length > 0}
 				<div class="mt-4">
-					<label for="commissionId" class="mb-2 block text-sm font-medium text-slate-300">Comisión (opcional)</label>
+					<label for="commissionId" class="mb-2 block text-sm font-medium text-slate-300"
+						>Comisión (opcional)</label
+					>
 					<select
 						id="commissionId"
 						name="commissionId"
@@ -133,7 +137,8 @@
 						<option value="">Sin comisión</option>
 						{#each availableCommissions as commission}
 							<option value={commission.id}>
-								{commission.code} - {commission.locationName || 'Sin localidad'} {commission.schedule ? `(${commission.schedule})` : ''}
+								{commission.code} - {commission.locationName || 'Sin localidad'}
+								{commission.schedule ? `(${commission.schedule})` : ''}
 							</option>
 						{/each}
 					</select>
@@ -170,15 +175,15 @@
 							<div class="flex items-start justify-between gap-4">
 								<div class="flex-1">
 									<p class="font-semibold text-white">
-										{data.students.find(s => s.id === entry.studentId)?.lastName}, 
-										{data.students.find(s => s.id === entry.studentId)?.firstName}
+										{data.students.find((s) => s.id === entry.studentId)?.lastName},
+										{data.students.find((s) => s.id === entry.studentId)?.firstName}
 									</p>
 									<p class="text-sm text-slate-400">
-										DNI: {data.students.find(s => s.id === entry.studentId)?.dni}
+										DNI: {data.students.find((s) => s.id === entry.studentId)?.dni}
 									</p>
 								</div>
 								<div class="flex items-center gap-4">
-									<label class="flex items-center gap-2 cursor-pointer">
+									<label class="flex cursor-pointer items-center gap-2">
 										<input
 											type="checkbox"
 											checked={entry.present}
@@ -226,10 +231,14 @@
 		<h2 class="mb-4 text-xl font-semibold">Registros Recientes</h2>
 		<div class="space-y-3">
 			{#each data.recentAttendance as record}
-				<div class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-4">
+				<div
+					class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-4"
+				>
 					<div>
 						<p class="font-semibold text-white">{record.subject}</p>
-						<p class="text-xs text-slate-500">{new Date(record.date).toLocaleDateString('es-AR')}</p>
+						<p class="text-xs text-slate-500">
+							{new Date(record.date).toLocaleDateString('es-AR')}
+						</p>
 					</div>
 					<div class="text-right">
 						<p class="text-sm text-slate-400">
@@ -248,7 +257,10 @@
 	</div>
 
 	<div class="flex justify-start">
-		<a href="/preceptor" class="rounded-2xl border border-slate-700 px-6 py-3 transition hover:bg-slate-800">
+		<a
+			href="/preceptor"
+			class="rounded-2xl border border-slate-700 px-6 py-3 transition hover:bg-slate-800"
+		>
 			← Volver al panel
 		</a>
 	</div>

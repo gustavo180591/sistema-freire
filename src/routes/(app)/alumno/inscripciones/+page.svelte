@@ -56,7 +56,12 @@
 				class="inline-flex items-center gap-2 rounded-xl border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
 			>
 				<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M12 4v16m8-8H4"
+					/>
 				</svg>
 				Nueva Inscripción
 			</a>
@@ -68,8 +73,18 @@
 		<div class="rounded-2xl border border-emerald-800 bg-emerald-950/30 p-6">
 			<div class="flex items-center gap-3">
 				<div class="rounded-full bg-emerald-500/20 p-2">
-					<svg class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+					<svg
+						class="h-6 w-6 text-emerald-400"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M5 13l4 4L19 7"
+						/>
 					</svg>
 				</div>
 				<p class="font-semibold text-emerald-400">{form.message}</p>
@@ -173,7 +188,7 @@
 								<button
 									type="button"
 									onclick={() => initiateCancel(enrollment.id)}
-									class="rounded-lg border border-red-900/50 px-3 py-2 text-sm text-red-400 hover:bg-red-950/30 transition"
+									class="rounded-lg border border-red-900/50 px-3 py-2 text-sm text-red-400 transition hover:bg-red-950/30"
 								>
 									Cancelar
 								</button>
@@ -196,7 +211,7 @@
 				<div class="mt-6 flex gap-3">
 					<button
 						onclick={handleCancel}
-						class="flex-1 rounded-xl border border-slate-700 px-4 py-3 font-medium text-slate-300 hover:bg-slate-800 transition"
+						class="flex-1 rounded-xl border border-slate-700 px-4 py-3 font-medium text-slate-300 transition hover:bg-slate-800"
 					>
 						Mantener
 					</button>
@@ -205,7 +220,7 @@
 							<input type="hidden" name="enrollmentId" value={enrollmentToCancel} />
 							<button
 								type="submit"
-								class="flex-1 rounded-xl bg-red-500 px-4 py-3 font-medium text-white hover:bg-red-600 transition"
+								class="flex-1 rounded-xl bg-red-500 px-4 py-3 font-medium text-white transition hover:bg-red-600"
 							>
 								Cancelar Inscripción
 							</button>

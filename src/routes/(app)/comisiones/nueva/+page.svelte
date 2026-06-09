@@ -35,10 +35,15 @@
 		<div class="flex items-center gap-4">
 			<a
 				href="/comisiones"
-				class="rounded-xl border border-slate-700 p-2 text-slate-400 hover:bg-slate-800 transition"
+				class="rounded-xl border border-slate-700 p-2 text-slate-400 transition hover:bg-slate-800"
 			>
 				<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M15 19l-7-7 7-7"
+					/>
 				</svg>
 			</a>
 			<div>
@@ -54,7 +59,12 @@
 			<div class="flex items-center gap-3">
 				<div class="rounded-full bg-red-500/20 p-2">
 					<svg class="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M6 18L18 6M6 6l12 12"
+						/>
 					</svg>
 				</div>
 				<p class="font-semibold text-red-400">{form.error}</p>
@@ -68,7 +78,9 @@
 			<div class="grid gap-6 md:grid-cols-2">
 				<!-- Código -->
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Código <span class="text-red-400">*</span></label>
+					<label class="mb-2 block text-sm font-medium text-slate-300"
+						>Código <span class="text-red-400">*</span></label
+					>
 					<input
 						type="text"
 						name="code"
@@ -80,7 +92,9 @@
 
 				<!-- Materia -->
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Materia <span class="text-red-400">*</span></label>
+					<label class="mb-2 block text-sm font-medium text-slate-300"
+						>Materia <span class="text-red-400">*</span></label
+					>
 					<select
 						name="subjectId"
 						required
@@ -126,7 +140,9 @@
 
 				<!-- Período Lectivo -->
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Período Lectivo <span class="text-red-400">*</span></label>
+					<label class="mb-2 block text-sm font-medium text-slate-300"
+						>Período Lectivo <span class="text-red-400">*</span></label
+					>
 					<select
 						name="academicTermId"
 						required
@@ -169,7 +185,9 @@
 
 				<!-- Cupo Máximo -->
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Cupo Máximo <span class="text-red-400">*</span></label>
+					<label class="mb-2 block text-sm font-medium text-slate-300"
+						>Cupo Máximo <span class="text-red-400">*</span></label
+					>
 					<input
 						type="number"
 						name="maxCapacity"
@@ -207,13 +225,13 @@
 			<div class="flex gap-3">
 				<a
 					href="/comisiones"
-					class="flex-1 rounded-xl border border-slate-700 px-6 py-3 font-medium text-slate-300 hover:bg-slate-800 transition text-center"
+					class="flex-1 rounded-xl border border-slate-700 px-6 py-3 text-center font-medium text-slate-300 transition hover:bg-slate-800"
 				>
 					Cancelar
 				</a>
 				<button
 					type="submit"
-					class="flex-1 rounded-xl bg-indigo-500 px-6 py-3 font-medium text-white hover:bg-indigo-600 transition"
+					class="flex-1 rounded-xl bg-indigo-500 px-6 py-3 font-medium text-white transition hover:bg-indigo-600"
 				>
 					Crear Comisión
 				</button>

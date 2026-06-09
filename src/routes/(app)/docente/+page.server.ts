@@ -47,10 +47,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	const subjects = subjectTeachers.map(st => st.subject);
+	const subjects = subjectTeachers.map((st) => st.subject);
 
 	// Obtener estudiantes de las carreras de las materias del docente
-	const careerIds = subjects.flatMap(s => s.careerSubjects.map(cs => cs.career.id));
+	const careerIds = subjects.flatMap((s) => s.careerSubjects.map((cs) => cs.career.id));
 	const students = await prisma.student.findMany({
 		where: {
 			status: 'ACTIVE',
@@ -62,25 +62,28 @@ export const load: PageServerLoad = async ({ locals }) => {
 			user: true,
 			career: true
 		},
-		orderBy: [
-			{ lastName: 'asc' },
-			{ firstName: 'asc' }
-		]
+		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
 	});
 
-	// Obtener calificaciones recientes del docente
+	// Obtener calificaciones recientes del docente (nuevo modelo Grade → Evaluation → Subject)
 	const recentGrades = await prisma.grade.findMany({
 		where: {
 			createdByUserId: locals.user.id,
-			subjectId: {
-				in: subjects.map(s => s.id)
+			evaluation: {
+				subjectId: {
+					in: subjects.map((s) => s.id)
+				}
 			}
 		},
 		include: {
-			subject: true,
+			evaluation: {
+				include: {
+					subject: true
+				}
+			},
 			student: true
 		},
-		orderBy: { gradedAt: 'desc' },
+		orderBy: { createdAt: 'desc' },
 		take: 10
 	});
 
@@ -89,7 +92,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		where: {
 			createdByUserId: locals.user.id,
 			subjectId: {
-				in: subjects.map(s => s.id)
+				in: subjects.map((s) => s.id)
 			}
 		},
 		include: {
@@ -107,14 +110,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 			lastName: teacher.lastName,
 			dni: teacher.dni
 		},
-		subjects: subjects.map(s => ({
+		subjects: subjects.map((s) => ({
 			id: s.id,
 			code: s.code,
 			name: s.name,
 			yearLevel: s.yearLevel,
-			careers: s.careerSubjects.map(cs => cs.career.name)
+			careers: s.careerSubjects.map((cs) => cs.career.name)
 		})),
-		students: students.map(s => ({
+		students: students.map((s) => ({
 			id: s.id,
 			dni: s.dni,
 			firstName: s.firstName,
@@ -122,16 +125,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 			career: s.career.name,
 			currentYear: s.currentYear
 		})),
-		recentGrades: recentGrades.map(g => ({
+		recentGrades: recentGrades.map((g) => ({
 			id: g.id,
 			studentId: g.studentId,
 			studentName: `${g.student.lastName}, ${g.student.firstName}`,
-			subject: g.subject.name,
+			subject: g.evaluation?.subject.name || 'Sin materia',
+			evaluationTitle: g.evaluation?.title || 'Sin evaluación',
 			value: g.value,
-			gradeType: g.gradeType,
-			gradedAt: g.gradedAt
+			status: g.status,
+			createdAt: g.createdAt
 		})),
-		recentAttendance: recentAttendance.map(a => ({
+		recentAttendance: recentAttendance.map((a) => ({
 			id: a.id,
 			date: a.classDate,
 			subject: a.subject.name,

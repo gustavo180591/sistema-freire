@@ -35,12 +35,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	const subjects = subjectTeachers.map(st => st.subject);
+	const subjects = subjectTeachers.map((st) => st.subject);
 
 	// Obtener estudiantes por materia
 	const studentsBySubject = await Promise.all(
 		subjects.map(async (subject) => {
-			const careerIds = subject.careerSubjects.map(cs => cs.career.id);
+			const careerIds = subject.careerSubjects.map((cs) => cs.career.id);
 			const students = await prisma.student.findMany({
 				where: {
 					status: 'ACTIVE',
@@ -61,14 +61,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 	);
 
 	return {
-		subjects: subjects.map(s => {
-			const studentData = studentsBySubject.find(sbs => sbs.subjectId === s.id);
+		subjects: subjects.map((s) => {
+			const studentData = studentsBySubject.find((sbs) => sbs.subjectId === s.id);
 			return {
 				id: s.id,
 				code: s.code,
 				name: s.name,
 				yearLevel: s.yearLevel,
-				careers: s.careerSubjects.map(cs => cs.career.name),
+				careers: s.careerSubjects.map((cs) => cs.career.name),
 				totalStudents: studentData?.totalStudents || 0
 			};
 		})

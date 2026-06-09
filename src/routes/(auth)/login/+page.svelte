@@ -1,6 +1,6 @@
 <script lang="ts">
 	let { form } = $props();
-	
+
 	let email = $state('');
 	let password = $state('');
 	let showPassword = $state(false);
@@ -56,15 +56,26 @@
 				</div>
 
 				{#if form?.error}
-					<div class="mt-4 rounded-xl border p-4 text-sm {form?.locked ? 'border-red-800 bg-red-950/30 text-red-400' : 'border-red-800 bg-red-950/30 text-red-400'}">
+					<div
+						class="mt-4 rounded-xl border p-4 text-sm {form?.locked
+							? 'border-red-800 bg-red-950/30 text-red-400'
+							: 'border-red-800 bg-red-950/30 text-red-400'}"
+					>
 						<div class="flex items-center gap-2">
 							<svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+								/>
 							</svg>
 							<div>
 								<p class="font-medium">{form.error}</p>
 								{#if form?.attemptsLeft !== undefined && form.attemptsLeft > 0}
-									<p class="text-xs mt-1">Te quedan {form.attemptsLeft} intentos antes del bloqueo.</p>
+									<p class="mt-1 text-xs">
+										Te quedan {form.attemptsLeft} intentos antes del bloqueo.
+									</p>
 								{/if}
 							</div>
 						</div>
@@ -83,12 +94,16 @@
 							type="email"
 							autocomplete="email"
 							placeholder="nombre@instituto.edu.ar"
-							class="w-full rounded-2xl border {form?.error ? 'border-red-600' : 'border-slate-700'} bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+							class="w-full rounded-2xl border {form?.error
+								? 'border-red-600'
+								: 'border-slate-700'} bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 						/>
 					</div>
 
 					<div>
-						<label for="password" class="mb-2 block text-sm font-medium text-slate-300"> Contraseña </label>
+						<label for="password" class="mb-2 block text-sm font-medium text-slate-300">
+							Contraseña
+						</label>
 						<input
 							id="password"
 							bind:value={password}
@@ -114,7 +129,7 @@
 					<button
 						type="submit"
 						disabled={form?.locked}
-						class="w-full rounded-2xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed"
+						class="w-full rounded-2xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						{form?.locked ? `Bloqueado (${form.minutesLeft} min)` : 'Ingresar al sistema'}
 					</button>

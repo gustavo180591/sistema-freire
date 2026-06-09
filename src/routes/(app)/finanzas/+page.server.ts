@@ -9,8 +9,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
 
-    const [charges, payments] = await Promise.all([
-        prisma.studentCharge.findMany({
+	const [charges, payments] = await Promise.all([
+		prisma.studentCharge.findMany({
 			where: {
 				student: {
 					career: {
@@ -22,22 +22,22 @@ export const load: PageServerLoad = async ({ locals }) => {
 					}
 				}
 			},
-            include: {
-                student: {
-                    include: {
-                        career: {
-                            select: {
-                                name: true
-                            }
-                        }
-                    }
-                }
-            },
-            orderBy: {
-                createdAt: 'desc'
-            }
-        }),
-        prisma.payment.findMany({
+			include: {
+				student: {
+					include: {
+						career: {
+							select: {
+								name: true
+							}
+						}
+					}
+				}
+			},
+			orderBy: {
+				createdAt: 'desc'
+			}
+		}),
+		prisma.payment.findMany({
 			where: {
 				student: {
 					career: {
@@ -49,36 +49,36 @@ export const load: PageServerLoad = async ({ locals }) => {
 					}
 				}
 			},
-            select: {
-                amount: true
-            }
-        })
-    ]);
+			select: {
+				amount: true
+			}
+		})
+	]);
 
-    const financeRows = charges.map((charge) => {
-        const debt = Number(charge.amount) - Number(charge.paidAmount);
+	const financeRows = charges.map((charge) => {
+		const debt = Number(charge.amount) - Number(charge.paidAmount);
 
-        return {
-            id: charge.id,
-            student: `${charge.student.firstName} ${charge.student.lastName}`.trim(),
-            career: charge.student.career.name,
-            period: charge.periodLabel,
-            debt,
-            status: debt > 0 ? 'Con deuda' : 'Al día'
-        };
-    });
+		return {
+			id: charge.id,
+			student: `${charge.student.firstName} ${charge.student.lastName}`.trim(),
+			career: charge.student.career.name,
+			period: charge.periodLabel,
+			debt,
+			status: debt > 0 ? 'Con deuda' : 'Al día'
+		};
+	});
 
-    const studentsWithDebt = financeRows.filter((row) => row.debt > 0).length;
-    const totalDebt = financeRows.reduce((acc, row) => acc + row.debt, 0);
-    const totalCollected = payments.reduce((acc, p) => acc + Number(p.amount), 0);
+	const studentsWithDebt = financeRows.filter((row) => row.debt > 0).length;
+	const totalDebt = financeRows.reduce((acc, row) => acc + row.debt, 0);
+	const totalCollected = payments.reduce((acc, p) => acc + Number(p.amount), 0);
 
-    return {
-        financeRows,
-        metrics: {
-            studentsWithDebt,
-            totalDebt,
-            paymentsCount: payments.length,
-            totalCollected
-        }
-    };
+	return {
+		financeRows,
+		metrics: {
+			studentsWithDebt,
+			totalDebt,
+			paymentsCount: payments.length,
+			totalCollected
+		}
+	};
 };

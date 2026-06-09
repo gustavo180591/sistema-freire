@@ -33,11 +33,7 @@
 	</section>
 
 	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
-		<form
-			method="POST"
-			use:enhance
-			class="space-y-6"
-		>
+		<form method="POST" use:enhance class="space-y-6">
 			{#if !success && errors.general}
 				<div class="rounded-2xl border border-red-900 bg-red-900/10 p-4 text-sm text-red-400">
 					{errors.general}

@@ -30,8 +30,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	const totalAttendance = attendanceStats.reduce((sum, stat) => sum + stat._count, 0);
-	const presentAttendance = attendanceStats.find(s => s.present)?._count || 0;
-	const attendanceRate = totalAttendance > 0 ? Math.round((presentAttendance / totalAttendance) * 100) : 0;
+	const presentAttendance = attendanceStats.find((s) => s.present)?._count || 0;
+	const attendanceRate =
+		totalAttendance > 0 ? Math.round((presentAttendance / totalAttendance) * 100) : 0;
 
 	// Estadísticas de incidencias (último mes)
 	const incidentCount = await prisma.studentFollowUp.count({
@@ -81,7 +82,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			presentAttendance,
 			incidentCount,
 			careerStats,
-			observationsByType: observationsByType.map(o => ({
+			observationsByType: observationsByType.map((o) => ({
 				type: o.type,
 				count: o._count
 			}))

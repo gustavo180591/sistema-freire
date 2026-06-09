@@ -129,8 +129,8 @@ export const actions: Actions = {
 
 		// Verificar que el nuevo cupo no sea menor que los inscriptos actuales
 		if (capacity < currentCommission.currentEnrolled) {
-			return fail(400, { 
-				error: `El cupo no puede ser menor a los inscriptos actuales (${currentCommission.currentEnrolled})` 
+			return fail(400, {
+				error: `El cupo no puede ser menor a los inscriptos actuales (${currentCommission.currentEnrolled})`
 			});
 		}
 

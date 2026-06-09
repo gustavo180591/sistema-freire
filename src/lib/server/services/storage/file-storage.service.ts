@@ -70,7 +70,13 @@ export class FileStorageService {
 	static async validatePDFMagicBytes(buffer: Buffer): Promise<boolean> {
 		// PDF magic bytes: %PDF- (25 50 44 46 2D)
 		if (buffer.length < 5) return false;
-		return buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46 && buffer[4] === 0x2D;
+		return (
+			buffer[0] === 0x25 &&
+			buffer[1] === 0x50 &&
+			buffer[2] === 0x44 &&
+			buffer[3] === 0x46 &&
+			buffer[4] === 0x2d
+		);
 	}
 
 	/**
@@ -78,7 +84,13 @@ export class FileStorageService {
 	 */
 	static generateStoragePath(teacherId: string, periodYear: number, periodMonth: number): string {
 		const uuid = randomUUID();
-		return join(STORAGE_BASE_DIR, String(periodYear), String(periodMonth).padStart(2, '0'), teacherId, `${uuid}.pdf`);
+		return join(
+			STORAGE_BASE_DIR,
+			String(periodYear),
+			String(periodMonth).padStart(2, '0'),
+			teacherId,
+			`${uuid}.pdf`
+		);
 	}
 
 	/**
@@ -141,7 +153,7 @@ export class FileStorageService {
 	 */
 	static async readFile(fileKey: string): Promise<Buffer> {
 		const filePath = join(process.cwd(), fileKey);
-		
+
 		if (!existsSync(filePath)) {
 			throw new Error('Archivo no encontrado');
 		}
@@ -154,7 +166,7 @@ export class FileStorageService {
 	 */
 	static async deleteFile(fileKey: string): Promise<void> {
 		const filePath = join(process.cwd(), fileKey);
-		
+
 		if (existsSync(filePath)) {
 			await unlink(filePath);
 		}

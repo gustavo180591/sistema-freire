@@ -49,17 +49,14 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				}
 			}
 		},
-		orderBy: [
-			{ yearLevel: 'asc' },
-			{ code: 'asc' }
-		]
+		orderBy: [{ yearLevel: 'asc' }, { code: 'asc' }]
 	});
 
 	// Obtener IDs de materias ya asignadas
-	const assignedSubjectIds = teacher.subjects.map(st => st.subjectId);
+	const assignedSubjectIds = teacher.subjects.map((st) => st.subjectId);
 
 	// Filtrar materias no asignadas
-	const availableSubjects = allSubjects.filter(s => !assignedSubjectIds.includes(s.id));
+	const availableSubjects = allSubjects.filter((s) => !assignedSubjectIds.includes(s.id));
 
 	return {
 		teacher: {
@@ -70,18 +67,18 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			lastName: teacher.lastName,
 			email: teacher.user.email
 		},
-		assignedSubjects: teacher.subjects.map(st => ({
+		assignedSubjects: teacher.subjects.map((st) => ({
 			subjectId: st.subjectId,
 			teacherId: st.teacherId,
 			...st.subject,
-			careers: st.subject.careerSubjects.map(cs => cs.career)
+			careers: st.subject.careerSubjects.map((cs) => cs.career)
 		})),
-		availableSubjects: availableSubjects.map(s => ({
+		availableSubjects: availableSubjects.map((s) => ({
 			id: s.id,
 			code: s.code,
 			name: s.name,
 			yearLevel: s.yearLevel,
-			careers: s.careerSubjects.map(cs => cs.career)
+			careers: s.careerSubjects.map((cs) => cs.career)
 		}))
 	};
 };

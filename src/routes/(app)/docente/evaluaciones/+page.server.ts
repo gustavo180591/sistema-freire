@@ -2,8 +2,8 @@ import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { requireRole } from '$lib/server/auth/authorization';
-import { auditLog } from '$lib/server/audit';
-import { AuditAction } from '@prisma/client';
+import { EvaluationService } from '$lib/server/academic/evaluation-service';
+import { EvaluationType } from '@prisma/client';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	requireRole(locals.user, ['DOCENTE']);
@@ -139,111 +139,108 @@ export const actions: Actions = {
 		}
 
 		try {
-			// Verificar que la materia pertenezca al docente
-			const teacher = await prisma.teacher.findUnique({
-				where: { userId: locals.user.id }
-			});
+			const evaluationService = new EvaluationService(prisma);
 
-			if (!teacher) {
-				return { error: 'Docente no encontrado' };
-			}
-
-			const subjectTeacher = await prisma.subjectTeacher.findUnique({
-				where: {
-					subjectId_teacherId: {
-						subjectId,
-						teacherId: teacher.id
-					}
-				}
-			});
-
-			if (!subjectTeacher) {
-				return { error: 'No tenés permiso para crear evaluaciones en esta materia' };
-			}
-
-			// Validar comisión según tipo de evaluación
-			const requiresCommission = ['PARCIAL', 'TRABAJO_PRACTICO', 'INTEGRADOR'].includes(type);
-			if (requiresCommission && !commissionId) {
-				return { error: `El tipo ${type} requiere seleccionar una comisión` };
-			}
-
-			// Si se proporciona comisión, validar que pertenezca a la materia
-			if (commissionId) {
-				const commission = await prisma.subjectCommission.findUnique({
-					where: { id: commissionId }
-				});
-				if (!commission || commission.subjectId !== subjectId) {
-					return { error: 'La comisión seleccionada no pertenece a esta materia' };
-				}
-				// Validar que el docente esté asignado a la comisión
-				if (commission.teacherId !== teacher.id) {
-					return { error: 'No estás asignado a esta comisión' };
-				}
-			}
-
-			// Validar recuperatorio
-			if (type === 'RECUPERATORIO') {
-				if (!parentEvaluationId) {
-					return { error: 'Un recuperatorio debe referenciar una evaluación original' };
-				}
-				const parentEvaluation = await prisma.evaluation.findUnique({
-					where: { id: parentEvaluationId },
-					include: { subject: true, commission: true }
-				});
-				if (!parentEvaluation) {
-					return { error: 'Evaluación original no encontrada' };
-				}
-				if (parentEvaluation.subjectId !== subjectId) {
-					return {
-						error: 'El recuperatorio debe ser de la misma materia que la evaluación original'
-					};
-				}
-				if (commissionId && parentEvaluation.commissionId !== commissionId) {
-					return {
-						error: 'El recuperatorio debe ser de la misma comisión que la evaluación original'
-					};
-				}
-			}
-
-			// Obtener datos de la materia para auditoría
-			const subject = await prisma.subject.findUnique({
-				where: { id: subjectId }
-			});
-
-			// Convertir valores a Decimal
 			const maxScoreValue = maxScore ? parseFloat(maxScore) : 10;
 			const minPassingScoreValue = minPassingScore ? parseFloat(minPassingScore) : 6;
 			const weightValue = weight ? parseFloat(weight) : 1;
 
-			const evaluation = await prisma.evaluation.create({
-				data: {
-					subjectId,
-					commissionId: commissionId || null,
-					title,
-					description: description || null,
-					type: type as any, // Type cast until Prisma Client is regenerated
-					evaluationDate: evaluationDate ? new Date(evaluationDate) : new Date(),
-					maxScore: maxScoreValue,
-					minPassingScore: minPassingScoreValue,
-					weight: weightValue,
-					parentEvaluationId: parentEvaluationId || null,
-					createdByUserId: locals.user.id
-				}
+			const evaluation = await evaluationService.createEvaluation({
+				subjectId,
+				commissionId: commissionId || undefined,
+				title,
+				description: description || undefined,
+				type: type as EvaluationType,
+				evaluationDate: evaluationDate ? new Date(evaluationDate) : new Date(),
+				maxScore: maxScoreValue,
+				minPassingScore: minPassingScoreValue,
+				weight: weightValue,
+				parentEvaluationId: parentEvaluationId || undefined,
+				userId: locals.user.id
 			});
 
-			// Registrar en auditoría
-			await auditLog({
-				userId: locals.user.id,
-				action: AuditAction.CREATE,
-				entityType: 'EVALUATION',
-				entityId: evaluation.id,
-				description: `Evaluación creada: ${type} - ${title} para ${subject?.name}${commissionId ? ' (comisión)' : ''}`
-			});
+			if ('error' in evaluation) {
+				return { error: evaluation.error };
+			}
 
 			return { success: 'Evaluación creada exitosamente' };
 		} catch (error) {
 			console.error('Error al crear evaluación:', error);
 			return { error: 'Error al crear la evaluación' };
+		}
+	},
+
+	closeEvaluation: async ({ request, locals }) => {
+		requireRole(locals.user, ['DOCENTE']);
+
+		if (!locals.user) {
+			return { error: 'No autenticado' };
+		}
+
+		const data = await request.formData();
+		const evaluationId = data.get('evaluationId')?.toString();
+		const reason = data.get('reason')?.toString();
+
+		if (!evaluationId) {
+			return { error: 'ID de evaluación requerido' };
+		}
+
+		try {
+			const evaluationService = new EvaluationService(prisma);
+
+			// Validar que el usuario puede cerrar la evaluación
+			const validation = await evaluationService.canCloseEvaluation(evaluationId, locals.user.id);
+			if (validation) {
+				return validation;
+			}
+
+			await evaluationService.closeEvaluation({
+				evaluationId,
+				userId: locals.user.id,
+				reason
+			});
+
+			return { success: 'Evaluación cerrada exitosamente' };
+		} catch (error) {
+			console.error('Error al cerrar evaluación:', error);
+			return { error: 'Error al cerrar la evaluación' };
+		}
+	},
+
+	reopenEvaluation: async ({ request, locals }) => {
+		requireRole(locals.user, ['DOCENTE']);
+
+		if (!locals.user) {
+			return { error: 'No autenticado' };
+		}
+
+		const data = await request.formData();
+		const evaluationId = data.get('evaluationId')?.toString();
+		const reason = data.get('reason')?.toString();
+
+		if (!evaluationId) {
+			return { error: 'ID de evaluación requerido' };
+		}
+
+		try {
+			const evaluationService = new EvaluationService(prisma);
+
+			// Validar que el usuario puede reabrir la evaluación
+			const validation = await evaluationService.canReopenEvaluation(evaluationId, locals.user.id);
+			if (validation) {
+				return validation;
+			}
+
+			await evaluationService.reopenEvaluation({
+				evaluationId,
+				userId: locals.user.id,
+				reason
+			});
+
+			return { success: 'Evaluación reabierta exitosamente' };
+		} catch (error) {
+			console.error('Error al reabrir evaluación:', error);
+			return { error: 'Error al reabrir la evaluación' };
 		}
 	}
 };

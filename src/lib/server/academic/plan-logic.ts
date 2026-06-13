@@ -1,5 +1,5 @@
 import { PrismaClient, CorrelativeType, SubjectType, CourseStatus, FinalExamStatus, AcademicStatus } from '@prisma/client';
-import type { StudentSubjectStatus, SubjectCorrelative, Subject } from '@prisma/client';
+import type { StudentSubjectStatus, SubjectCorrelative, Subject, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -154,7 +154,8 @@ export async function canStudentEnroll(
  */
 export async function calculateFinalStatus(
 	studentId: string,
-	subjectId: string
+	subjectId: string,
+	tx?: Omit<Prisma.TransactionClient, '$transaction' | '$use' | '$on' | '$disconnect' | '$connect'>
 ): Promise<{
 	regularityStatus: 'REGULAR' | 'LIBRE';
 	approved: boolean;
@@ -166,8 +167,10 @@ export async function calculateFinalStatus(
 	finalExamStatus: FinalExamStatus;
 	academicStatus: AcademicStatus;
 }> {
+	const client = tx || prisma;
+
 	// Obtener calificaciones con sus evaluaciones (nuevo modelo)
-	const grades = await prisma.grade.findMany({
+	const grades = await client.grade.findMany({
 		where: {
 			studentId,
 			evaluation: {
@@ -198,7 +201,7 @@ export async function calculateFinalStatus(
 	}
 
 	// Obtener umbrales de la materia
-	const subject = await prisma.subject.findUnique({
+	const subject = await client.subject.findUnique({
 		where: { id: subjectId }
 	});
 
@@ -375,65 +378,79 @@ export async function calculateFinalStatus(
  */
 export async function updateStudentSubjectStatus(
 	studentId: string,
-	subjectId: string
+	subjectId: string,
+	tx?: Omit<Prisma.TransactionClient, '$transaction' | '$use' | '$on' | '$disconnect' | '$connect'>
 ): Promise<void> {
 	// Calcular estado final
-	const status = await calculateFinalStatus(studentId, subjectId);
+	const status = await calculateFinalStatus(studentId, subjectId, tx);
 
-	// Usar transacción para asegurar atomicidad
-	await prisma.$transaction(async (tx) => {
-		// Buscar el registro de estado
-		const existingStatus = await tx.studentSubjectStatus.findUnique({
+	// Si no se proporciona un cliente transaccional, crear una transacción
+	if (!tx) {
+		await prisma.$transaction(async (txClient) => {
+			await updateStudentSubjectStatusInternal(studentId, subjectId, status, txClient);
+		});
+	} else {
+		await updateStudentSubjectStatusInternal(studentId, subjectId, status, tx);
+	}
+}
+
+async function updateStudentSubjectStatusInternal(
+	studentId: string,
+	subjectId: string,
+	status: Awaited<ReturnType<typeof calculateFinalStatus>>,
+	tx: Omit<Prisma.TransactionClient, '$transaction' | '$use' | '$on' | '$disconnect' | '$connect'>
+): Promise<void> {
+	// Buscar el registro de estado
+	const existingStatus = await tx.studentSubjectStatus.findUnique({
+		where: {
+			studentId_subjectId: {
+				studentId,
+				subjectId
+			}
+		}
+	});
+
+	if (existingStatus) {
+		// Actualizar registro existente con nuevos campos
+		await tx.studentSubjectStatus.update({
 			where: {
 				studentId_subjectId: {
 					studentId,
 					subjectId
 				}
+			},
+			data: {
+				regularityStatus: status.regularityStatus,
+				approved: status.approved,
+				promoted: status.promoted,
+				finalGrade: status.finalGrade,
+				promotionDate: status.promotionDate,
+				// Nuevos campos del modelo
+				courseAverage: status.courseAverage,
+				courseStatus: status.courseStatus,
+				finalExamStatus: status.finalExamStatus,
+				academicStatus: status.academicStatus
 			}
 		});
-
-		if (existingStatus) {
-			// Actualizar registro existente con nuevos campos
-			await tx.studentSubjectStatus.update({
-				where: {
-					studentId_subjectId: {
-						studentId,
-						subjectId
-					}
-				},
-				data: {
-					regularityStatus: status.regularityStatus,
-					approved: status.approved,
-					promoted: status.promoted,
-					finalGrade: status.finalGrade,
-					promotionDate: status.promotionDate,
-					// Nuevos campos del modelo
-					courseAverage: status.courseAverage,
-					courseStatus: status.courseStatus,
-					finalExamStatus: status.finalExamStatus,
-					academicStatus: status.academicStatus
-				}
-			});
-		} else {
-			// Crear nuevo registro con nuevos campos
-			await tx.studentSubjectStatus.create({
-				data: {
-					studentId,
-					subjectId,
-					regularityStatus: status.regularityStatus,
-					approved: status.approved,
-					promoted: status.promoted,
-					finalGrade: status.finalGrade,
-					promotionDate: status.promotionDate,
-					// Nuevos campos del modelo
-					courseAverage: status.courseAverage,
-					courseStatus: status.courseStatus,
-					finalExamStatus: status.finalExamStatus,
-					academicStatus: status.academicStatus
-				}
-			});
-		}
-	});
+	} else {
+		// Crear nuevo registro con nuevos campos
+		await tx.studentSubjectStatus.create({
+			data: {
+				studentId,
+				subjectId,
+				regularityStatus: status.regularityStatus,
+				approved: status.approved,
+				promoted: status.promoted,
+				finalGrade: status.finalGrade,
+				promotionDate: status.promotionDate,
+				// Nuevos campos del modelo
+				courseAverage: status.courseAverage,
+				courseStatus: status.courseStatus,
+				finalExamStatus: status.finalExamStatus,
+				academicStatus: status.academicStatus
+			}
+		});
+	}
 }
 
 /**
@@ -444,14 +461,17 @@ export async function canStudentPass(
 	studentId: string,
 	subjectId: string,
 	finalGrade: number,
-	careerId?: string
+	careerId?: string,
+	tx?: Omit<Prisma.TransactionClient, '$transaction' | '$use' | '$on' | '$disconnect' | '$connect'>
 ): Promise<{
 	canPass: boolean;
 	missing: string[];
 	reason?: string;
 }> {
+	const client = tx || prisma;
+
 	// Obtener umbrales de la materia
-	const subject = await prisma.subject.findUnique({
+	const subject = await client.subject.findUnique({
 		where: { id: subjectId }
 	});
 
@@ -467,7 +487,7 @@ export async function canStudentPass(
 	}
 
 	// 2. Obtener correlativas de tipo APROBADO
-	const correlativas = await prisma.subjectCorrelative.findMany({
+	const correlativas = await client.subjectCorrelative.findMany({
 		where: {
 			subjectId,
 			isActive: true,
@@ -489,7 +509,7 @@ export async function canStudentPass(
 	const missing = [] as string[];
 
 	for (const corr of correlativas) {
-		const status = await prisma.studentSubjectStatus.findFirst({
+		const status = await client.studentSubjectStatus.findFirst({
 			where: {
 				studentId,
 				subjectId: corr.requiredSubjectId,

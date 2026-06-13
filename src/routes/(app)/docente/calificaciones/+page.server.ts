@@ -2,8 +2,8 @@ import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { requireRole, getUserAllowedLocationIds } from '$lib/server/auth/authorization';
-import { auditLog } from '$lib/server/audit';
-import { AuditAction } from '@prisma/client';
+import { EvaluationService } from '$lib/server/academic/evaluation-service';
+import { GradeStatus } from '@prisma/client';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	requireRole(locals.user, ['DOCENTE']);
@@ -174,7 +174,15 @@ export const actions: Actions = {
 		}
 
 		try {
-			// Verificar que la evaluación pertenezca al docente
+			const evaluationService = new EvaluationService(prisma);
+
+			// Validar que se puede cargar calificaciones
+			const validation = await evaluationService.canLoadGrades(evaluationId, locals.user.id);
+			if (validation) {
+				return validation;
+			}
+
+			// Obtener evaluación para validaciones adicionales
 			const evaluation = await prisma.evaluation.findUnique({
 				where: { id: evaluationId },
 				include: {
@@ -185,36 +193,6 @@ export const actions: Actions = {
 
 			if (!evaluation) {
 				return { error: 'Evaluación no encontrada' };
-			}
-
-			if (evaluation.createdByUserId !== locals.user.id) {
-				return { error: 'No tenés permiso para cargar calificaciones en esta evaluación' };
-			}
-
-			if (evaluation.isClosed) {
-				return { error: 'La evaluación está cerrada y no acepta nuevas calificaciones' };
-			}
-
-			// Verificar que la materia pertenezca al docente
-			const teacher = await prisma.teacher.findUnique({
-				where: { userId: locals.user.id }
-			});
-
-			if (!teacher) {
-				return { error: 'Docente no encontrado' };
-			}
-
-			const subjectTeacher = await prisma.subjectTeacher.findUnique({
-				where: {
-					subjectId_teacherId: {
-						subjectId: evaluation.subjectId,
-						teacherId: teacher.id
-					}
-				}
-			});
-
-			if (!subjectTeacher) {
-				return { error: 'No tenés permiso para cargar calificaciones en esta materia' };
 			}
 
 			// Obtener alumnos inscriptos en la comisión de la evaluación
@@ -272,109 +250,106 @@ export const actions: Actions = {
 				}
 			}
 
-			const results = [];
-			const errors = [];
+			// Validación del lote completo
+			const validationErrors: Array<{ studentId: string; error: string }> = [];
+			const validGrades: Array<{
+				studentId: string;
+				status: GradeStatus;
+				value: number | null;
+				observations: string | undefined;
+			}> = [];
 
-			// Procesar cada calificación del Map
 			for (const [studentId, gradeData] of gradesMap.entries()) {
-				try {
-					// Validar que el alumno esté inscripto
-					const enrollment = enrolledStudents.find((e) => e.studentId === studentId);
-					if (!enrollment) {
-						errors.push({
-							studentId: studentId,
-							error: 'Alumno no inscripto en esta materia/comisión'
-						});
-						continue;
-					}
-
-					// Validar reglas de estado
-					if (gradeData.status === 'PRESENT' && gradeData.value === null) {
-						errors.push({
-							studentId: studentId,
-							error: 'PRESENT requiere una nota'
-						});
-						continue;
-					}
-
-					if (
-						(gradeData.status === 'ABSENT' || gradeData.status === 'EXCUSED') &&
-						gradeData.value !== null
-					) {
-						errors.push({
-							studentId: studentId,
-							error: 'ABSENT y EXCUSED requieren nota null'
-						});
-						continue;
-					}
-
-					// Validar rango de nota
-					if (gradeData.value !== null) {
-						const valueNum = Number(gradeData.value);
-						const maxScoreNum = Number(evaluation.maxScore);
-						if (valueNum < 0 || valueNum > maxScoreNum) {
-							errors.push({
-								studentId: studentId,
-								error: `Nota debe estar entre 0 y ${maxScoreNum}`
-							});
-							continue;
-						}
-					}
-
-					// Upsert calificación
-					const grade = await prisma.grade.upsert({
-						where: {
-							evaluationId_studentId: {
-								evaluationId: evaluation.id,
-								studentId: studentId
-							}
-						},
-						create: {
-							evaluationId: evaluation.id,
-							studentId: studentId,
-							status: gradeData.status as 'PRESENT' | 'ABSENT' | 'EXCUSED',
-							value: gradeData.value !== null ? Number(gradeData.value) : null,
-							observations: gradeData.observations || null,
-							createdByUserId: locals.user.id
-						},
-						update: {
-							status: gradeData.status as 'PRESENT' | 'ABSENT' | 'EXCUSED',
-							value: gradeData.value !== null ? Number(gradeData.value) : null,
-							observations: gradeData.observations || null,
-							updatedByUserId: locals.user.id
-						}
+				// Validar que el alumno esté inscripto
+				const enrollment = enrolledStudents.find((e) => e.studentId === studentId);
+				if (!enrollment) {
+					validationErrors.push({
+						studentId,
+						error: 'Alumno no inscripto en esta materia/comisión'
 					});
-
-					results.push({
-						studentId: studentId,
-						status: 'success'
-					});
-
-					// Registrar en auditoría
-					await auditLog({
-						userId: locals.user.id,
-						action: AuditAction.CREATE,
-						entityType: 'GRADE',
-						entityId: grade.id,
-						description: `Carga de calificación: ${gradeData.status} ${gradeData.value || ''} para alumno ${studentId} en evaluación ${evaluation.title}`
-					});
-				} catch (error) {
-					console.error(`Error al cargar calificación para alumno ${studentId}:`, error);
-					errors.push({
-						studentId: studentId,
-						error: 'Error al procesar calificación'
-					});
+					continue;
 				}
+
+				// Validar reglas de estado
+				if (gradeData.status === 'PRESENT' && gradeData.value === null) {
+					validationErrors.push({
+						studentId,
+						error: 'PRESENT requiere una nota'
+					});
+					continue;
+				}
+
+				if (
+					(gradeData.status === 'ABSENT' || gradeData.status === 'EXCUSED') &&
+					gradeData.value !== null
+				) {
+					validationErrors.push({
+						studentId,
+						error: 'ABSENT y EXCUSED requieren nota null'
+					});
+					continue;
+				}
+
+				// Validar rango de nota
+				if (gradeData.value !== null) {
+					const valueNum = Number(gradeData.value);
+					const maxScoreNum = Number(evaluation.maxScore);
+					if (isNaN(valueNum) || valueNum < 0 || valueNum > maxScoreNum) {
+						validationErrors.push({
+							studentId,
+							error: `Nota debe estar entre 0 y ${maxScoreNum}`
+						});
+						continue;
+					}
+				}
+
+				// Validar estado válido
+				if (!['PRESENT', 'ABSENT', 'EXCUSED'].includes(gradeData.status)) {
+					validationErrors.push({
+						studentId,
+						error: 'Estado inválido'
+					});
+					continue;
+				}
+
+				// Si pasa todas las validaciones, agregar a la lista de válidos
+				validGrades.push({
+					studentId,
+					status: gradeData.status as GradeStatus,
+					value: gradeData.value !== null ? Number(gradeData.value) : null,
+					observations: gradeData.observations || undefined
+				});
+			}
+
+			// Si hay errores de validación, no guardar nada
+			if (validationErrors.length > 0) {
+				return {
+					error: 'Hay errores de validación. No se guardó ninguna calificación.',
+					errors: validationErrors
+				};
+			}
+
+			// Delegar al servicio
+			const result = await evaluationService.loadGradesBatch({
+				evaluationId,
+				grades: validGrades.map(g => ({
+					...g,
+					observations: g.observations || undefined
+				})),
+				userId: locals.user.id
+			});
+
+			if ('error' in result) {
+				return result;
 			}
 
 			return {
-				success: `Procesadas ${results.length} calificaciones con ${errors.length} errores`,
-				results,
-				errors
+				success: `Cargadas exitosamente ${result.length} calificaciones`,
+				results: result.map((g) => ({ studentId: g.studentId, status: 'success', gradeId: g.id }))
 			};
 		} catch (error) {
 			console.error('Error en carga masiva:', error);
-			return { error: 'Error al procesar la carga masiva' };
+			return { error: 'Error al procesar la carga masiva. Ninguna calificación fue guardada.' };
 		}
 	},
 
@@ -397,27 +372,12 @@ export const actions: Actions = {
 		}
 
 		try {
-			// Verificar que la calificación pertenezca al docente
-			const existingGrade = await prisma.grade.findUnique({
-				where: { id: gradeId },
-				include: {
-					evaluation: true,
-					student: {
-						include: { user: true }
-					}
-				}
-			});
+			const evaluationService = new EvaluationService(prisma);
 
-			if (!existingGrade) {
-				return { error: 'Calificación no encontrada' };
-			}
-
-			if (existingGrade.createdByUserId !== locals.user.id) {
-				return { error: 'No tenés permiso para editar esta calificación' };
-			}
-
-			if (existingGrade.evaluation.isClosed) {
-				return { error: 'La evaluación está cerrada y no acepta ediciones' };
+			// Validar que se puede editar
+			const validation = await evaluationService.canEditGrade(gradeId, locals.user.id);
+			if (validation) {
+				return validation;
 			}
 
 			// Validar reglas de estado
@@ -429,25 +389,18 @@ export const actions: Actions = {
 				return { error: 'ABSENT y EXCUSED requieren nota null' };
 			}
 
-			// Actualizar calificación
-			await prisma.grade.update({
-				where: { id: gradeId },
-				data: {
-					status: status as any, // Type cast until Prisma Client is regenerated
-					value: value && value !== 'null' ? parseFloat(value) : null,
-					observations: observations || null,
-					updatedByUserId: locals.user.id
-				}
+			// Delegar al servicio
+			const result = await evaluationService.editGrade({
+				gradeId,
+				status: status as GradeStatus,
+				value: value && value !== 'null' ? parseFloat(value) : null,
+				observations: observations || undefined,
+				userId: locals.user.id
 			});
 
-			// Registrar en auditoría
-			await auditLog({
-				userId: locals.user.id,
-				action: AuditAction.UPDATE,
-				entityType: 'GRADE',
-				entityId: gradeId,
-				description: `Edición de calificación: ${status} ${value || ''} para ${existingGrade.student.firstName} ${existingGrade.student.lastName} en ${existingGrade.evaluation.title}`
-			});
+			if ('error' in result) {
+				return result;
+			}
 
 			return { success: 'Calificación actualizada exitosamente' };
 		} catch (error) {
@@ -472,41 +425,18 @@ export const actions: Actions = {
 		}
 
 		try {
-			// Verificar que la calificación pertenezca al docente
-			const existingGrade = await prisma.grade.findUnique({
-				where: { id: gradeId },
-				include: {
-					evaluation: true,
-					student: {
-						include: { user: true }
-					}
-				}
-			});
+			const evaluationService = new EvaluationService(prisma);
 
-			if (!existingGrade) {
-				return { error: 'Calificación no encontrada' };
+			// Validar que se puede eliminar
+			const validation = await evaluationService.canDeleteGrade(gradeId, locals.user.id);
+			if (validation) {
+				return validation;
 			}
 
-			if (existingGrade.createdByUserId !== locals.user.id) {
-				return { error: 'No tenés permiso para eliminar esta calificación' };
-			}
-
-			if (existingGrade.evaluation.isClosed) {
-				return { error: 'La evaluación está cerrada y no acepta eliminaciones' };
-			}
-
-			// Eliminar calificación
-			await prisma.grade.delete({
-				where: { id: gradeId }
-			});
-
-			// Registrar en auditoría
-			await auditLog({
-				userId: locals.user.id,
-				action: AuditAction.DELETE,
-				entityType: 'GRADE',
-				entityId: gradeId,
-				description: `Eliminación de calificación para ${existingGrade.student.firstName} ${existingGrade.student.lastName} en ${existingGrade.evaluation.title}`
+			// Delegar al servicio
+			await evaluationService.deleteGrade({
+				gradeId,
+				userId: locals.user.id
 			});
 
 			return { success: 'Calificación eliminada exitosamente' };

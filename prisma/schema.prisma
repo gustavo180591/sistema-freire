@@ -25,8 +25,8 @@ model User {
   totpVerified        Boolean                  @default(false)
   auditLogs           AuditLog[]
   uploadedMaterials   ClassMaterial[]          @relation("MaterialUploader")
-  createdEvaluations  Evaluation[]             @relation("EvaluationCreator")
   closedEvaluations   Evaluation[]             @relation("EvaluationCloser")
+  createdEvaluations  Evaluation[]             @relation("EvaluationCreator")
   reopenedEvaluations Evaluation[]             @relation("EvaluationReopener")
   createdGrades       Grade[]                  @relation("GradeCreator")
   updatedGrades       Grade[]                  @relation("GradeUpdater")
@@ -291,17 +291,13 @@ model AttendanceRecord {
   id              String             @id @default(cuid())
   subjectId       String
   classDate       DateTime
-  commissionId    String? // Opcional para mantener compatibilidad con carga por materia
   createdByUserId String
   createdAt       DateTime           @default(now())
+  commissionId    String?
   entries         AttendanceEntry[]
-  subject         Subject            @relation(fields: [subjectId], references: [id])
   commission      SubjectCommission? @relation(fields: [commissionId], references: [id])
+  subject         Subject            @relation(fields: [subjectId], references: [id])
 
-  // Constraint único: (subjectId, classDate, commissionId)
-  // NOTA: En PostgreSQL, NULL en columnas únicas permite duplicados.
-  // Cuando commissionId es NULL, múltiples registros con mismo (subjectId, classDate) son permitidos.
-  // Esto se mitige con validación backend en las acciones de creación de asistencia.
   @@unique([subjectId, classDate, commissionId])
   @@map("attendance_records")
 }
@@ -322,20 +318,19 @@ model AttendanceEntry {
 
 model Grade {
   id              String      @id @default(cuid())
-  evaluationId    String
   studentId       String
-  status          GradeStatus @default(PRESENT)
   value           Decimal?    @db.Decimal(5, 2)
-  observations    String?
   createdByUserId String
-  updatedByUserId String?
   createdAt       DateTime    @default(now())
+  evaluationId    String
+  observations    String?
+  status          GradeStatus @default(PRESENT)
   updatedAt       DateTime    @updatedAt
-
-  evaluation    Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Restrict)
-  student       Student    @relation(fields: [studentId], references: [id], onDelete: Restrict)
-  createdByUser User       @relation("GradeCreator", fields: [createdByUserId], references: [id])
-  updatedByUser User?      @relation("GradeUpdater", fields: [updatedByUserId], references: [id])
+  updatedByUserId String?
+  createdByUser   User        @relation("GradeCreator", fields: [createdByUserId], references: [id])
+  evaluation      Evaluation  @relation(fields: [evaluationId], references: [id])
+  student         Student     @relation(fields: [studentId], references: [id])
+  updatedByUser   User?       @relation("GradeUpdater", fields: [updatedByUserId], references: [id])
 
   @@unique([evaluationId, studentId])
   @@index([studentId])
@@ -349,17 +344,17 @@ model StudentSubjectStatus {
   subjectId         String
   attendancePercent Decimal          @default(0) @db.Decimal(5, 2)
   regularityStatus  RegularityStatus @default(LIBRE)
-  courseAverage     Decimal?         @db.Decimal(5, 2)
-  courseStatus      CourseStatus     @default(IN_PROGRESS)
-  finalExamScore    Decimal?         @db.Decimal(5, 2)
-  finalExamStatus   FinalExamStatus  @default(PENDING)
-  academicStatus    AcademicStatus   @default(EN_COURSE)
-  promotionDate     DateTime?
-  finalApprovalDate DateTime?
-  updatedAt         DateTime         @updatedAt
   approved          Boolean          @default(false)
   promoted          Boolean          @default(false)
   finalGrade        Decimal?         @db.Decimal(5, 2)
+  promotionDate     DateTime?
+  updatedAt         DateTime         @updatedAt
+  academicStatus    AcademicStatus   @default(EN_COURSE)
+  courseAverage     Decimal?         @db.Decimal(5, 2)
+  courseStatus      CourseStatus     @default(IN_PROGRESS)
+  finalApprovalDate DateTime?
+  finalExamScore    Decimal?         @db.Decimal(5, 2)
+  finalExamStatus   FinalExamStatus  @default(PENDING)
   student           Student          @relation(fields: [studentId], references: [id])
   subject           Subject          @relation(fields: [subjectId], references: [id])
 
@@ -674,36 +669,35 @@ model ClassMaterial {
 }
 
 model Evaluation {
-  id                 String         @id @default(cuid())
-  subjectId          String
-  commissionId       String?
-  title              String
-  description        String?
-  type               EvaluationType
-  evaluationDate     DateTime
-  maxScore           Decimal        @default(10) @db.Decimal(6, 2)
-  minPassingScore    Decimal        @default(6) @db.Decimal(6, 2)
-  weight             Decimal        @default(1) @db.Decimal(6, 2)
-  observations       String?
-  isClosed           Boolean        @default(false)
-  closedAt           DateTime?
-  closedByUserId     String?
-  closedReason       String?
-  reopenedAt         DateTime?
-  reopenedByUserId   String?
-  reopenReason       String?
-  parentEvaluationId String?
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
-  createdByUserId    String
-
-  subject             Subject            @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  id                  String             @id @default(cuid())
+  subjectId           String
+  title               String
+  description         String?
+  maxScore            Decimal            @default(10) @db.Decimal(6, 2)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  closedAt            DateTime?
+  closedByUserId      String?
+  closedReason        String?
+  commissionId        String?
+  createdByUserId     String
+  evaluationDate      DateTime
+  isClosed            Boolean            @default(false)
+  minPassingScore     Decimal            @default(6) @db.Decimal(6, 2)
+  observations        String?
+  parentEvaluationId  String?
+  reopenReason        String?
+  reopenedAt          DateTime?
+  reopenedByUserId    String?
+  weight              Decimal            @default(1) @db.Decimal(6, 2)
+  type                EvaluationType
+  closedByUser        User?              @relation("EvaluationCloser", fields: [closedByUserId], references: [id])
   commission          SubjectCommission? @relation(fields: [commissionId], references: [id], onDelete: Restrict)
   createdByUser       User               @relation("EvaluationCreator", fields: [createdByUserId], references: [id])
-  closedByUser        User?              @relation("EvaluationCloser", fields: [closedByUserId], references: [id])
-  reopenedByUser      User?              @relation("EvaluationReopener", fields: [reopenedByUserId], references: [id])
   parentEvaluation    Evaluation?        @relation("EvaluationRecovery", fields: [parentEvaluationId], references: [id])
   recoveryEvaluations Evaluation[]       @relation("EvaluationRecovery")
+  reopenedByUser      User?              @relation("EvaluationReopener", fields: [reopenedByUserId], references: [id])
+  subject             Subject            @relation(fields: [subjectId], references: [id])
   grades              Grade[]
 
   @@index([subjectId])

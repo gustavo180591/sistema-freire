@@ -409,49 +409,70 @@ model ChargeConcept {
 }
 
 model StudentCharge {
-  id             String              @id @default(cuid())
-  studentId      String
-  conceptId      String
-  periodLabel    String
-  amount         Decimal             @db.Decimal(12, 2)
-  paidAmount     Decimal             @default(0) @db.Decimal(12, 2)
-  dueDate        DateTime?
-  status         ChargeStatus        @default(PENDING)
-  notes          String?
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  userId         String?
-  academicTermId String?
-  allocations    PaymentAllocation[]
-  academicTerm   AcademicTerm?       @relation(fields: [academicTermId], references: [id])
-  concept        ChargeConcept       @relation(fields: [conceptId], references: [id])
-  student        Student             @relation(fields: [studentId], references: [id])
-  user           User?               @relation(fields: [userId], references: [id])
+  id                 String              @id @default(cuid())
+  studentId          String
+  conceptId          String
+  periodLabel        String
+  amount             Decimal             @db.Decimal(12, 2)
+  paidAmount         Decimal             @default(0) @db.Decimal(12, 2)
+  dueDate            DateTime?
+  status             ChargeStatus        @default(PENDING)
+  notes              String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  userId             String?
+  academicTermId     String
+  // Nuevos campos para cálculos financieros
+  lateFeeApplied     Decimal             @default(0) @db.Decimal(12, 2)
+  discountApplied    Decimal             @default(0) @db.Decimal(12, 2)
+  scholarshipApplied Decimal             @default(0) @db.Decimal(12, 2)
+  finalAmount        Decimal             @db.Decimal(12, 2)
+  isOverdue          Boolean             @default(false)
+  overdueSince       DateTime?
+  allocations        PaymentAllocation[]
+  lateFees           LateFee[]
+  academicTerm       AcademicTerm?       @relation(fields: [academicTermId], references: [id])
+  concept            ChargeConcept       @relation(fields: [conceptId], references: [id])
+  student            Student             @relation(fields: [studentId], references: [id])
+  user               User?               @relation(fields: [userId], references: [id])
 
+  @@unique([studentId, conceptId, periodLabel, academicTermId])
   @@index([studentId, status])
   @@index([periodLabel])
   @@index([academicTermId])
+  @@index([dueDate])
+  @@index([isOverdue])
   @@map("student_charges")
 }
 
 model Payment {
-  id             String              @id @default(cuid())
-  studentId      String
-  amount         Decimal             @db.Decimal(12, 2)
-  method         PaymentMethod
-  reference      String?
-  paidAt         DateTime            @default(now())
-  notes          String?
-  createdAt      DateTime            @default(now())
-  userId         String?
-  academicTermId String?
-  allocations    PaymentAllocation[]
-  academicTerm   AcademicTerm?       @relation(fields: [academicTermId], references: [id])
-  student        Student             @relation(fields: [studentId], references: [id])
-  user           User?               @relation(fields: [userId], references: [id])
+  id              String              @id @default(cuid())
+  studentId       String
+  amount          Decimal             @db.Decimal(12, 2)
+  method          PaymentMethod
+  reference       String?
+  paidAt          DateTime            @default(now())
+  notes           String?
+  createdAt       DateTime            @default(now())
+  userId          String?
+  academicTermId  String?
+  // Nuevos campos para anulación y recibo
+  receiptId       String?
+  cancelledAt     DateTime?
+  cancelledBy     String?
+  cancelledReason String?
+  isCancelled     Boolean             @default(false)
+  allocations     PaymentAllocation[]
+  receipt         Receipt?            @relation(fields: [receiptId], references: [id], onDelete: Restrict)
+  academicTerm    AcademicTerm?       @relation(fields: [academicTermId], references: [id])
+  student         Student             @relation(fields: [studentId], references: [id])
+  user            User?               @relation(fields: [userId], references: [id])
 
+  @@unique([method, reference], name: "payment_method_reference_unique")
   @@index([studentId, paidAt])
   @@index([academicTermId])
+  @@index([receiptId])
+  @@index([isCancelled])
   @@map("payments")
 }
 
@@ -459,29 +480,195 @@ model PaymentAllocation {
   paymentId String
   chargeId  String
   amount    Decimal       @db.Decimal(12, 2)
-  charge    StudentCharge @relation(fields: [chargeId], references: [id], onDelete: Cascade)
-  payment   Payment       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  charge    StudentCharge @relation(fields: [chargeId], references: [id], onDelete: Restrict)
+  payment   Payment       @relation(fields: [paymentId], references: [id], onDelete: Restrict)
 
   @@id([paymentId, chargeId])
   @@map("payment_allocations")
 }
 
 model Scholarship {
-  id         String    @id @default(cuid())
-  studentId  String
-  name       String
-  percentage Decimal   @db.Decimal(5, 2)
-  active     Boolean   @default(true)
-  startDate  DateTime
-  endDate    DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  userId     String?
-  student    Student   @relation(fields: [studentId], references: [id])
-  user       User?     @relation(fields: [userId], references: [id])
+  id               String    @id @default(cuid())
+  studentId        String
+  name             String
+  percentage       Decimal   @db.Decimal(5, 2)
+  active           Boolean   @default(true)
+  startDate        DateTime
+  endDate          DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  userId           String?
+  // Nuevos campos para aplicación automática
+  applicableTo     String[]
+  autoApply        Boolean   @default(true)
+  maxMonthlyAmount Decimal?  @db.Decimal(12, 2)
+  appliedAmount    Decimal   @default(0) @db.Decimal(12, 2)
+  lastAppliedAt    DateTime?
+  student          Student   @relation(fields: [studentId], references: [id])
+  user             User?     @relation(fields: [userId], references: [id])
 
   @@index([studentId, active])
   @@map("scholarships")
+}
+
+// Nuevos modelos financieros - Fase 1
+
+model Receipt {
+  id               String        @id @default(cuid())
+  receiptNumber    Int
+  receiptYear      Int
+  studentId        String
+  studentName      String
+  studentDni       String?
+  studentAddress   String?
+  totalAmount      Decimal       @db.Decimal(12, 2)
+  paymentMethod    PaymentMethod
+  paymentReference String?
+  issuedAt         DateTime      @default(now())
+  issuedBy         String
+  issuedByName     String
+  observations     String?
+  status           ReceiptStatus @default(ISSUED)
+  cancelledAt      DateTime?
+  cancelledBy      String?
+  cancelledReason  String?
+  printCount       Int           @default(0)
+  originalCopy     Boolean       @default(true)
+  items            ReceiptItem[]
+  payments         Payment[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@unique([receiptNumber, receiptYear])
+  @@index([studentId])
+  @@index([receiptNumber, receiptYear])
+  @@index([status])
+  @@map("receipts")
+}
+
+model ReceiptItem {
+  id             String  @id @default(cuid())
+  receiptId      String
+  chargeId       String?
+  concept        String
+  periodLabel    String?
+  baseAmount     Decimal @db.Decimal(12, 2)
+  lateFeeAmount  Decimal @default(0) @db.Decimal(12, 2)
+  discountAmount Decimal @default(0) @db.Decimal(12, 2)
+  finalAmount    Decimal @db.Decimal(12, 2)
+  receipt        Receipt @relation(fields: [receiptId], references: [id], onDelete: Restrict)
+
+  @@index([receiptId])
+  @@map("receipt_items")
+}
+
+model FinancialMovement {
+  id            String                @id @default(cuid())
+  studentId     String
+  movementType  FinancialMovementType
+  entityType    String
+  entityId      String
+  description   String
+  amount        Decimal               @db.Decimal(12, 2)
+  balanceBefore Decimal               @db.Decimal(12, 2)
+  balanceAfter  Decimal               @db.Decimal(12, 2)
+  metadata      Json?
+  userId        String?
+  createdAt     DateTime              @default(now())
+
+  @@index([studentId, createdAt])
+  @@index([movementType])
+  @@index([entityType, entityId])
+  @@map("financial_movements")
+}
+
+model Discount {
+  id           String       @id @default(cuid())
+  code         String       @unique
+  name         String
+  description  String?
+  discountType DiscountType
+  value        Decimal      @db.Decimal(12, 2)
+  applicableTo String[]
+  minAmount    Decimal?     @db.Decimal(12, 2)
+  maxAmount    Decimal?     @db.Decimal(12, 2)
+  validFrom    DateTime
+  validUntil   DateTime?
+  active       Boolean      @default(true)
+  priority     Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([active])
+  @@index([validFrom, validUntil])
+  @@map("discounts")
+}
+
+model LateFee {
+  id               String        @id @default(cuid())
+  chargeId         String
+  chargeAmount     Decimal       @db.Decimal(12, 2)
+  daysOverdue      Int
+  feeType          LateFeeType
+  feeValue         Decimal       @db.Decimal(12, 2)
+  calculatedAmount Decimal       @db.Decimal(12, 2)
+  appliedAt        DateTime      @default(now())
+  appliedBy        String?
+  isAutomatic      Boolean       @default(true)
+  charge           StudentCharge @relation(fields: [chargeId], references: [id], onDelete: Cascade)
+
+  @@index([chargeId])
+  @@index([appliedAt])
+  @@map("late_fees")
+}
+
+model FinancialBlock {
+  id               String             @id @default(cuid())
+  studentId        String
+  blockType        FinancialBlockType
+  blockReason      String
+  blockedAt        DateTime           @default(now())
+  blockedBy        String
+  blockedByName    String
+  debtAmount       Decimal            @db.Decimal(12, 2)
+  overdueDays      Int?
+  exceptionGranted Boolean            @default(false)
+  exceptionBy      String?
+  exceptionAt      DateTime?
+  exceptionReason  String?
+  unblockedAt      DateTime?
+  unblockedBy      String?
+  isActive         Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  // Unique constraint removido - se crea índice único parcial en SQL manual
+  @@index([studentId, isActive])
+  @@index([blockType])
+  @@index([isActive])
+  @@map("financial_blocks")
+}
+
+model FinancialConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json
+  description String?
+  category    String
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?
+
+  @@index([category])
+  @@map("financial_config")
+}
+
+model ReceiptNumber {
+  id         String   @id @default(cuid())
+  year       Int      @unique
+  lastNumber Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  @@map("receipt_numbers")
 }
 
 model Payslip {
@@ -957,4 +1144,42 @@ enum FollowUpType {
   INCIDENT
   ACHIEVEMENT
   NOTE
+}
+
+// Nuevos enums financieros - Fase 1
+
+enum ReceiptStatus {
+  ISSUED
+  CANCELLED
+}
+
+enum FinancialMovementType {
+  CHARGE
+  PAYMENT
+  ALLOCATION
+  RECEIPT
+  CANCELLATION
+  ADJUSTMENT
+  LATE_FEE
+  DISCOUNT
+  SCHOLARSHIP
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum LateFeeType {
+  PERCENTAGE
+  FIXED
+}
+
+enum FinancialBlockType {
+  ENROLLMENT
+  EXAM
+  COURSE
+  CERTIFICATE
+  REPORT
+  ALL
 }

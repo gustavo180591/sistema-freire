@@ -664,6 +664,7 @@ try {
 - Los intentos fallidos NO se auditan como intentos fallidos
 - Solo se auditan las operaciones exitosas
 - Esto simplifica la auditoría y evita contaminar los logs con intentos fallidos esperables (como duplicados)
+- **Nota:** Esta es una decisión de diseño actual. Si en el futuro se requiere auditar intentos fallidos, se puede implementar sin afectar la lógica existente.
 
 ## Límites Conocidos
 

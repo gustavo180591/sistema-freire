@@ -9,7 +9,7 @@ import * as DecimalHelpers from './decimal-helpers';
 // Prisma exports these enums at runtime (.prisma/client) but TypeScript types don't include them
 // These string literal types ensure type safety while matching Prisma enum values exactly
 export type ReceiptStatus = 'ISSUED' | 'CANCELLED';
-export type FinancialMovementType = 'CHARGE' | 'PAYMENT' | 'ALLOCATION' | 'RECEIPT' | 'CANCELLATION' | 'ADJUSTMENT' | 'LATE_FEE' | 'DISCOUNT' | 'SCHOLARSHIP';
+export type FinancialMovementType = 'CHARGE' | 'PAYMENT' | 'ALLOCATION' | 'RECEIPT' | 'CANCELLATION' | 'ADJUSTMENT' | 'LATE_FEE' | 'DISCOUNT' | 'SCHOLARSHIP' | 'PAYMENT_CANCELLATION';
 export type DiscountType = 'PERCENTAGE' | 'FIXED';
 export type LateFeeType = 'PERCENTAGE' | 'FIXED';
 export type FinancialBlockType = 'ENROLLMENT' | 'EXAM' | 'COURSE' | 'CERTIFICATE' | 'REPORT' | 'ALL';
@@ -124,9 +124,10 @@ export type PaymentInput = {
   amount: Decimal;
   method: PaymentMethod;
   reference?: string;
+  paidAt?: Date;
   notes?: string;
-  academicTermId?: string;
-  userId?: string;
+  userId: string;
+  chargeIds?: string[];
 };
 
 export type ReceiptInput = {
@@ -177,8 +178,33 @@ export type ChargeResult = {
 
 export type PaymentResult = {
   payment: Prisma.PaymentGetPayload<{}>;
-  allocations: Prisma.PaymentAllocationGetPayload<{}>[];
-  movements: FinancialMovement[];
+  allocations: PaymentAllocation[];
+  movement: Prisma.FinancialMovementGetPayload<{}>;
+};
+
+export type PaymentAllocation = {
+  paymentId: string;
+  chargeId: string;
+  amount: Decimal;
+  charge?: Prisma.StudentChargeGetPayload<{}>;
+};
+
+export type Payment = {
+  id: string;
+  studentId: string;
+  amount: Decimal;
+  method: PaymentMethod;
+  reference?: string;
+  paidAt: Date;
+  notes?: string;
+  createdAt: Date;
+  userId?: string;
+  academicTermId?: string;
+  isCancelled: boolean;
+  cancelledAt?: Date;
+  cancelledBy?: string;
+  cancelledReason?: string;
+  allocations: PaymentAllocation[];
 };
 
 export type ReceiptResult = {
@@ -970,26 +996,6 @@ export class FinancialService {
     throw new Error('Not implemented yet - Phase 5');
   }
 
-  /**
-   * Registrar un pago
-   */
-  async registerPayment(input: PaymentInput, tx?: Prisma.TransactionClient): Promise<PaymentResult> {
-    throw new Error('Not implemented yet - Phase 3');
-  }
-
-  /**
-   * Anular un pago
-   */
-  async cancelPayment(paymentId: string, reason: string, userId: string, tx?: Prisma.TransactionClient): Promise<void> {
-    throw new Error('Not implemented yet - Phase 3');
-  }
-
-  /**
-   * Asignar pago a cuotas específicas
-   */
-  async allocatePayment(paymentId: string, chargeIds: string[], tx?: Prisma.TransactionClient): Promise<void> {
-    throw new Error('Not implemented yet - Phase 3');
-  }
 
   /**
    * Generar recibo institucional
@@ -1180,6 +1186,418 @@ export class FinancialService {
       priority: d.priority,
       createdAt: d.createdAt,
       updatedAt: d.updatedAt
+    }));
+  }
+
+  /**
+   * Registrar un pago
+   */
+  async registerPayment(input: PaymentInput): Promise<PaymentResult> {
+    const { studentId, amount, method, reference, paidAt, notes, userId, chargeIds } = input;
+
+    // Validar alumno existente
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+      include: { user: true }
+    });
+    if (!student) {
+      throw new Error('Alumno no encontrado');
+    }
+    if (student.status !== 'ACTIVE') {
+      throw new Error('El alumno no está activo');
+    }
+
+    // Validar permisos
+    const userRoles = await prisma.userRole.findMany({
+      where: { userId },
+      include: { role: true }
+    });
+    const roleCodes = userRoles.map(ur => ur.role.code);
+    const hasPermissionResult = await hasPermission(
+      roleCodes[0] || '',
+      'PAYMENT',
+      'create'
+    );
+    if (!hasPermissionResult) {
+      throw new Error('No tiene permisos para registrar pagos');
+    }
+
+    // Validar monto positivo
+    if (DecimalHelpers.isLessThan(amount, DecimalHelpers.zero())) {
+      throw new Error('El monto no puede ser negativo');
+    }
+    if (amount.equals(DecimalHelpers.zero())) {
+      throw new Error('El monto no puede ser cero');
+    }
+
+    // Validar cuotas pendientes si se especifican
+    let pendingCharges: Prisma.StudentChargeGetPayload<{}>[] = [];
+    let totalDebt = DecimalHelpers.zero();
+
+    if (chargeIds && chargeIds.length > 0) {
+      pendingCharges = await prisma.studentCharge.findMany({
+        where: {
+          id: { in: chargeIds },
+          studentId,
+          status: { in: ['PENDING', 'PARTIAL'] }
+        }
+      });
+
+      if (pendingCharges.length !== chargeIds.length) {
+        throw new Error('Algunas cuotas no existen o no están pendientes');
+      }
+
+      totalDebt = pendingCharges.reduce(
+        (acc: Decimal, charge) => DecimalHelpers.add(acc, DecimalHelpers.subtract(charge.finalAmount, charge.paidAmount)),
+        DecimalHelpers.zero()
+      );
+
+      // Validar que el monto no supere la deuda seleccionada
+      if (DecimalHelpers.isGreaterThan(amount, totalDebt)) {
+        throw new Error('El monto del pago no puede superar la deuda seleccionada');
+      }
+    } else {
+      // Si no se especifican cuotas, obtener todas las pendientes
+      pendingCharges = await prisma.studentCharge.findMany({
+        where: {
+          studentId,
+          status: { in: ['PENDING', 'PARTIAL'] }
+        },
+        orderBy: { dueDate: 'asc' }
+      });
+
+      totalDebt = pendingCharges.reduce(
+        (acc: Decimal, charge) => DecimalHelpers.add(acc, DecimalHelpers.subtract(charge.finalAmount, charge.paidAmount)),
+        DecimalHelpers.zero()
+      );
+
+      if (DecimalHelpers.isGreaterThan(amount, totalDebt)) {
+        throw new Error('El monto del pago no puede superar la deuda total del alumno');
+      }
+    }
+
+    // Validar referencia duplicada si se proporciona
+    if (reference) {
+      const existingPayment = await prisma.payment.findFirst({
+        where: {
+          method,
+          reference,
+          isCancelled: false
+        }
+      });
+      if (existingPayment) {
+        throw new Error('Ya existe un pago con esta referencia');
+      }
+    }
+
+    // Ejecutar registro de pago y allocations en transacción atómica
+    const result = await prisma.$transaction(async (tx) => {
+      // Crear pago
+      const payment = await tx.payment.create({
+        data: {
+          studentId,
+          amount,
+          method: method,
+          reference,
+          paidAt: paidAt || new Date(),
+          notes,
+          userId,
+          academicTermId: pendingCharges[0]?.academicTermId || null
+        }
+      });
+
+      // Asignar pago a cuotas (FIFO automático si no se especifican cuotas)
+      const allocations = await this.allocatePaymentInternal(
+        payment.id,
+        amount,
+        pendingCharges,
+        tx
+      );
+
+      // Crear movimiento financiero
+      const movement = await tx.financialMovement.create({
+        data: {
+          studentId,
+          movementType: 'PAYMENT',
+          amount,
+          entityType: 'Payment',
+          entityId: payment.id,
+          description: `Pago de ${student.user.firstName} ${student.user.lastName} - ${method}`,
+          balanceBefore: DecimalHelpers.zero(),
+          balanceAfter: DecimalHelpers.zero(),
+          userId
+        }
+      });
+
+      return { payment, allocations, movement };
+    });
+
+    // Registrar auditoría
+    await auditLog({
+      action: AuditAction.CREATE,
+      entityType: 'Payment',
+      description: `Registró pago de ${student.user.firstName} ${student.user.lastName} - $${amount.toString()}`,
+      userId,
+      metadata: {
+        paymentId: result.payment.id,
+        studentId,
+        studentName: `${student.user.firstName} ${student.user.lastName}`,
+        amount: amount.toString(),
+        method,
+        reference,
+        chargeIds: result.allocations.map(a => a.chargeId),
+        allocations: result.allocations.map(a => ({ chargeId: a.chargeId, amount: a.amount.toString() }))
+      }
+    });
+
+    return {
+      payment: result.payment,
+      allocations: result.allocations,
+      movement: result.movement
+    };
+  }
+
+  /**
+   * Asignar pago a cuotas (helper interno)
+   */
+  private async allocatePaymentInternal(
+    paymentId: string,
+    paymentAmount: Decimal,
+    charges: Prisma.StudentChargeGetPayload<{}>[],
+    tx: Prisma.TransactionClient
+  ): Promise<PaymentAllocation[]> {
+    const allocations: PaymentAllocation[] = [];
+    let remainingAmount = paymentAmount;
+
+    // Ordenar cuotas por fecha de vencimiento (FIFO)
+    const sortedCharges = [...charges].sort((a, b) => {
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return a.dueDate.getTime() - b.dueDate.getTime();
+    });
+
+    for (const charge of sortedCharges) {
+      if (DecimalHelpers.isLessThan(remainingAmount, DecimalHelpers.zero()) || remainingAmount.equals(DecimalHelpers.zero())) {
+        break;
+      }
+
+      const chargeBalance = DecimalHelpers.subtract(charge.finalAmount, charge.paidAmount);
+      if (DecimalHelpers.isLessThan(chargeBalance, DecimalHelpers.zero()) || chargeBalance.equals(DecimalHelpers.zero())) {
+        continue;
+      }
+
+      const allocationAmount = DecimalHelpers.isLessThan(remainingAmount, chargeBalance)
+        ? remainingAmount
+        : chargeBalance;
+
+      // Crear allocation
+      await tx.paymentAllocation.create({
+        data: {
+          paymentId,
+          chargeId: charge.id,
+          amount: allocationAmount
+        }
+      });
+
+      // Actualizar cuota
+      const newPaidAmount = DecimalHelpers.add(charge.paidAmount, allocationAmount);
+      let newStatus: ChargeStatus = charge.status;
+
+      if (newPaidAmount.equals(charge.finalAmount)) {
+        newStatus = ChargeStatus.PAID;
+      } else if (DecimalHelpers.isGreaterThan(newPaidAmount, DecimalHelpers.zero())) {
+        newStatus = ChargeStatus.PARTIAL;
+      }
+
+      await tx.studentCharge.update({
+        where: { id: charge.id },
+        data: {
+          paidAmount: newPaidAmount,
+          status: newStatus
+        }
+      });
+
+      allocations.push({
+        paymentId,
+        chargeId: charge.id,
+        amount: allocationAmount
+      });
+
+      remainingAmount = DecimalHelpers.subtract(remainingAmount, allocationAmount);
+    }
+
+    return allocations;
+  }
+
+  /**
+   * Anular un pago
+   */
+  async cancelPayment(paymentId: string, reason: string, userId: string): Promise<void> {
+    // Validar pago existente
+    const payment = await prisma.payment.findUnique({
+      where: { id: paymentId },
+      include: {
+        allocations: {
+          include: { charge: true }
+        },
+        student: { include: { user: true } }
+      }
+    });
+
+    if (!payment) {
+      throw new Error('Pago no encontrado');
+    }
+
+    if (payment.isCancelled) {
+      throw new Error('El pago ya está anulado');
+    }
+
+    // Validar permisos
+    const userRoles = await prisma.userRole.findMany({
+      where: { userId },
+      include: { role: true }
+    });
+    const roleCodes = userRoles.map(ur => ur.role.code);
+    const hasPermissionResult = await hasPermission(
+      roleCodes[0] || '',
+      'PAYMENT',
+      'delete'
+    );
+    if (!hasPermissionResult) {
+      throw new Error('No tiene permisos para anular pagos');
+    }
+
+    // Guardar valores anteriores para auditoría
+    const previousValues = {
+      amount: payment.amount.toString(),
+      method: payment.method,
+      reference: payment.reference,
+      allocations: payment.allocations.map(a => ({
+        chargeId: a.chargeId,
+        amount: a.amount.toString()
+      }))
+    };
+
+    // Ejecutar anulación en transacción atómica
+    await prisma.$transaction(async (tx) => {
+      // Revertir allocations
+      for (const allocation of payment.allocations) {
+        const charge = allocation.charge;
+        const newPaidAmount = DecimalHelpers.subtract(charge.paidAmount, allocation.amount);
+        let newStatus: ChargeStatus = charge.status;
+
+        if (newPaidAmount.equals(DecimalHelpers.zero())) {
+          newStatus = ChargeStatus.PENDING;
+        } else if (DecimalHelpers.isGreaterThan(newPaidAmount, DecimalHelpers.zero())) {
+          newStatus = ChargeStatus.PARTIAL;
+        }
+
+        await tx.studentCharge.update({
+          where: { id: charge.id },
+          data: {
+            paidAmount: newPaidAmount,
+            status: newStatus
+          }
+        });
+
+        // Eliminar allocation
+        await tx.paymentAllocation.delete({
+          where: {
+            paymentId_chargeId: {
+              paymentId,
+              chargeId: allocation.chargeId
+            }
+          }
+        });
+      }
+
+      // Marcar pago como anulado
+      await tx.payment.update({
+        where: { id: paymentId },
+        data: {
+          isCancelled: true,
+          cancelledAt: new Date(),
+          cancelledBy: userId,
+          cancelledReason: reason
+        }
+      });
+
+      // Crear movimiento financiero de cancelación
+      await tx.financialMovement.create({
+        data: {
+          studentId: payment.studentId,
+          movementType: 'CANCELLATION',
+          amount: payment.amount,
+          entityType: 'Payment',
+          entityId: paymentId,
+          description: `Anulación de pago de ${payment.student.user.firstName} ${payment.student.user.lastName} - $${payment.amount.toString()}`,
+          balanceBefore: DecimalHelpers.zero(),
+          balanceAfter: DecimalHelpers.zero(),
+          userId
+        }
+      });
+    });
+
+    // Registrar auditoría
+    await auditLog({
+      action: AuditAction.DELETE,
+      entityType: 'Payment',
+      description: `Anuló pago de ${payment.student.user.firstName} ${payment.student.user.lastName} - $${payment.amount.toString()}`,
+      userId,
+      metadata: {
+        paymentId,
+        studentId: payment.studentId,
+        studentName: `${payment.student.user.firstName} ${payment.student.user.lastName}`,
+        reason,
+        previousValues,
+        newValues: {
+          isCancelled: true,
+          cancelledAt: new Date().toISOString(),
+          cancelledBy: userId
+        }
+      }
+    });
+  }
+
+  /**
+   * Obtener pagos de un alumno
+   */
+  async getStudentPayments(studentId: string): Promise<Payment[]> {
+    const payments = await prisma.payment.findMany({
+      where: {
+        studentId,
+        isCancelled: false
+      },
+      include: {
+        allocations: {
+          include: { charge: true }
+        },
+        user: true
+      },
+      orderBy: { paidAt: 'desc' }
+    });
+
+    return payments.map(p => ({
+      id: p.id,
+      studentId: p.studentId,
+      amount: p.amount,
+      method: p.method,
+      reference: p.reference || undefined,
+      paidAt: p.paidAt,
+      notes: p.notes || undefined,
+      createdAt: p.createdAt,
+      userId: p.userId || undefined,
+      academicTermId: p.academicTermId || undefined,
+      isCancelled: p.isCancelled,
+      cancelledAt: p.cancelledAt || undefined,
+      cancelledBy: p.cancelledBy || undefined,
+      cancelledReason: p.cancelledReason || undefined,
+      allocations: p.allocations.map(a => ({
+        paymentId: a.paymentId,
+        chargeId: a.chargeId,
+        amount: a.amount,
+        charge: a.charge
+      }))
     }));
   }
 }

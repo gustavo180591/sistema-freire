@@ -680,14 +680,15 @@ async function runAllTests() {
 
 		console.log('\n===========================================================');
 		console.log('✅ Todas las pruebas pasaron exitosamente');
-
-		await cleanupTestData();
 	} catch (error) {
 		console.error('\n===========================================================');
 		console.error('❌ Pruebas fallaron');
 		console.error(error);
-		await cleanupTestData();
 		process.exit(1);
+	} finally {
+		console.log('\n🧹 Limpiando datos de prueba...');
+		await cleanupTestData();
+		await prisma.$disconnect();
 	}
 }
 

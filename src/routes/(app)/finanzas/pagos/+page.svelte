@@ -13,8 +13,16 @@
 	let notes = $state('');
 	let selectedCharges = $state<string[]>([]);
 
+	type PendingCharge = {
+		id: string;
+		concept: string;
+		periodLabel: string;
+		finalAmount: string | number;
+		dueDate: string;
+	};
+
 	// Obtener cuotas pendientes del alumno seleccionado
-	let pendingCharges = $state<any[]>([]);
+	let pendingCharges = $state<PendingCharge[]>([]);
 
 	$effect(() => {
 		if (selectedStudent) {

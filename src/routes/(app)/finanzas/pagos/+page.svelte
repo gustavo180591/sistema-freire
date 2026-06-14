@@ -14,7 +14,7 @@
 	let selectedCharges = $state<string[]>([]);
 
 	// Obtener cuotas pendientes del alumno seleccionado
-	let pendingCharges = $state<Prisma.JsonValue[]>([]);
+	let pendingCharges = $state<any[]>([]);
 
 	$effect(() => {
 		if (selectedStudent) {

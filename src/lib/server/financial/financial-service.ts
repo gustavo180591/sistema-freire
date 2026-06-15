@@ -1005,20 +1005,6 @@ export class FinancialService {
   }
 
   /**
-   * Anular recibo
-   */
-  async cancelReceipt(receiptId: string, reason: string, userId: string, tx?: Prisma.TransactionClient): Promise<void> {
-    throw new Error('Not implemented yet - Phase 4');
-  }
-
-  /**
-   * Reimprimir recibo (incrementa contador)
-   */
-  async reprintReceipt(receiptId: string, tx?: Prisma.TransactionClient): Promise<void> {
-    throw new Error('Not implemented yet - Phase 4');
-  }
-
-  /**
    * Obtener siguiente número de recibo (transaccional y seguro contra concurrencia)
    */
   async getNextReceiptNumber(year: number, tx?: Prisma.TransactionClient): Promise<number> {
@@ -1600,6 +1586,440 @@ export class FinancialService {
       }))
     }));
   }
+
+	// Receipt methods
+
+	async issueReceipt(params: {
+		paymentIds: string[];
+		userId: string;
+		observations?: string;
+	}): Promise<{ receipt: Receipt; items: ReceiptItem[] }> {
+		const { paymentIds, userId, observations } = params;
+
+		// Validate permissions
+		const userRoles = await prisma.userRole.findMany({
+			where: { userId },
+			include: { role: true }
+		});
+		const roleCodes = userRoles.map((ur) => ur.role.code);
+		const canIssue = await hasPermission(roleCodes[0] || '', 'RECEIPT', 'create');
+		if (!canIssue) {
+			throw new Error('No tiene permisos para emitir recibos');
+		}
+
+		// Validate payments exist and are not cancelled
+		const payments = await prisma.payment.findMany({
+			where: {
+				id: { in: paymentIds },
+				isCancelled: false
+			},
+			include: {
+				student: {
+					include: { user: true }
+				},
+				allocations: {
+					include: {
+						charge: {
+							include: { concept: true }
+						}
+					}
+				}
+			}
+		});
+
+		if (payments.length === 0) {
+			throw new Error('No se encontraron pagos válidos para emitir recibo');
+		}
+
+		if (payments.length !== paymentIds.length) {
+			throw new Error('Algunos pagos no existen o están anulados');
+		}
+
+		// Validate all payments belong to same student
+		const studentIds = new Set(payments.map((p) => p.studentId));
+		if (studentIds.size > 1) {
+			throw new Error('Todos los pagos deben pertenecer al mismo alumno');
+		}
+
+		const student = payments[0].student;
+		const studentId = student.id;
+
+		// Check if payments already have active receipts
+		const paymentsWithReceipts = await prisma.payment.findMany({
+			where: {
+				id: { in: paymentIds },
+				receiptId: { not: null }
+			},
+			select: { id: true, receiptId: true }
+		});
+
+		// Check if any of these receipts are still ISSUED
+		if (paymentsWithReceipts.length > 0) {
+			const receiptIds = paymentsWithReceipts.map((p) => p.receiptId).filter(Boolean) as string[];
+			if (receiptIds.length > 0) {
+				// Use raw query to avoid Prisma enum type issues
+				// Prisma generates incorrect SQL when filtering by enum status
+				// This is a safe parameterized query
+				const activeReceipts = await prisma.$queryRaw<Array<{ id: string }>>`
+					SELECT id FROM receipts
+					WHERE id = ANY(${receiptIds})
+					AND status = 'ISSUED'
+				`;
+
+				if (activeReceipts.length > 0) {
+					throw new Error('Algunos pagos ya tienen recibos activos emitidos');
+				}
+			}
+		}
+
+		// Get current year
+		const currentYear = new Date().getFullYear();
+
+		// Calculate total and generate receipt items
+		const items: Array<{
+			chargeId: string | null;
+			concept: string;
+			periodLabel: string | null;
+			baseAmount: Decimal;
+			lateFeeAmount: Decimal;
+			discountAmount: Decimal;
+			finalAmount: Decimal;
+		}> = [];
+		let totalAmount = new Decimal(0);
+		let paymentMethod: PaymentMethod | null = null;
+		let paymentReference: string | null = null;
+
+		for (const payment of payments) {
+			if (!paymentMethod) {
+				paymentMethod = payment.method;
+				paymentReference = payment.reference;
+			}
+
+			for (const allocation of payment.allocations) {
+				const charge = allocation.charge;
+				const item = {
+					chargeId: charge.id,
+					concept: charge.concept.name,
+					periodLabel: charge.periodLabel,
+					baseAmount: charge.amount,
+					lateFeeAmount: charge.lateFeeApplied,
+					discountAmount: charge.discountApplied.add(charge.scholarshipApplied),
+					finalAmount: allocation.amount
+				};
+				items.push(item);
+				totalAmount = totalAmount.add(allocation.amount);
+			}
+		}
+
+		// Issue receipt in transaction
+		const result = await prisma.$transaction(async (tx) => {
+			// Get or create receipt number for current year
+			let receiptNumberRecord = await tx.receiptNumber.findUnique({
+				where: { year: currentYear }
+			});
+
+			if (!receiptNumberRecord) {
+				receiptNumberRecord = await tx.receiptNumber.create({
+					data: {
+						year: currentYear,
+						lastNumber: 0
+					}
+				});
+			}
+
+			// Increment receipt number
+			const newReceiptNumber = receiptNumberRecord.lastNumber + 1;
+			await tx.receiptNumber.update({
+				where: { year: currentYear },
+				data: { lastNumber: newReceiptNumber }
+			});
+
+			// Create receipt
+			const receipt = await tx.receipt.create({
+				data: {
+					receiptNumber: newReceiptNumber,
+					receiptYear: currentYear,
+					studentId,
+					studentName: `${student.user.firstName} ${student.user.lastName}`,
+					studentDni: student.dni || undefined,
+					studentAddress: student.address || undefined,
+					totalAmount,
+					paymentMethod: paymentMethod!,
+					paymentReference,
+					issuedBy: userId,
+					issuedByName: await this.getUserName(userId),
+					observations,
+					status: 'ISSUED',
+					printCount: 0,
+					originalCopy: true
+				}
+			});
+
+			// Create receipt items
+			const receiptItems = await tx.receiptItem.createMany({
+				data: items.map((item) => ({
+					...item,
+					receiptId: receipt.id
+				}))
+			});
+
+			// Link payments to receipt
+			await tx.payment.updateMany({
+				where: {
+					id: { in: paymentIds }
+				},
+				data: {
+					receiptId: receipt.id
+				}
+			});
+
+			// Create financial movement
+			await tx.financialMovement.create({
+				data: {
+					studentId,
+					movementType: 'RECEIPT',
+					entityType: 'Receipt',
+					entityId: receipt.id,
+					amount: totalAmount,
+					description: `Recibo #${newReceiptNumber}/${currentYear}`,
+					userId,
+					balanceBefore: new Decimal(0),
+					balanceAfter: new Decimal(0)
+				}
+			});
+
+			// Audit
+			await auditLog({
+				userId,
+				action: 'CREATE',
+				entityType: 'Receipt',
+				entityId: receipt.id,
+				description: `Emitió recibo #${newReceiptNumber}/${currentYear} para ${student.user.firstName} ${student.user.lastName}`,
+				metadata: {
+					receiptNumber: newReceiptNumber,
+					receiptYear: currentYear,
+					studentId,
+					studentName: `${student.user.firstName} ${student.user.lastName}`,
+					totalAmount: totalAmount.toString(),
+					paymentIds,
+					paymentMethod,
+					observations
+				}
+			});
+
+			return { receipt, itemsCreated: receiptItems.count };
+		});
+
+		// Fetch created items
+		const createdItems = await prisma.receiptItem.findMany({
+			where: { receiptId: result.receipt.id }
+		});
+
+		return { receipt: result.receipt as any, items: createdItems as any };
+	}
+
+	async cancelReceipt(params: {
+		receiptId: string;
+		reason: string;
+		userId: string;
+	}): Promise<void> {
+		const { receiptId, reason, userId } = params;
+
+		// Validate permissions
+		const userRoles = await prisma.userRole.findMany({
+			where: { userId },
+			include: { role: true }
+		});
+		const roleCodes = userRoles.map((ur) => ur.role.code);
+		const canCancel = await hasPermission(roleCodes[0] || '', 'RECEIPT', 'delete');
+		if (!canCancel) {
+			throw new Error('No tiene permisos para anular recibos');
+		}
+
+		// Get receipt
+		const receipt = await prisma.receipt.findUnique({
+			where: { id: receiptId }
+		});
+
+		if (!receipt) {
+			throw new Error('Recibo no encontrado');
+		}
+
+		if (receipt.status === 'CANCELLED') {
+			throw new Error('El recibo ya está anulado');
+		}
+
+		// Cancel receipt in transaction
+		await prisma.$transaction(async (tx) => {
+			// Update receipt status
+			await tx.receipt.update({
+				where: { id: receiptId },
+				data: {
+					status: 'CANCELLED',
+					cancelledAt: new Date(),
+					cancelledBy: userId,
+					cancelledReason: reason
+				}
+			});
+
+			// Create financial movement for cancellation
+			await tx.financialMovement.create({
+				data: {
+					studentId: receipt.studentId,
+					movementType: 'CANCELLATION',
+					entityType: 'Receipt',
+					entityId: receiptId,
+					amount: receipt.totalAmount.neg(),
+					description: `Anulación de recibo #${receipt.receiptNumber}/${receipt.receiptYear}`,
+					userId,
+					balanceBefore: new Decimal(0),
+					balanceAfter: new Decimal(0)
+				}
+			});
+
+			// Audit
+			await auditLog({
+				userId,
+				action: 'DELETE',
+				entityType: 'Receipt',
+				entityId: receiptId,
+				description: `Anuló recibo #${receipt.receiptNumber}/${receipt.receiptYear} para ${receipt.studentName}`,
+				metadata: {
+					receiptNumber: receipt.receiptNumber,
+					receiptYear: receipt.receiptYear,
+					studentId: receipt.studentId,
+					studentName: receipt.studentName,
+					totalAmount: receipt.totalAmount.toString(),
+					reason,
+					oldStatus: receipt.status,
+					newStatus: 'CANCELLED'
+				}
+			});
+		});
+	}
+
+	async reprintReceipt(params: {
+		receiptId: string;
+		userId: string;
+	}): Promise<Receipt> {
+		const { receiptId, userId } = params;
+
+		// Validate permissions
+		const userRoles = await prisma.userRole.findMany({
+			where: { userId },
+			include: { role: true }
+		});
+		const roleCodes = userRoles.map((ur) => ur.role.code);
+		const canView = await hasPermission(roleCodes[0] || '', 'RECEIPT', 'read');
+		if (!canView) {
+			throw new Error('No tiene permisos para ver recibos');
+		}
+
+		// Get receipt
+		const receipt = await prisma.receipt.findUnique({
+			where: { id: receiptId }
+		});
+
+		if (!receipt) {
+			throw new Error('Recibo no encontrado');
+		}
+
+		// Increment print count
+		const updatedReceipt = await prisma.receipt.update({
+			where: { id: receiptId },
+			data: {
+				printCount: receipt.printCount + 1
+			}
+		});
+
+		// Audit
+		await auditLog({
+			userId,
+			action: 'UPDATE',
+			entityType: 'Receipt',
+			entityId: receiptId,
+			description: `Reimprimió recibo #${receipt.receiptNumber}/${receipt.receiptYear}`,
+			metadata: {
+				receiptNumber: receipt.receiptNumber,
+				receiptYear: receipt.receiptYear,
+				studentId: receipt.studentId,
+				studentName: receipt.studentName,
+				printCount: updatedReceipt.printCount
+			}
+		});
+
+		return updatedReceipt as any;
+	}
+
+	async getReceipt(receiptId: string, userId: string): Promise<Receipt | null> {
+		// Validate permissions
+		const userRoles = await prisma.userRole.findMany({
+			where: { userId },
+			include: { role: true }
+		});
+		const roleCodes = userRoles.map((ur) => ur.role.code);
+		const canView = await hasPermission(roleCodes[0] || '', 'RECEIPT', 'read');
+		if (!canView) {
+			throw new Error('No tiene permisos para ver recibos');
+		}
+
+		return prisma.receipt.findUnique({
+			where: { id: receiptId },
+			include: {
+				items: true
+			}
+		}) as any;
+	}
+
+	async getStudentReceipts(studentId: string, userId: string): Promise<Receipt[]> {
+		// Check if user is the student or has permission
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			include: { student: true }
+		});
+
+		if (!user) {
+			throw new Error('Usuario no encontrado');
+		}
+
+		const isStudent = user.student?.id === studentId;
+		const userRoles = await prisma.userRole.findMany({
+			where: { userId },
+			include: { role: true }
+		});
+		const roleCodes = userRoles.map((ur) => ur.role.code);
+		const canView = await hasPermission(roleCodes[0] || '', 'RECEIPT', 'read');
+
+		if (!isStudent && !canView) {
+			throw new Error('No tiene permisos para ver recibos de este alumno');
+		}
+
+		return prisma.receipt.findMany({
+			where: { studentId },
+			include: {
+				items: true
+			},
+			orderBy: {
+				issuedAt: 'desc'
+			}
+		}) as any;
+	}
+
+	private async getUserName(userId: string): Promise<string> {
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			select: {
+				firstName: true,
+				lastName: true
+			}
+		});
+
+		if (!user) {
+			return 'Usuario desconocido';
+		}
+
+		return `${user.firstName} ${user.lastName}`;
+	}
 }
 
 // Singleton instance

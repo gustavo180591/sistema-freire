@@ -25,7 +25,8 @@ export const ENTITIES = [
 	'COMMUNICATION',
 	'EVALUATION',
 	'SCHEDULE',
-	'DOCUMENT'
+	'DOCUMENT',
+	'FINANCIAL_BLOCK'
 ] as const;
 
 export type Entity = (typeof ENTITIES)[number];
@@ -171,10 +172,11 @@ function getEntityLabel(entity: Entity): string {
 		ATTENDANCE: 'asistencia',
 		STUDENT_FOLLOW_UP: 'seguimientos',
 		MATERIAL: 'materiales',
-		COMMUNICATION: 'comunicados',
+		COMMUNICATION: 'comunicaciones',
 		EVALUATION: 'evaluaciones',
 		SCHEDULE: 'horarios',
-		DOCUMENT: 'documentos'
+		DOCUMENT: 'documentos',
+		FINANCIAL_BLOCK: 'bloqueos financieros'
 	};
 	return labels[entity] || entity.toLowerCase();
 }

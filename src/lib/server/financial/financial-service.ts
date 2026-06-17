@@ -1014,9 +1014,323 @@ export class FinancialService {
   /**
    * Calcular resumen de deuda de un alumno
    */
-  async calculateDebtSummary(studentId: string): Promise<DebtSummary> {
-    throw new Error('Not implemented yet - Phase 5');
-  }
+  async calculateDebtSummary(studentId: string): Promise<{
+		totalDebt: Decimal;
+		overdueDebt: Decimal;
+		pendingBalance: Decimal;
+		pendingCharges: number;
+		overdueCharges: number;
+		partialCharges: number;
+		paidCharges: number;
+		cancelledCharges: number;
+	}> {
+		const charges = await prisma.studentCharge.findMany({
+			where: { studentId },
+			include: {
+				allocations: true
+			}
+		});
+
+		let totalDebt = new Decimal(0);
+		let overdueDebt = new Decimal(0);
+		let pendingBalance = new Decimal(0);
+		let pendingCharges = 0;
+		let overdueCharges = 0;
+		let partialCharges = 0;
+		let paidCharges = 0;
+		let cancelledCharges = 0;
+		const now = new Date();
+
+		for (const charge of charges) {
+			const finalAmount = charge.finalAmount;
+			const paidAmount = charge.paidAmount;
+			const remaining = finalAmount.sub(paidAmount);
+
+			// Count by status
+			if (charge.status === 'CANCELLED') {
+				cancelledCharges++;
+				continue;
+			}
+
+			if (charge.status === 'PAID') {
+				paidCharges++;
+				continue;
+			}
+
+			if (remaining.gt(0)) {
+				pendingBalance = pendingBalance.add(remaining);
+				totalDebt = totalDebt.add(remaining);
+
+				// Check if overdue
+				if (charge.dueDate && new Date(charge.dueDate) < now) {
+					overdueDebt = overdueDebt.add(remaining);
+					overdueCharges++;
+				} else {
+					pendingCharges++;
+				}
+
+				// Check if partial payment
+				if (paidAmount.gt(0)) {
+					partialCharges++;
+				}
+			}
+		}
+
+		return {
+			totalDebt,
+			overdueDebt,
+			pendingBalance,
+			pendingCharges,
+			overdueCharges,
+			partialCharges,
+			paidCharges,
+			cancelledCharges
+		};
+	}
+
+	async getStudentFinancialStatus(studentId: string): Promise<{
+		student: any;
+		pendingCharges: any[];
+		overdueCharges: any[];
+		payments: any[];
+		receipts: any[];
+		totalDebt: Decimal;
+		overdueDebt: Decimal;
+		hasActiveBlock: boolean;
+		blockRules: string[];
+	}> {
+		const student = await prisma.student.findUnique({
+			where: { id: studentId },
+			include: {
+				user: true
+			}
+		});
+
+		if (!student) {
+			throw new Error('Alumno no encontrado');
+		}
+
+		const debtSummary = await this.calculateDebtSummary(studentId);
+
+		const pendingCharges = await prisma.studentCharge.findMany({
+			where: {
+				studentId,
+				status: { in: ['PENDING', 'PARTIAL'] }
+			},
+			include: {
+				concept: true,
+				academicTerm: true
+			},
+			orderBy: {
+				dueDate: 'asc'
+			}
+		});
+
+		const overdueCharges = await prisma.studentCharge.findMany({
+			where: {
+				studentId,
+				dueDate: { lt: new Date() },
+				status: { in: ['PENDING', 'PARTIAL'] }
+			},
+			include: {
+				concept: true,
+				academicTerm: true
+			}
+		});
+
+		const payments = await prisma.payment.findMany({
+			where: {
+				studentId,
+				isCancelled: false
+			},
+			include: {
+				allocations: true
+			},
+			orderBy: {
+				paidAt: 'desc'
+			}
+		});
+
+		// Use raw query to avoid Prisma enum type issues
+		const receipts = await prisma.$queryRaw<Array<any>>`
+			SELECT * FROM receipts
+			WHERE "studentId" = ${studentId}
+			AND status = 'ISSUED'
+			ORDER BY "issuedAt" DESC
+		`;
+
+		const activeBlocks = await prisma.financialBlock.findMany({
+			where: {
+				studentId,
+				isActive: true
+			}
+		});
+
+		const blockRules: string[] = [];
+		if (activeBlocks.length > 0) {
+			blockRules.push('Deuda vencida');
+			if (debtSummary.overdueCharges > 0) {
+				blockRules.push(`${debtSummary.overdueCharges} cuotas vencidas`);
+			}
+		}
+
+		return {
+			student,
+			pendingCharges,
+			overdueCharges,
+			payments,
+			receipts,
+			totalDebt: debtSummary.totalDebt,
+			overdueDebt: debtSummary.overdueDebt,
+			hasActiveBlock: activeBlocks.length > 0,
+			blockRules
+		};
+	}
+
+	async evaluateFinancialBlocks(
+		studentId: string,
+		userId: string,
+		tx?: Prisma.TransactionClient
+	): Promise<void> {
+		const client = tx || prisma;
+		const debtSummary = await this.calculateDebtSummary(studentId);
+
+		// Get configuration rules
+		const config = await client.financialConfig.findMany({
+			where: { category: 'BLOCK_RULES' }
+		});
+
+		const rules = config.reduce((acc, cfg) => {
+			acc[cfg.key] = cfg.value;
+			return acc;
+		}, {} as Record<string, any>);
+
+		// Default rules if not configured
+		const blockOnOverdue = rules.blockOnOverdue !== false;
+		const blockOverdueAmount = rules.blockOverdueAmount ? new Decimal(rules.blockOverdueAmount) : new Decimal(0);
+		const blockOverdueCharges = rules.blockOverdueCharges || 1;
+		const graceDays = rules.graceDays || 0;
+
+		// Check if student should be blocked
+		let shouldBlock = false;
+		let blockReason = '';
+		let blockType: FinancialBlockType = 'ALL';
+		let overdueDays = 0;
+
+		if (blockOnOverdue && debtSummary.overdueDebt.gt(0)) {
+			// Check grace period
+			const overdueCharges = await client.studentCharge.findMany({
+				where: {
+					studentId,
+					dueDate: { lt: new Date() },
+					status: { in: ['PENDING', 'PARTIAL'] }
+				}
+			});
+
+			if (overdueCharges.length > 0) {
+				const mostOverdue = overdueCharges.reduce((max, charge) => {
+					const days = Math.floor((new Date().getTime() - new Date(charge.dueDate!).getTime()) / (1000 * 60 * 60 * 24));
+					return days > max ? days : max;
+				}, 0);
+
+				overdueDays = mostOverdue;
+
+				if (overdueDays > graceDays) {
+					shouldBlock = true;
+					blockReason = `Deuda vencida de ${debtSummary.overdueDebt.toString()} ARS (${debtSummary.overdueCharges} cuotas, ${overdueDays} días)`;
+
+					// Determine block type based on amount/charges
+					if (debtSummary.overdueDebt.gte(blockOverdueAmount) || debtSummary.overdueCharges >= blockOverdueCharges) {
+						blockType = 'ALL';
+					} else {
+						blockType = 'ENROLLMENT';
+					}
+				}
+			}
+		}
+
+		// Get existing active blocks
+		const existingBlocks = await client.financialBlock.findMany({
+			where: {
+				studentId,
+				isActive: true
+			}
+		});
+
+		if (shouldBlock) {
+			// Check if block already exists
+			const existingBlock = existingBlocks.find((b) => b.blockType === blockType);
+
+			if (!existingBlock) {
+				// Create new block
+				await client.financialBlock.create({
+					data: {
+						studentId,
+						blockType,
+						blockReason,
+						blockedBy: userId,
+						blockedByName: await this.getUserName(userId),
+						debtAmount: debtSummary.overdueDebt,
+						overdueDays,
+						isActive: true
+					}
+				});
+
+				// Audit
+				await auditLog({
+					userId,
+					action: 'CREATE',
+					entityType: 'FinancialBlock',
+					entityId: studentId,
+					description: `Bloqueó a alumno por deuda: ${blockReason}`,
+					metadata: {
+						studentId,
+						blockType,
+						blockReason,
+						debtAmount: debtSummary.overdueDebt.toString(),
+						overdueCharges: debtSummary.overdueCharges,
+						overdueDays
+					}
+				});
+			} else {
+				// Update existing block
+				await client.financialBlock.update({
+					where: { id: existingBlock.id },
+					data: {
+						debtAmount: debtSummary.overdueDebt,
+						overdueDays,
+						blockReason
+					}
+				});
+			}
+		} else {
+			// Deactivate blocks if debt is resolved
+			for (const block of existingBlocks) {
+				await client.financialBlock.update({
+					where: { id: block.id },
+					data: {
+						isActive: false,
+						unblockedAt: new Date(),
+						unblockedBy: userId
+					}
+				});
+
+				// Audit
+				await auditLog({
+					userId,
+					action: 'UPDATE',
+					entityType: 'FinancialBlock',
+					entityId: block.id,
+					description: `Desbloqueó a alumno (deuda resuelta)`,
+					metadata: {
+						studentId,
+						blockType: block.blockType,
+						previousReason: block.blockReason
+					}
+				});
+			}
+		}
+	}
 
   /**
    * Verificar si un alumno tiene bloqueos activos
@@ -1024,6 +1338,180 @@ export class FinancialService {
   async checkBlockStatus(studentId: string, blockType?: FinancialBlockType): Promise<BlockStatus> {
     throw new Error('Not implemented yet - Phase 5');
   }
+
+	async checkFinancialBlock(studentId: string, blockType?: FinancialBlockType): Promise<{
+		blocked: boolean;
+		reason: string | null;
+		debtAmount: Decimal | null;
+		blockedAt: Date | null;
+		blockType: FinancialBlockType | null;
+		hasException: boolean;
+		exceptionBy: string | null;
+		exceptionReason: string | null;
+	}> {
+		const where: any = {
+			studentId,
+			isActive: true
+		};
+
+		if (blockType) {
+			where.blockType = blockType;
+		}
+
+		const block = await prisma.financialBlock.findFirst({
+			where,
+			orderBy: {
+				blockedAt: 'desc'
+			}
+		});
+
+		if (!block) {
+			return {
+				blocked: false,
+				reason: null,
+				debtAmount: null,
+				blockedAt: null,
+				blockType: null,
+				hasException: false,
+				exceptionBy: null,
+				exceptionReason: null
+			};
+		}
+
+		return {
+			blocked: !block.exceptionGranted,
+			reason: block.blockReason,
+			debtAmount: block.debtAmount,
+			blockedAt: block.blockedAt,
+			blockType: block.blockType,
+			hasException: block.exceptionGranted,
+			exceptionBy: block.exceptionBy,
+			exceptionReason: block.exceptionReason
+		};
+	}
+
+	async createFinancialBlockException(params: {
+		studentId: string;
+		blockType: FinancialBlockType;
+		reason: string;
+		userId: string;
+		expiresAt?: Date;
+	}): Promise<void> {
+		const { studentId, blockType, reason, userId, expiresAt } = params;
+
+		// Validate permissions
+		const userRoles = await prisma.userRole.findMany({
+			where: { userId },
+			include: { role: true }
+		});
+		const roleCodes = userRoles.map((ur) => ur.role.code);
+		const canManage = await hasPermission(roleCodes[0] || '', 'FINANCIAL_BLOCK', 'update');
+		if (!canManage) {
+			throw new Error('No tiene permisos para crear excepciones de bloqueo');
+		}
+
+		// Get active block
+		// Use raw query to avoid Prisma enum type issues
+		const blocks = await prisma.$queryRaw<Array<any>>`
+			SELECT * FROM financial_blocks
+			WHERE "studentId" = ${studentId}
+			AND "blockType" = ${blockType}
+			AND "isActive" = true
+			LIMIT 1
+		`;
+
+		if (!blocks || blocks.length === 0) {
+			throw new Error('No hay bloqueo activo de este tipo para el alumno');
+		}
+
+		const block = blocks[0];
+
+		// Update block with exception
+		await prisma.financialBlock.update({
+			where: { id: block.id },
+			data: {
+				exceptionGranted: true,
+				exceptionBy: userId,
+				exceptionAt: new Date(),
+				exceptionReason: reason
+			}
+		});
+
+		// Audit
+		await auditLog({
+			userId,
+			action: 'UPDATE',
+			entityType: 'FinancialBlock',
+			entityId: block.id,
+			description: `Otorgó excepción de bloqueo ${blockType} para alumno`,
+			metadata: {
+				studentId,
+				blockType,
+				reason,
+				expiresAt: expiresAt?.toISOString()
+			}
+		});
+	}
+
+	async revokeFinancialBlockException(params: {
+		studentId: string;
+		blockType: FinancialBlockType;
+		userId: string;
+	}): Promise<void> {
+		const { studentId, blockType, userId } = params;
+
+		// Validate permissions
+		const userRoles = await prisma.userRole.findMany({
+			where: { userId },
+			include: { role: true }
+		});
+		const roleCodes = userRoles.map((ur) => ur.role.code);
+		const canManage = await hasPermission(roleCodes[0] || '', 'FINANCIAL_BLOCK', 'update');
+		if (!canManage) {
+			throw new Error('No tiene permisos para revocar excepciones de bloqueo');
+		}
+
+		// Get active block with exception
+		// Use raw query to avoid Prisma enum type issues
+		const blocks = await prisma.$queryRaw<Array<any>>`
+			SELECT * FROM financial_blocks
+			WHERE "studentId" = ${studentId}
+			AND "blockType" = ${blockType}
+			AND "isActive" = true
+			AND "exceptionGranted" = true
+			LIMIT 1
+		`;
+
+		if (!blocks || blocks.length === 0) {
+			throw new Error('No hay excepción activa para revocar');
+		}
+
+		const block = blocks[0];
+
+		// Revoke exception
+		await prisma.financialBlock.update({
+			where: { id: block.id },
+			data: {
+				exceptionGranted: false,
+				exceptionBy: null,
+				exceptionAt: null,
+				exceptionReason: null
+			}
+		});
+
+		// Audit
+		await auditLog({
+			userId,
+			action: 'UPDATE',
+			entityType: 'FinancialBlock',
+			entityId: block.id,
+			description: `Revocó excepción de bloqueo ${blockType} para alumno`,
+			metadata: {
+				studentId,
+				blockType
+			}
+		});
+	}
 
   /**
    * Crear bloqueo financiero
@@ -1276,7 +1764,7 @@ export class FinancialService {
       }
     }
 
-    // Ejecutar registro de pago y allocations en transacción atómica
+    // Ejecutar registro de pago, allocations y recálculo de bloqueos en transacción atómica
     const result = await prisma.$transaction(async (tx) => {
       // Crear pago
       const payment = await tx.payment.create({
@@ -1314,6 +1802,9 @@ export class FinancialService {
           userId
         }
       });
+
+      // Recalculate debt and blocks within the same transaction
+      await this.evaluateFinancialBlocks(studentId, userId, tx);
 
       return { payment, allocations, movement };
     });
@@ -1522,6 +2013,9 @@ export class FinancialService {
           userId
         }
       });
+
+      // Recalculate debt and blocks within the same transaction
+      await this.evaluateFinancialBlocks(payment.studentId, userId, tx);
     });
 
     // Registrar auditoría

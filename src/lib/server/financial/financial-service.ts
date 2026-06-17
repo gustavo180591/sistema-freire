@@ -1,4 +1,4 @@
-import { Prisma, PaymentMethod, ChargeStatus, AuditAction } from '@prisma/client';
+import { Prisma, PaymentMethod, ChargeStatus, AuditAction, ReceiptStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { prisma } from '../db/prisma';
 import { auditLog } from '../audit';
@@ -8,7 +8,6 @@ import * as DecimalHelpers from './decimal-helpers';
 // Financial enum types - These match the exact values defined in prisma/schema.prisma
 // Prisma exports these enums at runtime (.prisma/client) but TypeScript types don't include them
 // These string literal types ensure type safety while matching Prisma enum values exactly
-export type ReceiptStatus = 'ISSUED' | 'CANCELLED';
 export type FinancialMovementType = 'CHARGE' | 'PAYMENT' | 'ALLOCATION' | 'RECEIPT' | 'CANCELLATION' | 'ADJUSTMENT' | 'LATE_FEE' | 'DISCOUNT' | 'SCHOLARSHIP' | 'PAYMENT_CANCELLATION';
 export type DiscountType = 'PERCENTAGE' | 'FIXED';
 export type LateFeeType = 'PERCENTAGE' | 'FIXED';
@@ -2499,6 +2498,354 @@ export class FinancialService {
 		}) as any;
 	}
 
+	async getFinancialDashboardMetrics(): Promise<{
+		totalBilled: Decimal;
+		totalCollected: Decimal;
+		totalPending: Decimal;
+		overdueDebt: Decimal;
+		studentsWithDebt: number;
+		studentsBlocked: number;
+		paymentsToday: number;
+		paymentsThisMonth: number;
+		receiptsIssued: number;
+		receiptsCancelled: number;
+	}> {
+		const now = new Date();
+		const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+		const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+		// Total facturado (suma de todas las cuotas)
+		const totalBilledResult = await prisma.studentCharge.aggregate({
+			_sum: { finalAmount: true }
+		});
+		const totalBilled = totalBilledResult._sum.finalAmount || DecimalHelpers.zero();
+
+		// Total cobrado (suma de todos los pagos no cancelados)
+		const totalCollectedResult = await prisma.payment.aggregate({
+			where: { isCancelled: false },
+			_sum: { amount: true }
+		});
+		const totalCollected = totalCollectedResult._sum.amount || DecimalHelpers.zero();
+
+		// Total pendiente (suma de saldos de cuotas pendientes/parciales)
+		const pendingChargesForTotal = await prisma.studentCharge.findMany({
+			where: { status: { in: ['PENDING', 'PARTIAL'] } }
+		});
+		const totalPending = pendingChargesForTotal.reduce((sum, charge) => {
+			return DecimalHelpers.add(sum, DecimalHelpers.subtract(charge.finalAmount, charge.paidAmount));
+		}, DecimalHelpers.zero());
+
+		// Deuda vencida (cuotas con dueDate pasado y no pagadas completamente)
+		const overdueCharges = await prisma.studentCharge.findMany({
+			where: {
+				status: { in: ['PENDING', 'PARTIAL'] },
+				dueDate: { lt: new Date() }
+			}
+		});
+		const overdueDebt = overdueCharges.reduce((sum, charge) => {
+			return DecimalHelpers.add(sum, DecimalHelpers.subtract(charge.finalAmount, charge.paidAmount));
+		}, DecimalHelpers.zero());
+
+		// Cantidad de alumnos con deuda
+		const pendingCharges = await prisma.studentCharge.findMany({
+			where: { status: { in: ['PENDING', 'PARTIAL'] } },
+			select: { studentId: true, finalAmount: true, paidAmount: true }
+		});
+		const studentsWithDebtSet = new Set(
+			pendingCharges
+				.filter((charge) => charge.finalAmount.gt(charge.paidAmount))
+				.map((charge) => charge.studentId)
+		);
+
+		// Cantidad de alumnos bloqueados
+		const studentsBlocked = await prisma.financialBlock.groupBy({
+			by: ['studentId'],
+			where: { isActive: true }
+		});
+
+		// Pagos del día
+		const paymentsToday = await prisma.payment.count({
+			where: {
+				isCancelled: false,
+				paidAt: { gte: startOfDay }
+			}
+		});
+
+		// Pagos del mes
+		const paymentsThisMonth = await prisma.payment.count({
+			where: {
+				isCancelled: false,
+				paidAt: { gte: startOfMonth }
+			}
+		});
+
+		// Recibos emitidos
+		// SECURITY NOTE: Using $queryRaw (safe parameterized) because Prisma Client cannot filter by enum ReceiptStatus
+		// The values are hardcoded (no user input) and the query is encapsulated in FinancialService
+		// Prisma generates incorrect SQL: "operator does not exist: text = \"ReceiptStatus\""
+		const receiptsIssuedResult = await prisma.$queryRaw<
+			{ count: bigint }[]
+		>`SELECT COUNT(*) as count FROM receipts WHERE status = 'ISSUED'`;
+		const receiptsIssued = Number(receiptsIssuedResult[0]?.count || 0);
+
+		// Recibos anulados
+		// SECURITY NOTE: Using $queryRaw (safe parameterized) because Prisma Client cannot filter by enum ReceiptStatus
+		// The values are hardcoded (no user input) and the query is encapsulated in FinancialService
+		const receiptsCancelledResult = await prisma.$queryRaw<
+			{ count: bigint }[]
+		>`SELECT COUNT(*) as count FROM receipts WHERE status = 'CANCELLED'`;
+		const receiptsCancelled = Number(receiptsCancelledResult[0]?.count || 0);
+
+		return {
+			totalBilled,
+			totalCollected,
+			totalPending,
+			overdueDebt,
+			studentsWithDebt: studentsWithDebtSet.size,
+			studentsBlocked: studentsBlocked.length,
+			paymentsToday,
+			paymentsThisMonth,
+			receiptsIssued,
+			receiptsCancelled
+		};
+	}
+
+	async getStudentFinancialReport(studentId: string): Promise<{
+		student: any;
+		totalCharges: Decimal;
+		totalPaid: Decimal;
+		totalPending: Decimal;
+		overdueDebt: Decimal;
+		charges: any[];
+		payments: any[];
+		receipts: any[];
+		activeBlocks: any[];
+	}> {
+		const student = await prisma.student.findUnique({
+			where: { id: studentId },
+			include: {
+				user: true,
+				career: true
+			}
+		});
+
+		if (!student) {
+			throw new Error('Alumno no encontrado');
+		}
+
+		// Cuotas
+		const charges = await prisma.studentCharge.findMany({
+			where: { studentId },
+			include: {
+				concept: true,
+				academicTerm: true
+			},
+			orderBy: { dueDate: 'asc' }
+		});
+
+		const totalCharges = charges.reduce((sum, charge) => DecimalHelpers.add(sum, charge.finalAmount), DecimalHelpers.zero());
+		const totalPaid = charges.reduce((sum, charge) => DecimalHelpers.add(sum, charge.paidAmount), DecimalHelpers.zero());
+		const totalPending = DecimalHelpers.subtract(totalCharges, totalPaid);
+
+		// Deuda vencida
+		const overdueCharges = charges.filter(
+			(charge) => charge.dueDate && new Date(charge.dueDate) < new Date() && charge.status !== 'PAID'
+		);
+		const overdueDebt = overdueCharges.reduce(
+			(sum, charge) => DecimalHelpers.add(sum, DecimalHelpers.subtract(charge.finalAmount, charge.paidAmount)),
+			DecimalHelpers.zero()
+		);
+
+		// Pagos
+		const payments = await prisma.payment.findMany({
+			where: { studentId },
+			include: {
+				allocations: {
+					include: {
+						charge: {
+							include: {
+								concept: true
+							}
+						}
+					}
+				}
+			},
+			orderBy: { paidAt: 'desc' }
+		});
+
+		// Recibos
+		const receipts = await prisma.receipt.findMany({
+			where: { studentId },
+			include: {
+				items: true
+			},
+			orderBy: { issuedAt: 'desc' }
+		});
+
+		// Bloqueos activos
+		const activeBlocks = await prisma.financialBlock.findMany({
+			where: {
+				studentId,
+				isActive: true
+			}
+		});
+
+		return {
+			student,
+			totalCharges,
+			totalPaid,
+			totalPending,
+			overdueDebt,
+			charges,
+			payments,
+			receipts,
+			activeBlocks
+		};
+	}
+
+	async getPeriodFinancialReport(filters: {
+		startDate?: Date;
+		endDate?: Date;
+	}): Promise<{
+		totalGenerated: Decimal;
+		totalCollected: Decimal;
+		totalPending: Decimal;
+		totalOverdue: Decimal;
+		paymentsByMethod: Record<string, number>;
+		receiptsByStatus: Record<string, number>;
+	}> {
+		const { startDate, endDate } = filters;
+
+		// Total generado (cuotas en el período)
+		const chargesWhere: any = {};
+		if (startDate) chargesWhere.createdAt = { ...chargesWhere.createdAt, gte: startDate };
+		if (endDate) chargesWhere.createdAt = { ...chargesWhere.createdAt, lte: endDate };
+
+		const totalGeneratedResult = await prisma.studentCharge.aggregate({
+			where: chargesWhere,
+			_sum: { finalAmount: true }
+		});
+		const totalGenerated = totalGeneratedResult._sum.finalAmount || DecimalHelpers.zero();
+
+		// Total cobrado (pagos en el período)
+		const paymentsWhere: any = { isCancelled: false };
+		if (startDate) paymentsWhere.paidAt = { ...paymentsWhere.paidAt, gte: startDate };
+		if (endDate) paymentsWhere.paidAt = { ...paymentsWhere.paidAt, lte: endDate };
+
+		const totalCollectedResult = await prisma.payment.aggregate({
+			where: paymentsWhere,
+			_sum: { amount: true }
+		});
+		const totalCollected = totalCollectedResult._sum.amount || DecimalHelpers.zero();
+
+		// Total pendiente (cuotas pendientes al final del período)
+		const totalPendingResult = await prisma.studentCharge.aggregate({
+			where: { status: { in: ['PENDING', 'PARTIAL'] } },
+			_sum: { finalAmount: true }
+		});
+		const totalPendingCharges = totalPendingResult._sum.finalAmount || DecimalHelpers.zero();
+
+		const totalPaidResult = await prisma.studentCharge.aggregate({
+			where: { status: { in: ['PENDING', 'PARTIAL'] } },
+			_sum: { paidAmount: true }
+		});
+		const totalPaidCharges = totalPaidResult._sum.paidAmount || DecimalHelpers.zero();
+		const totalPending = DecimalHelpers.subtract(totalPendingCharges, totalPaidCharges);
+
+		// Total vencido (cuotas vencidas al final del período)
+		const overdueCharges = await prisma.studentCharge.findMany({
+			where: {
+				status: { in: ['PENDING', 'PARTIAL'] },
+				dueDate: { lt: new Date() }
+			}
+		});
+		const totalOverdue = overdueCharges.reduce(
+			(sum, charge) => DecimalHelpers.add(sum, DecimalHelpers.subtract(charge.finalAmount, charge.paidAmount)),
+			DecimalHelpers.zero()
+		);
+
+		// Pagos por método
+		const paymentsByMethodResult = await prisma.payment.groupBy({
+			by: ['method'],
+			where: paymentsWhere,
+			_count: true
+		});
+		const paymentsByMethod = paymentsByMethodResult.reduce((acc, { method, _count }) => {
+			acc[method] = _count;
+			return acc;
+		}, {} as Record<string, number>);
+
+		// Recibos por estado
+		const receiptsByStatusResult = await prisma.receipt.groupBy({
+			by: ['status'],
+			_count: true
+		});
+		const receiptsByStatus = receiptsByStatusResult.reduce((acc, { status, _count }) => {
+			acc[status] = _count;
+			return acc;
+		}, {} as Record<string, number>);
+
+		return {
+			totalGenerated,
+			totalCollected,
+			totalPending,
+			totalOverdue,
+			paymentsByMethod,
+			receiptsByStatus
+		};
+	}
+
+	async getFinancialMovementsHistory(filters: {
+		studentId?: string;
+		movementType?: FinancialMovementType;
+		startDate?: Date;
+		endDate?: Date;
+	}): Promise<{
+		movements: any[];
+		total: number;
+	}> {
+		const where: any = {};
+
+		if (filters.studentId) {
+			where.studentId = filters.studentId;
+		}
+
+		if (filters.movementType) {
+			where.movementType = filters.movementType;
+		}
+
+		if (filters.startDate || filters.endDate) {
+			where.createdAt = {};
+			if (filters.startDate) where.createdAt.gte = filters.startDate;
+			if (filters.endDate) where.createdAt.lte = filters.endDate;
+		}
+
+		const movements = await prisma.financialMovement.findMany({
+			where,
+			orderBy: {
+				createdAt: 'desc'
+			}
+		});
+
+		// Fetch student data separately for each movement
+		const studentIds = [...new Set(movements.map((m) => m.studentId))];
+		const students = await prisma.student.findMany({
+			where: { id: { in: studentIds } },
+			include: { user: true }
+		});
+		const studentMap = new Map(students.map((s) => [s.id, s]));
+
+		const movementsWithStudent = movements.map((movement) => ({
+			...movement,
+			student: studentMap.get(movement.studentId)
+		}));
+
+		return {
+			movements: movementsWithStudent,
+			total: movements.length
+		};
+	}
+
 	private async getUserName(userId: string): Promise<string> {
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
@@ -2513,6 +2860,161 @@ export class FinancialService {
 		}
 
 		return `${user.firstName} ${user.lastName}`;
+	}
+
+	// Helper para escapar valores CSV
+	private escapeCSV(value: string): string {
+		if (value === null || value === undefined) return '';
+		const stringValue = String(value);
+		// Si contiene comillas, comas, saltos de línea (\n) o carriage return (\r), escapar con comillas dobles
+		if (stringValue.includes('"') || stringValue.includes(',') || stringValue.includes('\n') || stringValue.includes('\r')) {
+			return `"${stringValue.replace(/"/g, '""')}"`;
+		}
+		return stringValue;
+	}
+
+	// Generar CSV desde array de objetos
+	private generateCSV(headers: string[], rows: Record<string, any>[]): string {
+		const headerRow = headers.map(this.escapeCSV).join(',');
+		const dataRows = rows.map((row) =>
+			headers.map((header) => this.escapeCSV(row[header] ?? '')).join(',')
+		);
+		return [headerRow, ...dataRows].join('\n');
+	}
+
+	async exportPeriodReportToCSV(filters: {
+		startDate?: Date;
+		endDate?: Date;
+	}, userId?: string, ip?: string, userAgent?: string): Promise<{ csv: string; filename: string; recordCount: number }> {
+		const report = await this.getPeriodFinancialReport(filters);
+
+		// Generar filas con datos detallados
+		const rows: Record<string, any>[] = [
+			{
+				metric: 'Total Generado',
+				value: report.totalGenerated.toString(),
+				period: filters.startDate ? filters.startDate.toISOString().split('T')[0] : 'Todos',
+				endDate: filters.endDate ? filters.endDate.toISOString().split('T')[0] : ''
+			},
+			{
+				metric: 'Total Cobrado',
+				value: report.totalCollected.toString(),
+				period: '',
+				endDate: ''
+			},
+			{
+				metric: 'Total Pendiente',
+				value: report.totalPending.toString(),
+				period: '',
+				endDate: ''
+			},
+			{
+				metric: 'Total Vencido',
+				value: report.totalOverdue.toString(),
+				period: '',
+				endDate: ''
+			}
+		];
+
+		// Agregar pagos por método
+		for (const [method, count] of Object.entries(report.paymentsByMethod)) {
+			rows.push({
+				metric: `Pagos ${method}`,
+				value: count.toString(),
+				period: '',
+				endDate: ''
+			});
+		}
+
+		// Agregar recibos por estado
+		for (const [status, count] of Object.entries(report.receiptsByStatus)) {
+			rows.push({
+				metric: `Recibos ${status}`,
+				value: count.toString(),
+				period: '',
+				endDate: ''
+			});
+		}
+
+		const headers = ['Metric', 'Value', 'Period Start', 'Period End'];
+		const csv = this.generateCSV(headers, rows);
+		const filename = `reporte-periodo-${Date.now()}.csv`;
+
+		// Auditoría de exportación
+		if (userId) {
+			await auditLog({
+				action: 'EXPORT',
+				entityType: 'FINANCIAL_REPORT',
+				description: 'Exportación CSV de reporte por período',
+				userId,
+				metadata: {
+					format: 'CSV',
+					filters,
+					recordCount: rows.length,
+					filename
+				},
+				ip,
+				userAgent
+			});
+		}
+
+		return { csv, filename, recordCount: rows.length };
+	}
+
+	async exportMovementsToCSV(filters: {
+		studentId?: string;
+		movementType?: FinancialMovementType;
+		startDate?: Date;
+		endDate?: Date;
+	}, userId?: string, ip?: string, userAgent?: string): Promise<{ csv: string; filename: string; recordCount: number }> {
+		const history = await this.getFinancialMovementsHistory(filters);
+
+		const headers = [
+			'Fecha',
+			'Alumno',
+			'Tipo',
+			'Descripción',
+			'Monto',
+			'Balance Anterior',
+			'Balance Posterior',
+			'Usuario Responsable'
+		];
+
+		const rows = history.movements.map((movement) => ({
+			fecha: movement.createdAt.toISOString(),
+			alumno: movement.student
+				? `${movement.student.user.firstName} ${movement.student.user.lastName}`
+				: '-',
+			tipo: movement.movementType,
+			descripcion: movement.description,
+			monto: movement.amount.toString(),
+			balanceAnterior: movement.balanceBefore.toString(),
+			balancePosterior: movement.balanceAfter.toString(),
+			usuarioResponsable: movement.userId || '-'
+		}));
+
+		const csv = this.generateCSV(headers, rows);
+		const filename = `movimientos-${Date.now()}.csv`;
+
+		// Auditoría de exportación
+		if (userId) {
+			await auditLog({
+				action: 'EXPORT',
+				entityType: 'FINANCIAL_REPORT',
+				description: 'Exportación CSV de historial de movimientos',
+				userId,
+				metadata: {
+					format: 'CSV',
+					filters,
+					recordCount: rows.length,
+					filename
+				},
+				ip,
+				userAgent
+			});
+		}
+
+		return { csv, filename, recordCount: rows.length };
 	}
 }
 

@@ -104,6 +104,22 @@ const defaultPermissions = [
 	},
 	{
 		roleCode: 'DIRECTOR',
+		entity: 'FINANCIAL_BLOCK',
+		canCreate: true,
+		canRead: true,
+		canUpdate: true,
+		canDelete: true
+	},
+	{
+		roleCode: 'DIRECTOR',
+		entity: 'FINANCIAL_REPORT',
+		canCreate: false,
+		canRead: true,
+		canUpdate: false,
+		canDelete: false
+	},
+	{
+		roleCode: 'DIRECTOR',
 		entity: 'PAYSLIP',
 		canCreate: true,
 		canRead: true,
@@ -240,6 +256,22 @@ const defaultPermissions = [
 		canCreate: true,
 		canRead: true,
 		canUpdate: true,
+		canDelete: false
+	},
+	{
+		roleCode: 'FINANZAS',
+		entity: 'FINANCIAL_BLOCK',
+		canCreate: true,
+		canRead: true,
+		canUpdate: true,
+		canDelete: false
+	},
+	{
+		roleCode: 'FINANZAS',
+		entity: 'FINANCIAL_REPORT',
+		canCreate: false,
+		canRead: true,
+		canUpdate: false,
 		canDelete: false
 	},
 	{

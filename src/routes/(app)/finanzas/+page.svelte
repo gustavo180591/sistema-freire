@@ -1,46 +1,17 @@
 <script lang="ts">
 	let { data } = $props();
 
-	const financeRows = $derived(
-		data?.financeRows ?? [
-			{
-				id: '1',
-				student: 'Ana Rodríguez',
-				career: 'PROFESORADO DE EDUCACIÓN SECUNDARIA EN MATEMÁTICA',
-				period: 'Marzo 2026',
-				debt: 18500,
-				status: 'Con deuda'
-			},
-			{
-				id: '2',
-				student: 'Lucas Benítez',
-				career: 'PROFESORADO DE EDUCACIÓN SECUNDARIA EN LENGUA Y LITERATURA',
-				period: 'Marzo 2026',
-				debt: 0,
-				status: 'Al día'
-			}
-		]
-	);
-
-	let search = $state('');
-
-	const filtered = $derived(
-		financeRows.filter((row) => {
-			const q = search.toLowerCase();
-			return (
-				row.student.toLowerCase().includes(q) ||
-				row.career.toLowerCase().includes(q) ||
-				row.period.toLowerCase().includes(q) ||
-				row.status.toLowerCase().includes(q)
-			);
-		})
-	);
-
 	const currency = new Intl.NumberFormat('es-AR', {
 		style: 'currency',
 		currency: 'ARS',
 		maximumFractionDigits: 0
 	});
+
+	function formatDecimal(value: any): number {
+		if (typeof value === 'number') return value;
+		if (value && typeof value.toNumber === 'function') return value.toNumber();
+		return 0;
+	}
 </script>
 
 <svelte:head>
@@ -85,7 +56,7 @@
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<p class="text-sm text-slate-400">Deuda total</p>
-			<h2 class="mt-3 text-4xl font-bold">{currency.format(data?.metrics?.totalDebt ?? 0)}</h2>
+			<h2 class="mt-3 text-4xl font-bold">{currency.format(formatDecimal(data?.metrics?.totalDebt ?? 0))}</h2>
 			<p class="mt-2 text-sm text-slate-500">Saldo pendiente consolidado</p>
 		</div>
 
@@ -97,55 +68,14 @@
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<p class="text-sm text-slate-400">Importe cobrado</p>
-			<h2 class="mt-3 text-4xl font-bold">{currency.format(data?.metrics?.totalCollected ?? 0)}</h2>
+			<h2 class="mt-3 text-4xl font-bold">{currency.format(formatDecimal(data?.metrics?.totalCollected ?? 0))}</h2>
 			<p class="mt-2 text-sm text-slate-500">Ingresos registrados</p>
 		</div>
 	</section>
 
 	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-		<input
-			bind:value={search}
-			type="text"
-			placeholder="Buscar por alumno, carrera, período o estado"
-			class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-slate-500"
-		/>
-	</section>
-
-	<section class="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70">
-		<table class="w-full text-left">
-			<thead class="border-b border-slate-800 bg-slate-900">
-				<tr>
-					<th class="px-6 py-4 text-sm font-semibold">Alumno</th>
-					<th class="px-6 py-4 text-sm font-semibold">Carrera</th>
-					<th class="px-6 py-4 text-sm font-semibold">Período</th>
-					<th class="px-6 py-4 text-sm font-semibold">Deuda</th>
-					<th class="px-6 py-4 text-sm font-semibold">Estado</th>
-					<th class="px-6 py-4 text-right text-sm font-semibold">Acciones</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each filtered as row}
-					<tr class="border-b border-slate-800 last:border-none">
-						<td class="px-6 py-4 font-medium">{row.student}</td>
-						<td class="px-6 py-4">{row.career}</td>
-						<td class="px-6 py-4 text-slate-300">{row.period}</td>
-						<td class="px-6 py-4 font-medium">{currency.format(row.debt)}</td>
-						<td class="px-6 py-4">
-							<span class="rounded-full border border-slate-700 px-3 py-1 text-xs">
-								{row.status}
-							</span>
-						</td>
-						<td class="px-6 py-4 text-right">
-							<a
-								href={`/finanzas/${row.id}`}
-								class="rounded-xl border border-slate-700 px-3 py-2 text-sm transition hover:border-slate-500"
-							>
-								Ver detalle
-							</a>
-						</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
+		<p class="text-sm text-slate-400">
+			Para ver reportes detallados por alumno, período o movimientos, utiliza las opciones de navegación.
+		</p>
 	</section>
 </div>

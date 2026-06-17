@@ -26,7 +26,8 @@ export const ENTITIES = [
 	'EVALUATION',
 	'SCHEDULE',
 	'DOCUMENT',
-	'FINANCIAL_BLOCK'
+	'FINANCIAL_BLOCK',
+	'FINANCIAL_REPORT'
 ] as const;
 
 export type Entity = (typeof ENTITIES)[number];
@@ -176,7 +177,8 @@ function getEntityLabel(entity: Entity): string {
 		EVALUATION: 'evaluaciones',
 		SCHEDULE: 'horarios',
 		DOCUMENT: 'documentos',
-		FINANCIAL_BLOCK: 'bloqueos financieros'
+		FINANCIAL_BLOCK: 'bloqueos financieros',
+		FINANCIAL_REPORT: 'reportes financieros'
 	};
 	return labels[entity] || entity.toLowerCase();
 }
@@ -248,6 +250,14 @@ export async function seedDefaultPermissions() {
 			canRead: true,
 			canUpdate: true,
 			canDelete: true
+		},
+		{
+			roleCode: 'DIRECTOR',
+			entity: 'FINANCIAL_REPORT',
+			canCreate: false,
+			canRead: true,
+			canUpdate: false,
+			canDelete: false
 		},
 		{
 			roleCode: 'DIRECTOR',
@@ -355,6 +365,14 @@ export async function seedDefaultPermissions() {
 			canCreate: true,
 			canRead: true,
 			canUpdate: true,
+			canDelete: false
+		},
+		{
+			roleCode: 'FINANZAS',
+			entity: 'FINANCIAL_REPORT',
+			canCreate: false,
+			canRead: true,
+			canUpdate: false,
 			canDelete: false
 		},
 		{

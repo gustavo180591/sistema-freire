@@ -1,84 +1,39 @@
 import type { PageServerLoad } from './$types';
+import { financialService } from '$lib/server/financial/financial-service';
+import { hasPermission } from '$lib/server/auth/permissions-granular';
 import { prisma } from '$lib/server/db/prisma';
-import { getUserAllowedLocationIds } from '$lib/server/auth/authorization';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) {
 		throw new Error('Usuario no autenticado');
 	}
 
-	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
-
-	const [charges, payments] = await Promise.all([
-		prisma.studentCharge.findMany({
-			where: {
-				student: {
-					career: {
-						locations: {
-							some: {
-								locationId: { in: allowedLocationIds }
-							}
-						}
-					}
-				}
-			},
-			include: {
-				student: {
-					include: {
-						career: {
-							select: {
-								name: true
-							}
-						}
-					}
-				}
-			},
-			orderBy: {
-				createdAt: 'desc'
-			}
-		}),
-		prisma.payment.findMany({
-			where: {
-				student: {
-					career: {
-						locations: {
-							some: {
-								locationId: { in: allowedLocationIds }
-							}
-						}
-					}
-				}
-			},
-			select: {
-				amount: true
-			}
-		})
-	]);
-
-	const financeRows = charges.map((charge) => {
-		const debt = Number(charge.amount) - Number(charge.paidAmount);
-
-		return {
-			id: charge.id,
-			student: `${charge.student.firstName} ${charge.student.lastName}`.trim(),
-			career: charge.student.career.name,
-			period: charge.periodLabel,
-			debt,
-			status: debt > 0 ? 'Con deuda' : 'Al día'
-		};
+	// Get user roles
+	const userRoles = await prisma.userRole.findMany({
+		where: { userId: locals.user.id },
+		include: { role: true }
 	});
+	const roleCodes = userRoles.map((ur: any) => ur.role.code);
 
-	const studentsWithDebt = financeRows.filter((row) => row.debt > 0).length;
-	const totalDebt = financeRows.reduce((acc, row) => acc + row.debt, 0);
-	const totalCollected = payments.reduce((acc, p) => acc + Number(p.amount), 0);
+	// Check if user has permission to view financial reports
+	const canViewReports = await hasPermission(roleCodes[0] || '', 'FINANCIAL_REPORT', 'read');
+
+	if (!canViewReports) {
+		throw new Error('No tiene permisos para ver reportes financieros');
+	}
+
+	// Get dashboard metrics
+	const dashboardMetrics = await financialService.getFinancialDashboardMetrics();
+
+	// Map to UI-expected format
+	const metrics = {
+		studentsWithDebt: dashboardMetrics.studentsWithDebt,
+		totalDebt: dashboardMetrics.totalPending,
+		paymentsCount: dashboardMetrics.paymentsThisMonth,
+		totalCollected: dashboardMetrics.totalCollected
+	};
 
 	return {
-		financeRows,
-		metrics: {
-			studentsWithDebt,
-			totalDebt,
-			paymentsCount: payments.length,
-			totalCollected
-		}
+		metrics
 	};
 };

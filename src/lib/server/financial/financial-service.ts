@@ -8,7 +8,7 @@ import * as DecimalHelpers from './decimal-helpers';
 // Financial enum types - These match the exact values defined in prisma/schema.prisma
 // Prisma exports these enums at runtime (.prisma/client) but TypeScript types don't include them
 // These string literal types ensure type safety while matching Prisma enum values exactly
-export type FinancialMovementType = 'CHARGE' | 'PAYMENT' | 'ALLOCATION' | 'RECEIPT' | 'CANCELLATION' | 'ADJUSTMENT' | 'LATE_FEE' | 'DISCOUNT' | 'SCHOLARSHIP' | 'PAYMENT_CANCELLATION';
+export type FinancialMovementType = 'CHARGE' | 'PAYMENT' | 'ALLOCATION' | 'RECEIPT' | 'CANCELLATION' | 'ADJUSTMENT' | 'LATE_FEE' | 'DISCOUNT' | 'SCHOLARSHIP' | 'PAYMENT_CANCELLATION' | 'PAYMENT_AGREEMENT' | 'AGREEMENT_INSTALLMENT';
 export type DiscountType = 'PERCENTAGE' | 'FIXED';
 export type LateFeeType = 'PERCENTAGE' | 'FIXED';
 export type FinancialBlockType = 'ENROLLMENT' | 'EXAM' | 'COURSE' | 'CERTIFICATE' | 'REPORT' | 'ALL';

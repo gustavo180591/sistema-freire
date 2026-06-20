@@ -27,7 +27,8 @@ export const ENTITIES = [
 	'SCHEDULE',
 	'DOCUMENT',
 	'FINANCIAL_BLOCK',
-	'FINANCIAL_REPORT'
+	'FINANCIAL_REPORT',
+	'PAYMENT_AGREEMENT'
 ] as const;
 
 export type Entity = (typeof ENTITIES)[number];
@@ -172,6 +173,7 @@ function getEntityLabel(entity: Entity): string {
 		GRADE: 'calificaciones',
 		ATTENDANCE: 'asistencia',
 		STUDENT_FOLLOW_UP: 'seguimientos',
+		PAYMENT_AGREEMENT: 'convenios de pago',
 		MATERIAL: 'materiales',
 		COMMUNICATION: 'comunicaciones',
 		EVALUATION: 'evaluaciones',

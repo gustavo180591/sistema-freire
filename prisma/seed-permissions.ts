@@ -150,6 +150,14 @@ const defaultPermissions = [
 		canUpdate: false,
 		canDelete: false
 	},
+	{
+		roleCode: 'DIRECTOR',
+		entity: 'PAYMENT_AGREEMENT',
+		canCreate: true,
+		canRead: true,
+		canUpdate: true,
+		canDelete: true
+	},
 
 	// SECRETARIA - Puede gestionar académico pero no finanzas
 	{
@@ -224,6 +232,14 @@ const defaultPermissions = [
 		canUpdate: true,
 		canDelete: false
 	},
+	{
+		roleCode: 'SECRETARIA',
+		entity: 'PAYMENT_AGREEMENT',
+		canCreate: false,
+		canRead: true,
+		canUpdate: false,
+		canDelete: false
+	},
 
 	// FINANZAS - Solo finanzas
 	{
@@ -288,6 +304,14 @@ const defaultPermissions = [
 		canCreate: false,
 		canRead: true,
 		canUpdate: false,
+		canDelete: false
+	},
+	{
+		roleCode: 'FINANZAS',
+		entity: 'PAYMENT_AGREEMENT',
+		canCreate: true,
+		canRead: true,
+		canUpdate: true,
 		canDelete: false
 	},
 
@@ -366,6 +390,14 @@ const defaultPermissions = [
 		canCreate: true,
 		canRead: true,
 		canUpdate: true,
+		canDelete: false
+	},
+	{
+		roleCode: 'ALUMNO',
+		entity: 'PAYMENT_AGREEMENT',
+		canCreate: false,
+		canRead: true,
+		canUpdate: false,
 		canDelete: false
 	},
 

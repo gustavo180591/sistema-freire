@@ -19,7 +19,7 @@
 </script>
 
 <svelte:head>
-	<title>Panel Preceptor | Paulo Freire</title>
+	<title>Panel Preceptor | ISFD "PAULO FREIRE" 1117</title>
 </svelte:head>
 
 <div class="mx-auto max-w-7xl space-y-8 p-6">

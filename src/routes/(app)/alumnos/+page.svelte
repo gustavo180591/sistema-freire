@@ -195,7 +195,7 @@
 </script>
 
 <svelte:head>
-	<title>Gestión de Alumnos | Paulo Freire</title>
+	<title>Gestión de Alumnos | ISFD "PAULO FREIRE" 1117</title>
 </svelte:head>
 
 <div class="mx-auto max-w-7xl space-y-8">

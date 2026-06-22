@@ -68,7 +68,7 @@
 </script>
 
 <svelte:head>
-	<title>Editar recibo de sueldo | Instituto Paulo Freire</title>
+	<title>Editar recibo de sueldo | Instituto ISFD "PAULO FREIRE" 1117</title>
 	<meta name="description" content="Edición de recibo de sueldo docente" />
 </svelte:head>
 

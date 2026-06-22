@@ -30,7 +30,7 @@
 </script>
 
 <svelte:head>
-	<title>Usuarios | Paulo Freire</title>
+	<title>Usuarios | ISFD "PAULO FREIRE" 1117</title>
 </svelte:head>
 
 <div class="space-y-8">

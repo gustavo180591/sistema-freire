@@ -5,7 +5,7 @@
 </script>
 
 <svelte:head>
-	<title>Mi Asistencia | Paulo Freire</title>
+	<title>Mi Asistencia | ISFD "PAULO FREIRE" 1117</title>
 </svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-8 p-6">

@@ -7,7 +7,7 @@
 </script>
 
 <svelte:head>
-	<title>Login | Instituto Paulo Freire</title>
+	<title>Login | Instituto ISFD "PAULO FREIRE" 1117</title>
 	<meta
 		name="description"
 		content="Acceso al Sistema Integral de Gestión Académica y Administrativa"
@@ -23,7 +23,7 @@
 				</p>
 				<h1 class="mt-4 text-5xl font-bold tracking-tight">
 					Acceso institucional
-					<span class="block text-slate-300">Paulo Freire</span>
+					<span class="block text-slate-300">ISFD "PAULO FREIRE" 1117</span>
 				</h1>
 				<p class="mt-6 max-w-xl text-lg leading-8 text-slate-300">
 					Ingresá con tus credenciales para acceder a módulos académicos, financieros, asistencia,

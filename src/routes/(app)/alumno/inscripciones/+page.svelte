@@ -37,7 +37,7 @@
 </script>
 
 <svelte:head>
-	<title>Mis Inscripciones | Paulo Freire</title>
+	<title>Mis Inscripciones | ISFD "PAULO FREIRE" 1117</title>
 </svelte:head>
 
 <div class="mx-auto max-w-7xl space-y-8 p-6">

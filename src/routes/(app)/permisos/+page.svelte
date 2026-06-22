@@ -57,7 +57,7 @@
 </script>
 
 <svelte:head>
-	<title>Gestión de Permisos | Paulo Freire</title>
+	<title>Gestión de Permisos | ISFD "PAULO FREIRE" 1117</title>
 </svelte:head>
 
 <div class="space-y-6 p-4 md:p-6">

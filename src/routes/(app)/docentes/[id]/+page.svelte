@@ -39,7 +39,7 @@
 </script>
 
 <svelte:head>
-	<title>Asignación de Materias | Paulo Freire</title>
+	<title>Asignación de Materias | ISFD "PAULO FREIRE" 1117</title>
 </svelte:head>
 
 <div class="mx-auto max-w-7xl space-y-8">

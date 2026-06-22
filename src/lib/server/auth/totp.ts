@@ -2,7 +2,7 @@ import { TOTP, Secret } from 'otpauth';
 import QRCode from 'qrcode';
 import crypto from 'crypto';
 
-const APP_NAME = 'Paulo Freire';
+const APP_NAME = 'ISFD "PAULO FREIRE" 1117';
 
 // Generar secreto base32 aleatorio (20 bytes = 160 bits)
 function generateBase32Secret(): string {

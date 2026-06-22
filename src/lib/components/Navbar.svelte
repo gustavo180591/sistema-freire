@@ -88,8 +88,8 @@
 			<!-- Logo + Sección -->
 			<div class="flex items-center gap-6">
 				<a href={homeUrl()} class="flex items-center gap-2 transition hover:opacity-80">
-					<img src={logoPath} alt="Logo" class="h-8 w-auto" />
-					<span class="text-lg font-bold text-white">Paulo Freire</span>
+					<img src={logoPath} alt="Logo" class="h-16 w-auto" />
+					<span class="text-lg font-bold text-white">ISFD "PAULO FREIRE" 1117</span>
 				</a>
 				{#if currentSection()}
 					<span class="hidden text-slate-500 md:block">/</span>

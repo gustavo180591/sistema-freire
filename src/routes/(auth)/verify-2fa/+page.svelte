@@ -6,7 +6,7 @@
 </script>
 
 <svelte:head>
-	<title>Verificación 2FA | Paulo Freire</title>
+	<title>Verificación 2FA | ISFD "PAULO FREIRE" 1117</title>
 </svelte:head>
 
 <div class="min-h-screen bg-slate-950 text-white">

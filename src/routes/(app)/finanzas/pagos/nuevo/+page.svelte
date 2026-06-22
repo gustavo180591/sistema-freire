@@ -12,7 +12,7 @@
 </script>
 
 <svelte:head>
-	<title>Nuevo pago | Instituto Paulo Freire</title>
+	<title>Nuevo pago | Instituto ISFD "PAULO FREIRE" 1117</title>
 	<meta name="description" content="Registro manual de pagos institucionales" />
 </svelte:head>
 

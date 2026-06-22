@@ -7,7 +7,7 @@
 </script>
 
 <svelte:head>
-	<title>Editar Carrera {data.career.name} | Paulo Freire</title>
+	<title>Editar Carrera {data.career.name} | ISFD "PAULO FREIRE" 1117</title>
 </svelte:head>
 
 <div class="mx-auto max-w-4xl space-y-8">

@@ -15,7 +15,7 @@
 </script>
 
 <svelte:head>
-	<title>Finanzas | Instituto Paulo Freire</title>
+	<title>Finanzas | Instituto ISFD "PAULO FREIRE" 1117</title>
 	<meta name="description" content="Gestión financiera institucional, morosidad y pagos" />
 </svelte:head>
 

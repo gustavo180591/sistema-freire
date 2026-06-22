@@ -137,7 +137,7 @@
 </script>
 
 <svelte:head>
-	<title>Instituto Paulo Freire</title>
+	<title>Instituto ISFD "PAULO FREIRE" 1117</title>
 	<meta name="description" content="Sistema Integral de Gestión Académica y Administrativa" />
 </svelte:head>
 
@@ -158,7 +158,7 @@
 
 					<h1 class="text-4xl font-bold tracking-tight md:text-6xl">
 						Sistema Integral
-						<span class="block text-slate-300">Paulo Freire</span>
+						<span class="block text-slate-300">ISFD "PAULO FREIRE" 1117</span>
 					</h1>
 
 					<p class="mt-6 max-w-2xl text-lg leading-8 text-slate-300 md:text-xl">

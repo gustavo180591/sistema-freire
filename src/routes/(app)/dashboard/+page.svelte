@@ -189,7 +189,7 @@
 </script>
 
 <svelte:head>
-	<title>Dashboard | Instituto Paulo Freire</title>
+	<title>Dashboard | Instituto ISFD "PAULO FREIRE" 1117</title>
 	<meta name="description" content="Panel institucional de gestión académica y administrativa" />
 </svelte:head>
 
@@ -210,7 +210,7 @@
 					<h1 class="mt-2 text-3xl font-bold tracking-tight md:text-4xl">Dashboard general</h1>
 					<p class="mt-3 max-w-3xl text-sm text-slate-400 md:text-base">
 						Vista consolidada del estado académico, financiero y administrativo del Instituto
-						Superior de Formación Docente Paulo Freire.
+						Superior de Formación Docente ISFD "PAULO FREIRE" 1117.
 					</p>
 				</div>
 				{#if currentTerm}

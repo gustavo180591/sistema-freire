@@ -11,7 +11,7 @@
 </script>
 
 <svelte:head>
-	<title>Reporte financiero | Instituto Paulo Freire</title>
+	<title>Reporte financiero | Instituto ISFD "PAULO FREIRE" 1117</title>
 	<meta name="description" content="Reporte institucional de deuda, cobranza y morosidad" />
 </svelte:head>
 

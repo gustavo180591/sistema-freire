@@ -25,7 +25,7 @@
 </script>
 
 <svelte:head>
-	<title>Mis Calificaciones | Paulo Freire</title>
+	<title>Mis Calificaciones | ISFD "PAULO FREIRE" 1117</title>
 </svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-8 p-6">

@@ -84,7 +84,7 @@
 </script>
 
 <svelte:head>
-	<title>Cargar recibo de sueldo | Instituto Paulo Freire</title>
+	<title>Cargar recibo de sueldo | Instituto ISFD "PAULO FREIRE" 1117</title>
 	<meta name="description" content="Carga de recibos de sueldo docentes" />
 </svelte:head>
 

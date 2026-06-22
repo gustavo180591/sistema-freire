@@ -9,7 +9,7 @@
 </script>
 
 <svelte:head>
-	<title>Reporte académico | Instituto Paulo Freire</title>
+	<title>Reporte académico | Instituto ISFD "PAULO FREIRE" 1117</title>
 	<meta
 		name="description"
 		content="Reporte institucional de matrícula, regularidad y riesgo académico"

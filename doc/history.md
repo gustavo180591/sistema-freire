@@ -1,12 +1,12 @@
 # Sistema Integral de Gestión Académica y Administrativa
 
-Instituto Superior de Formación Docente – Paulo Freire
+Instituto Superior de Formación Docente – ISFD "PAULO FREIRE" 1117
 
 ---
 
 # 1. Historia de Usuario Fundacional
 
-Como equipo directivo del Instituto Superior de Formación Docente Paulo Freire,
+Como equipo directivo del Instituto Superior de Formación Docente ISFD "PAULO FREIRE" 1117,
 queremos implementar un sistema integral de gestión académica, financiera y de asistencia
 exclusivo para nuestra institución,
 para centralizar los procesos administrativos, garantizar el cumplimiento del reglamento
@@ -27,7 +27,7 @@ El sistema deberá:
 - Generar documentación oficial exigida por inspección.
 - Registrar y auditar todas las acciones críticas.
 
-El sistema será desarrollado exclusivamente para el Instituto Paulo Freire.
+El sistema será desarrollado exclusivamente para el Instituto ISFD "PAULO FREIRE" 1117.
 
 ---
 

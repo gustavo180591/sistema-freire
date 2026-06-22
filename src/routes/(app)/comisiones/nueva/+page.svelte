@@ -26,7 +26,7 @@
 </script>
 
 <svelte:head>
-	<title>Nueva Comisión | Paulo Freire</title>
+	<title>Nueva Comisión | ISFD "PAULO FREIRE" 1117</title>
 </svelte:head>
 
 <div class="mx-auto max-w-4xl space-y-8 p-6">

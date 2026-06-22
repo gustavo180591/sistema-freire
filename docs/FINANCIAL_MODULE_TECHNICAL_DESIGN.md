@@ -509,7 +509,7 @@ if (method === 'BANK_TRANSFER' && reference) {
 
 ### 3.1 Diseño del Recibo
 
-El recibo seguirá el formato estándar del Instituto Paulo Freire con:
+El recibo seguirá el formato estándar del Instituto ISFD "PAULO FREIRE" 1117 con:
 - Encabezado institucional (nombre, tipo, CUIT, domicilio, condición IVA)
 - Número correlativo (ej: 0001-2026)
 - Fecha de emisión

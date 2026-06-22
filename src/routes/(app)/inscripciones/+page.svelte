@@ -51,7 +51,7 @@
 </script>
 
 <svelte:head>
-	<title>Gestión de Inscripciones | Paulo Freire</title>
+	<title>Gestión de Inscripciones | ISFD "PAULO FREIRE" 1117</title>
 </svelte:head>
 
 <div class="mx-auto max-w-7xl space-y-8 p-6">

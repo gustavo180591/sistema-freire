@@ -10,7 +10,7 @@
 </script>
 
 <svelte:head>
-	<title>Nuevo usuario | Paulo Freire</title>
+	<title>Nuevo usuario | ISFD "PAULO FREIRE" 1117</title>
 </svelte:head>
 
 <div class="mx-auto max-w-4xl space-y-8">

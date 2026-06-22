@@ -20,7 +20,7 @@
 </script>
 
 <svelte:head>
-	<title>Nueva carrera | Instituto Paulo Freire</title>
+	<title>Nueva carrera | Instituto ISFD "PAULO FREIRE" 1117</title>
 	<meta name="description" content="Alta institucional de carreras y estructura académica" />
 </svelte:head>
 

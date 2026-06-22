@@ -5,7 +5,7 @@
 </script>
 
 <svelte:head>
-	<title>Administración de Asistencia | Paulo Freire</title>
+	<title>Administración de Asistencia | ISFD "PAULO FREIRE" 1117</title>
 </svelte:head>
 
 <div class="space-y-8">

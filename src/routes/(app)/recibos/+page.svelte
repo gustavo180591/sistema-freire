@@ -84,7 +84,7 @@
 </script>
 
 <svelte:head>
-	<title>Recibos docentes | Instituto Paulo Freire</title>
+	<title>Recibos docentes | Instituto ISFD "PAULO FREIRE" 1117</title>
 	<meta name="description" content="Consulta y descarga de recibos de sueldo docentes" />
 </svelte:head>
 

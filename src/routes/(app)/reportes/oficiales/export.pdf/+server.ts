@@ -21,7 +21,7 @@ export const GET: RequestHandler = async ({ locals }) => {
 	});
 
 	// Header institucional
-	doc.fontSize(18).text('Instituto Paulo Freire', { align: 'center' });
+	doc.fontSize(18).text('Instituto ISFD "PAULO FREIRE" 1117', { align: 'center' });
 	doc.moveDown(0.5);
 	doc.fontSize(14).text('Reporte Oficial Institucional', {
 		align: 'center'

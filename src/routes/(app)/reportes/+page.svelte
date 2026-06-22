@@ -36,7 +36,7 @@
 </script>
 
 <svelte:head>
-	<title>Reportes | Instituto Paulo Freire</title>
+	<title>Reportes | Instituto ISFD "PAULO FREIRE" 1117</title>
 	<meta name="description" content="Centro de reportes académicos, financieros y oficiales" />
 </svelte:head>
 

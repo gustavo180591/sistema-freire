@@ -25,7 +25,7 @@
 </script>
 
 <svelte:head>
-	<title>Configuración de Cuotas | Instituto Paulo Freire</title>
+	<title>Configuración de Cuotas | Instituto ISFD "PAULO FREIRE" 1117</title>
 </svelte:head>
 
 <div class="space-y-8">

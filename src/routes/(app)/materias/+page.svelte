@@ -105,7 +105,7 @@
 </script>
 
 <svelte:head>
-	<title>Materias | Instituto Paulo Freire</title>
+	<title>Materias | Instituto ISFD "PAULO FREIRE" 1117</title>
 	<meta name="description" content="Gestión de materias y planes de estudio" />
 </svelte:head>
 

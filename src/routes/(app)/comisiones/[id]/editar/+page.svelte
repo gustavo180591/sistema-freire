@@ -27,7 +27,7 @@
 </script>
 
 <svelte:head>
-	<title>Editar Comisión | Paulo Freire</title>
+	<title>Editar Comisión | ISFD "PAULO FREIRE" 1117</title>
 </svelte:head>
 
 <div class="mx-auto max-w-4xl space-y-8 p-6">

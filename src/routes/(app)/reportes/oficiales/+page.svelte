@@ -5,7 +5,7 @@
 </script>
 
 <svelte:head>
-	<title>Reportes oficiales | Instituto Paulo Freire</title>
+	<title>Reportes oficiales | Instituto ISFD "PAULO FREIRE" 1117</title>
 	<meta
 		name="description"
 		content="Actas, libro matriz, nóminas y documentación oficial institucional"

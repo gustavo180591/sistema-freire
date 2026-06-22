@@ -81,7 +81,7 @@
 </script>
 
 <svelte:head>
-	<title>Carreras | Instituto Paulo Freire</title>
+	<title>Carreras | Instituto ISFD "PAULO FREIRE" 1117</title>
 	<meta name="description" content="Gestión institucional de carreras y planes de estudio" />
 </svelte:head>
 

@@ -77,7 +77,7 @@
 </script>
 
 <svelte:head>
-	<title>Auditoría | Paulo Freire</title>
+	<title>Auditoría | ISFD "PAULO FREIRE" 1117</title>
 </svelte:head>
 
 <div class="space-y-6 p-4 md:p-6">

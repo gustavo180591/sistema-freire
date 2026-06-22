@@ -321,8 +321,8 @@
 		>
 			<div class="border-b border-slate-800 p-4">
 				<div class="flex items-center gap-2">
-					<img src="/logo.png" alt="Logo" class="h-8 w-auto" />
-					<span class="text-lg font-bold text-white">Paulo Freire</span>
+					<img src="/logo.png" alt="Logo" class="h-16 w-auto" />
+					<span class="text-lg font-bold text-white">ISFD "PAULO FREIRE" 1117</span>
 				</div>
 			</div>
 

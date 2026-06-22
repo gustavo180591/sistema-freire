@@ -6,7 +6,7 @@
 </script>
 
 <svelte:head>
-	<title>Contacto | Paulo Freire</title>
+	<title>Contacto | ISFD "PAULO FREIRE" 1117</title>
 	<meta name="description" content="Ponte en contacto con nosotros" />
 </svelte:head>
 

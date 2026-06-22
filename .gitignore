@@ -34,3 +34,4 @@ prisma/*.seed.ts
 
 # Database backups (contain sensitive data)
 prisma/backup/
+backups/

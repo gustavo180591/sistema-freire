@@ -183,7 +183,7 @@ export type PaymentResult = {
 
 export type PaymentAllocation = {
   paymentId: string;
-  chargeId: string;
+  chargeId: string | null;
   amount: Decimal;
   charge?: Prisma.StudentChargeGetPayload<{}>;
 };
@@ -1958,6 +1958,11 @@ export class FinancialService {
     await prisma.$transaction(async (tx) => {
       // Revertir allocations
       for (const allocation of payment.allocations) {
+        // Skip allocations without charge (agreement installment payments)
+        if (!allocation.charge || !allocation.chargeId) {
+          continue;
+        }
+
         const charge = allocation.charge;
         const newPaidAmount = DecimalHelpers.subtract(charge.paidAmount, allocation.amount);
         let newStatus: ChargeStatus = charge.status;
@@ -2073,9 +2078,9 @@ export class FinancialService {
       cancelledReason: p.cancelledReason || undefined,
       allocations: p.allocations.map(a => ({
         paymentId: a.paymentId,
-        chargeId: a.chargeId,
+        chargeId: a.chargeId || null,
         amount: a.amount,
-        charge: a.charge
+        charge: a.charge || undefined
       }))
     }));
   }
@@ -2189,6 +2194,11 @@ export class FinancialService {
 			}
 
 			for (const allocation of payment.allocations) {
+				// Skip allocations without charge (agreement installment payments)
+				if (!allocation.charge || !allocation.chargeId) {
+					continue;
+				}
+
 				const charge = allocation.charge;
 				const item = {
 					chargeId: charge.id,

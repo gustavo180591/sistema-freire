@@ -1,5 +1,5 @@
 /**
- * Payment Agreement Service - Phase 2 (Creation and Activation)
+ * Payment Agreement Service - Phase 3 (Installment Payments)
  *
  * Current Status:
  * - Schema and migration are applied to real database
@@ -15,10 +15,21 @@
  * - Generate agreement summaries
  * - Record audit events
  * - Validate permissions and ownership
+ *
+ * Phase 3 Features:
+ * - Register payments against agreement installments
+ * - Integrate with Payment and PaymentAllocation
+ * - Update installment status (PENDING -> PARTIAL -> PAID)
+ * - Update agreement totals (paidAmount, pendingAmount)
+ * - Validate payment amounts and installment state
+ * - Record payment events and audit logs
  */
 
 import { Prisma, PrismaClient } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
+
+// Payment method enum from Prisma
+type PaymentMethod = 'CASH' | 'BANK_TRANSFER' | 'DEBIT_CARD' | 'CREDIT_CARD' | 'QR' | 'SCHOLARSHIP';
 
 const prisma = new PrismaClient();
 
@@ -164,6 +175,16 @@ export type UpdateAgreementInput = {
 	observations?: string;
 	updatedBy: string;
 	updatedByName: string;
+};
+
+export type InstallmentPaymentInput = {
+	installmentId: string;
+	amount: Decimal;
+	method: string;
+	reference?: string;
+	notes?: string;
+	paidBy: string;
+	paidByName: string;
 };
 
 // Payment Agreement Service - Phase 2 (Implementation)
@@ -668,6 +689,198 @@ class PaymentAgreementService {
 		});
 
 		return activatedAgreement as unknown as PaymentAgreement;
+	}
+
+	/**
+	 * Register payment against an installment
+	 */
+	async registerInstallmentPayment(
+		input: InstallmentPaymentInput,
+		userRoles: UserRole[],
+		userId: string
+	): Promise<{
+		payment: Prisma.PaymentGetPayload<{}>;
+		installment: PaymentAgreementInstallment;
+		agreement: PaymentAgreement;
+	}> {
+		// Check permissions
+		if (!this.canViewAgreements(userRoles)) {
+			throw new Error('User does not have permission to register payments');
+		}
+
+		// Validate amount
+		if (input.amount.lte(0)) {
+			throw new Error('Payment amount must be greater than 0');
+		}
+
+		// Get installment with agreement
+		const installment = await prisma.paymentAgreementInstallment.findUnique({
+			where: { id: input.installmentId },
+			include: {
+				agreement: {
+					include: {
+						relatedCharges: true
+					}
+				}
+			}
+		});
+
+		if (!installment) {
+			throw new Error('Installment not found');
+		}
+
+		// Validate agreement is active
+		if (installment.agreement.status !== 'ACTIVE') {
+			throw new Error('Can only register payments for active agreements');
+		}
+
+		// Validate installment is not cancelled or waived
+		if (installment.status === 'CANCELLED' || installment.status === 'WAIVED') {
+			throw new Error('Cannot register payment for cancelled or waived installment');
+		}
+
+		// Validate payment amount does not exceed pending amount
+		if (input.amount.gt(installment.pendingAmount)) {
+			throw new Error(
+				`Payment amount (${input.amount.toString()}) exceeds pending amount (${installment.pendingAmount.toString()})`
+			);
+		}
+
+		// Process payment in transaction
+		const result = await prisma.$transaction(async (tx) => {
+			// Create payment
+			const payment = await tx.payment.create({
+				data: {
+					studentId: installment.agreement.studentId,
+					amount: input.amount,
+					method: input.method as PaymentMethod,
+					reference: input.reference,
+					notes: input.notes,
+					userId,
+					paidAt: new Date()
+				}
+			});
+
+			// Create allocation with installmentId
+			// For agreement payments, chargeId is null and installmentId is set
+			// This allows proper separation between original debt payments and agreement installment payments
+			const allocationData: Prisma.PaymentAllocationUncheckedCreateInput = {
+				paymentId: payment.id,
+				chargeId: null,
+				installmentId: input.installmentId,
+				amount: input.amount
+			};
+			await tx.paymentAllocation.create({
+				data: allocationData
+			});
+
+			// Update installment
+			const newPaidAmount = installment.paidAmount.plus(input.amount);
+			const newPendingAmount = installment.pendingAmount.minus(input.amount);
+			let newStatus = installment.status;
+
+			if (newPendingAmount.equals(new Decimal(0))) {
+				newStatus = 'PAID';
+			} else if (newPaidAmount.gt(new Decimal(0))) {
+				newStatus = 'PARTIAL';
+			}
+
+			const updatedInstallment = await tx.paymentAgreementInstallment.update({
+				where: { id: input.installmentId },
+				data: {
+					paidAmount: newPaidAmount,
+					pendingAmount: newPendingAmount,
+					status: newStatus,
+					paidAt: newStatus === 'PAID' ? new Date() : installment.paidAt
+				}
+			});
+
+			// Update agreement totals
+			const agreement = await tx.paymentAgreement.findUnique({
+				where: { id: installment.agreementId },
+				include: {
+					installments: true
+				}
+			});
+
+			if (!agreement) {
+				throw new Error('Agreement not found');
+			}
+
+			const totalPaid = agreement.installments.reduce(
+				(sum: Decimal, inst: { paidAmount: Decimal }) => sum.plus(inst.paidAmount),
+				new Decimal(0)
+			);
+			const totalPending = agreement.installments.reduce(
+				(sum: Decimal, inst: { pendingAmount: Decimal }) => sum.plus(inst.pendingAmount),
+				new Decimal(0)
+			);
+
+			let newAgreementStatus = agreement.status;
+			if (totalPending.equals(new Decimal(0))) {
+				newAgreementStatus = 'COMPLETED';
+			}
+
+			const updatedAgreement = await tx.paymentAgreement.update({
+				where: { id: installment.agreementId },
+				data: {
+					paidAmount: totalPaid,
+					pendingAmount: totalPending,
+					status: newAgreementStatus,
+					completedAt: newAgreementStatus === 'COMPLETED' ? new Date() : agreement.completedAt
+				}
+			});
+
+			// Record payment event
+			await tx.paymentAgreementEvent.create({
+				data: {
+					agreementId: installment.agreementId,
+					eventType: 'INSTALLMENT_PAID',
+					description: `Payment of ${input.amount.toString()} registered for installment ${installment.installmentNumber}`,
+					previousStatus: null, // Installment status changes don't use agreement status
+					newStatus: null, // Installment status changes don't use agreement status
+					oldValue: {
+						paidAmount: installment.paidAmount.toString(),
+						pendingAmount: installment.pendingAmount.toString()
+					},
+					newValue: {
+						paidAmount: newPaidAmount.toString(),
+						pendingAmount: newPendingAmount.toString()
+					},
+					userId,
+					userName: input.paidByName
+				}
+			});
+
+			// Create audit log
+			await this.createAuditLog(
+				userId,
+				'UPDATE',
+				'PaymentAgreementInstallment',
+				input.installmentId,
+				`Payment of ${input.amount.toString()} registered for installment ${installment.installmentNumber} of agreement ${updatedAgreement.agreementNumber}/${updatedAgreement.agreementYear}`,
+				{
+					paymentId: payment.id,
+					installmentId: input.installmentId,
+					agreementId: installment.agreementId,
+					agreementNumber: updatedAgreement.agreementNumber,
+					agreementYear: updatedAgreement.agreementYear,
+					amount: input.amount.toString(),
+					method: input.method,
+					installmentNumber: installment.installmentNumber,
+					previousStatus: installment.status,
+					newStatus
+				}
+			);
+
+			return { payment, installment: updatedInstallment, agreement: updatedAgreement };
+		});
+
+		return {
+			payment: result.payment,
+			installment: result.installment as unknown as PaymentAgreementInstallment,
+			agreement: result.agreement as unknown as PaymentAgreement
+		};
 	}
 }
 

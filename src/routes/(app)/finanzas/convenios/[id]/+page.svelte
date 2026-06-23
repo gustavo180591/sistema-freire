@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 
 	interface PaymentAgreement {
 		id: string;
@@ -18,9 +18,12 @@
 	}
 
 	interface PaymentAgreementInstallment {
+		id: string;
 		installmentNumber: number;
 		dueDate: Date;
 		amount: { toString: () => string };
+		paidAmount: { toString: () => string };
+		pendingAmount: { toString: () => string };
 		status: string;
 	}
 
@@ -54,7 +57,7 @@
 			<p class="text-slate-400">{data.agreement.studentName}</p>
 		</div>
 		<a
-			href="/finanzas/convenios"
+			href={resolve('/finanzas/convenios')}
 			class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
 		>
 			Volver
@@ -128,17 +131,50 @@
 	<div class="rounded-lg border border-slate-700 bg-slate-800/50 p-6">
 		<h2 class="mb-4 text-lg font-semibold text-white">Cuotas</h2>
 		<div class="space-y-2">
-			{#each data.agreement.installments as installment}
+			{#each data.agreement.installments as installment (installment.id)}
 				<div class="flex justify-between rounded-lg border border-slate-700 bg-slate-900 p-3">
 					<div>
 						<p class="text-sm font-medium text-white">Cuota {installment.installmentNumber}</p>
 						<p class="text-xs text-slate-400">
 							Vencimiento: {new Date(installment.dueDate).toLocaleDateString('es-AR')}
 						</p>
+						<p class="text-xs text-slate-400">
+							Pagado: ${installment.paidAmount.toString()} / Pendiente: ${installment.pendingAmount.toString()}
+						</p>
 					</div>
 					<div class="text-right">
 						<p class="text-sm font-medium text-white">${installment.amount.toString()}</p>
 						<p class="text-xs text-slate-400">{installment.status}</p>
+						{#if data.agreement.status === 'ACTIVE' && installment.status !== 'PAID' && installment.status !== 'CANCELLED' && installment.status !== 'WAIVED'}
+							<form method="POST" action="?/registerPayment" class="mt-2">
+								<input type="hidden" name="installmentId" value={installment.id} />
+								<input
+									type="number"
+									name="amount"
+									placeholder="Monto"
+									step="0.01"
+									min="0.01"
+									max={installment.pendingAmount.toString()}
+									class="mb-1 w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-white"
+								/>
+								<select
+									name="method"
+									class="mb-1 w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-white"
+								>
+									<option value="CASH">Efectivo</option>
+									<option value="BANK_TRANSFER">Transferencia</option>
+									<option value="DEBIT_CARD">Tarjeta Débito</option>
+									<option value="CREDIT_CARD">Tarjeta Crédito</option>
+									<option value="QR">QR</option>
+								</select>
+								<button
+									type="submit"
+									class="w-full rounded bg-indigo-600 px-2 py-1 text-xs font-medium text-white transition hover:bg-indigo-700"
+								>
+									Pagar
+								</button>
+							</form>
+						{/if}
 					</div>
 				</div>
 			{/each}

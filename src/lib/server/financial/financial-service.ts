@@ -2119,6 +2119,11 @@ export class FinancialService {
 					include: {
 						charge: {
 							include: { concept: true }
+						},
+						installment: {
+							include: {
+								agreement: true
+							}
 						}
 					}
 				}
@@ -2186,6 +2191,9 @@ export class FinancialService {
 		let totalAmount = new Decimal(0);
 		let paymentMethod: PaymentMethod | null = null;
 		let paymentReference: string | null = null;
+		let agreementId: string | null = null;
+		let agreementNumber: number | null = null;
+		let installmentNumber: number | null = null;
 
 		for (const payment of payments) {
 			if (!paymentMethod) {
@@ -2194,23 +2202,44 @@ export class FinancialService {
 			}
 
 			for (const allocation of payment.allocations) {
-				// Skip allocations without charge (agreement installment payments)
-				if (!allocation.charge || !allocation.chargeId) {
-					continue;
+				// Handle charge allocations (original debt payments)
+				if (allocation.charge && allocation.chargeId) {
+					const charge = allocation.charge;
+					const item = {
+						chargeId: charge.id,
+						concept: charge.concept.name,
+						periodLabel: charge.periodLabel,
+						baseAmount: charge.amount,
+						lateFeeAmount: charge.lateFeeApplied,
+						discountAmount: charge.discountApplied.add(charge.scholarshipApplied),
+						finalAmount: allocation.amount
+					};
+					items.push(item);
+					totalAmount = totalAmount.add(allocation.amount);
 				}
+				// Handle agreement installment allocations
+				else if (allocation.installment && allocation.installmentId) {
+					const installment = allocation.installment;
+					const agreement = installment.agreement;
+					const item = {
+						chargeId: null,
+						concept: `Cuota ${installment.installmentNumber} - Convenio #${agreement.agreementNumber}`,
+						periodLabel: `Vencimiento: ${installment.dueDate.toISOString().split('T')[0]}`,
+						baseAmount: installment.amount,
+						lateFeeAmount: new Decimal(0),
+						discountAmount: new Decimal(0),
+						finalAmount: allocation.amount
+					};
+					items.push(item);
+					totalAmount = totalAmount.add(allocation.amount);
 
-				const charge = allocation.charge;
-				const item = {
-					chargeId: charge.id,
-					concept: charge.concept.name,
-					periodLabel: charge.periodLabel,
-					baseAmount: charge.amount,
-					lateFeeAmount: charge.lateFeeApplied,
-					discountAmount: charge.discountApplied.add(charge.scholarshipApplied),
-					finalAmount: allocation.amount
-				};
-				items.push(item);
-				totalAmount = totalAmount.add(allocation.amount);
+					// Capture agreement info for receipt header
+					if (!agreementId) {
+						agreementId = agreement.id;
+						agreementNumber = agreement.agreementNumber;
+						installmentNumber = installment.installmentNumber;
+					}
+				}
 			}
 		}
 
@@ -2254,7 +2283,10 @@ export class FinancialService {
 					observations,
 					status: 'ISSUED',
 					printCount: 0,
-					originalCopy: true
+					originalCopy: true,
+					agreementId: agreementId || undefined,
+					agreementNumber: agreementNumber || undefined,
+					installmentNumber: installmentNumber || undefined
 				}
 			});
 

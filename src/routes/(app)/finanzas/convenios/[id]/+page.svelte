@@ -34,9 +34,26 @@
 		originalDebtIncluded: { toString: () => string };
 	}
 
+	interface PaymentWithReceipt {
+		id: string;
+		paidAt: Date;
+		amount: { toString: () => string };
+		method: string;
+		reference: string | null;
+		receipt: {
+			id: string;
+			receiptNumber: number;
+			receiptYear: number;
+			issuedAt: Date;
+			totalAmount: { toString: () => string };
+		} | null;
+		installment: PaymentAgreementInstallment | null;
+	}
+
 	interface PageData {
 		agreement: PaymentAgreement;
 		summary?: AgreementSummary;
+		paymentsWithReceipts?: PaymentWithReceipt[];
 	}
 
 	let { data }: { data: PageData } = $props();
@@ -180,6 +197,49 @@
 			{/each}
 		</div>
 	</div>
+
+	{#if data.paymentsWithReceipts && data.paymentsWithReceipts.length > 0}
+		<div class="rounded-lg border border-slate-700 bg-slate-800/50 p-6">
+			<h2 class="mb-4 text-lg font-semibold text-white">Pagos y Recibos</h2>
+			<div class="space-y-2">
+				{#each data.paymentsWithReceipts as payment (payment.id)}
+					<div class="flex justify-between rounded-lg border border-slate-700 bg-slate-900 p-3">
+						<div>
+							<p class="text-sm font-medium text-white">
+								Cuota {payment.installment?.installmentNumber || '?'} - ${payment.amount.toString()}
+							</p>
+							<p class="text-xs text-slate-400">
+								Fecha: {new Date(payment.paidAt).toLocaleDateString('es-AR')}
+							</p>
+							<p class="text-xs text-slate-400">
+								Método: {payment.method} {payment.reference ? `(${payment.reference})` : ''}
+							</p>
+						</div>
+						<div class="text-right">
+							{#if payment.receipt}
+								<p class="text-sm font-medium text-indigo-400">
+									Recibo #{payment.receipt.receiptNumber}/{payment.receipt.receiptYear}
+								</p>
+								<p class="text-xs text-slate-400">
+									{new Date(payment.receipt.issuedAt).toLocaleDateString('es-AR')}
+								</p>
+								<a
+									href={`/recibos/${payment.receipt.id}`}
+									class="mt-1 inline-block rounded bg-indigo-600 px-2 py-1 text-xs font-medium text-white transition hover:bg-indigo-700"
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									Ver Recibo
+								</a>
+							{:else}
+								<p class="text-sm font-medium text-slate-500">Sin recibo</p>
+							{/if}
+						</div>
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/if}
 
 	{#if data.agreement.status === 'DRAFT'}
 		<form method="POST" action="?/activate">

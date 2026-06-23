@@ -40,9 +40,51 @@ export async function load({ locals, params }) {
 		locals.user.id
 	);
 
+	// Get payments with receipts for this agreement
+	const { prisma } = await import('$lib/server/db/prisma');
+	const paymentsWithReceipts = await prisma.payment.findMany({
+		where: {
+			isCancelled: false,
+			allocations: {
+				some: {
+					installment: {
+						agreementId: params.id
+					}
+				}
+			}
+		},
+		include: {
+			receipt: true,
+			allocations: {
+				where: {
+					installmentId: { not: null }
+				},
+				include: {
+					installment: true
+				}
+			}
+		},
+		orderBy: { paidAt: 'desc' }
+	});
+
 	return {
 		agreement,
-		summary
+		summary,
+		paymentsWithReceipts: paymentsWithReceipts.map((p) => ({
+			id: p.id,
+			paidAt: p.paidAt,
+			amount: p.amount,
+			method: p.method,
+			reference: p.reference,
+			receipt: p.receipt ? {
+				id: p.receipt.id,
+				receiptNumber: p.receipt.receiptNumber,
+				receiptYear: p.receipt.receiptYear,
+				issuedAt: p.receipt.issuedAt,
+				totalAmount: p.receipt.totalAmount
+			} : null,
+			installment: p.allocations[0]?.installment || null
+		}))
 	};
 }
 

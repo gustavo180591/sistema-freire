@@ -1,5 +1,5 @@
 /**
- * Payment Agreement Service - Phase 3 (Installment Payments)
+ * Payment Agreement Service - Phase 5.2 (Effective Debt Calculation)
  *
  * Current Status:
  * - Schema and migration are applied to real database
@@ -23,6 +23,20 @@
  * - Update agreement totals (paidAmount, pendingAmount)
  * - Validate payment amounts and installment state
  * - Record payment events and audit logs
+ *
+ * Phase 5.1 Features:
+ * - Mark overdue installments (PENDING/PARTIAL -> OVERDUE)
+ * - Evaluate agreement completion (all installments PAID -> COMPLETED)
+ * - Evaluate agreement default (2+ consecutive overdue or >50% overdue -> DEFAULTED)
+ * - Register events and audit logs for status changes
+ * - Transactional consistency
+ *
+ * Phase 5.2 Features:
+ * - Calculate effective debt considering payment agreements
+ * - Distinguish between original debt and agreement-covered debt
+ * - Calculate agreement installment debt (pending and overdue)
+ * - Handle different agreement statuses (DRAFT, ACTIVE, COMPLETED, DEFAULTED, CANCELLED)
+ * - Avoid debt duplication
  */
 
 import { Prisma, PrismaClient } from '@prisma/client';
@@ -72,6 +86,59 @@ export type UserRole =
 	| 'DOCENTE'
 	| 'ALUMNO'
 	| 'APODERADO';
+
+// Types for effective debt calculation (Phase 5.2)
+export type EffectiveDebtSummary = {
+	// Original debt from StudentCharge (before considering agreements)
+	originalTotalDebt: Decimal;
+	originalOverdueDebt: Decimal;
+	originalPendingDebt: Decimal;
+
+	// Debt covered by active agreements
+	agreementCoveredDebt: Decimal;
+	agreementCoveredOverdueDebt: Decimal;
+
+	// Debt NOT covered by agreements (still payable as original charges)
+	uncoveredDebt: Decimal;
+	uncoveredOverdueDebt: Decimal;
+
+	// Agreement installment debt (what the student owes through agreements)
+	agreementInstallmentPending: Decimal;
+	agreementInstallmentOverdue: Decimal;
+	agreementInstallmentTotal: Decimal;
+
+	// Defaulted agreement debt (agreements that are DEFAULTED)
+	defaultedAgreementDebt: Decimal;
+
+	// Total effective debt (uncovered + agreement installments)
+	effectiveTotalDebt: Decimal;
+	effectiveOverdueDebt: Decimal;
+
+	// Agreement counts
+	activeAgreements: number;
+	completedAgreements: number;
+	defaultedAgreements: number;
+	cancelledAgreements: number;
+	draftAgreements: number;
+};
+
+export type AgreementDebtDetail = {
+	agreementId: string;
+	agreementNumber: number;
+	agreementYear: number;
+	status: PaymentAgreementStatusType;
+	originalDebt: Decimal;
+	agreedAmount: Decimal;
+	paidAmount: Decimal;
+	pendingAmount: Decimal;
+	installmentPending: Decimal;
+	installmentOverdue: Decimal;
+	coveredCharges: Array<{
+		chargeId: string;
+		originalAmount: Decimal;
+		includedAmount: Decimal;
+	}>;
+};
 
 // Types for Payment Agreement models
 export type PaymentAgreement = {
@@ -1136,6 +1203,325 @@ class PaymentAgreementService {
 			statusChanged: result.statusChanged,
 			previousStatus: result.previousStatus,
 			newStatus: result.newStatus
+		};
+	}
+
+	/**
+	 * Phase 5.2: Calculate effective debt summary considering payment agreements
+	 * This method calculates the student's debt while avoiding duplication with active agreements
+	 */
+	async getStudentEffectiveDebt(studentId: string): Promise<EffectiveDebtSummary> {
+		// Get all student charges
+		const charges = await prisma.studentCharge.findMany({
+			where: { studentId },
+			include: {
+				agreementChargeRelations: {
+					include: {
+						agreement: true
+					}
+				}
+			}
+		});
+
+		// Get all payment agreements for the student
+		const agreements = await prisma.paymentAgreement.findMany({
+			where: { studentId },
+			include: {
+				installments: true,
+				relatedCharges: true
+			}
+		});
+
+		const now = new Date();
+
+		// Calculate original debt (before considering agreements)
+		let originalTotalDebt = new Decimal(0);
+		let originalOverdueDebt = new Decimal(0);
+		let originalPendingDebt = new Decimal(0);
+
+		for (const charge of charges) {
+			if (charge.status === 'CANCELLED') continue;
+			if (charge.status === 'PAID') continue;
+
+			const remaining = charge.finalAmount.sub(charge.paidAmount);
+			if (remaining.gt(0)) {
+				originalTotalDebt = originalTotalDebt.add(remaining);
+				originalPendingDebt = originalPendingDebt.add(remaining);
+
+				if (charge.dueDate && new Date(charge.dueDate) < now) {
+					originalOverdueDebt = originalOverdueDebt.add(remaining);
+				}
+			}
+		}
+
+		// Calculate agreement-covered debt
+		let agreementCoveredDebt = new Decimal(0);
+		let agreementCoveredOverdueDebt = new Decimal(0);
+		const coveredChargeIds = new Set<string>();
+
+		for (const agreement of agreements) {
+			// Only ACTIVE agreements cover debt
+			if (agreement.status !== 'ACTIVE') continue;
+
+			for (const relation of agreement.relatedCharges) {
+				coveredChargeIds.add(relation.chargeId);
+				agreementCoveredDebt = agreementCoveredDebt.add(relation.amountIncluded);
+
+				// Check if the original charge was overdue
+				const charge = charges.find((c) => c.id === relation.chargeId);
+				if (charge && charge.dueDate && new Date(charge.dueDate) < now) {
+					agreementCoveredOverdueDebt = agreementCoveredOverdueDebt.add(relation.amountIncluded);
+				}
+			}
+		}
+
+		// Calculate uncovered debt (charges not covered by active agreements)
+		let uncoveredDebt = new Decimal(0);
+		let uncoveredOverdueDebt = new Decimal(0);
+
+		for (const charge of charges) {
+			if (charge.status === 'CANCELLED') continue;
+			if (charge.status === 'PAID') continue;
+			if (coveredChargeIds.has(charge.id)) continue;
+
+			const remaining = charge.finalAmount.sub(charge.paidAmount);
+			if (remaining.gt(0)) {
+				uncoveredDebt = uncoveredDebt.add(remaining);
+
+				if (charge.dueDate && new Date(charge.dueDate) < now) {
+					uncoveredOverdueDebt = uncoveredOverdueDebt.add(remaining);
+				}
+			}
+		}
+
+		// Calculate agreement installment debt
+		let agreementInstallmentPending = new Decimal(0);
+		let agreementInstallmentOverdue = new Decimal(0);
+		let agreementInstallmentTotal = new Decimal(0);
+		let defaultedAgreementDebt = new Decimal(0);
+
+		for (const agreement of agreements) {
+			// Skip DRAFT and CANCELLED agreements
+			if (agreement.status === 'DRAFT' || agreement.status === 'CANCELLED') continue;
+
+			// COMPLETED agreements have 0 debt
+			if (agreement.status === 'COMPLETED') continue;
+
+			// DEFAULTED agreements count as defaulted debt
+			if (agreement.status === 'DEFAULTED') {
+				defaultedAgreementDebt = defaultedAgreementDebt.add(agreement.pendingAmount);
+			}
+
+			// Calculate installment debt for ACTIVE and DEFAULTED agreements
+			if (agreement.status === 'ACTIVE' || agreement.status === 'DEFAULTED') {
+				for (const installment of agreement.installments) {
+					if (installment.status === 'PAID' || installment.status === 'CANCELLED' || installment.status === 'WAIVED') {
+						continue;
+					}
+
+					const pending = installment.pendingAmount;
+					agreementInstallmentTotal = agreementInstallmentTotal.add(pending);
+
+					if (installment.status === 'PENDING' || installment.status === 'PARTIAL' || installment.status === 'OVERDUE') {
+						agreementInstallmentPending = agreementInstallmentPending.add(pending);
+					}
+
+					if (installment.status === 'OVERDUE') {
+						agreementInstallmentOverdue = agreementInstallmentOverdue.add(pending);
+					}
+				}
+			}
+		}
+
+		// Calculate effective debt (uncovered + agreement installments)
+		const effectiveTotalDebt = uncoveredDebt.add(agreementInstallmentTotal);
+		const effectiveOverdueDebt = uncoveredOverdueDebt.add(agreementInstallmentOverdue);
+
+		// Count agreements by status
+		const activeAgreements = agreements.filter((a) => a.status === 'ACTIVE').length;
+		const completedAgreements = agreements.filter((a) => a.status === 'COMPLETED').length;
+		const defaultedAgreements = agreements.filter((a) => a.status === 'DEFAULTED').length;
+		const cancelledAgreements = agreements.filter((a) => a.status === 'CANCELLED').length;
+		const draftAgreements = agreements.filter((a) => a.status === 'DRAFT').length;
+
+		return {
+			originalTotalDebt,
+			originalOverdueDebt,
+			originalPendingDebt,
+			agreementCoveredDebt,
+			agreementCoveredOverdueDebt,
+			uncoveredDebt,
+			uncoveredOverdueDebt,
+			agreementInstallmentPending,
+			agreementInstallmentOverdue,
+			agreementInstallmentTotal,
+			defaultedAgreementDebt,
+			effectiveTotalDebt,
+			effectiveOverdueDebt,
+			activeAgreements,
+			completedAgreements,
+			defaultedAgreements,
+			cancelledAgreements,
+			draftAgreements
+		};
+	}
+
+	/**
+	 * Phase 5.2: Get detailed debt summary for each agreement
+	 */
+	async getStudentAgreementDebtSummary(studentId: string): Promise<AgreementDebtDetail[]> {
+		const agreements = await prisma.paymentAgreement.findMany({
+			where: { studentId },
+			include: {
+				installments: true,
+				relatedCharges: {
+					include: {
+						charge: true
+					}
+				}
+			},
+			orderBy: [
+				{ agreementYear: 'desc' },
+				{ agreementNumber: 'desc' }
+			]
+		});
+
+		const now = new Date();
+
+		return agreements.map((agreement) => {
+			// Calculate installment debt
+			let installmentPending = new Decimal(0);
+			let installmentOverdue = new Decimal(0);
+
+			for (const installment of agreement.installments) {
+				if (installment.status === 'PAID' || installment.status === 'CANCELLED' || installment.status === 'WAIVED') {
+					continue;
+				}
+
+				const pending = installment.pendingAmount;
+
+				if (installment.status === 'PENDING' || installment.status === 'PARTIAL' || installment.status === 'OVERDUE') {
+					installmentPending = installmentPending.add(pending);
+				}
+
+				if (installment.status === 'OVERDUE') {
+					installmentOverdue = installmentOverdue.add(pending);
+				}
+			}
+
+			// Build covered charges details
+			const coveredCharges = agreement.relatedCharges.map((relation) => ({
+				chargeId: relation.chargeId,
+				originalAmount: relation.charge.finalAmount,
+				includedAmount: relation.amountIncluded
+			}));
+
+			return {
+				agreementId: agreement.id,
+				agreementNumber: agreement.agreementNumber,
+				agreementYear: agreement.agreementYear,
+				status: agreement.status as PaymentAgreementStatusType,
+				originalDebt: agreement.originalDebt,
+				agreedAmount: agreement.agreedAmount,
+				paidAmount: agreement.paidAmount,
+				pendingAmount: agreement.pendingAmount,
+				installmentPending,
+				installmentOverdue,
+				coveredCharges
+			};
+		});
+	}
+
+	/**
+	 * Phase 5.2: Calculate debt summary with agreements (wrapper for compatibility)
+	 * This method provides a unified interface that can be used alongside FinancialService.calculateDebtSummary
+	 */
+	async calculateDebtSummaryWithAgreements(studentId: string): Promise<{
+		// Original debt summary (from FinancialService)
+		originalDebt: {
+			totalDebt: Decimal;
+			overdueDebt: Decimal;
+			pendingBalance: Decimal;
+			pendingCharges: number;
+			overdueCharges: number;
+			partialCharges: number;
+			paidCharges: number;
+			cancelledCharges: number;
+		};
+		// Agreement-enhanced debt summary
+		effectiveDebt: EffectiveDebtSummary;
+		// Agreement details
+		agreementDetails: AgreementDebtDetail[];
+	}> {
+		// Get original debt summary (mimicking FinancialService.calculateDebtSummary)
+		const charges = await prisma.studentCharge.findMany({
+			where: { studentId },
+			include: {
+				allocations: true
+			}
+		});
+
+		let totalDebt = new Decimal(0);
+		let overdueDebt = new Decimal(0);
+		let pendingBalance = new Decimal(0);
+		let pendingCharges = 0;
+		let overdueCharges = 0;
+		let partialCharges = 0;
+		let paidCharges = 0;
+		let cancelledCharges = 0;
+		const now = new Date();
+
+		for (const charge of charges) {
+			const finalAmount = charge.finalAmount;
+			const paidAmount = charge.paidAmount;
+			const remaining = finalAmount.sub(paidAmount);
+
+			if (charge.status === 'CANCELLED') {
+				cancelledCharges++;
+				continue;
+			}
+
+			if (charge.status === 'PAID') {
+				paidCharges++;
+				continue;
+			}
+
+			if (remaining.gt(0)) {
+				pendingBalance = pendingBalance.add(remaining);
+				totalDebt = totalDebt.add(remaining);
+
+				if (charge.dueDate && new Date(charge.dueDate) < now) {
+					overdueDebt = overdueDebt.add(remaining);
+					overdueCharges++;
+				} else {
+					pendingCharges++;
+				}
+
+				if (charge.status === 'PARTIAL') {
+					partialCharges++;
+				}
+			}
+		}
+
+		// Get effective debt summary
+		const effectiveDebt = await this.getStudentEffectiveDebt(studentId);
+
+		// Get agreement details
+		const agreementDetails = await this.getStudentAgreementDebtSummary(studentId);
+
+		return {
+			originalDebt: {
+				totalDebt,
+				overdueDebt,
+				pendingBalance,
+				pendingCharges,
+				overdueCharges,
+				partialCharges,
+				paidCharges,
+				cancelledCharges
+			},
+			effectiveDebt,
+			agreementDetails
 		};
 	}
 }

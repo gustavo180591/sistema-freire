@@ -882,6 +882,262 @@ class PaymentAgreementService {
 			agreement: result.agreement as unknown as PaymentAgreement
 		};
 	}
+
+	/**
+	 * Phase 5.1: Mark overdue installments
+	 * Marks installments as OVERDUE if their dueDate is in the past and they are not fully paid
+	 */
+	private async markOverdueInstallments(
+		agreementId: string,
+		tx: Prisma.TransactionClient
+	): Promise<{ markedCount: number; installmentIds: string[] }> {
+		const now = new Date();
+		const installments = await tx.paymentAgreementInstallment.findMany({
+			where: {
+				agreementId,
+				status: { in: ['PENDING', 'PARTIAL'] },
+				dueDate: { lt: now }
+			}
+		});
+
+		const markedIds: string[] = [];
+		for (const installment of installments) {
+			await tx.paymentAgreementInstallment.update({
+				where: { id: installment.id },
+				data: {
+					status: 'OVERDUE',
+					overdueSince: now
+				}
+			});
+			markedIds.push(installment.id);
+		}
+
+		return { markedCount: markedIds.length, installmentIds: markedIds };
+	}
+
+	/**
+	 * Phase 5.1: Evaluate if agreement should be marked as COMPLETED
+	 * Agreement is COMPLETED if all installments are PAID
+	 */
+	private async evaluateAgreementCompletion(
+		agreementId: string,
+		tx: Prisma.TransactionClient
+	): Promise<{ shouldComplete: boolean }> {
+		const installments = await tx.paymentAgreementInstallment.findMany({
+			where: { agreementId }
+		});
+
+		const allPaid = installments.every((inst) => inst.status === 'PAID');
+		return { shouldComplete: allPaid };
+	}
+
+	/**
+	 * Phase 5.1: Evaluate if agreement should be marked as DEFAULTED
+	 * Agreement is DEFAULTED if:
+	 * - Has 2 or more consecutive overdue installments
+	 * - OR has more than 50% of installments overdue
+	 */
+	private async evaluateAgreementDefault(
+		agreementId: string,
+		tx: Prisma.TransactionClient
+	): Promise<{ shouldDefault: boolean; reason: string }> {
+		const installments = await tx.paymentAgreementInstallment.findMany({
+			where: { agreementId },
+			orderBy: { installmentNumber: 'asc' }
+		});
+
+		const overdueInstallments = installments.filter((inst) => inst.status === 'OVERDUE');
+		const overdueCount = overdueInstallments.length;
+		const totalCount = installments.length;
+
+		if (totalCount === 0) {
+			return { shouldDefault: false, reason: 'No installments' };
+		}
+
+		// Check for 2 or more consecutive overdue installments
+		let consecutiveOverdue = 0;
+		let maxConsecutiveOverdue = 0;
+		for (const inst of installments) {
+			if (inst.status === 'OVERDUE') {
+				consecutiveOverdue++;
+				maxConsecutiveOverdue = Math.max(maxConsecutiveOverdue, consecutiveOverdue);
+			} else {
+				consecutiveOverdue = 0;
+			}
+		}
+
+		if (maxConsecutiveOverdue >= 2) {
+			return {
+				shouldDefault: true,
+				reason: `${maxConsecutiveOverdue} consecutive overdue installments`
+			};
+		}
+
+		// Check for more than 50% overdue
+		const overduePercentage = (overdueCount / totalCount) * 100;
+		if (overduePercentage > 50) {
+			return {
+				shouldDefault: true,
+				reason: `${overdueCount}/${totalCount} (${overduePercentage.toFixed(1)}%) installments overdue`
+			};
+		}
+
+		return { shouldDefault: false, reason: 'Not enough overdue installments' };
+	}
+
+	/**
+	 * Phase 5.1: Evaluate agreement financial status
+	 * Main coordinator method that evaluates and updates agreement status
+	 */
+	async evaluateAgreementFinancialStatus(
+		agreementId: string,
+		userId: string,
+		userName: string
+	): Promise<{
+		agreement: PaymentAgreement;
+		overdueMarked: number;
+		statusChanged: boolean;
+		previousStatus: PaymentAgreementStatusType;
+		newStatus: PaymentAgreementStatusType;
+	}> {
+		// Get agreement with installments
+		const agreement = await prisma.paymentAgreement.findUnique({
+			where: { id: agreementId },
+			include: {
+				installments: true
+			}
+		});
+
+		if (!agreement) {
+			throw new Error('Agreement not found');
+		}
+
+		if (agreement.status !== 'ACTIVE') {
+			throw new Error(`Agreement is in ${agreement.status} status, cannot evaluate`);
+		}
+
+		const previousStatus = agreement.status;
+
+		// Execute evaluation in transaction
+		const result = await prisma.$transaction(async (tx) => {
+			// Mark overdue installments
+			const { markedCount, installmentIds } = await this.markOverdueInstallments(
+				agreementId,
+				tx
+			);
+
+			// Evaluate completion
+			const { shouldComplete } = await this.evaluateAgreementCompletion(agreementId, tx);
+
+			// Evaluate default
+			const { shouldDefault, reason } = await this.evaluateAgreementDefault(agreementId, tx);
+
+			// Determine new status
+			let newStatus: PaymentAgreementStatusType = previousStatus;
+			if (shouldComplete) {
+				newStatus = 'COMPLETED';
+			} else if (shouldDefault) {
+				newStatus = 'DEFAULTED';
+			}
+
+			// Update agreement if status changed
+			let updatedAgreement = agreement;
+			if (newStatus !== previousStatus) {
+				updatedAgreement = await tx.paymentAgreement.update({
+					where: { id: agreementId },
+					data: {
+						status: newStatus,
+						completedAt: newStatus === 'COMPLETED' ? new Date() : null
+					},
+					include: {
+						installments: true
+					}
+				});
+
+				// Record status change event
+				const eventType = newStatus === 'COMPLETED' ? 'STATUS_CHANGED' : 'DEFAULTED';
+				await this.recordAgreementEvent(
+					agreementId,
+					eventType,
+					`Agreement status changed from ${previousStatus} to ${newStatus}${reason ? `: ${reason}` : ''}`,
+					userId,
+					userName,
+					previousStatus,
+					newStatus,
+					{ status: previousStatus },
+					{ status: newStatus, reason }
+				);
+
+				// Create audit log
+				await this.createAuditLog(
+					userId,
+					'UPDATE',
+					'PaymentAgreement',
+					agreementId,
+					`Agreement status changed from ${previousStatus} to ${newStatus}${reason ? `: ${reason}` : ''}`,
+					{
+						agreementNumber: agreement.agreementNumber,
+						agreementYear: agreement.agreementYear,
+						studentId: agreement.studentId,
+						studentName: agreement.studentName,
+						previousStatus,
+						newStatus,
+						reason
+					}
+				);
+			}
+
+			// Record overdue installment events
+			if (markedCount > 0) {
+				for (const installmentId of installmentIds) {
+					await this.recordAgreementEvent(
+						agreementId,
+						'INSTALLMENT_OVERDUE',
+						`Installment marked as overdue`,
+						userId,
+						userName,
+						undefined,
+						undefined,
+						{ installmentId },
+						{ status: 'OVERDUE', overdueSince: new Date().toISOString() }
+					);
+				}
+
+				// Create audit log for overdue marking
+				await this.createAuditLog(
+					userId,
+					'UPDATE',
+					'PaymentAgreementInstallment',
+					agreementId,
+					`${markedCount} installment(s) marked as overdue`,
+					{
+						agreementNumber: agreement.agreementNumber,
+						agreementYear: agreement.agreementYear,
+						studentId: agreement.studentId,
+						studentName: agreement.studentName,
+						markedCount,
+						installmentIds
+					}
+				);
+			}
+
+			return {
+				agreement: updatedAgreement,
+				overdueMarked: markedCount,
+				statusChanged: newStatus !== previousStatus,
+				previousStatus,
+				newStatus
+			};
+		});
+
+		return {
+			agreement: result.agreement as unknown as PaymentAgreement,
+			overdueMarked: result.overdueMarked,
+			statusChanged: result.statusChanged,
+			previousStatus: result.previousStatus,
+			newStatus: result.newStatus
+		};
+	}
 }
 
 // Export singleton instance

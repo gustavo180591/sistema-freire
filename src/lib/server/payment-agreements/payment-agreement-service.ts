@@ -1,5 +1,5 @@
 /**
- * Payment Agreement Service - Phase 5.2 (Effective Debt Calculation)
+ * Payment Agreement Service - Phase 5.3 (Block Exceptions)
  *
  * Current Status:
  * - Schema and migration are applied to real database
@@ -37,6 +37,15 @@
  * - Calculate agreement installment debt (pending and overdue)
  * - Handle different agreement statuses (DRAFT, ACTIVE, COMPLETED, DEFAULTED, CANCELLED)
  * - Avoid debt duplication
+ *
+ * Phase 5.3 Features:
+ * - Apply block exceptions for active and up-to-date agreements
+ * - Revoke block exceptions for overdue or defaulted agreements
+ * - Query active agreement block exceptions
+ * - Evaluate agreement block status
+ * - Link exceptions to agreements with exceptionSource and exceptionAgreementId
+ * - Register BLOCK_EXCEPTION events
+ * - Audit all exception creation/revocation
  */
 
 import { Prisma, PrismaClient } from '@prisma/client';
@@ -138,6 +147,38 @@ export type AgreementDebtDetail = {
 		originalAmount: Decimal;
 		includedAmount: Decimal;
 	}>;
+};
+
+// Types for block exception operations (Phase 5.3)
+export type AgreementBlockExceptionResult = {
+	agreementId: string;
+	agreementNumber: number;
+	agreementYear: number;
+	exceptionApplied: boolean;
+	exceptionRevoked: boolean;
+	blockId?: string;
+	previousException?: {
+		exceptionGranted: boolean;
+		exceptionBy?: string | null;
+		exceptionAt?: Date | null;
+		exceptionReason?: string | null;
+	};
+	reason: string;
+};
+
+export type ActiveAgreementBlockException = {
+	blockId: string;
+	studentId: string;
+	blockType: string;
+	blockReason: string;
+	exceptionGranted: boolean;
+	exceptionBy?: string | null;
+	exceptionAt?: Date | null;
+	exceptionReason?: string | null;
+	exceptionSource?: string | null;
+	exceptionAgreementId?: string | null;
+	agreementNumber?: number;
+	agreementYear?: number;
 };
 
 // Types for Payment Agreement models
@@ -1522,6 +1563,432 @@ class PaymentAgreementService {
 			},
 			effectiveDebt,
 			agreementDetails
+		};
+	}
+
+	/**
+	 * Phase 5.3: Apply block exception for an active and up-to-date agreement
+	 */
+	async applyAgreementBlockException(
+		agreementId: string,
+		userId: string,
+		userName: string
+	): Promise<AgreementBlockExceptionResult> {
+		// Get agreement with installments
+		const agreement = await prisma.paymentAgreement.findUnique({
+			where: { id: agreementId },
+			include: {
+				installments: true
+			}
+		});
+
+		if (!agreement) {
+			throw new Error('Convenio no encontrado');
+		}
+
+		// Validate agreement status
+		if (agreement.status !== 'ACTIVE') {
+			throw new Error(`Solo convenios ACTIVOS pueden generar excepción de bloqueo. Estado actual: ${agreement.status}`);
+		}
+
+		// Check if agreement has overdue installments
+		const hasOverdueInstallments = agreement.installments.some(
+			(installment) => installment.status === 'OVERDUE'
+		);
+
+		if (hasOverdueInstallments) {
+			throw new Error('Convenio con cuotas vencidas no puede generar excepción de bloqueo');
+		}
+
+		// Check for existing active blocks for the student
+		const activeBlocks = await prisma.financialBlock.findMany({
+			where: {
+				studentId: agreement.studentId,
+				isActive: true
+			}
+		});
+
+		if (activeBlocks.length === 0) {
+			return {
+				agreementId,
+				agreementNumber: agreement.agreementNumber,
+				agreementYear: agreement.agreementYear,
+				exceptionApplied: false,
+				exceptionRevoked: false,
+				reason: 'No hay bloqueos activos para el alumno'
+			};
+		}
+
+		// Check for existing exception for this agreement
+		const existingException = activeBlocks.find(
+			(block) => block.exceptionAgreementId === agreementId && block.exceptionSource === 'PAYMENT_AGREEMENT'
+		);
+
+		if (existingException) {
+			return {
+				agreementId,
+				agreementNumber: agreement.agreementNumber,
+				agreementYear: agreement.agreementYear,
+				exceptionApplied: false,
+				exceptionRevoked: false,
+				blockId: existingException.id,
+				previousException: {
+					exceptionGranted: existingException.exceptionGranted,
+					exceptionBy: existingException.exceptionBy,
+					exceptionAt: existingException.exceptionAt,
+					exceptionReason: existingException.exceptionReason
+				},
+				reason: 'Ya existe una excepción de bloqueo para este convenio'
+			};
+		}
+
+		// Apply exception to all active blocks
+		let exceptionApplied = false;
+		let firstBlockId: string | undefined;
+
+		for (const block of activeBlocks) {
+			await prisma.financialBlock.update({
+				where: { id: block.id },
+				data: {
+					exceptionGranted: true,
+					exceptionBy: userId,
+					exceptionAt: new Date(),
+					exceptionReason: `Convenio de pago activo y al día #${agreement.agreementNumber}/${agreement.agreementYear}`,
+					exceptionSource: 'PAYMENT_AGREEMENT',
+					exceptionAgreementId: agreementId
+				}
+			});
+
+			if (!firstBlockId) {
+				firstBlockId = block.id;
+			}
+			exceptionApplied = true;
+		}
+
+		// Register BLOCK_EXCEPTION event
+		await this.recordAgreementEvent(
+			agreementId,
+			'BLOCK_EXCEPTION',
+			`Excepción de bloqueo aplicada por convenio activo y al día`,
+			userId,
+			userName
+		);
+
+		// Audit log
+		await this.createAuditLog(
+			userId,
+			'UPDATE',
+			'FinancialBlock',
+			firstBlockId || agreementId,
+			`Aplicó excepción de bloqueo por convenio #${agreement.agreementNumber}/${agreement.agreementYear}`,
+			{
+				agreementId,
+				agreementNumber: agreement.agreementNumber,
+				agreementYear: agreement.agreementYear,
+				studentId: agreement.studentId,
+				blocksModified: activeBlocks.length
+			}
+		);
+
+		return {
+			agreementId,
+			agreementNumber: agreement.agreementNumber,
+			agreementYear: agreement.agreementYear,
+			exceptionApplied,
+			exceptionRevoked: false,
+			blockId: firstBlockId,
+			reason: exceptionApplied ? 'Excepción aplicada exitosamente' : 'No se aplicó excepción'
+		};
+	}
+
+	/**
+	 * Phase 5.3: Revoke block exception for an agreement
+	 */
+	async revokeAgreementBlockException(
+		agreementId: string,
+		userId: string,
+		userName: string
+	): Promise<AgreementBlockExceptionResult> {
+		// Get agreement
+		const agreement = await prisma.paymentAgreement.findUnique({
+			where: { id: agreementId }
+		});
+
+		if (!agreement) {
+			throw new Error('Convenio no encontrado');
+		}
+
+		// Find blocks with exception for this agreement
+		const blocksWithException = await prisma.financialBlock.findMany({
+			where: {
+				studentId: agreement.studentId,
+				isActive: true,
+				exceptionGranted: true,
+				exceptionSource: 'PAYMENT_AGREEMENT',
+				exceptionAgreementId: agreementId
+			}
+		});
+
+		if (blocksWithException.length === 0) {
+			return {
+				agreementId,
+				agreementNumber: agreement.agreementNumber,
+				agreementYear: agreement.agreementYear,
+				exceptionApplied: false,
+				exceptionRevoked: false,
+				reason: 'No hay excepción activa para este convenio'
+			};
+		}
+
+		// Revoke exception from all blocks
+		let exceptionRevoked = false;
+		let firstBlockId: string | undefined;
+
+		for (const block of blocksWithException) {
+			await prisma.financialBlock.update({
+				where: { id: block.id },
+				data: {
+					exceptionGranted: false,
+					exceptionBy: null,
+					exceptionAt: null,
+					exceptionReason: null,
+					exceptionSource: null,
+					exceptionAgreementId: null
+				}
+			});
+
+			if (!firstBlockId) {
+				firstBlockId = block.id;
+			}
+			exceptionRevoked = true;
+		}
+
+		// Register BLOCK_EXCEPTION event (revocation)
+		await this.recordAgreementEvent(
+			agreementId,
+			'BLOCK_EXCEPTION',
+			`Excepción de bloqueo revocada por convenio vencido o incumplido`,
+			userId,
+			userName
+		);
+
+		// Audit log
+		await this.createAuditLog(
+			userId,
+			'UPDATE',
+			'FinancialBlock',
+			firstBlockId || agreementId,
+			`Revocó excepción de bloqueo por convenio #${agreement.agreementNumber}/${agreement.agreementYear}`,
+			{
+				agreementId,
+				agreementNumber: agreement.agreementNumber,
+				agreementYear: agreement.agreementYear,
+				studentId: agreement.studentId,
+				blocksModified: blocksWithException.length
+			}
+		);
+
+		return {
+			agreementId,
+			agreementNumber: agreement.agreementNumber,
+			agreementYear: agreement.agreementYear,
+			exceptionApplied: false,
+			exceptionRevoked,
+			blockId: firstBlockId,
+			reason: exceptionRevoked ? 'Excepción revocada exitosamente' : 'No se revocó excepción'
+		};
+	}
+
+	/**
+	 * Phase 5.3: Get active block exception for a student's agreement
+	 */
+	async getActiveAgreementBlockException(studentId: string): Promise<ActiveAgreementBlockException | null> {
+		const block = await prisma.financialBlock.findFirst({
+			where: {
+				studentId,
+				isActive: true,
+				exceptionGranted: true,
+				exceptionSource: 'PAYMENT_AGREEMENT',
+				exceptionAgreementId: { not: null }
+			},
+			include: {
+				exceptionAgreement: true
+			}
+		});
+
+		if (!block) {
+			return null;
+		}
+
+		return {
+			blockId: block.id,
+			studentId: block.studentId,
+			blockType: block.blockType,
+			blockReason: block.blockReason,
+			exceptionGranted: block.exceptionGranted,
+			exceptionBy: block.exceptionBy,
+			exceptionAt: block.exceptionAt,
+			exceptionReason: block.exceptionReason,
+			exceptionSource: block.exceptionSource,
+			exceptionAgreementId: block.exceptionAgreementId,
+			agreementNumber: block.exceptionAgreement?.agreementNumber,
+			agreementYear: block.exceptionAgreement?.agreementYear
+		};
+	}
+
+	/**
+	 * Phase 5.3: Evaluate if an agreement should have a block exception
+	 * Returns true if agreement is ACTIVE and has no overdue installments
+	 */
+	async evaluateAgreementBlockException(agreementId: string): Promise<{
+		shouldHaveException: boolean;
+		reason: string;
+	}> {
+		const agreement = await prisma.paymentAgreement.findUnique({
+			where: { id: agreementId },
+			include: {
+				installments: true
+			}
+		});
+
+		if (!agreement) {
+			throw new Error('Convenio no encontrado');
+		}
+
+		// COMPLETED agreements don't need exceptions
+		if (agreement.status === 'COMPLETED') {
+			return {
+				shouldHaveException: false,
+				reason: 'Convenio completado no necesita excepción activa'
+			};
+		}
+
+		// DEFAULTED agreements should not have exceptions
+		if (agreement.status === 'DEFAULTED') {
+			return {
+				shouldHaveException: false,
+				reason: 'Convenio incumplido no debe tener excepción'
+			};
+		}
+
+		// DRAFT and CANCELLED agreements cannot have exceptions
+		if (agreement.status === 'DRAFT' || agreement.status === 'CANCELLED') {
+			return {
+				shouldHaveException: false,
+				reason: `Convenio ${agreement.status} no puede tener excepción`
+			};
+		}
+
+		// ACTIVE agreements: check for overdue installments
+		if (agreement.status === 'ACTIVE') {
+			const hasOverdueInstallments = agreement.installments.some(
+				(installment) => installment.status === 'OVERDUE'
+			);
+
+			if (hasOverdueInstallments) {
+				return {
+					shouldHaveException: false,
+					reason: 'Convenio con cuotas vencidas no debe tener excepción'
+				};
+			}
+
+			return {
+				shouldHaveException: true,
+				reason: 'Convenio activo y al día puede tener excepción'
+			};
+		}
+
+		return {
+			shouldHaveException: false,
+			reason: `Estado de convenio ${agreement.status} no evaluado para excepción`
+		};
+	}
+
+	/**
+	 * Phase 5.3: Evaluate and apply/revoke block exception for an agreement
+	 * This is the main coordinator method
+	 */
+	async evaluateAgreementBlockStatus(
+		agreementId: string,
+		userId: string,
+		userName: string
+	): Promise<AgreementBlockExceptionResult> {
+		// Get agreement
+		const agreement = await prisma.paymentAgreement.findUnique({
+			where: { id: agreementId }
+		});
+
+		if (!agreement) {
+			throw new Error('Convenio no encontrado');
+		}
+
+		// Evaluate if agreement should have exception
+		const evaluation = await this.evaluateAgreementBlockException(agreementId);
+
+		// Get current exception status
+		const currentException = await this.getActiveAgreementBlockException(agreement.studentId);
+
+		// If should have exception but doesn't, apply it
+		if (evaluation.shouldHaveException && !currentException) {
+			return await this.applyAgreementBlockException(agreementId, userId, userName);
+		}
+
+		// If should not have exception but has one, revoke it
+		if (!evaluation.shouldHaveException && currentException && currentException.exceptionAgreementId === agreementId) {
+			return await this.revokeAgreementBlockException(agreementId, userId, userName);
+		}
+
+		// If should have exception and already has one for this agreement, no action needed
+		if (evaluation.shouldHaveException && currentException && currentException.exceptionAgreementId === agreementId) {
+			return {
+				agreementId,
+				agreementNumber: agreement.agreementNumber,
+				agreementYear: agreement.agreementYear,
+				exceptionApplied: false,
+				exceptionRevoked: false,
+				blockId: currentException.blockId,
+				previousException: {
+					exceptionGranted: currentException.exceptionGranted,
+					exceptionBy: currentException.exceptionBy,
+					exceptionAt: currentException.exceptionAt,
+					exceptionReason: currentException.exceptionReason
+				},
+				reason: 'Excepción ya existe y es correcta'
+			};
+		}
+
+		// If should not have exception and doesn't have one, no action needed
+		if (!evaluation.shouldHaveException && !currentException) {
+			return {
+				agreementId,
+				agreementNumber: agreement.agreementNumber,
+				agreementYear: agreement.agreementYear,
+				exceptionApplied: false,
+				exceptionRevoked: false,
+				reason: evaluation.reason
+			};
+		}
+
+		// If exception exists but is for a different agreement, no action (let the other agreement handle it)
+		if (currentException && currentException.exceptionAgreementId !== agreementId) {
+			return {
+				agreementId,
+				agreementNumber: agreement.agreementNumber,
+				agreementYear: agreement.agreementYear,
+				exceptionApplied: false,
+				exceptionRevoked: false,
+				blockId: currentException.blockId,
+				reason: 'Excepción existe para otro convenio'
+			};
+		}
+
+		return {
+			agreementId,
+			agreementNumber: agreement.agreementNumber,
+			agreementYear: agreement.agreementYear,
+			exceptionApplied: false,
+			exceptionRevoked: false,
+			reason: 'No se requirió acción'
 		};
 	}
 }

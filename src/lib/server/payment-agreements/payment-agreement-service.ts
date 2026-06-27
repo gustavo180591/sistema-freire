@@ -2236,6 +2236,131 @@ class PaymentAgreementService {
 
 		return debtors;
 	}
+
+	/**
+	 * Phase 6.1: Batch evaluation of all active payment agreements
+	 * Evaluates status for all ACTIVE agreements in a safe, idempotent batch operation
+	 * 
+	 * This method is designed for automated execution (e.g., cron jobs) and manual scripts.
+	 * It processes each agreement independently, so errors in one agreement don't affect others.
+	 * 
+	 * @param options - Optional configuration
+	 * @param options.dryRun - If true, evaluates without making changes (default: false)
+	 * @param options.systemUserId - User ID to use for audit logs (default: 'SYSTEM')
+	 * @param options.systemUserName - User name to use for audit logs (default: 'System Batch')
+	 * 
+	 * @returns Summary of batch evaluation results
+	 */
+	async evaluateAllActiveAgreementsStatus(options: {
+		dryRun?: boolean;
+		systemUserId?: string;
+		systemUserName?: string;
+	} = {}): Promise<{
+		totalEvaluated: number;
+		installmentsMarkedOverdue: number;
+		agreementsCompleted: number;
+		agreementsDefaulted: number;
+		agreementsUnchanged: number;
+		errors: Array<{
+			agreementId: string;
+			agreementNumber: number;
+			agreementYear: number;
+			error: string;
+		}>;
+	}> {
+		const { dryRun = false, systemUserId = 'SYSTEM', systemUserName = 'System Batch' } = options;
+
+		// Get all ACTIVE agreements
+		const activeAgreements = await prisma.paymentAgreement.findMany({
+			where: { status: 'ACTIVE' },
+			include: {
+				installments: true
+			},
+			orderBy: [
+				{ agreementYear: 'asc' },
+				{ agreementNumber: 'asc' }
+			]
+		});
+
+		const results = {
+			totalEvaluated: activeAgreements.length,
+			installmentsMarkedOverdue: 0,
+			agreementsCompleted: 0,
+			agreementsDefaulted: 0,
+			agreementsUnchanged: 0,
+			errors: [] as Array<{
+				agreementId: string;
+				agreementNumber: number;
+				agreementYear: number;
+				error: string;
+			}>
+		};
+
+		// Process each agreement independently
+		for (const agreement of activeAgreements) {
+			try {
+				if (dryRun) {
+					// In dry-run mode, just evaluate without making changes
+					const now = new Date();
+					const overdueInstallments = agreement.installments.filter(
+						(inst) => inst.status === 'PENDING' && inst.dueDate < now
+					);
+					
+					const totalPaid = agreement.installments.reduce(
+						(sum, inst) => sum.add(inst.paidAmount),
+						new Decimal(0)
+					);
+					const totalPending = agreement.installments.reduce(
+						(sum, inst) => sum.add(inst.pendingAmount),
+						new Decimal(0)
+					);
+
+					// Simulate evaluation logic
+					if (totalPending.equals(new Decimal(0))) {
+						results.agreementsCompleted++;
+					} else if (overdueInstallments.length > 0) {
+						// Check default rule (e.g., 2+ overdue installments)
+						if (overdueInstallments.length >= 2) {
+							results.agreementsDefaulted++;
+						} else {
+							results.installmentsMarkedOverdue += overdueInstallments.length;
+						}
+					} else {
+						results.agreementsUnchanged++;
+					}
+				} else {
+					// In normal mode, execute actual evaluation
+					const evaluationResult = await this.evaluateAgreementFinancialStatus(
+						agreement.id,
+						systemUserId,
+						systemUserName
+					);
+
+					results.installmentsMarkedOverdue += evaluationResult.overdueMarked;
+
+					if (evaluationResult.statusChanged) {
+						if (evaluationResult.newStatus === 'COMPLETED') {
+							results.agreementsCompleted++;
+						} else if (evaluationResult.newStatus === 'DEFAULTED') {
+							results.agreementsDefaulted++;
+						}
+					} else {
+						results.agreementsUnchanged++;
+					}
+				}
+			} catch (error) {
+				// Log error but continue processing other agreements
+				results.errors.push({
+					agreementId: agreement.id,
+					agreementNumber: agreement.agreementNumber,
+					agreementYear: agreement.agreementYear,
+					error: error instanceof Error ? error.message : String(error)
+				});
+			}
+		}
+
+		return results;
+	}
 }
 
 // Export singleton instance

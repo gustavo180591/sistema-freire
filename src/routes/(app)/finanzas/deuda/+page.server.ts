@@ -79,6 +79,35 @@ export const actions = {
 		}
 	},
 
+	getDebtSummaryWithAgreements: async ({ request, locals }) => {
+		const userId = locals.user?.id;
+		if (!userId) {
+			throw error(401, 'No autenticado');
+		}
+
+		const formData = await request.formData();
+		const studentId = formData.get('studentId') as string;
+
+		if (!studentId) {
+			return fail(400, { error: 'Falta el ID del alumno' });
+		}
+
+		// Ownership validation
+		const student = await prisma.student.findUnique({
+			where: { userId }
+		});
+		if (student && student.id !== studentId) {
+			return fail(403, { error: 'No tiene permisos para consultar deuda de otros alumnos' });
+		}
+
+		try {
+			const status = await financialService.getStudentFinancialStatusWithAgreements(studentId);
+			return { success: true, status };
+		} catch (e) {
+			return fail(400, { error: e instanceof Error ? e.message : 'Error al calcular deuda con convenios' });
+		}
+	},
+
 	evaluateBlocks: async ({ request, locals }: any) => {
 		const userId = locals.user?.id;
 		if (!userId) {

@@ -4,6 +4,7 @@ import { prisma } from '../db/prisma';
 import { auditLog } from '../audit';
 import { hasPermission } from '../auth/permissions-granular';
 import * as DecimalHelpers from './decimal-helpers';
+import { paymentAgreementService } from '../payment-agreements/payment-agreement-service';
 
 // Financial enum types - These match the exact values defined in prisma/schema.prisma
 // Prisma exports these enums at runtime (.prisma/client) but TypeScript types don't include them
@@ -3057,6 +3058,122 @@ export class FinancialService {
 		}
 
 		return { csv, filename, recordCount: rows.length };
+	}
+
+	/**
+	 * Phase 5.5: Get student financial status with payment agreement integration
+	 * Extends getStudentFinancialStatus to include effective debt considering agreements
+	 */
+	async getStudentFinancialStatusWithAgreements(studentId: string) {
+		// Get original financial status
+		const originalStatus = await this.getStudentFinancialStatus(studentId);
+
+		// Get integrated debt report from PaymentAgreementService
+		const integratedReport = await paymentAgreementService.getStudentIntegratedDebtReport(studentId);
+
+		return {
+			...originalStatus,
+			agreementDebtSummary: {
+				originalDebtTotal: integratedReport.originalDebtTotal,
+				originalDebtCoveredByActiveAgreements: integratedReport.originalDebtCoveredByActiveAgreements,
+				originalDebtStillEnforceable: integratedReport.originalDebtStillEnforceable,
+				agreementPendingDebt: integratedReport.agreementPendingDebt,
+				agreementOverdueDebt: integratedReport.agreementOverdueDebt,
+				agreementDefaultedDebt: integratedReport.agreementDefaultedDebt,
+				effectiveTotalDebt: integratedReport.effectiveTotalDebt,
+				activeAgreementsCount: integratedReport.activeAgreementsCount,
+				defaultedAgreementsCount: integratedReport.defaultedAgreementsCount,
+				completedAgreementsCount: integratedReport.completedAgreementsCount
+			}
+		};
+	}
+
+	/**
+	 * Phase 5.5: Get financial dashboard metrics with payment agreement integration
+	 * Extends getFinancialDashboardMetrics to include effective debt metrics
+	 */
+	async getFinancialDashboardMetricsWithAgreements(): Promise<{
+		totalBilled: Decimal;
+		totalCollected: Decimal;
+		totalPending: Decimal;
+		overdueDebt: Decimal;
+		studentsWithDebt: number;
+		studentsBlocked: number;
+		paymentsToday: number;
+		paymentsThisMonth: number;
+		receiptsIssued: number;
+		receiptsCancelled: number;
+		// Phase 5.5: Agreement metrics
+		agreementMetrics: {
+			totalOriginalDebt: Decimal;
+			totalEffectiveDebt: Decimal;
+			totalAgreementPendingDebt: Decimal;
+			totalAgreementOverdueDebt: Decimal;
+			totalAgreementDefaultedDebt: Decimal;
+			studentsWithActiveAgreements: number;
+			studentsWithDefaultedAgreements: number;
+		};
+	}> {
+		// Get original dashboard metrics
+		const originalMetrics = await this.getFinancialDashboardMetrics();
+
+		// Get aggregated financial report with agreements
+		const aggregatedReport = await paymentAgreementService.getAggregatedFinancialReport();
+
+		return {
+			...originalMetrics,
+			agreementMetrics: {
+				totalOriginalDebt: aggregatedReport.totalOriginalDebt,
+				totalEffectiveDebt: aggregatedReport.totalEffectiveDebt,
+				totalAgreementPendingDebt: aggregatedReport.totalAgreementPendingDebt,
+				totalAgreementOverdueDebt: aggregatedReport.totalAgreementOverdueDebt,
+				totalAgreementDefaultedDebt: aggregatedReport.totalAgreementDefaultedDebt,
+				studentsWithActiveAgreements: aggregatedReport.totalActiveAgreements,
+				studentsWithDefaultedAgreements: aggregatedReport.totalDefaultedAgreements
+			}
+		};
+	}
+
+	/**
+	 * Phase 5.5: Get period financial report with payment agreement integration
+	 * Extends getPeriodFinancialReport to include agreement summary
+	 */
+	async getPeriodFinancialReportWithAgreements(filters: {
+		startDate?: Date;
+		endDate?: Date;
+	}): Promise<{
+		totalGenerated: Decimal;
+		totalCollected: Decimal;
+		totalPending: Decimal;
+		totalOverdue: Decimal;
+		paymentsByMethod: Record<string, number>;
+		receiptsByStatus: Record<string, number>;
+		// Phase 5.5: Agreement summary
+		agreementSummary: {
+			totalOriginalDebt: Decimal;
+			totalEffectiveDebt: Decimal;
+			totalAgreementPendingDebt: Decimal;
+			totalAgreementOverdueDebt: Decimal;
+			totalAgreementDefaultedDebt: Decimal;
+		};
+	}> {
+		// Get original period report
+		const originalReport = await this.getPeriodFinancialReport(filters);
+
+		// Get aggregated report with agreements (note: this is global, not filtered by period)
+		// This is a limitation: agreement debt is not period-filtered in Phase 5.5
+		const aggregatedReport = await paymentAgreementService.getAggregatedFinancialReport();
+
+		return {
+			...originalReport,
+			agreementSummary: {
+				totalOriginalDebt: aggregatedReport.totalOriginalDebt,
+				totalEffectiveDebt: aggregatedReport.totalEffectiveDebt,
+				totalAgreementPendingDebt: aggregatedReport.totalAgreementPendingDebt,
+				totalAgreementOverdueDebt: aggregatedReport.totalAgreementOverdueDebt,
+				totalAgreementDefaultedDebt: aggregatedReport.totalAgreementDefaultedDebt
+			}
+		};
 	}
 }
 

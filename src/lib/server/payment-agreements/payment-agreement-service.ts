@@ -1,5 +1,5 @@
 /**
- * Payment Agreement Service - Phase 5.3 (Block Exceptions)
+ * Payment Agreement Service - Phase 5.4 (Integrated Reports)
  *
  * Current Status:
  * - Schema and migration are applied to real database
@@ -46,6 +46,15 @@
  * - Link exceptions to agreements with exceptionSource and exceptionAgreementId
  * - Register BLOCK_EXCEPTION events
  * - Audit all exception creation/revocation
+ *
+ * Phase 5.4 Features:
+ * - Generate integrated financial reports considering payment agreements
+ * - Distinguish between original debt and effective debt
+ * - Show debt covered by agreements vs uncovered debt
+ * - Report agreement installment debt (pending and overdue)
+ * - Report defaulted agreement debt separately
+ * - Avoid debt duplication in reports
+ * - Provide aggregated reports for multiple students
  */
 
 import { Prisma, PrismaClient } from '@prisma/client';
@@ -179,6 +188,50 @@ export type ActiveAgreementBlockException = {
 	exceptionAgreementId?: string | null;
 	agreementNumber?: number;
 	agreementYear?: number;
+};
+
+// Types for integrated financial reports (Phase 5.4)
+export type StudentIntegratedDebtReport = {
+	studentId: string;
+	studentName: string;
+	studentDni?: string;
+	careerName?: string;
+	originalDebtTotal: Decimal;
+	originalDebtCoveredByActiveAgreements: Decimal;
+	originalDebtStillEnforceable: Decimal;
+	agreementPendingDebt: Decimal;
+	agreementOverdueDebt: Decimal;
+	agreementDefaultedDebt: Decimal;
+	effectiveTotalDebt: Decimal;
+	activeAgreementsCount: number;
+	defaultedAgreementsCount: number;
+	completedAgreementsCount: number;
+	agreementDetails: Array<{
+		agreementId: string;
+		agreementNumber: number;
+		agreementYear: number;
+		status: PaymentAgreementStatusType;
+		originalDebt: Decimal;
+		paidAmount: Decimal;
+		pendingAmount: Decimal;
+		installmentPending: Decimal;
+		installmentOverdue: Decimal;
+	}>;
+};
+
+export type AggregatedFinancialReport = {
+	totalStudents: number;
+	totalOriginalDebt: Decimal;
+	totalOriginalDebtCoveredByAgreements: Decimal;
+	totalOriginalDebtStillEnforceable: Decimal;
+	totalAgreementPendingDebt: Decimal;
+	totalAgreementOverdueDebt: Decimal;
+	totalAgreementDefaultedDebt: Decimal;
+	totalEffectiveDebt: Decimal;
+	totalActiveAgreements: number;
+	totalDefaultedAgreements: number;
+	totalCompletedAgreements: number;
+	studentReports: StudentIntegratedDebtReport[];
 };
 
 // Types for Payment Agreement models
@@ -1990,6 +2043,198 @@ class PaymentAgreementService {
 			exceptionRevoked: false,
 			reason: 'No se requirió acción'
 		};
+	}
+
+	/**
+	 * Phase 5.4: Generate integrated debt report for a single student
+	 */
+	async getStudentIntegratedDebtReport(studentId: string): Promise<StudentIntegratedDebtReport> {
+		// Get student with career
+		const student = await prisma.student.findUnique({
+			where: { id: studentId },
+			include: {
+				career: true
+			}
+		});
+
+		if (!student) {
+			throw new Error('Alumno no encontrado');
+		}
+
+		// Calculate debt summary with agreements (Phase 5.2)
+		const debtSummary = await this.calculateDebtSummaryWithAgreements(studentId);
+
+		// Get all agreements for the student
+		const agreements = await prisma.paymentAgreement.findMany({
+			where: { studentId },
+			include: {
+				installments: true
+			},
+			orderBy: [
+				{ agreementYear: 'desc' },
+				{ agreementNumber: 'desc' }
+			]
+		});
+
+		// Count agreements by status
+		const activeAgreementsCount = agreements.filter((a) => a.status === 'ACTIVE').length;
+		const defaultedAgreementsCount = agreements.filter((a) => a.status === 'DEFAULTED').length;
+		const completedAgreementsCount = agreements.filter((a) => a.status === 'COMPLETED').length;
+
+		// Build agreement details
+		const agreementDetails = agreements.map((agreement) => {
+			const installmentPending = agreement.installments
+				.filter((inst) => inst.status === 'PENDING' || inst.status === 'PARTIAL')
+				.reduce((sum, inst) => sum.add(inst.pendingAmount), new Decimal(0));
+			const installmentOverdue = agreement.installments
+				.filter((inst) => inst.status === 'OVERDUE')
+				.reduce((sum, inst) => sum.add(inst.pendingAmount), new Decimal(0));
+
+			return {
+				agreementId: agreement.id,
+				agreementNumber: agreement.agreementNumber,
+				agreementYear: agreement.agreementYear,
+				status: agreement.status,
+				originalDebt: agreement.originalDebt,
+				paidAmount: agreement.paidAmount,
+				pendingAmount: agreement.pendingAmount,
+				installmentPending,
+				installmentOverdue
+			};
+		});
+
+		// Calculate agreement debt by status
+		const agreementPendingDebt = agreements
+			.filter((a) => a.status === 'ACTIVE')
+			.reduce((sum, agreement) => {
+				const pending = agreement.installments
+					.filter((inst) => inst.status === 'PENDING' || inst.status === 'PARTIAL')
+					.reduce((instSum, inst) => instSum.add(inst.pendingAmount), new Decimal(0));
+				return sum.add(pending);
+			}, new Decimal(0));
+
+		const agreementOverdueDebt = agreements
+			.filter((a) => a.status === 'ACTIVE')
+			.reduce((sum, agreement) => {
+				const overdue = agreement.installments
+					.filter((inst) => inst.status === 'OVERDUE')
+					.reduce((instSum, inst) => instSum.add(inst.pendingAmount), new Decimal(0));
+				return sum.add(overdue);
+			}, new Decimal(0));
+
+		const agreementDefaultedDebt = agreements
+			.filter((a) => a.status === 'DEFAULTED')
+			.reduce((sum, agreement) => sum.add(agreement.pendingAmount), new Decimal(0));
+
+		// Calculate effective total debt (uncovered debt + agreement installment debt)
+		const effectiveTotalDebt = debtSummary.effectiveDebt.uncoveredDebt.add(debtSummary.effectiveDebt.agreementInstallmentPending);
+
+		return {
+			studentId: student.id,
+			studentName: `${student.firstName} ${student.lastName}`.trim(),
+			studentDni: student.dni,
+			careerName: student.career?.name,
+			originalDebtTotal: debtSummary.originalDebt.totalDebt,
+			originalDebtCoveredByActiveAgreements: debtSummary.effectiveDebt.agreementCoveredDebt,
+			originalDebtStillEnforceable: debtSummary.effectiveDebt.uncoveredDebt,
+			agreementPendingDebt,
+			agreementOverdueDebt,
+			agreementDefaultedDebt,
+			effectiveTotalDebt,
+			activeAgreementsCount,
+			defaultedAgreementsCount,
+			completedAgreementsCount,
+			agreementDetails
+		};
+	}
+
+	/**
+	 * Phase 5.4: Generate aggregated financial report for multiple students
+	 */
+	async getAggregatedFinancialReport(studentIds?: string[]): Promise<AggregatedFinancialReport> {
+		// If no student IDs provided, get all students with debt or agreements
+		let targetStudentIds = studentIds;
+		if (!targetStudentIds || targetStudentIds.length === 0) {
+			// Get students with pending charges or payment agreements
+			const studentsWithDebt = await prisma.studentCharge.findMany({
+				where: {
+					status: { in: ['PENDING', 'PARTIAL'] }
+				},
+				select: { studentId: true },
+				distinct: ['studentId']
+			});
+
+			const studentsWithAgreements = await prisma.paymentAgreement.findMany({
+				where: {
+					status: { in: ['ACTIVE', 'DEFAULTED'] }
+				},
+				select: { studentId: true },
+				distinct: ['studentId']
+			});
+
+			const debtIds = studentsWithDebt.map((s) => s.studentId);
+			const agreementIds = studentsWithAgreements.map((s) => s.studentId);
+			targetStudentIds = Array.from(new Set([...debtIds, ...agreementIds]));
+		}
+
+		// Generate individual reports
+		const studentReports: StudentIntegratedDebtReport[] = [];
+		for (const studentId of targetStudentIds) {
+			try {
+				const report = await this.getStudentIntegratedDebtReport(studentId);
+				studentReports.push(report);
+			} catch (error) {
+				// Skip students that cannot be found
+				console.warn(`Skipping student ${studentId}: ${error}`);
+			}
+		}
+
+		// Calculate aggregates
+		const totalOriginalDebt = studentReports.reduce((sum, r) => sum.add(r.originalDebtTotal), new Decimal(0));
+		const totalOriginalDebtCoveredByAgreements = studentReports.reduce((sum, r) => sum.add(r.originalDebtCoveredByActiveAgreements), new Decimal(0));
+		const totalOriginalDebtStillEnforceable = studentReports.reduce((sum, r) => sum.add(r.originalDebtStillEnforceable), new Decimal(0));
+		const totalAgreementPendingDebt = studentReports.reduce((sum, r) => sum.add(r.agreementPendingDebt), new Decimal(0));
+		const totalAgreementOverdueDebt = studentReports.reduce((sum, r) => sum.add(r.agreementOverdueDebt), new Decimal(0));
+		const totalAgreementDefaultedDebt = studentReports.reduce((sum, r) => sum.add(r.agreementDefaultedDebt), new Decimal(0));
+		const totalEffectiveDebt = studentReports.reduce((sum, r) => sum.add(r.effectiveTotalDebt), new Decimal(0));
+		const totalActiveAgreements = studentReports.reduce((sum, r) => sum + r.activeAgreementsCount, 0);
+		const totalDefaultedAgreements = studentReports.reduce((sum, r) => sum + r.defaultedAgreementsCount, 0);
+		const totalCompletedAgreements = studentReports.reduce((sum, r) => sum + r.completedAgreementsCount, 0);
+
+		return {
+			totalStudents: studentReports.length,
+			totalOriginalDebt,
+			totalOriginalDebtCoveredByAgreements,
+			totalOriginalDebtStillEnforceable,
+			totalAgreementPendingDebt,
+			totalAgreementOverdueDebt,
+			totalAgreementDefaultedDebt,
+			totalEffectiveDebt,
+			totalActiveAgreements,
+			totalDefaultedAgreements,
+			totalCompletedAgreements,
+			studentReports
+		};
+	}
+
+	/**
+	 * Phase 5.4: Get debtor students with integrated debt information
+	 */
+	async getDebtorStudentsWithAgreements(): Promise<StudentIntegratedDebtReport[]> {
+		// Get students with effective debt > 0
+		const report = await this.getAggregatedFinancialReport();
+		
+		// Filter students with effective debt
+		const debtors = report.studentReports.filter((r) => r.effectiveTotalDebt.gt(0));
+		
+		// Sort by effective debt descending
+		debtors.sort((a, b) => {
+			if (b.effectiveTotalDebt.gt(a.effectiveTotalDebt)) return 1;
+			if (a.effectiveTotalDebt.gt(b.effectiveTotalDebt)) return -1;
+			return 0;
+		});
+
+		return debtors;
 	}
 }
 

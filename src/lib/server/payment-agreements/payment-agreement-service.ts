@@ -2361,6 +2361,117 @@ class PaymentAgreementService {
 
 		return results;
 	}
+
+	/**
+	 * Phase 6.2: Batch evaluation of agreement block exceptions
+	 * Evaluates and manages block exceptions for all relevant agreements in a safe, idempotent batch operation
+	 * 
+	 * This method is designed for automated execution (e.g., cron jobs) and manual scripts.
+	 * It processes each agreement independently, so errors in one agreement don't affect others.
+	 * 
+	 * @param options - Optional configuration
+	 * @param options.dryRun - If true, evaluates without making changes (default: false)
+	 * @param options.systemUserId - User ID to use for audit logs (default: 'SYSTEM')
+	 * @param options.systemUserName - User name to use for audit logs (default: 'System Batch')
+	 * 
+	 * @returns Summary of batch evaluation results
+	 */
+	async evaluateAllAgreementBlockExceptions(options: {
+		dryRun?: boolean;
+		systemUserId?: string;
+		systemUserName?: string;
+	} = {}): Promise<{
+		totalEvaluated: number;
+		exceptionsApplied: number;
+		exceptionsRevoked: number;
+		agreementsUnchanged: number;
+		agreementsSkipped: number;
+		errors: Array<{
+			agreementId: string;
+			agreementNumber: number;
+			agreementYear: number;
+			error: string;
+		}>;
+	}> {
+		const { dryRun = false, systemUserId = 'SYSTEM', systemUserName = 'System Batch' } = options;
+
+		// Get all agreements that need evaluation
+		// Include: ACTIVE, DEFAULTED, COMPLETED
+		// Exclude: DRAFT, CANCELLED (unless they have active exceptions to clean up)
+		const agreementsToEvaluate = await prisma.paymentAgreement.findMany({
+			where: {
+				status: {
+					in: ['ACTIVE', 'DEFAULTED', 'COMPLETED']
+				}
+			},
+			include: {
+				installments: true
+			},
+			orderBy: [
+				{ agreementYear: 'asc' },
+				{ agreementNumber: 'asc' }
+			]
+		});
+
+		const results = {
+			totalEvaluated: agreementsToEvaluate.length,
+			exceptionsApplied: 0,
+			exceptionsRevoked: 0,
+			agreementsUnchanged: 0,
+			agreementsSkipped: 0,
+			errors: [] as Array<{
+				agreementId: string;
+				agreementNumber: number;
+				agreementYear: number;
+				error: string;
+			}>
+		};
+
+		// Process each agreement independently
+		for (const agreement of agreementsToEvaluate) {
+			try {
+				if (dryRun) {
+					// In dry-run mode, just evaluate without making changes
+					const evaluation = await this.evaluateAgreementBlockException(agreement.id);
+					const currentException = await this.getActiveAgreementBlockException(agreement.studentId);
+
+					// Simulate what would happen
+					if (evaluation.shouldHaveException && !currentException) {
+						results.exceptionsApplied++;
+					} else if (!evaluation.shouldHaveException && currentException && currentException.exceptionAgreementId === agreement.id) {
+						results.exceptionsRevoked++;
+					} else {
+						results.agreementsUnchanged++;
+					}
+				} else {
+					// In normal mode, execute actual evaluation
+					const blockResult = await this.evaluateAgreementBlockStatus(
+						agreement.id,
+						systemUserId,
+						systemUserName
+					);
+
+					if (blockResult.exceptionApplied) {
+						results.exceptionsApplied++;
+					} else if (blockResult.exceptionRevoked) {
+						results.exceptionsRevoked++;
+					} else {
+						results.agreementsUnchanged++;
+					}
+				}
+			} catch (error) {
+				// Log error but continue processing other agreements
+				results.errors.push({
+					agreementId: agreement.id,
+					agreementNumber: agreement.agreementNumber,
+					agreementYear: agreement.agreementYear,
+					error: error instanceof Error ? error.message : String(error)
+				});
+			}
+		}
+
+		return results;
+	}
 }
 
 // Export singleton instance

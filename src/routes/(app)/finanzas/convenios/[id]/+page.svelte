@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { enhance } from '$app/forms';
 
 	interface PaymentAgreement {
 		id: string;
 		agreementNumber: number;
 		agreementYear: number;
 		studentName: string;
+		studentId: string;
 		originalDebt: { toString: () => string };
 		agreedAmount: { toString: () => string };
 		paidAmount: { toString: () => string };
@@ -50,13 +52,81 @@
 		installment: PaymentAgreementInstallment | null;
 	}
 
+	interface ActiveException {
+		blockId: string;
+		studentId: string;
+		exceptionGranted: boolean;
+		exceptionBy: string;
+		exceptionAt: Date;
+		exceptionReason: string;
+		exceptionSource: string;
+		exceptionAgreementId: string;
+		agreementNumber: number;
+		agreementYear: number;
+	}
+
+	interface AgreementEvent {
+		id: string;
+		eventType: string;
+		description: string;
+		previousStatus: string | null;
+		newStatus: string | null;
+		metadata: unknown;
+		reason: string | null;
+		createdAt: Date;
+		userId: string;
+		userName: string;
+	}
+
 	interface PageData {
 		agreement: PaymentAgreement;
 		summary?: AgreementSummary;
 		paymentsWithReceipts?: PaymentWithReceipt[];
+		activeException?: ActiveException | null;
+		events?: AgreementEvent[];
 	}
 
 	let { data }: { data: PageData } = $props();
+
+	let statusResult: { success: boolean; result?: unknown; error?: string } | null = $state(null);
+	let exceptionResult: { success: boolean; result?: unknown; error?: string } | null = $state(null);
+
+	let formStatusResult: { success: boolean; result?: unknown; error?: string } | null = $state(null);
+	let formExceptionResult: { success: boolean; result?: unknown; error?: string } | null = $state(null);
+
+	function getStatusColor(status: string): string {
+		switch (status) {
+			case 'ACTIVE':
+				return 'bg-green-900/30 text-green-400 border-green-800';
+			case 'COMPLETED':
+				return 'bg-blue-900/30 text-blue-400 border-blue-800';
+			case 'DEFAULTED':
+				return 'bg-red-900/30 text-red-400 border-red-800';
+			case 'DRAFT':
+				return 'bg-slate-700/30 text-slate-400 border-slate-600';
+			case 'CANCELLED':
+				return 'bg-orange-900/30 text-orange-400 border-orange-800';
+			default:
+				return 'bg-slate-700/30 text-slate-400 border-slate-600';
+		}
+	}
+
+	function getInstallmentStatusColor(status: string): string {
+		switch (status) {
+			case 'PAID':
+				return 'bg-green-900/30 text-green-400 border-green-800';
+			case 'OVERDUE':
+				return 'bg-red-900/30 text-red-400 border-red-800';
+			case 'PENDING':
+				return 'bg-yellow-900/30 text-yellow-400 border-yellow-800';
+			case 'WAIVED':
+				return 'bg-purple-900/30 text-purple-400 border-purple-800';
+			case 'CANCELLED':
+				return 'bg-slate-700/30 text-slate-400 border-slate-600';
+			default:
+				return 'bg-slate-700/30 text-slate-400 border-slate-600';
+		}
+	}
 </script>
 
 <svelte:head>
@@ -81,13 +151,15 @@
 		</a>
 	</div>
 
+	<!-- Status Card -->
 	<div class="rounded-lg border border-slate-700 bg-slate-800/50 p-6">
-		<h2 class="mb-4 text-lg font-semibold text-white">Información del Convenio</h2>
+		<div class="flex items-center justify-between mb-4">
+			<h2 class="text-lg font-semibold text-white">Estado del Convenio</h2>
+			<span class={`rounded-full px-3 py-1 text-xs font-medium border ${getStatusColor(data.agreement.status)}`}>
+				{data.agreement.status}
+			</span>
+		</div>
 		<div class="grid grid-cols-2 gap-4">
-			<div>
-				<p class="text-sm text-slate-400">Estado</p>
-				<p class="text-white">{data.agreement.status}</p>
-			</div>
 			<div>
 				<p class="text-sm text-slate-400">Fecha de Creación</p>
 				<p class="text-white">{new Date(data.agreement.createdAt).toLocaleDateString('es-AR')}</p>
@@ -108,10 +180,10 @@
 				<p class="text-sm text-slate-400">Pendiente</p>
 				<p class="text-white">${data.agreement.pendingAmount.toString()}</p>
 			</div>
-		</div>
-		<div class="mt-4">
-			<p class="text-sm text-slate-400">Motivo</p>
-			<p class="text-white">{data.agreement.reason}</p>
+			<div>
+				<p class="text-sm text-slate-400">Motivo</p>
+				<p class="text-white">{data.agreement.reason}</p>
+			</div>
 		</div>
 		{#if data.agreement.observations}
 			<div class="mt-4">
@@ -119,6 +191,54 @@
 				<p class="text-white">{data.agreement.observations}</p>
 			</div>
 		{/if}
+	</div>
+
+	<!-- Block Exception Status -->
+	{#if data.activeException}
+		<div class="rounded-lg border border-indigo-900 bg-indigo-950/30 p-6">
+			<h2 class="mb-4 text-lg font-semibold text-indigo-300">Excepción de Bloqueo Activa</h2>
+			<div class="grid grid-cols-2 gap-4">
+				<div>
+					<p class="text-sm text-slate-400">Otorgada por</p>
+					<p class="text-white">{data.activeException.exceptionBy}</p>
+				</div>
+				<div>
+					<p class="text-sm text-slate-400">Fecha</p>
+					<p class="text-white">{new Date(data.activeException.exceptionAt).toLocaleDateString('es-AR')}</p>
+				</div>
+				<div>
+					<p class="text-sm text-slate-400">Motivo</p>
+					<p class="text-white">{data.activeException.exceptionReason}</p>
+				</div>
+				<div>
+					<p class="text-sm text-slate-400">Fuente</p>
+					<p class="text-white">{data.activeException.exceptionSource}</p>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	<!-- Manual Actions -->
+	<div class="rounded-lg border border-slate-700 bg-slate-800/50 p-6">
+		<h2 class="mb-4 text-lg font-semibold text-white">Acciones Manuales</h2>
+		<div class="flex gap-4">
+			<form method="POST" action="?/evaluateStatus">
+				<button
+					type="submit"
+					class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
+				>
+					Evaluar Estado
+				</button>
+			</form>
+			<form method="POST" action="?/evaluateBlockException">
+				<button
+					type="submit"
+					class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-700"
+				>
+					Evaluar Excepción de Bloqueo
+				</button>
+			</form>
+		</div>
 	</div>
 
 	{#if data.summary}
@@ -161,7 +281,9 @@
 					</div>
 					<div class="text-right">
 						<p class="text-sm font-medium text-white">${installment.amount.toString()}</p>
-						<p class="text-xs text-slate-400">{installment.status}</p>
+						<span class={`rounded-full px-2 py-1 text-xs font-medium border ${getInstallmentStatusColor(installment.status)}`}>
+							{installment.status}
+						</span>
 						{#if data.agreement.status === 'ACTIVE' && installment.status !== 'PAID' && installment.status !== 'CANCELLED' && installment.status !== 'WAIVED'}
 							<form method="POST" action="?/registerPayment" class="mt-2">
 								<input type="hidden" name="installmentId" value={installment.id} />
@@ -250,5 +372,37 @@
 				Activar Convenio
 			</button>
 		</form>
+	{/if}
+
+	{#if data.events && data.events.length > 0}
+		<div class="rounded-lg border border-slate-700 bg-slate-800/50 p-6">
+			<h2 class="mb-4 text-lg font-semibold text-white">Eventos del Convenio</h2>
+			<div class="space-y-2">
+				{#each data.events as event (event.id)}
+					<div class="rounded-lg border border-slate-700 bg-slate-900 p-3">
+						<div class="flex justify-between items-start">
+							<div>
+								<p class="text-sm font-medium text-white">{event.eventType}</p>
+								<p class="text-xs text-slate-400">{event.description}</p>
+								{#if event.previousStatus && event.newStatus}
+									<p class="text-xs text-slate-400">
+										Estado: {event.previousStatus} → {event.newStatus}
+									</p>
+								{/if}
+								{#if event.reason}
+									<p class="text-xs text-slate-400">Motivo: {event.reason}</p>
+								{/if}
+							</div>
+							<div class="text-right">
+								<p class="text-xs text-slate-400">
+									{new Date(event.createdAt).toLocaleDateString('es-AR')} {new Date(event.createdAt).toLocaleTimeString('es-AR')}
+								</p>
+								<p class="text-xs text-slate-400">{event.userName}</p>
+							</div>
+						</div>
+					</div>
+				{/each}
+			</div>
+		</div>
 	{/if}
 </div>

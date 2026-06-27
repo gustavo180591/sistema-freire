@@ -2,6 +2,10 @@ import { paymentAgreementService } from '$lib/server/payment-agreements/payment-
 import { error, redirect } from '@sveltejs/kit';
 import type { UserRole } from '$lib/server/payment-agreements/payment-agreement-service';
 import { Decimal } from '@prisma/client/runtime/library';
+import {
+	canEvaluateAgreementStatus,
+	canEvaluateAgreementBlockException
+} from '$lib/server/payment-agreements/payment-agreement-permissions';
 
 export async function load({ locals, params }) {
 	if (!locals.user) {
@@ -67,6 +71,20 @@ export async function load({ locals, params }) {
 		orderBy: { paidAt: 'desc' }
 	});
 
+	// Get active block exception for this agreement
+	const activeException = await paymentAgreementService.getActiveAgreementBlockException(
+		agreement.studentId
+	);
+
+	// Get events for this agreement
+	const events = await prisma.paymentAgreementEvent.findMany({
+		where: {
+			agreementId: params.id
+		},
+		orderBy: { createdAt: 'desc' },
+		take: 20
+	});
+
 	return {
 		agreement,
 		summary,
@@ -84,6 +102,19 @@ export async function load({ locals, params }) {
 				totalAmount: p.receipt.totalAmount
 			} : null,
 			installment: p.allocations[0]?.installment || null
+		})),
+		activeException: activeException && activeException.exceptionAgreementId === params.id ? activeException : null,
+		events: events.map((e) => ({
+			id: e.id,
+			eventType: e.eventType,
+			description: e.description,
+			previousStatus: e.previousStatus,
+			newStatus: e.newStatus,
+			metadata: e.metadata,
+			reason: e.reason,
+			createdAt: e.createdAt,
+			userId: e.userId,
+			userName: e.userName
 		}))
 	};
 }
@@ -147,6 +178,54 @@ export const actions = {
 			return { success: true, result };
 		} catch (err) {
 			console.error('Error registering payment:', err);
+			return { success: false, error: err instanceof Error ? err.message : 'Error desconocido' };
+		}
+	},
+
+	evaluateStatus: async ({ locals, params }) => {
+		if (!locals.user) {
+			throw error(401, 'No autenticado');
+		}
+
+		// Check if user can evaluate agreements
+		if (!canEvaluateAgreementStatus(locals.user)) {
+			return { success: false, error: 'No tienes permiso para evaluar convenios' };
+		}
+
+		try {
+			const result = await paymentAgreementService.evaluateAgreementFinancialStatus(
+				params.id,
+				locals.user.id,
+				`${locals.user.firstName} ${locals.user.lastName}`
+			);
+
+			return { success: true, result };
+		} catch (err) {
+			console.error('Error evaluating agreement status:', err);
+			return { success: false, error: err instanceof Error ? err.message : 'Error desconocido' };
+		}
+	},
+
+	evaluateBlockException: async ({ locals, params }) => {
+		if (!locals.user) {
+			throw error(401, 'No autenticado');
+		}
+
+		// Check if user can evaluate agreements
+		if (!canEvaluateAgreementBlockException(locals.user)) {
+			return { success: false, error: 'No tienes permiso para evaluar excepciones de bloqueo' };
+		}
+
+		try {
+			const result = await paymentAgreementService.evaluateAgreementBlockStatus(
+				params.id,
+				locals.user.id,
+				`${locals.user.firstName} ${locals.user.lastName}`
+			);
+
+			return { success: true, result };
+		} catch (err) {
+			console.error('Error evaluating block exception:', err);
 			return { success: false, error: err instanceof Error ? err.message : 'Error desconocido' };
 		}
 	}

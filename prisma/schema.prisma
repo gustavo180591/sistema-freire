@@ -40,6 +40,8 @@ model User {
   verifiedDocs        StudentDocument[]        @relation("VerifiedBy")
   createdFollowUps    StudentFollowUp[]        @relation("FollowUpCreator")
   resolvedFollowUps   StudentFollowUp[]        @relation("FollowUpResolver")
+  uploadedDocuments   Document[]               @relation("DocumentUploader")
+  documentAccessLogs  DocumentAccessLog[]      @relation("DocumentAccessLogUser")
   student             Student?
   teacher             Teacher?
   locationPermissions UserLocationPermission[]
@@ -1257,6 +1259,86 @@ enum FinancialBlockExceptionSource {
   PAYMENT_AGREEMENT
 }
 
+// Enums para Gestión Documental - Fase 1.1
+enum DocumentOwnerType {
+  STUDENT
+  TEACHER
+  STAFF
+  USER
+  INSTITUTION
+  SYSTEM
+}
+
+enum DocumentCategory {
+  ACADEMIC
+  FINANCIAL
+  ADMINISTRATIVE
+  LEGAL
+  MEDICAL
+  CERTIFICATE
+  CONTRACT
+  OTHER
+}
+
+enum DocumentSubType {
+  // Académicos
+  ENROLLMENT_CERTIFICATE
+  STUDY_CERTIFICATE
+  GRADE_REPORT
+  DIPLOMA
+  TRANSCRIPT
+
+  // Financieros
+  RECEIPT
+  INVOICE
+  PAYMENT_PROOF
+  SCHOLARSHIP_DOCUMENT
+
+  // Administrativos
+  IDENTITY_DOCUMENT
+  TAX_DOCUMENT
+  RESIDENCE_PROOF
+  EMPLOYMENT_RECORD
+
+  // Legales
+  CONTRACT
+  AGREEMENT
+  POWER_OF_ATTORNEY
+  COURT_DOCUMENT
+
+  // Certificados
+  ATTENDANCE_CERTIFICATE
+  GOOD_CONDUCT_CERTIFICATE
+  COMPLETION_CERTIFICATE
+
+  // Otros
+  GENERAL
+  UNSPECIFIED
+}
+
+enum DocumentStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+  REPLACED
+  DELETED
+}
+
+enum DocumentVisibility {
+  PRIVATE
+  INTERNAL
+  PUBLIC
+}
+
+enum DocumentAccessAction {
+  UPLOAD
+  VIEW
+  DOWNLOAD
+  UPDATE
+  DELETE
+  RESTORE
+}
+
 // Modelos para Convenios de Pago - Fase 1
 model PaymentAgreement {
   id              String  @id @default(cuid())
@@ -1407,4 +1489,77 @@ model PaymentAgreementNumber {
   updatedAt  DateTime @updatedAt
 
   @@map("payment_agreement_numbers")
+}
+
+// Modelos para Gestión Documental - Fase 1.1
+model Document {
+  id           String  @id @default(cuid())
+  originalName String
+  storedName   String
+  storageKey   String  @unique
+  mimeType     String
+  extension    String
+  sizeBytes    Int
+  sha256Hash   String?
+
+  // Ownership genérico
+  ownerType DocumentOwnerType
+  ownerId   String
+
+  // Clasificación
+  category   DocumentCategory
+  subType    DocumentSubType
+  status     DocumentStatus     @default(ACTIVE)
+  visibility DocumentVisibility @default(PRIVATE)
+
+  // Usuario que subió el documento
+  uploadedById String
+  uploadedBy   User   @relation("DocumentUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  // Fechas
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  expiresAt DateTime?
+
+  // Metadatos flexibles
+  metadata Json?
+  tags     String[]
+
+  // Relación con logs de acceso
+  accessLogs DocumentAccessLog[]
+
+  // Índices
+  @@index([ownerType, ownerId])
+  @@index([category])
+  @@index([subType])
+  @@index([status])
+  @@index([visibility])
+  @@index([uploadedById])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("documents")
+}
+
+model DocumentAccessLog {
+  id         String               @id @default(cuid())
+  documentId String
+  userId     String
+  action     DocumentAccessAction
+  createdAt  DateTime             @default(now())
+  ipAddress  String?
+  userAgent  String?
+  metadata   Json?
+
+  // Relaciones
+  document Document @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  user     User     @relation("DocumentAccessLogUser", fields: [userId], references: [id], onDelete: Restrict)
+
+  // Índices
+  @@index([documentId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([documentId, createdAt])
+  @@map("document_access_logs")
 }

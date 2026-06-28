@@ -36,3 +36,8 @@ prisma/*.seed.ts
 prisma/backup/
 backups/
 static/uploads/
+
+# Private document storage
+storage/
+storage/private/
+storage/private/documents/

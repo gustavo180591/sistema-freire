@@ -25,12 +25,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// Get dashboard metrics
 	const dashboardMetrics = await financialService.getFinancialDashboardMetrics();
 
-	// Map to UI-expected format
+	// Map to UI-expected format (convert Decimal to number for serialization)
 	const metrics = {
 		studentsWithDebt: dashboardMetrics.studentsWithDebt,
-		totalDebt: dashboardMetrics.totalPending,
+		totalDebt: Number(dashboardMetrics.totalPending),
 		paymentsCount: dashboardMetrics.paymentsThisMonth,
-		totalCollected: dashboardMetrics.totalCollected
+		totalCollected: Number(dashboardMetrics.totalCollected)
 	};
 
 	return {

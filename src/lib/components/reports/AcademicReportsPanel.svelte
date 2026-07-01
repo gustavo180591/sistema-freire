@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import ReportKpiCard from './ReportKpiCard.svelte';
+	import SimpleProgressBar from './charts/SimpleProgressBar.svelte';
+	import SimpleMetricComparison from './charts/SimpleMetricComparison.svelte';
+	import SimpleDistributionList from './charts/SimpleDistributionList.svelte';
 
 	interface Props {
 		onError: (message: string) => void;
@@ -214,6 +217,55 @@
 			<ReportKpiCard label="Regulares" value={metrics.regularCount} />
 			<ReportKpiCard label="Libres" value={metrics.libreCount} />
 			<ReportKpiCard label="Alumnos en Riesgo" value={metrics.riskStudents} />
+		</div>
+
+		<div class="grid gap-6 md:grid-cols-2">
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+				<h3 class="mb-4 text-lg font-semibold text-slate-200">Alumnos Activos vs Total</h3>
+				<SimpleProgressBar
+					value={metrics.activeStudents}
+					total={metrics.totalStudents}
+					label="Alumnos Activos"
+					color="rgb(99, 102, 241)"
+				/>
+			</div>
+
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+				<h3 class="mb-4 text-lg font-semibold text-slate-200">Regularidad Académica</h3>
+				<SimpleMetricComparison
+					metrics={[
+						{ label: 'Regulares', value: metrics.regularCount, color: 'rgb(34, 197, 94)' },
+						{ label: 'Libres', value: metrics.libreCount, color: 'rgb(239, 68, 68)' }
+					]}
+					showTotal={false}
+				/>
+			</div>
+
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+				<h3 class="mb-4 text-lg font-semibold text-slate-200">Alumnos por Carrera</h3>
+				<SimpleDistributionList data={metrics.studentsByCareer} color="rgb(99, 102, 241)" />
+			</div>
+
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+				<h3 class="mb-4 text-lg font-semibold text-slate-200">Alumnos por Estado</h3>
+				<SimpleDistributionList data={metrics.studentsByStatus} color="rgb(34, 197, 94)" />
+			</div>
+
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+				<h3 class="mb-4 text-lg font-semibold text-slate-200">Alumnos en Riesgo</h3>
+				<div class="text-center">
+					<div class="text-4xl font-bold text-amber-500">{metrics.riskStudents}</div>
+					<div class="text-sm text-slate-400 mt-1">alumnos en riesgo académico</div>
+				</div>
+			</div>
+
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+				<h3 class="mb-4 text-lg font-semibold text-slate-200">Promedio de Calificaciones</h3>
+				<div class="text-center">
+					<div class="text-4xl font-bold text-indigo-500">{formatPercent(metrics.averageGrade)}</div>
+					<div class="text-sm text-slate-400 mt-1">promedio general</div>
+				</div>
+			</div>
 		</div>
 	{:else}
 		<div class="flex flex-col items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/70 p-12">

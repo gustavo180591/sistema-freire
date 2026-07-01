@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import ReportKpiCard from './ReportKpiCard.svelte';
+	import SimpleProgressBar from './charts/SimpleProgressBar.svelte';
+	import SimpleMetricComparison from './charts/SimpleMetricComparison.svelte';
 
 	interface Props {
 		onError: (message: string) => void;
@@ -207,6 +209,45 @@
 			<ReportKpiCard label="Pagos" value={metrics.paymentsCount} />
 			<ReportKpiCard label="Recibos" value={metrics.receiptsIssued} />
 			<ReportKpiCard label="Convenios Activos" value={metrics.activeAgreements} />
+		</div>
+
+		<div class="grid gap-6 md:grid-cols-2">
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+				<h3 class="mb-4 text-lg font-semibold text-slate-200">Pagado vs Pendiente</h3>
+				<SimpleMetricComparison
+					metrics={[
+						{ label: 'Pagado', value: metrics.totalPaid, color: 'rgb(34, 197, 94)' },
+						{ label: 'Pendiente', value: metrics.totalPending, color: 'rgb(239, 68, 68)' }
+					]}
+					showTotal={false}
+				/>
+			</div>
+
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+				<h3 class="mb-4 text-lg font-semibold text-slate-200">Deuda Vencida vs Total</h3>
+				<SimpleProgressBar
+					value={metrics.overdueDebt}
+					total={metrics.totalCharges}
+					label="Deuda Vencida"
+					color="rgb(239, 68, 68)"
+				/>
+			</div>
+
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+				<h3 class="mb-4 text-lg font-semibold text-slate-200">Alumnos con Deuda</h3>
+				<div class="text-center">
+					<div class="text-4xl font-bold text-amber-500">{metrics.studentsWithDebt}</div>
+					<div class="text-sm text-slate-400 mt-1">alumnos con deuda pendiente</div>
+				</div>
+			</div>
+
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+				<h3 class="mb-4 text-lg font-semibold text-slate-200">Convenios Activos</h3>
+				<div class="text-center">
+					<div class="text-4xl font-bold text-indigo-500">{metrics.activeAgreements}</div>
+					<div class="text-sm text-slate-400 mt-1">convenios de pago activos</div>
+				</div>
+			</div>
 		</div>
 	{:else}
 		<div class="flex flex-col items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/70 p-12">

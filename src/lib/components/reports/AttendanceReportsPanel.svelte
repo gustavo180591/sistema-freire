@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import ReportKpiCard from './ReportKpiCard.svelte';
+	import SimpleProgressBar from './charts/SimpleProgressBar.svelte';
+	import SimpleMetricComparison from './charts/SimpleMetricComparison.svelte';
+	import SimpleDistributionList from './charts/SimpleDistributionList.svelte';
 
 	interface Props {
 		onError: (message: string) => void;
@@ -230,6 +233,50 @@
 			<ReportKpiCard label="Con Observación" value={metrics.justifiedCount} />
 			<ReportKpiCard label="Sin Observación" value={metrics.unjustifiedCount} />
 			<ReportKpiCard label="Asistencia Promedio" value={formatPercent(metrics.averageAttendance)} />
+		</div>
+
+		<div class="grid gap-6 md:grid-cols-2">
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+				<h3 class="mb-4 text-lg font-semibold text-slate-200">Presentes vs Ausentes</h3>
+				<SimpleMetricComparison
+					metrics={[
+						{ label: 'Presentes', value: metrics.presentCount, color: 'rgb(34, 197, 94)' },
+						{ label: 'Ausentes', value: metrics.absentCount, color: 'rgb(239, 68, 68)' }
+					]}
+					showTotal={false}
+				/>
+			</div>
+
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+				<h3 class="mb-4 text-lg font-semibold text-slate-200">Ausencias con/sin Observación</h3>
+				<SimpleMetricComparison
+					metrics={[
+						{ label: 'Con Observación', value: metrics.justifiedCount, color: 'rgb(251, 191, 36)' },
+						{ label: 'Sin Observación', value: metrics.unjustifiedCount, color: 'rgb(239, 68, 68)' }
+					]}
+					showTotal={false}
+				/>
+			</div>
+
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+				<h3 class="mb-4 text-lg font-semibold text-slate-200">Asistencia Promedio</h3>
+				<SimpleProgressBar
+					value={metrics.averageAttendance}
+					total={100}
+					label="Asistencia Promedio"
+					color="rgb(99, 102, 241)"
+				/>
+			</div>
+
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+				<h3 class="mb-4 text-lg font-semibold text-slate-200">Promedio por Materia</h3>
+				<SimpleDistributionList data={metrics.averageBySubject} title="Asistencia por Materia" color="rgb(99, 102, 241)" />
+			</div>
+
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 md:col-span-2">
+				<h3 class="mb-4 text-lg font-semibold text-slate-200">Promedio por Comisión</h3>
+				<SimpleDistributionList data={metrics.averageByCommission} title="Asistencia por Comisión" color="rgb(34, 197, 94)" />
+			</div>
 		</div>
 	{:else}
 		<div class="flex flex-col items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/70 p-12">

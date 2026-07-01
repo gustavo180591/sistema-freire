@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import ReportKpiCard from './ReportKpiCard.svelte';
+	import SimpleProgressBar from './charts/SimpleProgressBar.svelte';
+	import SimpleMetricComparison from './charts/SimpleMetricComparison.svelte';
 
 	interface Props {
 		onError: (message: string) => void;
@@ -135,6 +137,47 @@
 			<ReportKpiCard label="Cobrado" value={formatCurrency(metrics.totalCollected)} />
 			<ReportKpiCard label="Asistencia Promedio" value={formatPercent(metrics.averageAttendance)} />
 			<ReportKpiCard label="Baja Asistencia" value={metrics.lowAttendanceCount} />
+		</div>
+
+		<div class="grid gap-6 md:grid-cols-2">
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+				<h3 class="mb-4 text-lg font-semibold text-slate-200">Alumnos Activos vs Total</h3>
+				<SimpleProgressBar
+					value={metrics.activeStudents}
+					total={metrics.totalStudents}
+					label="Alumnos Activos"
+					color="rgb(99, 102, 241)"
+				/>
+			</div>
+
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+				<h3 class="mb-4 text-lg font-semibold text-slate-200">Deuda vs Cobrado</h3>
+				<SimpleMetricComparison
+					metrics={[
+						{ label: 'Deuda Total', value: metrics.totalDebt, color: 'rgb(239, 68, 68)' },
+						{ label: 'Cobrado', value: metrics.totalCollected, color: 'rgb(34, 197, 94)' }
+					]}
+					showTotal={false}
+				/>
+			</div>
+
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+				<h3 class="mb-4 text-lg font-semibold text-slate-200">Asistencia Promedio</h3>
+				<SimpleProgressBar
+					value={metrics.averageAttendance}
+					total={100}
+					label="Asistencia Promedio"
+					color="rgb(99, 102, 241)"
+				/>
+			</div>
+
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+				<h3 class="mb-4 text-lg font-semibold text-slate-200">Baja Asistencia</h3>
+				<div class="text-center">
+					<div class="text-4xl font-bold text-amber-500">{metrics.lowAttendanceCount}</div>
+					<div class="text-sm text-slate-400 mt-1">alumnos con asistencia baja</div>
+				</div>
+			</div>
 		</div>
 	{:else}
 		<div class="flex flex-col items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/70 p-12">

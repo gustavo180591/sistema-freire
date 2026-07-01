@@ -79,6 +79,52 @@
 		}
 	}
 
+	async function exportToCsv() {
+		try {
+			const queryParams = new URLSearchParams();
+			if (filters.studentId) queryParams.append('studentId', filters.studentId);
+			if (filters.startDate) queryParams.append('startDate', filters.startDate);
+			if (filters.endDate) queryParams.append('endDate', filters.endDate);
+
+			const queryString = queryParams.toString();
+			const url = `/api/reports/financial/export${queryString ? `?${queryString}` : ''}`;
+
+			const response = await fetch(url);
+
+			if (response.status === 401) {
+				goto('/login');
+				return;
+			}
+
+			if (response.status === 403) {
+				onError('No tienes permiso para exportar reportes financieros (requiere FINANCIAL_REPORT:read)');
+				return;
+			}
+
+			if (response.status === 400) {
+				onError('Filtros inválidos para exportación');
+				return;
+			}
+
+			if (!response.ok) {
+				throw new Error(`Error: ${response.statusText}`);
+			}
+
+			const blob = await response.blob();
+			const blobUrl = window.URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = blobUrl;
+			a.download = response.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'reporte-financiero.csv';
+			document.body.appendChild(a);
+			a.click();
+			window.URL.revokeObjectURL(blobUrl);
+			document.body.removeChild(a);
+		} catch (error) {
+			console.error('Error exporting financial report:', error);
+			onError('Error al exportar reporte financiero');
+		}
+	}
+
 	function formatCurrency(value: number): string {
 		return new Intl.NumberFormat('es-AR', {
 			style: 'currency',
@@ -131,12 +177,20 @@
 				/>
 			</div>
 		</div>
-		<button
-			onclick={fetchFinancialReport}
-			class="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:scale-[1.02]"
-		>
-			Aplicar Filtros
-		</button>
+		<div class="mt-4 flex gap-2">
+			<button
+				onclick={fetchFinancialReport}
+				class="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:scale-[1.02]"
+			>
+				Aplicar Filtros
+			</button>
+			<button
+				onclick={exportToCsv}
+				class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:scale-[1.02]"
+			>
+				Exportar CSV
+			</button>
+		</div>
 	</div>
 
 	{#if loading}

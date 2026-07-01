@@ -60,6 +60,39 @@
 		}
 	}
 
+	async function exportToCsv() {
+		try {
+			const response = await fetch('/api/reports/institutional/export');
+
+			if (response.status === 401) {
+				goto('/login');
+				return;
+			}
+
+			if (response.status === 403) {
+				onError('No tienes permiso para exportar reportes institucionales (requiere SUPERADMIN)');
+				return;
+			}
+
+			if (!response.ok) {
+				throw new Error(`Error: ${response.statusText}`);
+			}
+
+			const blob = await response.blob();
+			const url = window.URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = response.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'reporte-institucional.csv';
+			document.body.appendChild(a);
+			a.click();
+			window.URL.revokeObjectURL(url);
+			document.body.removeChild(a);
+		} catch (error) {
+			console.error('Error exporting institutional report:', error);
+			onError('Error al exportar reporte institucional');
+		}
+	}
+
 	function formatCurrency(value: number): string {
 		return new Intl.NumberFormat('es-AR', {
 			style: 'currency',
@@ -78,6 +111,14 @@
 </script>
 
 <div class="space-y-6">
+	<div class="flex justify-end">
+		<button
+			onclick={exportToCsv}
+			class="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:scale-[1.02]"
+		>
+			Exportar CSV
+		</button>
+	</div>
 	{#if loading}
 		<div class="flex items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/70 p-12">
 			<div class="h-12 w-12 animate-spin rounded-full border-4 border-slate-700 border-t-indigo-500"></div>

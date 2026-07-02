@@ -196,29 +196,29 @@
 <div class="space-y-8">
 	<!-- Header Institucional -->
 	<section
-		class="relative overflow-hidden rounded-3xl border border-slate-800 bg-linear-to-br from-slate-900 via-slate-900/95 to-indigo-950/30 p-8 md:p-10"
+		class="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 via-slate-50 to-indigo-50 p-8 md:p-10 dark:border-slate-800 dark:from-slate-900 dark:via-slate-900/95 dark:to-indigo-950/30"
 	>
 		<div
-			class="absolute inset-0 bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] bg-size-[40px_40px] opacity-5"
+			class="absolute inset-0 bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] bg-size-[40px_40px] opacity-5 dark:opacity-5"
 		></div>
 		<div class="relative">
 			<div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
 				<div class="flex-1">
-					<p class="text-sm font-semibold tracking-[0.2em] text-indigo-400 uppercase">
+					<p class="text-sm font-semibold tracking-[0.2em] text-indigo-600 uppercase dark:text-indigo-400">
 						Panel institucional
 					</p>
-					<h1 class="mt-2 text-3xl font-bold tracking-tight md:text-4xl">Dashboard general</h1>
-					<p class="mt-3 max-w-3xl text-sm text-slate-400 md:text-base">
+					<h1 class="mt-2 text-3xl font-bold tracking-tight md:text-4xl text-slate-900 dark:text-white">Dashboard general</h1>
+					<p class="mt-3 max-w-3xl text-sm text-slate-600 md:text-base dark:text-slate-400">
 						Vista consolidada del estado académico, financiero y administrativo del Instituto
 						Superior de Formación Docente ISFD "PAULO FREIRE" 1117.
 					</p>
 				</div>
 				{#if currentTerm}
 					<div
-						class="flex items-center gap-3 rounded-2xl border border-slate-700/50 bg-slate-800/50 px-4 py-3 backdrop-blur-sm"
+						class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 backdrop-blur-sm dark:border-slate-700/50 dark:bg-slate-800/50"
 					>
 						<svg
-							class="h-5 w-5 text-indigo-400"
+							class="h-5 w-5 text-indigo-600 dark:text-indigo-400"
 							fill="none"
 							stroke="currentColor"
 							viewBox="0 0 24 24"
@@ -231,8 +231,8 @@
 							/>
 						</svg>
 						<div class="text-sm">
-							<p class="text-slate-400">Período actual</p>
-							<p class="font-semibold text-white">{currentTerm.name}</p>
+							<p class="text-slate-600 dark:text-slate-400">Período actual</p>
+							<p class="font-semibold text-slate-900 dark:text-white">{currentTerm.name}</p>
 						</div>
 					</div>
 				{/if}
@@ -244,13 +244,13 @@
 	<section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
 		{#each metrics as metric}
 			<div
-				class="group relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-6 transition-all duration-300 hover:border-slate-700 hover:bg-slate-900/90"
+				class="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/70 dark:hover:border-slate-700 dark:hover:bg-slate-900/90"
 			>
 				<div class="flex items-start justify-between">
 					<div class="flex-1">
-						<p class="text-sm font-medium text-slate-400">{metric.title}</p>
-						<h2 class="mt-3 text-3xl font-bold text-white md:text-4xl">{metric.value}</h2>
-						<p class="mt-2 text-xs text-slate-500 md:text-sm">{metric.description}</p>
+						<p class="text-sm font-medium text-slate-600 dark:text-slate-400">{metric.title}</p>
+						<h2 class="mt-3 text-3xl font-bold text-slate-900 md:text-4xl dark:text-white">{metric.value}</h2>
+						<p class="mt-2 text-xs text-slate-500 md:text-sm dark:text-slate-500">{metric.description}</p>
 					</div>
 					<div
 						class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl {metric.bgColor}"
@@ -277,10 +277,10 @@
 	<!-- Alertas y Accesos Rápidos -->
 	<section class="grid gap-6 lg:grid-cols-3">
 		<!-- Alertas Prioritarias -->
-		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 lg:col-span-2">
+		<div class="rounded-3xl border border-slate-200 bg-white p-6 lg:col-span-2 dark:border-slate-800 dark:bg-slate-900/70">
 			<div class="flex items-center gap-3">
-				<h2 class="text-xl font-semibold text-white">Alertas prioritarias</h2>
-				<span class="rounded-full bg-slate-800 px-2 py-1 text-xs font-medium text-slate-400">
+				<h2 class="text-xl font-semibold text-slate-900 dark:text-white">Alertas prioritarias</h2>
+				<span class="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
 					{alerts.length}
 				</span>
 			</div>
@@ -288,7 +288,7 @@
 				{#each alerts as alert}
 					<a
 						href={alert.href || '#'}
-						class="group relative flex items-start gap-4 rounded-2xl border border-slate-800 bg-slate-950/50 p-4 transition-all duration-200 hover:border-slate-700 hover:bg-slate-950/80 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 focus:outline-none"
+						class="light-hover-contrast group relative flex items-start gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 transition-all duration-200 hover:border-slate-300 hover:bg-slate-100 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white focus:outline-none dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-slate-700 dark:hover:bg-slate-950/80 dark:focus:ring-offset-slate-900"
 						aria-label="{alert.title}: {alert.description}"
 					>
 						<div
@@ -322,7 +322,7 @@
 						</div>
 						<div class="min-w-0 flex-1">
 							<div class="flex items-center gap-2">
-								<p class="font-semibold text-white">{alert.title}</p>
+								<p class="font-semibold text-slate-900 dark:text-white">{alert.title}</p>
 								{#if alert.priority === 'high'}
 									<span
 										class="rounded-full bg-rose-500/10 px-2 py-0.5 text-xs font-medium text-rose-400"
@@ -340,15 +340,15 @@
 									>
 								{/if}
 							</div>
-							<p class="mt-1 text-sm text-slate-400">{alert.description}</p>
-							<p class="mt-1 text-xs font-medium text-slate-500">
+							<p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{alert.description}</p>
+							<p class="mt-1 text-xs font-medium text-slate-500 dark:text-slate-500">
 								{alert.value}
 								{alert.value === 1 ? 'caso' : 'casos'}{alert.href ? ' → Ver detalles' : ''}
 							</p>
 						</div>
 						{#if alert.href}
 							<svg
-								class="h-5 w-5 shrink-0 text-slate-500 transition-transform group-hover:translate-x-1"
+								class="h-5 w-5 shrink-0 text-slate-400 transition-transform group-hover:translate-x-1 dark:text-slate-500"
 								fill="none"
 								stroke="currentColor"
 								viewBox="0 0 24 24"
@@ -367,20 +367,20 @@
 		</div>
 
 		<!-- Accesos Rápidos -->
-		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<h2 class="text-xl font-semibold text-white">Accesos rápidos</h2>
+		<div class="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900/70">
+			<h2 class="text-xl font-semibold text-slate-900 dark:text-white">Accesos rápidos</h2>
 			<div class="mt-6 grid gap-3">
 				{#each quickAccess as item}
 					<a
 						href={item.href}
-						class="group flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 p-4 transition-all duration-200 hover:border-indigo-500/50 hover:bg-indigo-950/20 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 focus:outline-none"
+						class="light-hover-contrast group flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 transition-all duration-200 hover:border-indigo-300 hover:bg-indigo-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white focus:outline-none dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-indigo-500/50 dark:hover:bg-indigo-950/20 dark:focus:ring-offset-slate-900"
 						aria-label="{item.label}: {item.description}"
 					>
 						<div
-							class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10"
+							class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-500/10"
 						>
 							<svg
-								class="h-5 w-5 text-indigo-400"
+								class="h-5 w-5 text-indigo-600 dark:text-indigo-400"
 								fill="none"
 								stroke="currentColor"
 								viewBox="0 0 24 24"
@@ -394,7 +394,7 @@
 							</svg>
 						</div>
 						<div class="min-w-0 flex-1">
-							<p class="font-medium text-white transition-colors group-hover:text-indigo-300">
+							<p class="font-medium text-slate-900 transition-colors group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-300">
 								{item.label}
 							</p>
 							<p class="text-xs text-slate-500">{item.description}</p>

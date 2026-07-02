@@ -1,3 +1,439 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
+
+/* Global styles for light mode compatibility */
+/* These ensure that existing dark-mode-only classes work in light mode */
+html:not(.dark) {
+	/* Override dark-mode defaults for light mode */
+	color-scheme: light;
+}
+
+/* Ensure cards and containers have proper backgrounds in light mode */
+html:not(.dark) .bg-slate-950,
+html:not(.dark) .bg-slate-950\/50,
+html:not(.dark) .bg-slate-950\/30,
+html:not(.dark) .bg-slate-950\/20,
+html:not(.dark) .bg-slate-950\/10 {
+	background-color: white !important;
+}
+
+html:not(.dark) .bg-slate-900,
+html:not(.dark) .bg-slate-900\/80,
+html:not(.dark) .bg-slate-900\/60,
+html:not(.dark) .bg-slate-900\/50 {
+	background-color: #f8fafc !important;
+}
+
+html:not(.dark) .bg-slate-800,
+html:not(.dark) .bg-slate-800\/50 {
+	background-color: #f1f5f9 !important;
+}
+
+html:not(.dark) .bg-slate-700 {
+	background-color: #e2e8f0 !important;
+}
+
+html:not(.dark) .bg-slate-600 {
+	background-color: #cbd5e1 !important;
+}
+
+/* Indigo backgrounds for light mode */
+html:not(.dark) .bg-indigo-950,
+html:not(.dark) .bg-indigo-950\/50 {
+	background-color: #eef2ff !important;
+}
+
+html:not(.dark) .bg-indigo-900 {
+	background-color: #e0e7ff !important;
+}
+
+html:not(.dark) .bg-indigo-950\/20 {
+	background-color: rgba(238, 242, 255, 0.2) !important;
+}
+
+html:not(.dark) .bg-indigo-950\/30 {
+	background-color: rgba(238, 242, 255, 0.3) !important;
+}
+
+/* Red backgrounds (error states) - keep as red */
+html:not(.dark) .bg-red-950 {
+	background-color: #fef2f2 !important;
+}
+
+html:not(.dark) .bg-red-950\/30 {
+	background-color: rgba(254, 242, 242, 0.3) !important;
+}
+
+/* Amber backgrounds (warning states) - keep as amber */
+html:not(.dark) .bg-amber-950 {
+	background-color: #fffbeb !important;
+}
+
+html:not(.dark) .bg-amber-950\/10 {
+	background-color: rgba(255, 251, 235, 0.1) !important;
+}
+
+/* Emerald backgrounds (success states) - keep as emerald */
+html:not(.dark) .bg-emerald-950 {
+	background-color: #ecfdf5 !important;
+}
+
+html:not(.dark) .bg-emerald-500\/10 {
+	background-color: rgba(16, 185, 129, 0.1) !important;
+}
+
+/* Text colors for light mode */
+html:not(.dark) .text-white,
+html:not(.dark) .text-slate-50,
+html:not(.dark) .text-slate-100 {
+	color: #0f172a !important;
+}
+
+html:not(.dark) .text-slate-200 {
+	color: #1e293b !important;
+}
+
+html:not(.dark) .text-slate-300 {
+	color: #334155 !important;
+}
+
+html:not(.dark) .text-slate-400 {
+	color: #475569 !important;
+}
+
+html:not(.dark) .text-slate-500 {
+	color: #64748b !important;
+}
+
+html:not(.dark) .text-slate-600 {
+	color: #64748b !important;
+}
+
+/* Indigo text - keep as indigo */
+html:not(.dark) .text-indigo-400 {
+	color: #4f46e5 !important;
+}
+
+html:not(.dark) .text-indigo-300 {
+	color: #6366f1 !important;
+}
+
+/* Red text (error) - keep as red */
+html:not(.dark) .text-red-400 {
+	color: #dc2626 !important;
+}
+
+/* Amber text (warning) - keep as amber */
+html:not(.dark) .text-amber-400 {
+	color: #f59e0b !important;
+}
+
+/* Emerald text (success) - keep as emerald */
+html:not(.dark) .text-emerald-400 {
+	color: #10b981 !important;
+}
+
+/* Border colors for light mode */
+html:not(.dark) .border-slate-800,
+html:not(.dark) .border-slate-900 {
+	border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) .border-slate-700 {
+	border-color: #cbd5e1 !important;
+}
+
+html:not(.dark) .border-slate-600 {
+	border-color: #94a3b8 !important;
+}
+
+html:not(.dark) .border-slate-500 {
+	border-color: #64748b !important;
+}
+
+/* Red borders (error) - keep as red */
+html:not(.dark) .border-red-600 {
+	border-color: #dc2626 !important;
+}
+
+html:not(.dark) .border-red-800 {
+	border-color: #b91c1c !important;
+}
+
+/* Input styles for light mode */
+html:not(.dark) input[type="text"],
+html:not(.dark) input[type="email"],
+html:not(.dark) input[type="password"],
+html:not(.dark) input[type="number"],
+html:not(.dark) textarea,
+html:not(.dark) select {
+	background-color: white !important;
+	color: #0f172a !important;
+	border-color: #cbd5e1 !important;
+}
+
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+	color: #94a3b8 !important;
+}
+
+/* Button hover states for light mode */
+html:not(.dark) .hover\:bg-slate-800:hover {
+	background-color: #e2e8f0 !important;
+}
+
+html:not(.dark) .hover\:bg-slate-700:hover {
+	background-color: #cbd5e1 !important;
+}
+
+html:not(.dark) .hover\:bg-slate-600:hover {
+	background-color: #94a3b8 !important;
+}
+
+html:not(.dark) .hover\:bg-slate-950:hover {
+	background-color: #f1f5f9 !important;
+}
+
+/* Focus states for light mode */
+html:not(.dark) .focus\:border-indigo-500:focus {
+	border-color: #4f46e5 !important;
+}
+
+html:not(.dark) .focus\:ring-indigo-500:focus {
+	--tw-ring-color: #4f46e5 !important;
+}
+
+html:not(.dark) .focus\:border-slate-500:focus {
+	border-color: #64748b !important;
+}
+
+/* Divider colors for light mode */
+html:not(.dark) .divide-slate-800 > * + * {
+	border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) .divide-slate-700 > * + * {
+	border-color: #cbd5e1 !important;
+}
+
+/* Ring colors for light mode */
+html:not(.dark) .ring-slate-800 {
+	--tw-ring-color: #e2e8f0 !important;
+}
+
+html:not(.dark) .ring-slate-700 {
+	--tw-ring-color: #cbd5e1 !important;
+}
+
+/* Shadow adjustments for light mode */
+html:not(.dark) .shadow-2xl {
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+}
+
+html:not(.dark) .shadow-xl {
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1) !important;
+}
+
+html:not(.dark) .shadow-lg {
+	box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Checkbox styling for light mode */
+html:not(.dark) input[type="checkbox"] {
+	background-color: white !important;
+	border-color: #cbd5e1 !important;
+}
+
+/* Select dropdown styling for light mode */
+html:not(.dark) option {
+	background-color: white !important;
+	color: #0f172a !important;
+}
+
+/* =========================================================
+   FORCED LIGHT MODE
+   Cuando html NO tiene la clase .dark, todo debe verse claro
+   ========================================================= */
+
+html:not(.dark),
+html:not(.dark) body {
+	background-color: #ffffff !important;
+	color: #000000 !important;
+}
+
+html:not(.dark) main,
+html:not(.dark) section,
+html:not(.dark) article,
+html:not(.dark) aside,
+html:not(.dark) nav,
+html:not(.dark) header,
+html:not(.dark) footer {
+	background-color: #ffffff !important;
+	color: #000000 !important;
+}
+
+/* Fondos oscuros de Tailwind convertidos a blanco */
+html:not(.dark) .bg-black,
+html:not(.dark) .bg-slate-950,
+html:not(.dark) .bg-slate-950\/95,
+html:not(.dark) .bg-slate-950\/90,
+html:not(.dark) .bg-slate-950\/80,
+html:not(.dark) .bg-slate-950\/70,
+html:not(.dark) .bg-slate-950\/60,
+html:not(.dark) .bg-slate-950\/50,
+html:not(.dark) .bg-slate-900,
+html:not(.dark) .bg-slate-900\/95,
+html:not(.dark) .bg-slate-900\/90,
+html:not(.dark) .bg-slate-900\/80,
+html:not(.dark) .bg-slate-900\/70,
+html:not(.dark) .bg-slate-900\/60,
+html:not(.dark) .bg-slate-900\/50,
+html:not(.dark) .bg-slate-900\/40,
+html:not(.dark) .bg-slate-800,
+html:not(.dark) .bg-slate-800\/95,
+html:not(.dark) .bg-slate-800\/90,
+html:not(.dark) .bg-slate-800\/80,
+html:not(.dark) .bg-slate-800\/70,
+html:not(.dark) .bg-slate-800\/60,
+html:not(.dark) .bg-slate-800\/50,
+html:not(.dark) .bg-slate-700,
+html:not(.dark) .bg-slate-700\/50 {
+	background-color: #ffffff !important;
+}
+
+/* Fondos claros normalizados */
+html:not(.dark) .bg-slate-50,
+html:not(.dark) .bg-slate-100,
+html:not(.dark) .bg-white {
+	background-color: #ffffff !important;
+}
+
+/* Gradientes oscuros desactivados en modo claro */
+html:not(.dark) .bg-gradient-to-br,
+html:not(.dark) .bg-gradient-to-r,
+html:not(.dark) .bg-gradient-to-l,
+html:not(.dark) .bg-gradient-to-t,
+html:not(.dark) .bg-gradient-to-b {
+	background-image: none !important;
+	background-color: #ffffff !important;
+}
+
+/* Stops de gradiente oscuros */
+html:not(.dark) .from-slate-950,
+html:not(.dark) .from-slate-900,
+html:not(.dark) .from-slate-800,
+html:not(.dark) .via-slate-950,
+html:not(.dark) .via-slate-900,
+html:not(.dark) .via-slate-800,
+html:not(.dark) .to-slate-950,
+html:not(.dark) .to-slate-900,
+html:not(.dark) .to-slate-800,
+html:not(.dark) .to-indigo-950,
+html:not(.dark) .to-indigo-950\/30 {
+	--tw-gradient-from: #ffffff !important;
+	--tw-gradient-via: #ffffff !important;
+	--tw-gradient-to: #ffffff !important;
+}
+
+/* Textos: todo legible en negro */
+html:not(.dark) .text-white,
+html:not(.dark) .text-slate-50,
+html:not(.dark) .text-slate-100,
+html:not(.dark) .text-slate-200,
+html:not(.dark) .text-slate-300,
+html:not(.dark) .text-slate-400,
+html:not(.dark) .text-slate-500,
+html:not(.dark) .text-slate-600,
+html:not(.dark) .text-slate-700,
+html:not(.dark) .text-slate-800,
+html:not(.dark) .text-slate-900,
+html:not(.dark) .text-black {
+	color: #000000 !important;
+}
+
+/* Títulos, párrafos, labels y spans dentro del modo claro */
+html:not(.dark) h1,
+html:not(.dark) h2,
+html:not(.dark) h3,
+html:not(.dark) h4,
+html:not(.dark) h5,
+html:not(.dark) h6,
+html:not(.dark) p,
+html:not(.dark) span,
+html:not(.dark) label,
+html:not(.dark) small,
+html:not(.dark) strong {
+	color: #000000;
+}
+
+/* Bordes claros */
+html:not(.dark) .border-slate-950,
+html:not(.dark) .border-slate-900,
+html:not(.dark) .border-slate-800,
+html:not(.dark) .border-slate-700,
+html:not(.dark) .border-slate-600,
+html:not(.dark) .border-slate-500,
+html:not(.dark) .border-slate-400,
+html:not(.dark) .border-slate-300,
+html:not(.dark) .border-slate-200 {
+	border-color: #e5e7eb !important;
+}
+
+/* Inputs, selects, textareas */
+html:not(.dark) input,
+html:not(.dark) select,
+html:not(.dark) textarea {
+	background-color: #ffffff !important;
+	color: #000000 !important;
+	border-color: #d1d5db !important;
+}
+
+/* Botones y links: mantener visibles */
+html:not(.dark) button {
+	color: #000000;
+}
+
+html:not(.dark) a {
+	color: #000000;
+}
+
+/* Hover oscuro convertido a gris claro */
+html:not(.dark) .hover\:bg-slate-950:hover,
+html:not(.dark) .hover\:bg-slate-900:hover,
+html:not(.dark) .hover\:bg-slate-800:hover,
+html:not(.dark) .hover\:bg-slate-700:hover {
+	background-color: #f3f4f6 !important;
+	color: #000000 !important;
+}
+
+/* Sombras suaves */
+html:not(.dark) .shadow,
+html:not(.dark) .shadow-sm,
+html:not(.dark) .shadow-md,
+html:not(.dark) .shadow-lg,
+html:not(.dark) .shadow-xl {
+	box-shadow: 0 1px 3px rgb(0 0 0 / 0.08) !important;
+}
+
+/* =========================================================
+   FORCED LIGHT MODE - HOVER CONTRAST
+   En modo claro, los elementos interactivos se oscurecen
+   ========================================================= */
+
+html:not(.dark) .light-hover-contrast:hover {
+	background-color: #0f172a !important;
+	color: #ffffff !important;
+	border-color: #0f172a !important;
+	box-shadow: 0 12px 28px rgb(0 0 0 / 0.22) !important;
+}
+
+html:not(.dark) .light-hover-contrast:hover * {
+	color: #ffffff !important;
+	stroke: #ffffff !important;
+}
+
+html:not(.dark) .light-hover-contrast:hover svg {
+	color: #ffffff !important;
+	stroke: #ffffff !important;
+}

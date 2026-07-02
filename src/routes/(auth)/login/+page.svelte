@@ -1,9 +1,17 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { initTheme } from '$lib/utils/theme';
+	import ThemeToggle from '$lib/components/ui/ThemeToggle.svelte';
+
 	let { form } = $props();
 
 	let email = $state('');
 	let password = $state('');
 	let showPassword = $state(false);
+
+	onMount(() => {
+		initTheme();
+	});
 </script>
 
 <svelte:head>
@@ -14,7 +22,10 @@
 	/>
 </svelte:head>
 
-<div class="min-h-screen bg-slate-950 text-white">
+<div class="min-h-screen bg-slate-950 text-white relative">
+	<div class="absolute top-4 right-4 z-10">
+		<ThemeToggle />
+	</div>
 	<div class="mx-auto flex min-h-screen max-w-7xl items-center px-6 py-16">
 		<div class="grid w-full gap-10 lg:grid-cols-2">
 			<section class="hidden rounded-3xl border border-slate-800 bg-slate-900/60 p-10 lg:block">

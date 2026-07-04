@@ -72,6 +72,16 @@
 						/>
 					</div>
 					<div>
+						<label for="dni" class="mb-1 block text-sm text-slate-400">DNI</label>
+						<input
+							id="dni"
+							name="dni"
+							type="text"
+							value={data.user.student?.dni || data.user.teacher?.dni || ''}
+							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+						/>
+					</div>
+					<div>
 						<label for="email" class="mb-1 block text-sm text-slate-400">Email</label>
 						<input
 							id="email"
@@ -221,6 +231,125 @@
 									<option value="4" selected={data.user.student.currentYear === 4}>4° Año</option>
 								</select>
 							</div>
+							<div>
+								<label for="isBecado" class="mb-1 block text-sm text-slate-400">Becado</label>
+								<select
+									id="isBecado"
+									name="isBecado"
+									class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+								>
+									<option value="false" selected={!data.user.student.isBecado}>No</option>
+									<option value="true" selected={data.user.student.isBecado}>Sí</option>
+								</select>
+							</div>
+							<div>
+								<label for="isRecursante" class="mb-1 block text-sm text-slate-400"
+									>Recursante</label
+								>
+								<select
+									id="isRecursante"
+									name="isRecursante"
+									class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+								>
+									<option value="false" selected={!data.user.student.isRecursante}>No</option>
+									<option value="true" selected={data.user.student.isRecursante}>Sí</option>
+								</select>
+							</div>
+							<div>
+								<label for="studentStatus" class="mb-1 block text-sm text-slate-400"
+									>Estado del Estudiante</label
+								>
+								<select
+									id="studentStatus"
+									name="studentStatus"
+									class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+								>
+									<option value="ACTIVE" selected={data.user.student.status === 'ACTIVE'}
+										>Activo</option
+									>
+									<option value="INACTIVE" selected={data.user.student.status === 'INACTIVE'}
+										>Inactivo</option
+									>
+									<option value="GRADUATED" selected={data.user.student.status === 'GRADUATED'}
+										>Egresado</option
+									>
+									<option value="SUSPENDED" selected={data.user.student.status === 'SUSPENDED'}
+										>Suspendido</option
+									>
+								</select>
+							</div>
+							<div>
+								<label for="familyContactName" class="mb-1 block text-sm text-slate-400"
+									>Nombre Contacto Familiar</label
+								>
+								<input
+									id="familyContactName"
+									name="familyContactName"
+									type="text"
+									value={data.user.student.familyContactName || ''}
+									class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+								/>
+							</div>
+							<div>
+								<label for="familyContactPhone" class="mb-1 block text-sm text-slate-400"
+									>Teléfono Contacto Familiar</label
+								>
+								<input
+									id="familyContactPhone"
+									name="familyContactPhone"
+									type="tel"
+									value={data.user.student.familyContactPhone || ''}
+									class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+								/>
+							</div>
+							<div>
+								<label for="familyRelationship" class="mb-1 block text-sm text-slate-400"
+									>Parentesco</label
+								>
+								<input
+									id="familyRelationship"
+									name="familyRelationship"
+									type="text"
+									value={data.user.student.familyRelationship || ''}
+									class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+								/>
+							</div>
+							<div>
+								<label for="highSchool" class="mb-1 block text-sm text-slate-400"
+									>Colegio Secundario</label
+								>
+								<input
+									id="highSchool"
+									name="highSchool"
+									type="text"
+									value={data.user.student.highSchool || ''}
+									class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+								/>
+							</div>
+							<div>
+								<label for="highSchoolYear" class="mb-1 block text-sm text-slate-400"
+									>Año Egreso Secundario</label
+								>
+								<input
+									id="highSchoolYear"
+									name="highSchoolYear"
+									type="number"
+									value={data.user.student.highSchoolYear || ''}
+									class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+								/>
+							</div>
+							<div>
+								<label for="instituteYear" class="mb-1 block text-sm text-slate-400"
+									>Año Ingreso Instituto</label
+								>
+								<input
+									id="instituteYear"
+									name="instituteYear"
+									type="number"
+									value={data.user.student.instituteYear || ''}
+									class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+								/>
+							</div>
 						</div>
 					</div>
 				{/if}
@@ -346,7 +475,7 @@
 
 				<button
 					type="submit"
-					class="w-full rounded-xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.02]"
+					class="w-full rounded-xl bg-black px-6 py-3 font-semibold text-white transition hover:scale-[1.02]"
 				>
 					Guardar Datos
 				</button>
@@ -378,7 +507,7 @@
 				</div>
 				<button
 					type="submit"
-					class="w-full rounded-xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.02]"
+					class="w-full rounded-xl bg-black px-6 py-3 font-semibold text-white transition hover:scale-[1.02]"
 				>
 					Guardar Roles
 				</button>
@@ -467,7 +596,7 @@
 						</select>
 						<button
 							type="submit"
-							class="rounded-xl bg-blue-500 px-6 py-3 text-sm font-medium text-white transition hover:bg-blue-600"
+							class="rounded-xl bg-black px-6 py-3 text-sm font-medium text-white transition hover:scale-[1.02]"
 						>
 							Asignar
 						</button>

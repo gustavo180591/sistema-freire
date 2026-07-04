@@ -80,23 +80,46 @@ export const load: PageServerLoad = async ({ locals }) => {
 		subjects = [...subjects, ...subjectsWithoutStatus];
 	}
 
+	// Calcular progreso real basado en materias aprobadas
+	const totalCareerSubjects = await prisma.subject.count({
+		where: {
+			active: true,
+			careerSubjects: {
+				some: {
+					careerId: student.careerId
+				}
+			}
+		}
+	});
+
+	const progress = totalCareerSubjects > 0
+		? Math.round((subjects.filter((s) => s.approved).length / totalCareerSubjects) * 100)
+		: 0;
+
+	// Calcular deuda financiera real
+	const totalDebt = student.studentCharges.reduce((sum, charge) => {
+		return sum + Number(charge.amount) - Number(charge.paidAmount);
+	}, 0);
+
 	return {
 		student: {
 			id: student.id,
 			fullName: `${student.firstName} ${student.lastName}`,
 			dni: student.dni,
 			status: student.status,
-			career: student.career.name
+			career: student.career.name,
+			currentYear: student.currentYear
 		},
 		academic: {
 			totalSubjects: subjects.length,
 			approvedSubjects: subjects.filter((s) => s.approved).length,
 			regularSubjects: subjects.filter((s) => s.regularityStatus === 'REGULAR').length,
-			progress: 75,
+			freeSubjects: subjects.filter((s) => s.regularityStatus === 'LIBRE').length,
+			progress,
 			subjects
 		},
 		financial: {
-			totalDebt: 0
+			totalDebt
 		}
 	};
 };

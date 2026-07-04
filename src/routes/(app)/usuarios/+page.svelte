@@ -6,13 +6,29 @@
 
 	const users = $derived(data.users);
 	let search = $state('');
-	let editingUser = $state<User | null>(null);
 	let deletingUser = $state<User | null>(null);
 
 	interface User {
 		id: string;
+		firstName: string;
+		lastName: string;
 		fullName: string;
 		email: string;
+		dni: string;
+		phone: string;
+		birthDate: Date | null;
+		bloodType: string | null;
+		address: string | null;
+		locality: string | null;
+		postalCode: string | null;
+		careerId: string | null;
+		currentYear: number | null;
+		isBecado: boolean | null;
+		isRecursante: boolean | null;
+		studentStatus: string | null;
+		teacherStatus: string | null;
+		hireDate: Date | null;
+		observations: string | null;
 		role: string;
 		status: string;
 	}
@@ -23,7 +39,8 @@
 			return (
 				user.fullName.toLowerCase().includes(q) ||
 				user.email.toLowerCase().includes(q) ||
-				user.role.toLowerCase().includes(q)
+				user.role.toLowerCase().includes(q) ||
+				user.dni.toLowerCase().includes(q)
 			);
 		})
 	);
@@ -57,7 +74,7 @@
 		<input
 			bind:value={search}
 			type="text"
-			placeholder="Buscar por nombre, email o rol"
+			placeholder="Buscar por nombre, email, rol o DNI"
 			class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 		/>
 	</div>
@@ -67,8 +84,9 @@
 		<table class="w-full table-fixed text-left">
 			<thead class="border-b border-slate-800 bg-slate-900">
 				<tr>
-					<th class="w-1/4 px-4 py-3 text-sm font-semibold">Usuario</th>
-					<th class="w-1/3 px-4 py-3 text-sm font-semibold">Email</th>
+					<th class="w-1/5 px-4 py-3 text-sm font-semibold">Usuario</th>
+					<th class="w-1/6 px-4 py-3 text-sm font-semibold">DNI</th>
+					<th class="w-1/4 px-4 py-3 text-sm font-semibold">Email</th>
 					<th class="w-1/6 px-4 py-3 text-sm font-semibold">Rol</th>
 					<th class="w-1/6 px-4 py-3 text-sm font-semibold">Estado</th>
 					<th class="w-24 px-4 py-3 text-right text-sm font-semibold">Acciones</th>
@@ -82,6 +100,7 @@
 						<td class="truncate px-4 py-3" title={user.fullName}>
 							<span class="font-medium">{user.fullName}</span>
 						</td>
+						<td class="truncate px-4 py-3 text-slate-300" title={user.dni}>{user.dni || '-'}</td>
 						<td class="truncate px-4 py-3 text-slate-300" title={user.email}>{user.email}</td>
 						<td class="px-4 py-3">
 							<span class="inline-flex rounded-full border border-slate-700 px-2 py-0.5 text-xs">
@@ -117,8 +136,8 @@
 										/>
 									</svg>
 								</a>
-								<button
-									onclick={() => (editingUser = user)}
+								<a
+									href="/usuarios/{user.id}/editar"
 									class="text-blue-400 transition-colors hover:text-blue-300"
 									aria-label="Editar usuario"
 								>
@@ -130,7 +149,7 @@
 											d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
 										/>
 									</svg>
-								</button>
+								</a>
 								<button
 									onclick={() => (deletingUser = user)}
 									class="text-red-400 transition-colors hover:text-red-300"
@@ -160,6 +179,7 @@
 				<div class="flex items-start justify-between gap-3">
 					<div class="min-w-0 flex-1">
 						<p class="truncate font-semibold text-white">{user.fullName}</p>
+						<p class="truncate text-sm text-slate-400">{user.dni || '-'}</p>
 						<p class="truncate text-sm text-slate-400">{user.email}</p>
 					</div>
 					<span
@@ -197,8 +217,8 @@
 								/>
 							</svg>
 						</a>
-						<button
-							onclick={() => (editingUser = user)}
+						<a
+							href="/usuarios/{user.id}/editar"
 							class="text-blue-400 transition-colors hover:text-blue-300"
 							aria-label="Editar usuario"
 						>
@@ -210,7 +230,7 @@
 									d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
 								/>
 							</svg>
-						</button>
+						</a>
 						<button
 							onclick={() => (deletingUser = user)}
 							class="text-red-400 transition-colors hover:text-red-300"
@@ -236,133 +256,6 @@
 		{/if}
 	</div>
 </div>
-
-<!-- Modal de Edición -->
-{#if editingUser}
-	<div
-		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-		role="button"
-		tabindex="0"
-		onclick={() => (editingUser = null)}
-		onkeydown={(e) => e.key === 'Escape' && (editingUser = null)}
-	>
-		<div
-			class="relative mx-4 w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6"
-			role="dialog"
-			aria-modal="true"
-			tabindex="0"
-			onclick={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.stopPropagation()}
-		>
-			<div class="mb-4 flex items-center justify-between">
-				<h3 class="text-lg font-semibold text-white">Editar Usuario</h3>
-				<button
-					type="button"
-					aria-label="Cerrar modal"
-					onclick={() => (editingUser = null)}
-					class="text-slate-400 transition-colors hover:text-slate-300"
-				>
-					<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M6 18L18 6M6 6l12 12"
-						/>
-					</svg>
-				</button>
-			</div>
-			<form method="POST" action="/usuarios/{editingUser.id}/editar" use:enhance>
-				<div class="space-y-4">
-					<div>
-						<label for="firstName" class="mb-2 block text-sm font-medium text-slate-300"
-							>Nombre</label
-						>
-						<input
-							id="firstName"
-							type="text"
-							name="firstName"
-							value={editingUser.fullName.split(' ')[0]}
-							required
-							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white transition outline-none focus:border-slate-500"
-						/>
-					</div>
-					<div>
-						<label for="lastName" class="mb-2 block text-sm font-medium text-slate-300"
-							>Apellido</label
-						>
-						<input
-							id="lastName"
-							type="text"
-							name="lastName"
-							value={editingUser.fullName.split(' ')[1]}
-							required
-							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white transition outline-none focus:border-slate-500"
-						/>
-					</div>
-					<div>
-						<label for="email" class="mb-2 block text-sm font-medium text-slate-300">Email</label>
-						<input
-							id="email"
-							type="email"
-							name="email"
-							value={editingUser.email}
-							required
-							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white transition outline-none focus:border-slate-500"
-						/>
-					</div>
-					<div>
-						<label for="role" class="mb-2 block text-sm font-medium text-slate-300">Rol</label>
-						<select
-							id="role"
-							name="role"
-							value={editingUser.role}
-							required
-							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white transition outline-none focus:border-slate-500"
-						>
-							<option value="SUPERADMIN">Super Administrador</option>
-							<option value="DIRECTOR">Director</option>
-							<option value="SECRETARIA">Secretaría</option>
-							<option value="DOCENTE">Docente</option>
-							<option value="ALUMNO">Alumno</option>
-							<option value="FINANZAS">Finanzas</option>
-							<option value="APODERADO">Apoderado</option>
-							<option value="PRECEPTOR">Preceptor</option>
-						</select>
-					</div>
-					<div>
-						<label for="status" class="mb-2 block text-sm font-medium text-slate-300">Estado</label>
-						<select
-							id="status"
-							name="status"
-							value={editingUser.status === 'Activo' ? 'ACTIVE' : 'INACTIVE'}
-							required
-							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white transition outline-none focus:border-slate-500"
-						>
-							<option value="ACTIVE">Activo</option>
-							<option value="INACTIVE">Inactivo</option>
-						</select>
-					</div>
-					<div class="flex justify-end gap-3 pt-4">
-						<button
-							type="button"
-							onclick={() => (editingUser = null)}
-							class="rounded-xl border border-slate-700 px-5 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
-						>
-							Cancelar
-						</button>
-						<button
-							type="submit"
-							class="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:scale-[1.02]"
-						>
-							Guardar Cambios
-						</button>
-					</div>
-				</div>
-			</form>
-		</div>
-	</div>
-{/if}
 
 <!-- Modal de Eliminación -->
 {#if deletingUser}

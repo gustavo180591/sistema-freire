@@ -136,6 +136,15 @@ export const actions: Actions = {
 		const postalCode = formData.get('postalCode')?.toString();
 		const careerId = formData.get('careerId')?.toString();
 		const currentYear = formData.get('currentYear')?.toString();
+		const isBecado = formData.get('isBecado')?.toString();
+		const isRecursante = formData.get('isRecursante')?.toString();
+		const studentStatus = formData.get('studentStatus')?.toString();
+		const familyContactName = formData.get('familyContactName')?.toString();
+		const familyContactPhone = formData.get('familyContactPhone')?.toString();
+		const familyRelationship = formData.get('familyRelationship')?.toString();
+		const highSchool = formData.get('highSchool')?.toString();
+		const highSchoolYear = formData.get('highSchoolYear')?.toString();
+		const instituteYear = formData.get('instituteYear')?.toString();
 		const teacherStatus = formData.get('teacherStatus')?.toString();
 		const hireDate = formData.get('hireDate')?.toString();
 		const observations = formData.get('observations')?.toString();
@@ -174,7 +183,18 @@ export const actions: Actions = {
 							locality: locality || student.locality,
 							postalCode: postalCode || student.postalCode,
 							careerId: careerId || student.careerId,
-							currentYear: currentYear ? parseInt(currentYear) : student.currentYear
+							currentYear: currentYear ? parseInt(currentYear) : student.currentYear,
+							isBecado: isBecado !== undefined ? isBecado === 'true' : student.isBecado,
+							isRecursante: isRecursante !== undefined ? isRecursante === 'true' : student.isRecursante,
+							status: studentStatus
+								? (studentStatus as 'ACTIVE' | 'INACTIVE' | 'GRADUATED' | 'SUSPENDED')
+								: student.status,
+							familyContactName: familyContactName || student.familyContactName,
+							familyContactPhone: familyContactPhone || student.familyContactPhone,
+							familyRelationship: familyRelationship || student.familyRelationship,
+							highSchool: highSchool || student.highSchool,
+							highSchoolYear: highSchoolYear ? parseInt(highSchoolYear) : student.highSchoolYear,
+							instituteYear: instituteYear ? parseInt(instituteYear) : student.instituteYear
 						}
 					});
 				}

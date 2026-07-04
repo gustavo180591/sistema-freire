@@ -137,9 +137,9 @@ export const actions: Actions = {
 				});
 			});
 
-			// Registrar en auditoría
+			// Registrar en auditoría (usar el usuario que realizó la acción)
 			await auditLog({
-				userId: params.id,
+				userId: currentUser.id,
 				action: AuditAction.DELETE,
 				entityType: 'USER',
 				entityId: params.id,

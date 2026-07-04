@@ -12,6 +12,32 @@
 		currency: 'ARS',
 		maximumFractionDigits: 0
 	});
+
+	// Funciones para colores semánticos
+	function getAttendanceColor(percent: number): string {
+		if (percent >= 75) return 'text-emerald-400';
+		if (percent >= 60) return 'text-amber-400';
+		return 'text-red-400';
+	}
+
+	function getRegularityBadgeColor(status: string): string {
+		switch (status) {
+			case 'REGULAR':
+				return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+			case 'LIBRE':
+				return 'bg-red-500/20 text-red-400 border-red-500/30';
+			case 'PROMOCIONADO':
+				return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+			default:
+				return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+		}
+	}
+
+	function getApprovedBadge(approved: boolean): string {
+		return approved
+			? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+			: 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+	}
 </script>
 
 <svelte:head>
@@ -29,7 +55,7 @@
 					{student.fullName}
 				</h1>
 				<p class="mt-3 text-sm text-slate-400">
-					DNI: {student.dni} · {student.career}
+					DNI: {student.dni} · {student.career} · {student.currentYear}° Año
 				</p>
 				<div class="mt-4 inline-flex rounded-full border border-slate-700 px-4 py-2 text-sm">
 					{student.status}
@@ -49,25 +75,44 @@
 	<!-- KPIs -->
 	<section class="grid gap-4 md:grid-cols-4">
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<p class="text-sm text-slate-400">Progreso</p>
+			<p class="text-sm text-slate-400">Progreso carrera</p>
 			<h2 class="mt-3 text-4xl font-bold">{academic.progress}%</h2>
 		</div>
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<p class="text-sm text-slate-400">Aprobadas</p>
-			<h2 class="mt-3 text-4xl font-bold">{academic.approvedSubjects}</h2>
+			<h2 class="mt-3 text-4xl font-bold text-emerald-400">{academic.approvedSubjects}</h2>
 		</div>
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<p class="text-sm text-slate-400">Regulares</p>
-			<h2 class="mt-3 text-4xl font-bold">{academic.regularSubjects}</h2>
+			<h2 class="mt-3 text-4xl font-bold text-blue-400">{academic.regularSubjects}</h2>
 		</div>
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<p class="text-sm text-slate-400">Deuda pendiente</p>
-			<h2 class="mt-3 text-4xl font-bold">
-				{currency.format(financial.totalDebt)}
-			</h2>
+			<p class="text-sm text-slate-400">Libres</p>
+			<h2 class="mt-3 text-4xl font-bold text-red-400">{academic.freeSubjects || 0}</h2>
+		</div>
+	</section>
+
+	<!-- Financial KPI -->
+	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+		<div class="flex items-center justify-between">
+			<div>
+				<p class="text-sm text-slate-400">Deuda pendiente</p>
+				<h2 class="mt-2 text-3xl font-bold {financial.totalDebt > 0 ? 'text-red-400' : 'text-emerald-400'}">
+					{currency.format(financial.totalDebt)}
+				</h2>
+			</div>
+			{#if financial.totalDebt > 0}
+				<div class="rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400">
+					Pendiente de pago
+				</div>
+			{:else}
+				<div class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-400">
+					Al día
+				</div>
+			{/if}
 		</div>
 	</section>
 
@@ -89,15 +134,19 @@
 						<td class="px-6 py-4 font-medium">{subject.subject}</td>
 						<td class="px-6 py-4">{subject.yearLevel}°</td>
 						<td class="px-6 py-4">
-							{subject.attendancePercent}%
+							<span class="font-semibold {getAttendanceColor(subject.attendancePercent)}">
+								{subject.attendancePercent}%
+							</span>
 						</td>
 						<td class="px-6 py-4">
-							<span class="rounded-full border border-slate-700 px-3 py-1 text-xs">
+							<span class="rounded-full border px-3 py-1 text-xs {getRegularityBadgeColor(subject.regularityStatus)}">
 								{subject.regularityStatus}
 							</span>
 						</td>
 						<td class="px-6 py-4">
-							{subject.approved ? 'Sí' : 'No'}
+							<span class="rounded-full border px-3 py-1 text-xs {getApprovedBadge(subject.approved)}">
+								{subject.approved ? 'Sí' : 'No'}
+							</span>
 						</td>
 					</tr>
 				{/each}

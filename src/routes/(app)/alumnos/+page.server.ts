@@ -40,27 +40,51 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		}
 	}
 
-	const where: Prisma.StudentWhereInput = careerId ? { careerId } : {};
-
-	// Filtrar por localidades efectivas a través de la carrera
-	if (effectiveLocationIds.length > 0) {
-		where.career = {
-			locations: {
+	// Obtener usuarios con rol ALUMNO
+	const usersWithAlumnoRole = await prisma.user.findMany({
+		where: {
+			roles: {
 				some: {
-					locationId: { in: effectiveLocationIds }
+					role: {
+						code: 'ALUMNO'
+					}
 				}
 			}
-		};
+		},
+		include: {
+			roles: {
+				include: {
+					role: true
+				}
+			},
+			student: {
+				include: {
+					career: true
+				}
+			}
+		},
+		orderBy: [
+			{ lastName: 'asc' },
+			{ firstName: 'asc' }
+		]
+	});
+
+	// Filtrar por localidades si el usuario no tiene acceso global
+	let filteredUsers = usersWithAlumnoRole;
+	if (!hasGlobalAccess && effectiveLocationIds.length > 0) {
+		filteredUsers = usersWithAlumnoRole.filter((user) => {
+			if (!user.student) return false;
+			// Verificar si la carrera del alumno está en las localidades permitidas
+			return effectiveLocationIds.includes(user.student.careerId);
+		});
 	}
 
-	const students = await prisma.student.findMany({
-		where,
-		include: {
-			user: true,
-			career: true
-		},
-		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
-	});
+	// Filtrar por carrera si se especificó
+	if (careerId) {
+		filteredUsers = filteredUsers.filter((user) => {
+			return user.student && user.student.careerId === careerId;
+		});
+	}
 
 	const careers = await prisma.career.findMany({
 		where: {
@@ -75,44 +99,43 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		select: { id: true, name: true }
 	});
 
-	type StudentWithRelations = Prisma.StudentGetPayload<{
-		include: { user: true; career: true };
-	}>;
-
 	// Get career name if filtering by career
 	let careerName = null;
-	if (careerId && students.length > 0) {
-		careerName = students[0].career.name;
+	if (careerId && filteredUsers.length > 0) {
+		const userWithCareer = filteredUsers.find((u) => u.student && u.student.careerId === careerId);
+		if (userWithCareer && userWithCareer.student) {
+			careerName = userWithCareer.student.career.name;
+		}
 	}
 
 	return {
-		students: students.map((s: StudentWithRelations) => ({
-			id: s.id,
-			userId: s.userId,
-			dni: s.dni,
-			firstName: s.firstName,
-			lastName: s.lastName,
-			email: s.user.email,
-			career: s.career.name,
-			careerId: s.careerId,
-			status: s.status,
-			isBecado: s.isBecado,
-			isRecursante: s.isRecursante,
-			currentYear: s.currentYear,
-			createdAt: s.createdAt,
-			// Campos extendidos
-			birthDate: s.birthDate,
-			bloodType: s.bloodType,
-			phone: s.phone,
-			address: s.address,
-			locality: s.locality,
-			postalCode: s.postalCode,
-			highSchool: s.highSchool,
-			highSchoolYear: s.highSchoolYear,
-			instituteYear: s.instituteYear,
-			familyContactName: s.familyContactName,
-			familyContactPhone: s.familyContactPhone,
-			familyRelationship: s.familyRelationship
+		students: filteredUsers.map((user) => ({
+			id: user.student?.id || user.id,
+			userId: user.id,
+			dni: user.student?.dni || '',
+			firstName: user.firstName,
+			lastName: user.lastName,
+			email: user.email,
+			career: user.student?.career?.name || 'Sin carrera',
+			careerId: user.student?.careerId || '',
+			status: user.student?.status || 'ACTIVE',
+			isBecado: user.student?.isBecado || false,
+			isRecursante: user.student?.isRecursante || false,
+			currentYear: user.student?.currentYear || 1,
+			createdAt: user.createdAt,
+			// Campos extendidos - usar null en lugar de undefined
+			birthDate: user.student?.birthDate ?? null,
+			bloodType: user.student?.bloodType ?? null,
+			phone: user.student?.phone ?? null,
+			address: user.student?.address ?? null,
+			locality: user.student?.locality ?? null,
+			postalCode: user.student?.postalCode ?? null,
+			highSchool: user.student?.highSchool ?? null,
+			highSchoolYear: user.student?.highSchoolYear ?? null,
+			instituteYear: user.student?.instituteYear ?? null,
+			familyContactName: user.student?.familyContactName ?? null,
+			familyContactPhone: user.student?.familyContactPhone ?? null,
+			familyRelationship: user.student?.familyRelationship ?? null
 		})),
 		careers,
 		locations: filterableLocations,

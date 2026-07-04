@@ -411,6 +411,14 @@ html:not(.dark) input[type="checkbox"] {
 	color: #000000 !important;
 }
 
+/* Excepción: radio buttons deben ser visibles en modo claro */
+html:not(.dark) input[type="radio"] {
+	appearance: auto !important;
+	background-color: #ffffff !important;
+	border: 1px solid #d1d5db !important;
+	color: #000000 !important;
+}
+
 /* Excepción: botón de login debe mantener fondo negro en modo claro */
 html:not(.dark) button[type="submit"].bg-black {
 	background-color: #000000 !important;

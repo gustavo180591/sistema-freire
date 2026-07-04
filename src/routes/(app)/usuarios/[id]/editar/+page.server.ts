@@ -128,125 +128,26 @@ export const actions: Actions = {
 		const email = formData.get('email')?.toString();
 		const status = formData.get('status')?.toString();
 		const phone = formData.get('phone')?.toString();
-		const dni = formData.get('dni')?.toString();
-		const birthDate = formData.get('birthDate')?.toString();
-		const bloodType = formData.get('bloodType')?.toString();
-		const address = formData.get('address')?.toString();
-		const locality = formData.get('locality')?.toString();
-		const postalCode = formData.get('postalCode')?.toString();
-		const careerId = formData.get('careerId')?.toString();
-		const currentYear = formData.get('currentYear')?.toString();
-		const isBecado = formData.get('isBecado')?.toString();
-		const isRecursante = formData.get('isRecursante')?.toString();
-		const studentStatus = formData.get('studentStatus')?.toString();
-		const familyContactName = formData.get('familyContactName')?.toString();
-		const familyContactPhone = formData.get('familyContactPhone')?.toString();
-		const familyRelationship = formData.get('familyRelationship')?.toString();
-		const highSchool = formData.get('highSchool')?.toString();
-		const highSchoolYear = formData.get('highSchoolYear')?.toString();
-		const instituteYear = formData.get('instituteYear')?.toString();
-		const teacherStatus = formData.get('teacherStatus')?.toString();
-		const hireDate = formData.get('hireDate')?.toString();
-		const observations = formData.get('observations')?.toString();
 
 		if (!firstName || !lastName || !email) {
 			return fail(400, { error: 'Datos requeridos faltantes' });
 		}
 
+		// Validar status
+		const validStatuses = ['ACTIVE', 'INACTIVE', 'BLOCKED'];
+		if (status && !validStatuses.includes(status)) {
+			return fail(400, { error: 'Estado inválido' });
+		}
+
 		try {
-			await prisma.$transaction(async (tx) => {
-				// Actualizar usuario base
-				await tx.user.update({
-					where: { id: params.id },
-					data: {
-						firstName,
-						lastName,
-						email,
-						status: status as 'ACTIVE' | 'INACTIVE'
-					}
-				});
-
-				// Actualizar estudiante si existe
-				const student = await tx.student.findUnique({
-					where: { userId: params.id }
-				});
-
-				if (student) {
-					await tx.student.update({
-						where: { id: student.id },
-						data: {
-							dni: dni || student.dni,
-							birthDate: birthDate ? new Date(birthDate) : student.birthDate,
-							bloodType: bloodType || student.bloodType,
-							phone: phone || student.phone,
-							address: address || student.address,
-							locality: locality || student.locality,
-							postalCode: postalCode || student.postalCode,
-							careerId: careerId || student.careerId,
-							currentYear: currentYear ? parseInt(currentYear) : student.currentYear,
-							isBecado: isBecado !== undefined ? isBecado === 'true' : student.isBecado,
-							isRecursante: isRecursante !== undefined ? isRecursante === 'true' : student.isRecursante,
-							status: studentStatus
-								? (studentStatus as 'ACTIVE' | 'INACTIVE' | 'GRADUATED' | 'SUSPENDED')
-								: student.status,
-							familyContactName: familyContactName || student.familyContactName,
-							familyContactPhone: familyContactPhone || student.familyContactPhone,
-							familyRelationship: familyRelationship || student.familyRelationship,
-							highSchool: highSchool || student.highSchool,
-							highSchoolYear: highSchoolYear ? parseInt(highSchoolYear) : student.highSchoolYear,
-							instituteYear: instituteYear ? parseInt(instituteYear) : student.instituteYear
-						}
-					});
-				}
-
-				// Actualizar docente si existe
-				const teacher = await tx.teacher.findUnique({
-					where: { userId: params.id }
-				});
-
-				if (teacher) {
-					await tx.teacher.update({
-						where: { id: teacher.id },
-						data: {
-							dni: dni || teacher.dni,
-							firstName,
-							lastName,
-							status: teacherStatus
-								? (teacherStatus as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'RESIGNED')
-								: teacher.status,
-							hireDate: hireDate ? new Date(hireDate) : teacher.hireDate,
-							observations: observations !== undefined ? observations : teacher.observations
-						}
-					});
-				}
-
-				// Actualizar teléfono del usuario si se proporcionó
-				if (phone) {
-					await tx.user.update({
-						where: { id: params.id },
-						data: { phone }
-					});
-				}
-
-				// Actualizar permisos de localidad si se proporcionó
-				if (locality) {
-					// Eliminar permisos existentes
-					await tx.userLocationPermission.deleteMany({
-						where: { userId: params.id }
-					});
-
-					// Agregar nuevo permiso
-					const location = await tx.location.findUnique({
-						where: { code: locality }
-					});
-					if (location) {
-						await tx.userLocationPermission.create({
-							data: {
-								userId: params.id,
-								locationId: location.id
-							}
-						});
-					}
+			await prisma.user.update({
+				where: { id: params.id },
+				data: {
+					firstName,
+					lastName,
+					email,
+					phone: phone || null,
+					status: status as 'ACTIVE' | 'INACTIVE' | 'BLOCKED'
 				}
 			});
 
@@ -266,11 +167,26 @@ export const actions: Actions = {
 		}
 	},
 
-	updateRoles: async ({ request, params }) => {
+	updateRoles: async ({ request, params, locals }) => {
+		const currentUser = locals.user;
+		if (!currentUser) {
+			return fail(401, { error: 'No autorizado' });
+		}
+
 		const formData = await request.formData();
 		const roleIds = formData.getAll('roleIds').map((r) => r.toString());
 
 		try {
+			// Validar que todos los roleIds existan
+			if (roleIds.length > 0) {
+				const roles = await prisma.role.findMany({
+					where: { id: { in: roleIds } }
+				});
+				if (roles.length !== roleIds.length) {
+					return fail(400, { error: 'Algunos roles no existen' });
+				}
+			}
+
 			// Eliminar roles actuales
 			await prisma.userRole.deleteMany({
 				where: { userId: params.id }
@@ -282,7 +198,22 @@ export const actions: Actions = {
 					data: roleIds.map((roleId) => ({
 						userId: params.id,
 						roleId
-					}))
+					})),
+					skipDuplicates: true
+				});
+			}
+
+			// Registrar en auditoría
+			const targetUser = await prisma.user.findUnique({
+				where: { id: params.id }
+			});
+			if (targetUser) {
+				await auditLog({
+					userId: currentUser.id,
+					action: AuditAction.UPDATE,
+					entityType: 'USER_ROLES',
+					entityId: params.id,
+					description: `Actualización de roles del usuario ${targetUser.firstName} ${targetUser.lastName} (${targetUser.email})`
 				});
 			}
 
@@ -290,6 +221,66 @@ export const actions: Actions = {
 		} catch (e) {
 			console.error(e);
 			return fail(500, { error: 'Error al actualizar roles' });
+		}
+	},
+
+	updateLocations: async ({ request, params, locals }) => {
+		const currentUser = locals.user;
+		if (!currentUser) {
+			return fail(401, { error: 'No autorizado' });
+		}
+
+		const formData = await request.formData();
+		const locationIds = formData.getAll('locationIds').map((r) => r.toString());
+
+		try {
+			// Validar que todos los locationIds existan y estén activos
+			if (locationIds.length > 0) {
+				const locations = await prisma.location.findMany({
+					where: {
+						id: { in: locationIds },
+						active: true
+					}
+				});
+				if (locations.length !== locationIds.length) {
+					return fail(400, { error: 'Algunas sedes no existen o no están activas' });
+				}
+			}
+
+			// Eliminar permisos actuales
+			await prisma.userLocationPermission.deleteMany({
+				where: { userId: params.id }
+			});
+
+			// Agregar nuevos permisos
+			if (locationIds.length > 0) {
+				await prisma.userLocationPermission.createMany({
+					data: locationIds.map((locationId) => ({
+						userId: params.id,
+						locationId
+					})),
+					skipDuplicates: true
+				});
+			}
+
+			// Registrar en auditoría
+			const targetUser = await prisma.user.findUnique({
+				where: { id: params.id }
+			});
+			if (targetUser) {
+				await auditLog({
+					userId: currentUser.id,
+					action: AuditAction.UPDATE,
+					entityType: 'USER_LOCATIONS',
+					entityId: params.id,
+					description: `Actualización de sedes del usuario ${targetUser.firstName} ${targetUser.lastName} (${targetUser.email})`
+				});
+			}
+
+			return { success: true };
+		} catch (e) {
+			console.error(e);
+			return fail(500, { error: 'Error al actualizar sedes' });
 		}
 	},
 

@@ -120,6 +120,8 @@ async function seed() {
 				code: mat.code,
 				name: mat.name,
 				yearLevel: mat.yearLevel,
+				subjectType: 'COMMON',
+				trainingField: 'GENERAL',
 				active: true
 			}
 		});
@@ -135,6 +137,8 @@ async function seed() {
 				code: mat.code,
 				name: mat.name,
 				yearLevel: mat.yearLevel,
+				subjectType: 'CAREER_SPECIFIC',
+				trainingField: 'ESPECIFICA',
 				active: true
 			}
 		});

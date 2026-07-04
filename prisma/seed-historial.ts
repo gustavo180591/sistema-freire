@@ -20,6 +20,15 @@ async function main() {
 	});
 	console.log(`✅ Carrera: ${career.name}`);
 
+	// Obtener término académico existente
+	const academicTerm = await prisma.academicTerm.findFirst({
+		where: { year: 2026 }
+	});
+
+	if (!academicTerm) {
+		throw new Error('No se encontró término académico 2026. Ejecuta primero seed-locations.ts');
+	}
+
 	// 2. Crear materias de Lengua para todos los años
 	const materiasLengua = [
 		// 1er Año
@@ -59,6 +68,8 @@ async function main() {
 				code: mat.code,
 				name: mat.name,
 				yearLevel: mat.yearLevel,
+				subjectType: 'CAREER_SPECIFIC',
+				trainingField: 'ESPECIFICA',
 				active: true
 			}
 		});
@@ -263,6 +274,8 @@ async function main() {
 					periodLabel: '2025',
 					amount: 50000,
 					paidAmount: 0,
+					finalAmount: 50000,
+					academicTermId: academicTerm.id,
 					status: 'PENDING',
 					dueDate: new Date('2025-03-15')
 				}
@@ -293,6 +306,8 @@ async function main() {
 						periodLabel: `2025-${mes}`,
 						amount: total,
 						paidAmount: pagado,
+						finalAmount: total,
+						academicTermId: academicTerm.id,
 						status: estado as ChargeStatus,
 						dueDate: new Date(`2025-${mes === 'Marzo' ? '03' : mes === 'Abril' ? '04' : '05'}-10`)
 					}

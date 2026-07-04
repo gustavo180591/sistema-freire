@@ -110,6 +110,71 @@ async function seed() {
 
 	console.log('Carreras creadas:', { lenguaAlem, lenguaCapiovi, mateCapiovi });
 
+	// Obtener ubicaciones
+	const locations = await prisma.location.findMany();
+	if (locations.length === 0) {
+		console.warn('⚠️ No hay ubicaciones. Las carreras no estarán asociadas a ninguna ubicación.');
+	} else {
+		// Asociar carreras a ubicaciones
+		console.log('Asociando carreras a ubicaciones...');
+
+		// Lengua Alem -> Leandro N. Alem
+		const alemLocation = locations.find(l => l.name === 'Leandro N. Alem');
+		if (alemLocation) {
+			await prisma.careerLocation.upsert({
+				where: {
+					careerId_locationId: {
+						careerId: lenguaAlem.id,
+						locationId: alemLocation.id
+					}
+				},
+				update: {},
+				create: {
+					careerId: lenguaAlem.id,
+					locationId: alemLocation.id
+				}
+			});
+			console.log(`✅ ${lenguaAlem.name} -> ${alemLocation.name}`);
+		}
+
+		// Lengua Capiovi -> Capiovi
+		const capioviLocation = locations.find(l => l.name === 'Capiovi');
+		if (capioviLocation) {
+			await prisma.careerLocation.upsert({
+				where: {
+					careerId_locationId: {
+						careerId: lenguaCapiovi.id,
+						locationId: capioviLocation.id
+					}
+				},
+				update: {},
+				create: {
+					careerId: lenguaCapiovi.id,
+					locationId: capioviLocation.id
+				}
+			});
+			console.log(`✅ ${lenguaCapiovi.name} -> ${capioviLocation.name}`);
+		}
+
+		// Matemática Capiovi -> Capiovi
+		if (capioviLocation) {
+			await prisma.careerLocation.upsert({
+				where: {
+					careerId_locationId: {
+						careerId: mateCapiovi.id,
+						locationId: capioviLocation.id
+					}
+				},
+				update: {},
+				create: {
+					careerId: mateCapiovi.id,
+					locationId: capioviLocation.id
+				}
+			});
+			console.log(`✅ ${mateCapiovi.name} -> ${capioviLocation.name}`);
+		}
+	}
+
 	// Crear materias de Matemáticas
 	console.log('Creando materias de Matemáticas...');
 	for (const mat of materiasMatematicas) {
@@ -187,6 +252,22 @@ async function seed() {
 					sortOrder: i
 				}
 			});
+
+			// También asociar directamente a la carrera
+			await prisma.careerSubject.upsert({
+				where: {
+					careerId_subjectId: {
+						careerId: mateCapiovi.id,
+						subjectId: subject.id
+					}
+				},
+				update: {},
+				create: {
+					careerId: mateCapiovi.id,
+					subjectId: subject.id,
+					yearLevel: mat.yearLevel
+				}
+			});
 		}
 	}
 
@@ -227,6 +308,22 @@ async function seed() {
 					sortOrder: i
 				}
 			});
+
+			// También asociar directamente a la carrera
+			await prisma.careerSubject.upsert({
+				where: {
+					careerId_subjectId: {
+						careerId: lenguaAlem.id,
+						subjectId: subject.id
+					}
+				},
+				update: {},
+				create: {
+					careerId: lenguaAlem.id,
+					subjectId: subject.id,
+					yearLevel: mat.yearLevel
+				}
+			});
 		}
 	}
 
@@ -265,6 +362,22 @@ async function seed() {
 					planId: planLenguaCapiovi.id,
 					subjectId: subject.id,
 					sortOrder: i
+				}
+			});
+
+			// También asociar directamente a la carrera
+			await prisma.careerSubject.upsert({
+				where: {
+					careerId_subjectId: {
+						careerId: lenguaCapiovi.id,
+						subjectId: subject.id
+					}
+				},
+				update: {},
+				create: {
+					careerId: lenguaCapiovi.id,
+					subjectId: subject.id,
+					yearLevel: mat.yearLevel
 				}
 			});
 		}

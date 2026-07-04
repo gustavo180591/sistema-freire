@@ -140,7 +140,7 @@
 					<button
 						type="submit"
 						disabled={form?.locked}
-						class="w-full rounded-2xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
+						class="w-full rounded-2xl bg-black px-6 py-3 font-semibold text-white transition hover:scale-[1.01] dark:bg-white dark:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						{form?.locked ? `Bloqueado (${form.minutesLeft} min)` : 'Ingresar al sistema'}
 					</button>

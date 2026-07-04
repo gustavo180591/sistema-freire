@@ -411,6 +411,12 @@ html:not(.dark) input[type="checkbox"] {
 	color: #000000 !important;
 }
 
+/* Excepción: botón de login debe mantener fondo negro en modo claro */
+html:not(.dark) button[type="submit"].bg-black {
+	background-color: #000000 !important;
+	color: #ffffff !important;
+}
+
 /* Hover oscuro convertido a gris claro */
 html:not(.dark) .hover\:bg-slate-950:hover,
 html:not(.dark) .hover\:bg-slate-900:hover,

@@ -8,40 +8,21 @@
 		currentTheme = getTheme();
 	});
 
-	function setLightMode() {
-		setTheme('light');
-		currentTheme = 'light';
-	}
-
-	function setDarkMode() {
-		setTheme('dark');
-		currentTheme = 'dark';
+	function toggleTheme() {
+		const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+		setTheme(newTheme);
+		currentTheme = newTheme;
 	}
 </script>
 
-<div class="flex items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-	<button
-		type="button"
-		onclick={setLightMode}
-		class="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors {currentTheme === 'light'
-			? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white'
-			: 'text-slate-600 hover:bg-white/50 dark:text-slate-400 dark:hover:bg-slate-700/50'}"
-		aria-label="Activar modo claro"
-		aria-pressed={currentTheme === 'light'}
-	>
-		<span class="text-sm">☀️</span>
-		<span class="hidden sm:inline">Claro</span>
-	</button>
-	<button
-		type="button"
-		onclick={setDarkMode}
-		class="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors {currentTheme === 'dark'
-			? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white'
-			: 'text-slate-600 hover:bg-white/50 dark:text-slate-400 dark:hover:bg-slate-700/50'}"
-		aria-label="Activar modo oscuro"
-		aria-pressed={currentTheme === 'dark'}
-	>
-		<span class="text-sm">🌙</span>
-		<span class="hidden sm:inline">Oscuro</span>
-	</button>
-</div>
+<button
+	type="button"
+	onclick={toggleTheme}
+	class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-300 {currentTheme === 'light'
+		? 'bg-slate-900 text-white hover:bg-slate-800'
+		: 'bg-white text-slate-900 hover:bg-slate-100'}"
+	aria-label="Cambiar tema"
+>
+	<span class="text-sm">{currentTheme === 'light' ? '☀️' : '🌙'}</span>
+	<span class="hidden sm:inline">{currentTheme === 'light' ? 'Claro' : 'Oscuro'}</span>
+</button>

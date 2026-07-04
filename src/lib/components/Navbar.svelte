@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { page } from '$app/state';
+	import ThemeToggle from '$lib/components/ui/ThemeToggle.svelte';
 
 	interface User {
 		id: string;
@@ -107,7 +108,7 @@
 							class="flex items-center gap-3 rounded-lg p-1.5 transition hover:bg-slate-100 dark:hover:bg-slate-800"
 						>
 							<div
-								class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-sm font-medium text-slate-900 dark:bg-slate-700 dark:text-white"
+								class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-sm font-medium text-white dark:bg-slate-700 dark:text-white"
 							>
 								{user.firstName[0]}{user.lastName[0]}
 							</div>
@@ -132,10 +133,10 @@
 								class="absolute top-full right-0 mt-2 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-black/20 backdrop-blur-sm dark:border-slate-700/50 dark:bg-slate-900/95"
 							>
 								<!-- User Info Header -->
-								<div class="bg-gradient-to-br from-slate-100 to-slate-200 p-4 dark:from-slate-800 dark:to-slate-900">
+								<div class="bg-linear-to-br from-slate-100 to-slate-200 p-4 dark:from-slate-800 dark:to-slate-900">
 									<div class="flex items-center gap-3">
 										<div
-											class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white shadow-lg"
+											class="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white shadow-lg"
 										>
 											{user.firstName[0]}{user.lastName[0]}
 										</div>
@@ -171,6 +172,12 @@
 										</svg>
 										<span>Mi Perfil</span>
 									</a>
+
+									<div class="my-1.5 border-t border-slate-200 dark:border-slate-800"></div>
+
+									<div class="px-3 py-2">
+										<ThemeToggle />
+									</div>
 
 									<div class="my-1.5 border-t border-slate-200 dark:border-slate-800"></div>
 

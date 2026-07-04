@@ -196,7 +196,7 @@
 <div class="space-y-8">
 	<!-- Header Institucional -->
 	<section
-		class="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 via-slate-50 to-indigo-50 p-8 md:p-10 dark:border-slate-800 dark:from-slate-900 dark:via-slate-900/95 dark:to-indigo-950/30"
+		class="relative overflow-hidden rounded-3xl border border-slate-200 bg-linear-to-br from-slate-50 via-slate-50 to-indigo-50 p-8 md:p-10 dark:border-slate-800 dark:from-slate-900 dark:via-slate-900/95 dark:to-indigo-950/30"
 	>
 		<div
 			class="absolute inset-0 bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] bg-size-[40px_40px] opacity-5 dark:opacity-5"

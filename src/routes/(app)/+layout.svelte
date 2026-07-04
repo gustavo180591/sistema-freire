@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { initTheme } from '$lib/utils/theme';
-	import ThemeToggle from '$lib/components/ui/ThemeToggle.svelte';
 
 	let { children } = $props();
 
@@ -14,7 +13,6 @@
 	<header class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
 		<div class="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
 			<h1 class="text-xl font-bold text-slate-900 dark:text-white">Sistema Freire</h1>
-			<ThemeToggle />
 		</div>
 	</header>
 	<main class="mx-auto max-w-7xl px-6 py-10 md:py-16">

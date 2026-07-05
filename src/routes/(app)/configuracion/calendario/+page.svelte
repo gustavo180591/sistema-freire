@@ -10,7 +10,42 @@
 	let activeTab = $state<'calendario' | 'laborables' | 'feriados' | 'fechas'>('calendario');
 
 	// Estado para días laborables
-	let workingDays = $state<number[]>(data.workingDays || [1, 2, 3, 4, 5]);
+	let workingDays = $state<number[]>([1, 2, 3, 4, 5]);
+
+	// Initialize workingDays from data
+	$effect(() => {
+		if (data.workingDays) {
+			workingDays = data.workingDays;
+		}
+	});
+
+	// Estado para edición
+	type HolidayType = {
+		id: string;
+		name: string;
+		date: Date;
+		year: number;
+		recurring: boolean;
+		description: string | null;
+		countsAttendance: boolean;
+		createdAt: Date;
+		updatedAt: Date;
+	};
+
+	type ImportantDateType = {
+		id: string;
+		name: string;
+		date: Date;
+		year: number;
+		recurring: boolean;
+		description: string | null;
+		countsAttendance: boolean;
+		createdAt: Date;
+		updatedAt: Date;
+	};
+
+	let editingHoliday = $state<HolidayType | null>(null);
+	let editingImportantDate = $state<ImportantDateType | null>(null);
 
 	const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
@@ -79,6 +114,33 @@
 		}
 		return days;
 	});
+
+	// Helper functions to check if a date has special events
+	function isWorkingDay(day: number): boolean {
+		const date = new Date(selectedYear, selectedMonth, day);
+		const dayOfWeek = date.getDay();
+		return workingDays.includes(dayOfWeek);
+	}
+
+	function getHolidayForDay(day: number): HolidayType | null {
+		const date = new Date(selectedYear, selectedMonth, day);
+		return data.holidays?.find((h: HolidayType) => {
+			const holidayDate = new Date(h.date);
+			return holidayDate.getDate() === day && 
+			       holidayDate.getMonth() === selectedMonth &&
+			       holidayDate.getFullYear() === selectedYear;
+		}) || null;
+	}
+
+	function getImportantDateForDay(day: number): ImportantDateType | null {
+		const date = new Date(selectedYear, selectedMonth, day);
+		return data.importantDates?.find((d: ImportantDateType) => {
+			const importantDate = new Date(d.date);
+			return importantDate.getDate() === day && 
+			       importantDate.getMonth() === selectedMonth &&
+			       importantDate.getFullYear() === selectedYear;
+		}) || null;
+	}
 </script>
 
 <svelte:head>
@@ -164,10 +226,33 @@
 				<!-- Calendar days -->
 				{#each calendarDays as day}
 					{#if day}
+						{@const holiday = getHolidayForDay(day)}
+						{@const importantDate = getImportantDateForDay(day)}
+						{@const working = isWorkingDay(day)}
+						{@const event = holiday || importantDate}
+						{@const countsAttendance = event?.countsAttendance || false}
 						<div
-							class="flex aspect-square items-center justify-center rounded-xl border border-slate-700 bg-slate-800/50 text-slate-300 transition hover:border-indigo-500 hover:bg-indigo-500/10 hover:text-white"
+							class="relative flex aspect-square flex-col items-center justify-center rounded-xl border bg-slate-800/50 p-1 transition hover:border-indigo-500 hover:bg-indigo-500/10 {holiday 
+								? 'border-red-500/50 bg-red-500/10' 
+								: importantDate 
+									? 'border-blue-500/50 bg-blue-500/10' 
+									: working 
+										? 'border-slate-700' 
+										: 'border-slate-800 bg-slate-900/30 opacity-60'}"
 						>
-							<span class="text-sm font-medium">{day}</span>
+							<span class="text-sm font-medium {holiday ? 'text-red-400' : importantDate ? 'text-blue-400' : 'text-slate-300'}">{day}</span>
+							{#if holiday}
+								<span class="mt-1 truncate text-[10px] text-red-300">{holiday.name}</span>
+							{/if}
+							{#if importantDate}
+								<span class="mt-1 truncate text-[10px] text-blue-300">{importantDate.name}</span>
+							{/if}
+							{#if event && countsAttendance}
+								<span class="mt-1 text-[9px] text-green-400">✓ Cuenta asistencia</span>
+							{/if}
+							{#if !working && !holiday && !importantDate}
+								<span class="text-[10px] text-slate-500">No laborable</span>
+							{/if}
 						</div>
 					{:else}
 						<div class="aspect-square"></div>
@@ -233,9 +318,15 @@
 						/>
 					</div>
 				</div>
-				<div class="flex items-center gap-2">
-					<input type="checkbox" name="recurring" id="recurring" class="h-4 w-4 rounded border-slate-600 bg-slate-950 text-indigo-500 focus:ring-indigo-500" />
-					<label for="recurring" class="text-sm text-slate-400">Repetir anualmente</label>
+				<div class="flex flex-col gap-3">
+					<div class="flex items-center gap-2">
+						<input type="checkbox" name="recurring" id="recurring" class="h-4 w-4 rounded border-slate-600 bg-slate-950 text-indigo-500 focus:ring-indigo-500" />
+						<label for="recurring" class="text-sm text-slate-400">Repetir anualmente</label>
+					</div>
+					<div class="flex items-center gap-2">
+						<input type="checkbox" name="countsAttendance" id="countsAttendance" class="h-4 w-4 rounded border-slate-600 bg-slate-950 text-indigo-500 focus:ring-indigo-500" />
+						<label for="countsAttendance" class="text-sm text-slate-400">Cuenta asistencia (se debe tomar asistencia igual)</label>
+					</div>
 				</div>
 				<button
 					type="submit"
@@ -247,24 +338,36 @@
 			<div class="mt-6">
 				<h3 class="mb-3 text-lg font-semibold text-white">Feriados Configurados</h3>
 				<div class="space-y-2">
-					{#each data.holidays as holiday}
+					{#each data.holidays || [] as holiday}
 						<div class="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-800/50 p-4">
 							<div>
 								<p class="font-medium text-white">{holiday.name}</p>
 								<p class="text-sm text-slate-400">{new Date(holiday.date).toLocaleDateString('es-AR', { day: 'numeric', month: 'long' })}</p>
+								{#if holiday.countsAttendance}
+									<p class="text-xs text-green-400">✓ Cuenta asistencia</p>
+								{/if}
 							</div>
-							<form method="POST" action="?/deleteHoliday" use:enhance>
-								<input type="hidden" name="id" value={holiday.id} />
+							<div class="flex gap-2">
 								<button
-									type="submit"
-									class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400 hover:bg-red-500/20"
+									type="button"
+									onclick={() => editingHoliday = holiday}
+									class="rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-sm text-indigo-400 hover:bg-indigo-500/20"
 								>
-									Eliminar
+									Editar
 								</button>
-							</form>
+								<form method="POST" action="?/deleteHoliday" use:enhance>
+									<input type="hidden" name="id" value={holiday.id} />
+									<button
+										type="submit"
+										class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400 hover:bg-red-500/20"
+									>
+										Eliminar
+									</button>
+								</form>
+							</div>
 						</div>
 					{/each}
-					{#if data.holidays.length === 0}
+					{#if !data.holidays || data.holidays.length === 0}
 						<p class="text-slate-400">No hay feriados configurados</p>
 					{/if}
 				</div>
@@ -298,9 +401,15 @@
 						/>
 					</div>
 				</div>
-				<div class="flex items-center gap-2">
-					<input type="checkbox" name="recurring" id="recurringDate" class="h-4 w-4 rounded border-slate-600 bg-slate-950 text-indigo-500 focus:ring-indigo-500" />
-					<label for="recurringDate" class="text-sm text-slate-400">Repetir anualmente</label>
+				<div class="flex flex-col gap-3">
+					<div class="flex items-center gap-2">
+						<input type="checkbox" name="recurring" id="recurringDate" class="h-4 w-4 rounded border-slate-600 bg-slate-950 text-indigo-500 focus:ring-indigo-500" />
+						<label for="recurringDate" class="text-sm text-slate-400">Repetir anualmente</label>
+					</div>
+					<div class="flex items-center gap-2">
+						<input type="checkbox" name="countsAttendance" id="countsAttendanceDate" class="h-4 w-4 rounded border-slate-600 bg-slate-950 text-indigo-500 focus:ring-indigo-500" />
+						<label for="countsAttendanceDate" class="text-sm text-slate-400">Cuenta asistencia (se debe tomar asistencia igual)</label>
+					</div>
 				</div>
 				<button
 					type="submit"
@@ -312,24 +421,36 @@
 			<div class="mt-6">
 				<h3 class="mb-3 text-lg font-semibold text-white">Fechas Importantes Configuradas</h3>
 				<div class="space-y-2">
-					{#each data.importantDates as date}
+					{#each data.importantDates || [] as date}
 						<div class="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-800/50 p-4">
 							<div>
 								<p class="font-medium text-white">{date.name}</p>
 								<p class="text-sm text-slate-400">{new Date(date.date).toLocaleDateString('es-AR', { day: 'numeric', month: 'long' })}</p>
+								{#if date.countsAttendance}
+									<p class="text-xs text-green-400">✓ Cuenta asistencia</p>
+								{/if}
 							</div>
-							<form method="POST" action="?/deleteImportantDate" use:enhance>
-								<input type="hidden" name="id" value={date.id} />
+							<div class="flex gap-2">
 								<button
-									type="submit"
-									class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400 hover:bg-red-500/20"
+									type="button"
+									onclick={() => editingImportantDate = date}
+									class="rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-sm text-indigo-400 hover:bg-indigo-500/20"
 								>
-									Eliminar
+									Editar
 								</button>
-							</form>
+								<form method="POST" action="?/deleteImportantDate" use:enhance>
+									<input type="hidden" name="id" value={date.id} />
+									<button
+										type="submit"
+										class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400 hover:bg-red-500/20"
+									>
+										Eliminar
+									</button>
+								</form>
+							</div>
 						</div>
 					{/each}
-					{#if data.importantDates.length === 0}
+					{#if !data.importantDates || data.importantDates.length === 0}
 						<p class="text-slate-400">No hay fechas importantes configuradas</p>
 					{/if}
 				</div>

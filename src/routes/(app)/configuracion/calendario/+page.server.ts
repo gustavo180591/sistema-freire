@@ -61,7 +61,8 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const name = formData.get('name')?.toString();
 		const date = formData.get('date')?.toString();
-		const recurring = formData.get('recurring') === 'true';
+		const recurring = formData.get('recurring') === 'on';
+		const countsAttendance = formData.get('countsAttendance') === 'on';
 
 		if (!name || !date) {
 			return fail(400, { error: 'Nombre y fecha son requeridos' });
@@ -76,7 +77,8 @@ export const actions: Actions = {
 					name,
 					date: holidayDate,
 					year,
-					recurring
+					recurring,
+					countsAttendance
 				}
 			});
 
@@ -113,7 +115,8 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const name = formData.get('name')?.toString();
 		const date = formData.get('date')?.toString();
-		const recurring = formData.get('recurring') === 'true';
+		const recurring = formData.get('recurring') === 'on';
+		const countsAttendance = formData.get('countsAttendance') === 'on';
 
 		if (!name || !date) {
 			return fail(400, { error: 'Nombre y fecha son requeridos' });
@@ -128,7 +131,8 @@ export const actions: Actions = {
 					name,
 					date: importantDate,
 					year,
-					recurring
+					recurring,
+					countsAttendance
 				}
 			});
 

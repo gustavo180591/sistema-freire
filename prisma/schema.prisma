@@ -151,6 +151,7 @@ model Student {
   highSchool         String?
   highSchoolYear     Int?
   instituteYear      Int?
+  locationId         String?
   academicHistory    AcademicYearHistory[]
   attendanceEntries  AttendanceEntry[]
   grades             Grade[]
@@ -162,9 +163,11 @@ model Student {
   subjectStatuses    StudentSubjectStatus[]
   career             Career                 @relation(fields: [careerId], references: [id])
   user               User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location           Location?              @relation(fields: [locationId], references: [id], onDelete: Restrict)
   enrollments        SubjectEnrollment[]
 
   @@index([lastName, firstName])
+  @@index([locationId])
   @@map("students")
 }
 
@@ -755,12 +758,14 @@ model Location {
   phone           String?
   email           String?
   active          Boolean                  @default(true)
+  displayOrder    Int                      @default(0)
   createdAt       DateTime                 @default(now())
   updatedAt       DateTime                 @updatedAt
   academicTerms   AcademicTerm[]
   careers         CareerLocation[]
   commissions     SubjectCommission[]
   userPermissions UserLocationPermission[]
+  students        Student[]
 
   @@index([active])
   @@map("locations")

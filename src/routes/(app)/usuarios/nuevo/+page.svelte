@@ -63,6 +63,7 @@
 							<option value="ALUMNO">Alumno</option>
 							<option value="DOCENTE">Docente</option>
 							<option value="PRECEPTOR">Preceptor</option>
+							<option value="SIN_TIPO">Sin tipo</option>
 						{:else}
 							<option value="ALUMNO">Alumno</option>
 							<option value="DOCENTE">Docente</option>
@@ -71,6 +72,7 @@
 							<option value="DIRECTOR">Dirección</option>
 							<option value="APODERADO">Apoderado</option>
 							<option value="PRECEPTOR">Preceptor</option>
+							<option value="SIN_TIPO">Sin tipo</option>
 						{/if}
 					</select>
 				</div>

@@ -14,7 +14,8 @@ const ROLE_MAP: Record<string, RoleCode> = {
 	FINANZAS: 'FINANZAS',
 	DIRECTOR: 'DIRECTOR',
 	APODERADO: 'APODERADO',
-	PRECEPTOR: 'PRECEPTOR'
+	PRECEPTOR: 'PRECEPTOR',
+	SIN_TIPO: 'SIN_TIPO'
 };
 
 // Función para generar ID de alumno con prefijo según localidad

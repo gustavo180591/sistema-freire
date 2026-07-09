@@ -1021,6 +1021,7 @@ enum RoleCode {
   APODERADO
   PRECEPTOR
   LIQUIDADOR
+  SIN_TIPO
 }
 
 enum AuditAction {

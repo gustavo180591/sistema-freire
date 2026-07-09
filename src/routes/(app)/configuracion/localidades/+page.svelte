@@ -372,6 +372,7 @@
 						<label for="edit-name" class="mb-2 block text-sm font-medium text-slate-300">Nombre</label>
 						<input
 							id="edit-name"
+							name="name"
 							type="text"
 							bind:value={formData.name}
 							class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-white transition focus:border-indigo-500 focus:outline-none"
@@ -382,6 +383,7 @@
 						<label for="edit-code" class="mb-2 block text-sm font-medium text-slate-300">Código</label>
 						<input
 							id="edit-code"
+							name="code"
 							type="text"
 							bind:value={formData.code}
 							class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-white transition focus:border-indigo-500 focus:outline-none"
@@ -393,6 +395,7 @@
 					<label for="edit-address" class="mb-2 block text-sm font-medium text-slate-300">Dirección</label>
 					<input
 						id="edit-address"
+						name="address"
 						type="text"
 						bind:value={formData.address}
 						class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-white transition focus:border-indigo-500 focus:outline-none"
@@ -403,6 +406,7 @@
 						<label for="edit-city" class="mb-2 block text-sm font-medium text-slate-300">Ciudad</label>
 						<input
 							id="edit-city"
+							name="city"
 							type="text"
 							bind:value={formData.city}
 							class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-white transition focus:border-indigo-500 focus:outline-none"
@@ -412,6 +416,7 @@
 						<label for="edit-province" class="mb-2 block text-sm font-medium text-slate-300">Provincia</label>
 						<input
 							id="edit-province"
+							name="province"
 							type="text"
 							bind:value={formData.province}
 							class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-white transition focus:border-indigo-500 focus:outline-none"
@@ -423,6 +428,7 @@
 						<label for="edit-phone" class="mb-2 block text-sm font-medium text-slate-300">Teléfono</label>
 						<input
 							id="edit-phone"
+							name="phone"
 							type="text"
 							bind:value={formData.phone}
 							class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-white transition focus:border-indigo-500 focus:outline-none"
@@ -432,6 +438,7 @@
 						<label for="edit-email" class="mb-2 block text-sm font-medium text-slate-300">Email</label>
 						<input
 							id="edit-email"
+							name="email"
 							type="email"
 							bind:value={formData.email}
 							class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-white transition focus:border-indigo-500 focus:outline-none"
@@ -443,6 +450,7 @@
 						<label for="edit-displayOrder" class="mb-2 block text-sm font-medium text-slate-300">Orden de Visualización</label>
 						<input
 							id="edit-displayOrder"
+							name="displayOrder"
 							type="number"
 							bind:value={formData.displayOrder}
 							class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-white transition focus:border-indigo-500 focus:outline-none"
@@ -451,6 +459,7 @@
 					<div class="flex items-center gap-3">
 						<input
 							type="checkbox"
+							name="active"
 							bind:checked={formData.active}
 							id="edit-active"
 							class="h-5 w-5 rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-indigo-500"

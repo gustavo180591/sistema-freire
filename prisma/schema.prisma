@@ -434,6 +434,11 @@ model StudentCharge {
   finalAmount              Decimal                          @db.Decimal(12, 2)
   isOverdue                Boolean                          @default(false)
   overdueSince             DateTime?
+  // Campos para beneficios de cuotas
+  installmentNumber        Int?
+  benefitType              String?
+  benefitReason            String?
+  ruleSnapshot             Json?
   allocations              PaymentAllocation[]
   lateFees                 LateFee[]
   agreementChargeRelations PaymentAgreementChargeRelation[]

@@ -5,6 +5,7 @@ import { auditLog } from '../audit';
 import { hasPermission } from '../auth/permissions-granular';
 import * as DecimalHelpers from './decimal-helpers';
 import { paymentAgreementService } from '../payment-agreements/payment-agreement-service';
+import { calculateChargeBenefit, getBenefitsConfig, type BenefitsConfig } from './benefit-calculator';
 
 // Financial enum types - These match the exact values defined in prisma/schema.prisma
 // Prisma exports these enums at runtime (.prisma/client) but TypeScript types don't include them
@@ -117,6 +118,7 @@ export type ChargeInput = {
   academicTermId: string;
   notes?: string;
   userId: string;
+  installmentNumber?: number;
 };
 
 export type PaymentInput = {
@@ -261,8 +263,10 @@ export class FinancialService {
     academicTerm: Prisma.AcademicTermGetPayload<{}>,
     tx: Prisma.TransactionClient
   ): Promise<{ charge: Prisma.StudentChargeGetPayload<{}>; movement: Prisma.FinancialMovementGetPayload<{}>; scholarshipAmount: Decimal; discountAmount: Decimal; finalAmount: Decimal }> {
-    // Calcular beca si corresponde
-    let scholarshipAmount = DecimalHelpers.zero();
+    // Obtener configuración de beneficios
+    const benefitsConfig = await getBenefitsConfig(tx);
+
+    // Obtener becas activas del alumno
     const scholarships = await tx.scholarship.findMany({
       where: {
         studentId: input.studentId,
@@ -275,15 +279,42 @@ export class FinancialService {
       }
     });
 
-    for (const scholarship of scholarships) {
-      if (scholarship.applicableTo.includes(concept.code) || scholarship.applicableTo.includes('*')) {
-        const scholarshipValue = DecimalHelpers.percentage(input.amount, scholarship.percentage);
-        
-        // Validar que la beca no supere el monto base
-        if (DecimalHelpers.isGreaterThan(scholarshipValue, input.amount)) {
-          throw new Error('La beca no puede superar el monto base de la cuota');
-        }
+    // Obtener información de beca del alumno si corresponde
+    let scholarshipPercentage: Decimal | undefined;
+    if (student.isBecado && scholarships.length > 0) {
+      // Usar el porcentaje de la primera beca activa
+      scholarshipPercentage = scholarships[0].percentage;
+    }
 
+    // Calcular beneficios usando el nuevo sistema
+    // Extraer número de mes del periodLabel si está disponible
+    let monthNumber: number | null = null;
+    if (input.periodLabel) {
+      const monthMap: Record<string, number> = {
+        'Enero': 1, 'Febrero': 2, 'Marzo': 3, 'Abril': 4, 'Mayo': 5, 'Junio': 6,
+        'Julio': 7, 'Agosto': 8, 'Septiembre': 9, 'Octubre': 10, 'Noviembre': 11, 'Diciembre': 12
+      };
+      const monthName = input.periodLabel.split('-')[1] || input.periodLabel;
+      monthNumber = monthMap[monthName] || null;
+    }
+
+    const benefitCalculation = calculateChargeBenefit(
+      input.amount,
+      {
+        isBecado: student.isBecado,
+        isRecursante: student.isRecursante,
+        scholarshipPercentage
+      },
+      input.installmentNumber || null,
+      monthNumber,
+      benefitsConfig
+    );
+
+    // Si el beneficio seleccionado es SCHOLARSHIP, aplicar lógica de límites mensuales
+    let scholarshipAmount = benefitCalculation.scholarshipApplied;
+    if (benefitCalculation.benefitType === 'SCHOLARSHIP' && scholarshipPercentage) {
+
+      for (const scholarship of scholarships) {
         if (scholarship.maxMonthlyAmount) {
           // Calcular cuánto se aplicó en el mes actual
           const currentMonthStart = new Date();
@@ -307,69 +338,72 @@ export class FinancialService {
           const remaining = DecimalHelpers.subtract(scholarship.maxMonthlyAmount, totalApplied);
           
           if (DecimalHelpers.isLessThan(remaining, DecimalHelpers.zero()) || remaining.equals(DecimalHelpers.zero())) {
-            throw new Error('La beca ha alcanzado su límite mensual');
+            // La beca ha alcanzado su límite mensual, recalcular sin beca
+            const noScholarshipCalc = calculateChargeBenefit(
+              input.amount,
+              {
+                isBecado: false,
+                isRecursante: student.isRecursante
+              },
+              input.installmentNumber || null,
+              monthNumber,
+              benefitsConfig
+            );
+            scholarshipAmount = noScholarshipCalc.scholarshipApplied;
+            break;
           }
-          
-          const applicable = DecimalHelpers.isLessThan(scholarshipValue, remaining) ? scholarshipValue : remaining;
-          scholarshipAmount = DecimalHelpers.add(scholarshipAmount, applicable);
-        } else {
-          scholarshipAmount = DecimalHelpers.add(scholarshipAmount, scholarshipValue);
         }
       }
     }
 
-    // Validar que la beca no supere el monto base
-    if (DecimalHelpers.isGreaterThan(scholarshipAmount, input.amount)) {
-      throw new Error('El total de becas no puede superar el monto base de la cuota');
-    }
-
-    // Calcular descuento si corresponde
-    // REGLA: Los descuentos se aplican sobre el monto base, se acumulan, pero no pueden superar el saldo restante después de beca
+    // Calcular descuento si corresponde (solo si no hay beneficio de recursante aplicado)
     let discountAmount = DecimalHelpers.zero();
-    const discounts = await tx.discount.findMany({
-      where: {
-        active: true,
-        validFrom: { lte: new Date() },
-        OR: [
-          { validUntil: null },
-          { validUntil: { gte: new Date() } }
-        ],
-        applicableTo: {
-          has: concept.code
+    if (benefitCalculation.benefitType !== 'RECURSANT') {
+      const discounts = await tx.discount.findMany({
+        where: {
+          active: true,
+          validFrom: { lte: new Date() },
+          OR: [
+            { validUntil: null },
+            { validUntil: { gte: new Date() } }
+          ],
+          applicableTo: {
+            has: concept.code
+          }
+        },
+        orderBy: { priority: 'desc' }
+      });
+
+      const baseAfterScholarship = DecimalHelpers.subtract(input.amount, scholarshipAmount);
+
+      for (const discount of discounts) {
+        if (discount.minAmount && DecimalHelpers.isLessThan(input.amount, discount.minAmount)) {
+          continue;
         }
-      },
-      orderBy: { priority: 'desc' }
-    });
+        if (discount.maxAmount && DecimalHelpers.isGreaterThan(input.amount, discount.maxAmount)) {
+          continue;
+        }
 
-    const baseAfterScholarship = DecimalHelpers.subtract(input.amount, scholarshipAmount);
+        let discountValue: Decimal;
+        if (discount.discountType === 'PERCENTAGE') {
+          discountValue = DecimalHelpers.percentage(input.amount, discount.value);
+        } else {
+          discountValue = discount.value;
+        }
 
-    for (const discount of discounts) {
-      if (discount.minAmount && DecimalHelpers.isLessThan(input.amount, discount.minAmount)) {
-        continue;
+        // Validar que el descuento no supere el saldo restante
+        const currentTotalDiscount = DecimalHelpers.add(discountAmount, discountValue);
+        if (DecimalHelpers.isGreaterThan(currentTotalDiscount, baseAfterScholarship)) {
+          // Limitar el descuento al saldo restante
+          discountValue = DecimalHelpers.subtract(baseAfterScholarship, discountAmount);
+        }
+
+        discountAmount = DecimalHelpers.add(discountAmount, discountValue);
       }
-      if (discount.maxAmount && DecimalHelpers.isGreaterThan(input.amount, discount.maxAmount)) {
-        continue;
-      }
-
-      let discountValue: Decimal;
-      if (discount.discountType === 'PERCENTAGE') {
-        discountValue = DecimalHelpers.percentage(input.amount, discount.value);
-      } else {
-        discountValue = discount.value;
-      }
-
-      // Validar que el descuento no supere el saldo restante
-      const currentTotalDiscount = DecimalHelpers.add(discountAmount, discountValue);
-      if (DecimalHelpers.isGreaterThan(currentTotalDiscount, baseAfterScholarship)) {
-        // Limitar el descuento al saldo restante
-        discountValue = DecimalHelpers.subtract(baseAfterScholarship, discountAmount);
-      }
-
-      discountAmount = DecimalHelpers.add(discountAmount, discountValue);
     }
 
     // Calcular monto final
-    const finalAmount = DecimalHelpers.subtract(baseAfterScholarship, discountAmount);
+    const finalAmount = DecimalHelpers.subtract(input.amount, DecimalHelpers.add(scholarshipAmount, discountAmount));
 
     // Validar que el monto final no sea negativo
     if (DecimalHelpers.isLessThan(finalAmount, DecimalHelpers.zero())) {
@@ -401,7 +435,11 @@ export class FinancialService {
         discountApplied: discountAmount,
         scholarshipApplied: scholarshipAmount,
         finalAmount: finalAmount,
-        status: ChargeStatus.PENDING
+        status: ChargeStatus.PENDING,
+        installmentNumber: input.installmentNumber || null,
+        benefitType: benefitCalculation.benefitType,
+        benefitReason: benefitCalculation.benefitReason,
+        ruleSnapshot: benefitCalculation.ruleSnapshot as Prisma.InputJsonValue
       }
     });
 

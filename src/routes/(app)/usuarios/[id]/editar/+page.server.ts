@@ -153,28 +153,26 @@ export const actions: Actions = {
 			});
 
 			// Actualizar DNI si el usuario es alumno o docente
-			if (dni) {
-				// Verificar si es alumno
-				const student = await prisma.student.findUnique({
-					where: { userId: params.id }
+			// Verificar si es alumno
+			const student = await prisma.student.findUnique({
+				where: { userId: params.id }
+			});
+			if (student && dni) {
+				await prisma.student.update({
+					where: { userId: params.id },
+					data: { dni }
 				});
-				if (student) {
-					await prisma.student.update({
-						where: { userId: params.id },
-						data: { dni }
-					});
-				}
+			}
 
-				// Verificar si es docente
-				const teacher = await prisma.teacher.findUnique({
-					where: { userId: params.id }
+			// Verificar si es docente
+			const teacher = await prisma.teacher.findUnique({
+				where: { userId: params.id }
+			});
+			if (teacher && dni) {
+				await prisma.teacher.update({
+					where: { userId: params.id },
+					data: { dni }
 				});
-				if (teacher) {
-					await prisma.teacher.update({
-						where: { userId: params.id },
-						data: { dni }
-					});
-				}
 			}
 
 			// Registrar en auditoría

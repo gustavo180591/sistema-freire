@@ -95,18 +95,16 @@
 						<option value="BLOCKED" selected={data.user.status === 'BLOCKED'}>Bloqueado</option>
 					</select>
 				</div>
-				{#if data.user.student || data.user.teacher}
-					<div>
-						<label for="dni" class="mb-1 block text-sm text-slate-400">DNI</label>
-						<input
-							id="dni"
-							name="dni"
-							type="text"
-							value={data.user.student?.dni || data.user.teacher?.dni || ''}
-							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
-						/>
-					</div>
-				{/if}
+				<div>
+					<label for="dni" class="mb-1 block text-sm text-slate-400">DNI</label>
+					<input
+						id="dni"
+						name="dni"
+						type="text"
+						value={data.user.student?.dni || data.user.teacher?.dni || ''}
+						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+					/>
+				</div>
 				<div>
 					<label for="phone" class="mb-1 block text-sm text-slate-400">Teléfono</label>
 					<input

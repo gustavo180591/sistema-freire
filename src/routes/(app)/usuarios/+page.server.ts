@@ -48,7 +48,7 @@ export const load: PageServerLoad = async () => {
 		lastName: user.lastName,
 		fullName: `${user.firstName} ${user.lastName}`.trim(),
 		email: user.email,
-		dni: user.student?.dni || user.teacher?.dni || '',
+		dni: user.dni || user.student?.dni || user.teacher?.dni || '',
 		phone: user.student?.phone || user.phone || '',
 		birthDate: user.student?.birthDate ?? null,
 		bloodType: user.student?.bloodType ?? null,

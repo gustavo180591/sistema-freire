@@ -52,6 +52,10 @@
 					<p class="font-medium">{data.user.email}</p>
 				</div>
 				<div>
+					<p class="text-sm text-slate-400">DNI</p>
+					<p class="font-medium">{data.user.dni || data.user.student?.dni || data.user.teacher?.dni || '-'}</p>
+				</div>
+				<div>
 					<p class="text-sm text-slate-400">Estado</p>
 					<p
 						class="font-medium {data.user.status === 'ACTIVE' ? 'text-green-400' : 'text-red-400'}"

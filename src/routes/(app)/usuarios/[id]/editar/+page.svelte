@@ -101,7 +101,7 @@
 						id="dni"
 						name="dni"
 						type="text"
-						value={data.user.student?.dni || data.user.teacher?.dni || ''}
+						value={data.user.dni || data.user.student?.dni || data.user.teacher?.dni || ''}
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
 					/>
 				</div>

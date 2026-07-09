@@ -128,9 +128,7 @@ export const actions: Actions = {
 		const email = formData.get('email')?.toString();
 		const status = formData.get('status')?.toString();
 		const phone = formData.get('phone')?.toString();
-		const dni = formData.get('dni')?.toString();
-
-		console.log('DNI recibido del formulario:', dni);
+		const dni = formData.get('dni')?.toString()?.trim();
 
 		if (!firstName || !lastName || !email) {
 			return fail(400, { error: 'Datos requeridos faltantes' });
@@ -142,6 +140,42 @@ export const actions: Actions = {
 			return fail(400, { error: 'Estado inválido' });
 		}
 
+		// Validar unicidad de DNI si se proporciona
+		if (dni) {
+			// Verificar si el DNI ya existe en User (excluyendo el usuario actual)
+			const existingUserDni = await prisma.user.findFirst({
+				where: {
+					dni,
+					id: { not: params.id }
+				}
+			});
+			if (existingUserDni) {
+				return fail(400, { error: 'El DNI ya está en uso por otro usuario' });
+			}
+
+			// Verificar si el DNI ya existe en Student (excluyendo el usuario actual)
+			const existingStudentDni = await prisma.student.findFirst({
+				where: {
+					dni,
+					userId: { not: params.id }
+				}
+			});
+			if (existingStudentDni) {
+				return fail(400, { error: 'El DNI ya está en uso por otro alumno' });
+			}
+
+			// Verificar si el DNI ya existe en Teacher (excluyendo el usuario actual)
+			const existingTeacherDni = await prisma.teacher.findFirst({
+				where: {
+					dni,
+					userId: { not: params.id }
+				}
+			});
+			if (existingTeacherDni) {
+				return fail(400, { error: 'El DNI ya está en uso por otro docente' });
+			}
+		}
+
 		try {
 			await prisma.user.update({
 				where: { id: params.id },
@@ -150,12 +184,12 @@ export const actions: Actions = {
 					lastName,
 					email,
 					phone: phone || null,
+					dni: dni || null,
 					status: status as 'ACTIVE' | 'INACTIVE' | 'BLOCKED'
 				}
 			});
 
-			// Actualizar DNI si el usuario es alumno o docente
-			// Verificar si es alumno
+			// Sincronizar DNI con Student si el usuario es alumno y el DNI no está vacío
 			const student = await prisma.student.findUnique({
 				where: { userId: params.id }
 			});
@@ -166,7 +200,7 @@ export const actions: Actions = {
 				});
 			}
 
-			// Verificar si es docente
+			// Sincronizar DNI con Teacher si el usuario es docente y el DNI no está vacío
 			const teacher = await prisma.teacher.findUnique({
 				where: { userId: params.id }
 			});

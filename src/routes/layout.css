@@ -162,10 +162,10 @@ html:not(.dark) .border-red-800 {
 }
 
 /* Input styles for light mode */
-html:not(.dark) input[type="text"],
-html:not(.dark) input[type="email"],
-html:not(.dark) input[type="password"],
-html:not(.dark) input[type="number"],
+html:not(.dark) input[type='text'],
+html:not(.dark) input[type='email'],
+html:not(.dark) input[type='password'],
+html:not(.dark) input[type='number'],
 html:not(.dark) textarea,
 html:not(.dark) select {
 	background-color: white !important;
@@ -240,7 +240,7 @@ html:not(.dark) .shadow-lg {
 }
 
 /* Checkbox styling for light mode */
-html:not(.dark) input[type="checkbox"] {
+html:not(.dark) input[type='checkbox'] {
 	background-color: white !important;
 	border-color: #cbd5e1 !important;
 }
@@ -404,7 +404,7 @@ html:not(.dark) .flex.h-8.w-8.items-center.justify-center.rounded-full {
 }
 
 /* Excepción: checkboxes deben ser visibles en modo claro */
-html:not(.dark) input[type="checkbox"] {
+html:not(.dark) input[type='checkbox'] {
 	appearance: auto !important;
 	background-color: #ffffff !important;
 	border: 1px solid #d1d5db !important;
@@ -412,7 +412,7 @@ html:not(.dark) input[type="checkbox"] {
 }
 
 /* Excepción: radio buttons deben ser visibles en modo claro */
-html:not(.dark) input[type="radio"] {
+html:not(.dark) input[type='radio'] {
 	appearance: auto !important;
 	background-color: #ffffff !important;
 	border: 1px solid #d1d5db !important;
@@ -420,7 +420,7 @@ html:not(.dark) input[type="radio"] {
 }
 
 /* Excepción: botón de login debe mantener fondo negro en modo claro */
-html:not(.dark) button[type="submit"].bg-black {
+html:not(.dark) button[type='submit'].bg-black {
 	background-color: #000000 !important;
 	color: #ffffff !important;
 }

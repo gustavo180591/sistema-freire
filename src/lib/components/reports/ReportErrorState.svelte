@@ -6,7 +6,9 @@
 	let { message = 'Error al cargar el reporte' }: Props = $props();
 </script>
 
-<div class="flex flex-col items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/70 p-12">
+<div
+	class="flex flex-col items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/70 p-12"
+>
 	<svg class="h-16 w-16 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 		<path
 			stroke-linecap="round"

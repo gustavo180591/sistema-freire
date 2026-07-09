@@ -1,4 +1,13 @@
-import { PrismaClient, UserStatus, DocumentOwnerType, DocumentCategory, DocumentSubType, DocumentVisibility, DocumentAccessAction, RoleCode } from '@prisma/client';
+import {
+	PrismaClient,
+	UserStatus,
+	DocumentOwnerType,
+	DocumentCategory,
+	DocumentSubType,
+	DocumentVisibility,
+	DocumentAccessAction,
+	RoleCode
+} from '@prisma/client';
 import { documentManagementService } from '../src/lib/server/document-management/document-management.service';
 import { documentStorageService } from '../src/lib/server/document-management/document-storage.service';
 import {
@@ -105,7 +114,11 @@ async function testDocumentManagementEndpoints() {
 			throw new Error('Unauthenticated user should have received 401');
 		} catch (e: unknown) {
 			const error = e as { status?: number; message?: string };
-			if (error.status === 401 || (error.message && error.message.includes('401')) || (error.message && error.message.includes('autenticado'))) {
+			if (
+				error.status === 401 ||
+				(error.message && error.message.includes('401')) ||
+				(error.message && error.message.includes('autenticado'))
+			) {
 				console.log(`✅ Unauthenticated user correctly received 401\n`);
 			} else {
 				throw e;
@@ -126,7 +139,11 @@ async function testDocumentManagementEndpoints() {
 			throw new Error('User without permission should have received 403');
 		} catch (e: unknown) {
 			const error = e as { status?: number; message?: string };
-			if (error.status === 403 || (error.message && error.message.includes('403')) || (error.message && error.message.includes('permiso'))) {
+			if (
+				error.status === 403 ||
+				(error.message && error.message.includes('403')) ||
+				(error.message && error.message.includes('permiso'))
+			) {
 				console.log(`✅ User without permission correctly received 403\n`);
 			} else {
 				throw e;
@@ -149,7 +166,11 @@ async function testDocumentManagementEndpoints() {
 			throw new Error('User without permission should not access foreign document');
 		} catch (e: unknown) {
 			const error = e as { status?: number; message?: string };
-			if (error.status === 403 || (error.message && error.message.includes('403')) || (error.message && error.message.includes('permiso'))) {
+			if (
+				error.status === 403 ||
+				(error.message && error.message.includes('403')) ||
+				(error.message && error.message.includes('permiso'))
+			) {
 				console.log(`✅ User without permission correctly cannot access foreign document\n`);
 			} else {
 				throw e;
@@ -222,7 +243,11 @@ async function testDocumentManagementEndpoints() {
 			throw new Error('User without permission should not list foreign documents');
 		} catch (e: unknown) {
 			const error = e as { status?: number; message?: string };
-			if (error.status === 403 || (error.message && error.message.includes('403')) || (error.message && error.message.includes('permiso'))) {
+			if (
+				error.status === 403 ||
+				(error.message && error.message.includes('403')) ||
+				(error.message && error.message.includes('permiso'))
+			) {
 				console.log(`✅ User without permission correctly cannot list foreign documents\n`);
 			} else {
 				throw e;
@@ -233,7 +258,11 @@ async function testDocumentManagementEndpoints() {
 		console.log('Test 11: Detail returns document without absolute paths...');
 		const detail = await getDocumentApi(mockAdmin, document.id);
 		const detailStr = JSON.stringify(detail);
-		if (detailStr.includes('/home/') || detailStr.includes('/storage/') || detailStr.includes('/private/')) {
+		if (
+			detailStr.includes('/home/') ||
+			detailStr.includes('/storage/') ||
+			detailStr.includes('/private/')
+		) {
 			throw new Error('Detail response contains absolute paths');
 		}
 		console.log(`✅ Detail response has no absolute paths\n`);
@@ -301,7 +330,10 @@ async function testDocumentManagementEndpoints() {
 			throw new Error('Download of deleted document should have been rejected');
 		} catch (e: unknown) {
 			const error = e as { status?: number; message?: string };
-			if (error.status === 410 || (error.message && (error.message.includes('410') || error.message.includes('eliminado')))) {
+			if (
+				error.status === 410 ||
+				(error.message && (error.message.includes('410') || error.message.includes('eliminado')))
+			) {
 				console.log(`✅ Download of deleted document correctly rejected\n`);
 			} else {
 				throw e;
@@ -343,7 +375,7 @@ async function testDocumentManagementEndpoints() {
 		}
 
 		// Test 21: Responses don't expose absolute paths
-		console.log('Test 21: Responses don\'t expose absolute paths...');
+		console.log("Test 21: Responses don't expose absolute paths...");
 		const allResponses = [
 			JSON.stringify(document),
 			JSON.stringify(documents),
@@ -351,7 +383,11 @@ async function testDocumentManagementEndpoints() {
 			JSON.stringify(restoredDoc)
 		];
 		for (const response of allResponses) {
-			if (response.includes('/home/') || response.includes('/storage/') || response.includes('/private/')) {
+			if (
+				response.includes('/home/') ||
+				response.includes('/storage/') ||
+				response.includes('/private/')
+			) {
 				throw new Error('Response contains absolute paths');
 			}
 		}
@@ -395,7 +431,6 @@ async function testDocumentManagementEndpoints() {
 		console.log(`✅ Physical files verification will be performed in finally block\n`);
 
 		console.log('✅ All document management endpoint tests passed successfully!\n');
-
 	} catch (error) {
 		console.error('❌ Test failed:', error);
 		throw error;

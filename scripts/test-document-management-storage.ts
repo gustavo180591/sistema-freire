@@ -106,7 +106,9 @@ async function testDocumentManagementStorage() {
 		}
 
 		// Test 4.1: Rejection of false extension (allowed MIME with dangerous extension)
-		console.log('Test 4.1: Rejection of false extension (allowed MIME with dangerous extension)...');
+		console.log(
+			'Test 4.1: Rejection of false extension (allowed MIME with dangerous extension)...'
+		);
 		try {
 			const falseExtFile = createFalseExtensionFile();
 			validateDocumentFile(falseExtFile);
@@ -168,7 +170,12 @@ async function testDocumentManagementStorage() {
 
 		// Test 7.1: ownerId path traversal prevention
 		console.log('Test 7.1: ownerId path traversal prevention...');
-		const maliciousOwnerIds = ['../evil', 'student/../../evil', '/absolute/path', 'student\\..\\evil'];
+		const maliciousOwnerIds = [
+			'../evil',
+			'student/../../evil',
+			'/absolute/path',
+			'student\\..\\evil'
+		];
 		for (const maliciousOwnerId of maliciousOwnerIds) {
 			try {
 				documentStorageService.generateStorageKey({
@@ -196,8 +203,10 @@ async function testDocumentManagementStorage() {
 				documentStorageService.getFilePath(dangerousKey);
 				throw new Error(`Should have rejected dangerous storage key: ${dangerousKey}`);
 			} catch (error) {
-				if (error instanceof DocumentValidationError && error.code === 'INVALID_FILENAME' || 
-					error instanceof Error && error.message.includes('Path traversal')) {
+				if (
+					(error instanceof DocumentValidationError && error.code === 'INVALID_FILENAME') ||
+					(error instanceof Error && error.message.includes('Path traversal'))
+				) {
 					console.log(`✅ Dangerous storage key rejected: ${dangerousKey}`);
 				} else {
 					throw error;
@@ -231,7 +240,7 @@ async function testDocumentManagementStorage() {
 		console.log(`   - Base dir: ${documentStorageService.getStorageBaseDir()}\n`);
 
 		// Test 10: Confirmation that it doesn't write to static/uploads
-		console.log('Test 10: Confirmation that it doesn\'t write to static/uploads...');
+		console.log("Test 10: Confirmation that it doesn't write to static/uploads...");
 		if (!filePath.includes('static/uploads')) {
 			console.log(`✅ File not written to static/uploads\n`);
 		} else {
@@ -262,14 +271,13 @@ async function testDocumentManagementStorage() {
 		}
 
 		console.log('✅ All storage service tests passed successfully!\n');
-
 	} catch (error) {
 		console.error('❌ Test failed:', error);
 		throw error;
 	} finally {
 		// Cleanup
 		console.log('🧹 Cleaning up test files...');
-		
+
 		for (const filePath of testFilePaths) {
 			try {
 				await fs.unlink(filePath);

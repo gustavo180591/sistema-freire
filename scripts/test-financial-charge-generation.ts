@@ -310,7 +310,7 @@ async function testBulkCharges() {
 
 		console.log('✅ Cuotas masivas creadas exitosamente');
 		console.log(`   Cantidad: ${results.length}`);
-		console.log(`   IDs: ${results.map(r => r.charge.id).join(', ')}`);
+		console.log(`   IDs: ${results.map((r) => r.charge.id).join(', ')}`);
 
 		if (results.length !== 2) {
 			throw new Error('Se esperaban 2 cuotas');
@@ -415,7 +415,9 @@ async function testScholarshipApplication() {
 		// Verificar que la beca sea del 50%
 		const expectedScholarship = new Decimal(5000);
 		if (!charge.charge.scholarshipApplied.equals(expectedScholarship)) {
-			throw new Error(`Beca incorrecta: esperada ${expectedScholarship}, obtenida ${charge.charge.scholarshipApplied}`);
+			throw new Error(
+				`Beca incorrecta: esperada ${expectedScholarship}, obtenida ${charge.charge.scholarshipApplied}`
+			);
 		}
 
 		console.log('✅ Beca calculada correctamente (50%)');
@@ -456,7 +458,9 @@ async function testDiscountApplication() {
 		// Verificar que el descuento sea del 10%
 		const expectedDiscount = new Decimal(1000);
 		if (!charge.charge.discountApplied.equals(expectedDiscount)) {
-			throw new Error(`Descuento incorrecto: esperado ${expectedDiscount}, obtenido ${charge.charge.discountApplied}`);
+			throw new Error(
+				`Descuento incorrecto: esperado ${expectedDiscount}, obtenido ${charge.charge.discountApplied}`
+			);
 		}
 
 		console.log('✅ Descuento calculado correctamente (10%)');
@@ -610,7 +614,12 @@ async function testDuplicateControlledError() {
 			});
 			throw new Error('No se previno el duplicado');
 		} catch (error) {
-			if (error instanceof Error && error.message.includes('Ya existe una cuota para este alumno, concepto, período y ciclo lectivo')) {
+			if (
+				error instanceof Error &&
+				error.message.includes(
+					'Ya existe una cuota para este alumno, concepto, período y ciclo lectivo'
+				)
+			) {
 				console.log('✅ Duplicado capturado como error controlado (no 500)');
 			} else {
 				throw error;
@@ -771,7 +780,9 @@ async function testScholarshipMonthlyLimit() {
 		});
 
 		if (!charge1.charge.scholarshipApplied.equals(new Decimal(3000))) {
-			throw new Error(`Beca debería ser $3000, pero es ${charge1.charge.scholarshipApplied.toString()}`);
+			throw new Error(
+				`Beca debería ser $3000, pero es ${charge1.charge.scholarshipApplied.toString()}`
+			);
 		}
 
 		console.log('✅ Primera cuota: beca limitada a $3000');
@@ -872,7 +883,9 @@ async function testMultipleDiscountsAccumulated() {
 		// Descuento total debería ser 15% = $1500
 		const expectedDiscount = new Decimal(1500);
 		if (!charge.charge.discountApplied.equals(expectedDiscount)) {
-			throw new Error(`Descuento debería ser $1500, pero es ${charge.charge.discountApplied.toString()}`);
+			throw new Error(
+				`Descuento debería ser $1500, pero es ${charge.charge.discountApplied.toString()}`
+			);
 		}
 
 		console.log('✅ Múltiples descuentos acumulados correctamente');
@@ -1047,11 +1060,11 @@ async function testNoOrphanedMovements() {
 		const allCharges = await prisma.studentCharge.findMany({
 			select: { id: true }
 		});
-		const chargeIds = allCharges.map(c => c.id);
-		
+		const chargeIds = allCharges.map((c) => c.id);
+
 		const allMovements = await prisma.financialMovement.findMany();
-		const orphanedMovements = allMovements.filter(m => 
-			m.entityId && !chargeIds.includes(m.entityId)
+		const orphanedMovements = allMovements.filter(
+			(m) => m.entityId && !chargeIds.includes(m.entityId)
 		);
 
 		if (orphanedMovements.length > 0) {
@@ -1123,7 +1136,7 @@ async function testNoAuditOnBulkFailure() {
 
 async function runAllTests() {
 	console.log('🚀 Iniciando pruebas funcionales de Fase 2 - Generación de Cuotas\n');
-	console.log('=' .repeat(60));
+	console.log('='.repeat(60));
 
 	try {
 		await cleanupTestData();

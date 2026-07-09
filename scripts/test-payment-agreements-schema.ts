@@ -1,6 +1,6 @@
 /**
  * Script de prueba para validar el schema de Convenios de Pago - Fase 1
- * 
+ *
  * Este script valida:
  * - Creación de convenio en estado DRAFT
  * - Numeración correlativa por año
@@ -9,12 +9,12 @@
  * - Creación de eventos de auditoría
  * - Permisos base
  * - Imposibilidad de eliminar entidad histórica debido a Restrict
- * 
+ *
  * IMPORTANTE: Este script debe ejecutarse contra una base de datos que tenga
  * la migración de Convenios de Pago aplicada. Puede ser:
  * - La base temporal: sistema_freire_migration_test
  * - La base real después de aplicar la migración
- * 
+ *
  * Ejecución:
  * DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire_migration_test" npx tsx scripts/test-payment-agreements-schema.ts
  */
@@ -38,7 +38,7 @@ async function main() {
 	try {
 		// Test 1: Verificar que los nuevos modelos existen
 		console.log('Test 1: Verificar existencia de nuevos modelos...');
-		
+
 		const year = new Date().getFullYear();
 		const numberRecord = await (prisma as any).paymentAgreementNumber.upsert({
 			where: { year },
@@ -49,7 +49,7 @@ async function main() {
 
 		// Test 2: Crear datos necesarios para StudentCharge
 		console.log('\nTest 2: Crear datos necesarios (Career, AcademicTerm, Concept)...');
-		
+
 		const testCareer = await prisma.career.create({
 			data: {
 				name: 'Test Career for Payment Agreements',
@@ -84,7 +84,7 @@ async function main() {
 
 		// Test 3: Crear usuario y estudiante
 		console.log('\nTest 3: Crear usuario y estudiante...');
-		
+
 		const testUser = await prisma.user.create({
 			data: {
 				email: 'test.payment.agreement@example.com',
@@ -114,7 +114,7 @@ async function main() {
 
 		// Test 4: Crear StudentCharge
 		console.log('\nTest 4: Crear StudentCharge...');
-		
+
 		const testCharge = await prisma.studentCharge.create({
 			data: {
 				studentId: testStudentId,
@@ -133,7 +133,7 @@ async function main() {
 
 		// Test 5: Numeración correlativa transaccional
 		console.log('\nTest 5: Verificar numeración correlativa transaccional...');
-		
+
 		const nextNumber1 = await prisma.$transaction(async (tx) => {
 			const record = await (tx as any).paymentAgreementNumber.upsert({
 				where: { year },
@@ -153,14 +153,19 @@ async function main() {
 		});
 
 		if (nextNumber2 === nextNumber1 + 1) {
-			console.log('✅ Numeración correlativa funciona correctamente:', nextNumber1, '->', nextNumber2);
+			console.log(
+				'✅ Numeración correlativa funciona correctamente:',
+				nextNumber1,
+				'->',
+				nextNumber2
+			);
 		} else {
 			throw new Error('Numeración correlativa no funciona: ' + nextNumber1 + ' -> ' + nextNumber2);
 		}
 
 		// Test 6: Crear convenio en estado DRAFT
 		console.log('\nTest 6: Crear convenio en estado DRAFT...');
-		
+
 		const agreementNumber = await prisma.$transaction(async (tx) => {
 			const record = await (tx as any).paymentAgreementNumber.upsert({
 				where: { year },
@@ -195,7 +200,7 @@ async function main() {
 
 		// Test 7: Crear cuotas del convenio
 		console.log('\nTest 7: Crear cuotas del convenio...');
-		
+
 		const installment1 = await (prisma as any).paymentAgreementInstallment.create({
 			data: {
 				agreementId: testAgreementId,
@@ -226,7 +231,7 @@ async function main() {
 
 		// Test 8: Crear relación con deuda original (snapshot)
 		console.log('\nTest 8: Crear relación con deuda original (snapshot)...');
-		
+
 		const chargeRelation = await (prisma as any).paymentAgreementChargeRelation.create({
 			data: {
 				agreementId: testAgreementId,
@@ -246,7 +251,7 @@ async function main() {
 
 		// Test 9: Crear evento de auditoría
 		console.log('\nTest 9: Crear evento de auditoría...');
-		
+
 		const event = await (prisma as any).paymentAgreementEvent.create({
 			data: {
 				agreementId: testAgreementId,
@@ -269,12 +274,14 @@ async function main() {
 
 		// Test 10: Verificar restricción onDelete Restrict (convenio con cuotas)
 		console.log('\nTest 10: Verificar restricción onDelete Restrict (convenio con cuotas)...');
-		
+
 		try {
 			await (prisma as any).paymentAgreement.delete({
 				where: { id: testAgreementId }
 			});
-			console.log('❌ ERROR: Se pudo eliminar el convenio con cuotas (debería fallar por Restrict)');
+			console.log(
+				'❌ ERROR: Se pudo eliminar el convenio con cuotas (debería fallar por Restrict)'
+			);
 		} catch (error: any) {
 			if (error.code === 'P2003' || error.message.includes('Foreign key constraint')) {
 				console.log('✅ Restricción onDelete Restrict funciona correctamente');
@@ -286,7 +293,7 @@ async function main() {
 
 		// Test 11: Verificar restricción onDelete Restrict (cargo en convenio)
 		console.log('\nTest 11: Verificar restricción onDelete Restrict (cargo en convenio)...');
-		
+
 		try {
 			await prisma.studentCharge.delete({
 				where: { id: testChargeId }
@@ -303,7 +310,7 @@ async function main() {
 
 		// Test 12: Verificar relaciones y consultas
 		console.log('\nTest 12: Verificar relaciones y consultas...');
-		
+
 		const agreementWithRelations = await (prisma as any).paymentAgreement.findUnique({
 			where: { id: testAgreementId },
 			include: {
@@ -318,7 +325,7 @@ async function main() {
 			console.log('   Cuotas:', agreementWithRelations.installments.length);
 			console.log('   Relaciones con cargos:', agreementWithRelations.relatedCharges.length);
 			console.log('   Eventos:', agreementWithRelations.events.length);
-			
+
 			// Verificar que la relación con el cargo es correcta
 			if (agreementWithRelations.relatedCharges.length > 0) {
 				const relation = agreementWithRelations.relatedCharges[0];
@@ -330,7 +337,6 @@ async function main() {
 		}
 
 		console.log('\n✅ Todas las pruebas completadas exitosamente');
-
 	} catch (error) {
 		console.error('\n❌ Error durante las pruebas:', error);
 		throw error;

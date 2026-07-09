@@ -1,6 +1,6 @@
 /**
  * Payment Agreement Permissions Helper
- * 
+ *
  * Provides centralized permission checks for payment agreement operations.
  * These functions are used by both server actions and tests.
  */
@@ -14,15 +14,12 @@ interface UserWithRoles {
  */
 export function canManagePaymentAgreements(user: UserWithRoles | null): boolean {
 	if (!user) return false;
-	
+
 	const roles = (user.roles || []) as string[];
-	
+
 	return roles.some(
 		(role) =>
-			role === 'SUPERADMIN' ||
-			role === 'DIRECTOR' ||
-			role === 'FINANZAS' ||
-			role === 'SECRETARIA'
+			role === 'SUPERADMIN' || role === 'DIRECTOR' || role === 'FINANZAS' || role === 'SECRETARIA'
 	);
 }
 
@@ -31,15 +28,12 @@ export function canManagePaymentAgreements(user: UserWithRoles | null): boolean 
  */
 export function canEvaluateAgreementStatus(user: UserWithRoles | null): boolean {
 	if (!user) return false;
-	
+
 	const roles = (user.roles || []) as string[];
-	
+
 	return roles.some(
 		(role) =>
-			role === 'SUPERADMIN' ||
-			role === 'DIRECTOR' ||
-			role === 'FINANZAS' ||
-			role === 'SECRETARIA'
+			role === 'SUPERADMIN' || role === 'DIRECTOR' || role === 'FINANZAS' || role === 'SECRETARIA'
 	);
 }
 
@@ -48,15 +42,12 @@ export function canEvaluateAgreementStatus(user: UserWithRoles | null): boolean 
  */
 export function canEvaluateAgreementBlockException(user: UserWithRoles | null): boolean {
 	if (!user) return false;
-	
+
 	const roles = (user.roles || []) as string[];
-	
+
 	return roles.some(
 		(role) =>
-			role === 'SUPERADMIN' ||
-			role === 'DIRECTOR' ||
-			role === 'FINANZAS' ||
-			role === 'SECRETARIA'
+			role === 'SUPERADMIN' || role === 'DIRECTOR' || role === 'FINANZAS' || role === 'SECRETARIA'
 	);
 }
 
@@ -65,9 +56,9 @@ export function canEvaluateAgreementBlockException(user: UserWithRoles | null): 
  */
 export function canViewPaymentAgreements(user: UserWithRoles | null): boolean {
 	if (!user) return false;
-	
+
 	const roles = (user.roles || []) as string[];
-	
+
 	return roles.some(
 		(role) =>
 			role === 'SUPERADMIN' ||

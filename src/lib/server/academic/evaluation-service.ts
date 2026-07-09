@@ -84,7 +84,10 @@ export class EvaluationService {
 	/**
 	 * Valida que se puede cargar calificaciones en una evaluación
 	 */
-	async canLoadGrades(evaluationId: string, userId: string): Promise<EvaluationValidationError | null> {
+	async canLoadGrades(
+		evaluationId: string,
+		userId: string
+	): Promise<EvaluationValidationError | null> {
 		const evaluation = await this.prisma.evaluation.findUnique({
 			where: { id: evaluationId },
 			select: { isClosed: true, createdByUserId: true }
@@ -231,7 +234,10 @@ export class EvaluationService {
 	/**
 	 * Valida que se puede cerrar una evaluación
 	 */
-	async canCloseEvaluation(evaluationId: string, userId: string): Promise<EvaluationValidationError | null> {
+	async canCloseEvaluation(
+		evaluationId: string,
+		userId: string
+	): Promise<EvaluationValidationError | null> {
 		const evaluation = await this.prisma.evaluation.findUnique({
 			where: { id: evaluationId },
 			select: { isClosed: true, createdByUserId: true }
@@ -255,7 +261,10 @@ export class EvaluationService {
 	/**
 	 * Valida que se puede reabrir una evaluación
 	 */
-	async canReopenEvaluation(evaluationId: string, userId: string): Promise<EvaluationValidationError | null> {
+	async canReopenEvaluation(
+		evaluationId: string,
+		userId: string
+	): Promise<EvaluationValidationError | null> {
 		const evaluation = await this.prisma.evaluation.findUnique({
 			where: { id: evaluationId },
 			select: { isClosed: true, createdByUserId: true }
@@ -350,7 +359,14 @@ export class EvaluationService {
 
 		const evaluation = await this.prisma.evaluation.findUnique({
 			where: { id: data.evaluationId },
-			select: { subjectId: true, commissionId: true, maxScore: true, minPassingScore: true, weight: true, title: true }
+			select: {
+				subjectId: true,
+				commissionId: true,
+				maxScore: true,
+				minPassingScore: true,
+				weight: true,
+				title: true
+			}
 		});
 
 		if (!evaluation) {

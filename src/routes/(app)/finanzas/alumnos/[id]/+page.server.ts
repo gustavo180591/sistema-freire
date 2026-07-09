@@ -32,7 +32,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	try {
 		const report = await financialService.getStudentFinancialReport(studentId);
-		
+
 		// Serialize Decimal values to numbers for JSON serialization
 		const serializedReport = {
 			...report,
@@ -51,7 +51,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				amount: Number(payment.amount)
 			}))
 		};
-		
+
 		return { report: serializedReport };
 	} catch (error: any) {
 		throw new Error(error.message || 'Error al obtener el reporte financiero');

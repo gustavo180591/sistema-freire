@@ -63,10 +63,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 				}
 			}
 		},
-		orderBy: [
-			{ lastName: 'asc' },
-			{ firstName: 'asc' }
-		]
+		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
 	});
 
 	// Filtrar por localidades si el usuario no tiene acceso global

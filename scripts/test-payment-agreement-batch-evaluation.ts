@@ -1,9 +1,9 @@
 /**
  * Payment Agreement Batch Evaluation Test Script
  * Phase 6.1
- * 
+ *
  * Tests the batch evaluation functionality for payment agreements.
- * 
+ *
  * Usage:
  *   DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire" npx tsx scripts/test-payment-agreement-batch-evaluation.ts
  */
@@ -657,7 +657,6 @@ async function testBatchEvaluation() {
 			console.log('  ❌ Events or audit logs not created');
 			testPassed = false;
 		}
-
 	} catch (error) {
 		console.error('❌ Test error:', error instanceof Error ? error.message : String(error));
 		testPassed = false;

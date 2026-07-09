@@ -296,7 +296,9 @@ async function main() {
 		testReceiptId = receiptResult.receipt.id;
 		console.log('✓ Receipt generated successfully');
 		console.log(`  Receipt ID: ${receiptResult.receipt.id}`);
-		console.log(`  Receipt Number: ${receiptResult.receipt.receiptNumber}/${receiptResult.receipt.receiptYear}`);
+		console.log(
+			`  Receipt Number: ${receiptResult.receipt.receiptNumber}/${receiptResult.receipt.receiptYear}`
+		);
 		console.log(`  Receipt Total: ${receiptResult.receipt.totalAmount.toString()}`);
 
 		// 7. Verify receipt is linked to payment
@@ -391,7 +393,9 @@ async function main() {
 		}
 
 		if (!installmentItem.concept.includes('Convenio')) {
-			throw new Error(`Expected item concept to include 'Convenio', got ${installmentItem.concept}`);
+			throw new Error(
+				`Expected item concept to include 'Convenio', got ${installmentItem.concept}`
+			);
 		}
 
 		console.log('✓ Receipt items include correct installment info');
@@ -507,8 +511,12 @@ async function main() {
 
 			// Delete agreement
 			if (testAgreementId) {
-				await prisma.paymentAgreementInstallment.deleteMany({ where: { agreementId: testAgreementId } });
-				await prisma.paymentAgreementChargeRelation.deleteMany({ where: { agreementId: testAgreementId } });
+				await prisma.paymentAgreementInstallment.deleteMany({
+					where: { agreementId: testAgreementId }
+				});
+				await prisma.paymentAgreementChargeRelation.deleteMany({
+					where: { agreementId: testAgreementId }
+				});
 				await prisma.paymentAgreementEvent.deleteMany({ where: { agreementId: testAgreementId } });
 				await prisma.paymentAgreement.delete({ where: { id: testAgreementId } });
 				console.log('✓ Deleted test agreement');

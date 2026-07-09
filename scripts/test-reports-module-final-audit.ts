@@ -172,7 +172,10 @@ runTest('No Prisma in UI', () => {
 	for (const file of uiFiles) {
 		const path = join(process.cwd(), file);
 		const content = readFileSync(path, 'utf-8');
-		if (content.includes('from \'$lib/server/db/prisma\'') || content.includes('from \'@prisma/client\'')) {
+		if (
+			content.includes("from '$lib/server/db/prisma'") ||
+			content.includes("from '@prisma/client'")
+		) {
 			throw new Error(`Prisma import found in UI file: ${file}`);
 		}
 	}
@@ -264,11 +267,11 @@ runTest('No PDF/Excel as active implementation in reports API', () => {
 	// Check that we did not create new PDF/Excel endpoints under /api/reports
 	// Pre-existing routes under /reportes/ are not part of the reports module
 	const reportsApiPath = join(process.cwd(), 'src/routes/api/reports');
-	
+
 	// Check that no PDF/Excel export endpoints exist under /api/reports
 	const pdfExportPath = join(reportsApiPath, 'institutional/export/pdf');
 	const excelExportPath = join(reportsApiPath, 'institutional/export/excel');
-	
+
 	if (existsSync(pdfExportPath)) {
 		throw new Error('PDF export endpoint exists under /api/reports (not allowed)');
 	}
@@ -353,7 +356,10 @@ runTest('ATTENDANCE documented', () => {
 runTest('PaymentAgreement not altered', () => {
 	const path = join(process.cwd(), 'src/lib/server/reports/financial-reports.service.ts');
 	const content = readFileSync(path, 'utf-8');
-	if (content.includes('prisma.paymentAgreement.update') || content.includes('prisma.paymentAgreement.delete')) {
+	if (
+		content.includes('prisma.paymentAgreement.update') ||
+		content.includes('prisma.paymentAgreement.delete')
+	) {
 		throw new Error('PaymentAgreement is being modified in financial reports service');
 	}
 });
@@ -427,9 +433,11 @@ console.log(`Total Tests: ${testResults.length}`);
 
 if (failed > 0) {
 	console.log('\n❌ Failed tests:');
-	testResults.filter((r) => !r.passed).forEach((r) => {
-		console.log(`  - ${r.name}: ${r.error}`);
-	});
+	testResults
+		.filter((r) => !r.passed)
+		.forEach((r) => {
+			console.log(`  - ${r.name}: ${r.error}`);
+		});
 	process.exit(1);
 } else {
 	console.log('\n✅ All tests passed!');

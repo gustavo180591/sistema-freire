@@ -46,14 +46,14 @@
 		const input = event.target as HTMLInputElement;
 		if (input.files && input.files[0]) {
 			const file = input.files[0];
-			
+
 			// Validar tamaño
 			if (file.size > MAX_FILE_SIZE) {
 				error = `El archivo excede el tamaño máximo de ${MAX_FILE_SIZE / 1024 / 1024}MB`;
 				selectedFile = null;
 				return;
 			}
-			
+
 			selectedFile = file;
 			error = null;
 		}
@@ -77,7 +77,7 @@
 		formData.append('category', category);
 		formData.append('subType', subType);
 		formData.append('visibility', visibility);
-		
+
 		if (metadata) {
 			formData.append('metadata', metadata);
 		}
@@ -90,13 +90,13 @@
 		const k = 1024;
 		const sizes = ['Bytes', 'KB', 'MB', 'GB'];
 		const i = Math.floor(Math.log(bytes) / Math.log(k));
-		return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+		return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 	}
 </script>
 
 <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 	<h3 class="mb-4 text-lg font-semibold text-white">Subir Documento</h3>
-	
+
 	<form onsubmit={handleSubmit} class="space-y-4">
 		<!-- Selección de archivo -->
 		<div>
@@ -113,7 +113,12 @@
 				{#if selectedFile}
 					<div class="mt-2 flex items-center gap-2 text-sm text-slate-400">
 						<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+							/>
 						</svg>
 						<span>{selectedFile.name}</span>
 						<span class="text-slate-500">({formatFileSize(selectedFile.size)})</span>
@@ -124,7 +129,9 @@
 
 		<!-- Tipo de propietario -->
 		<div>
-			<label for="owner-type" class="mb-2 block text-sm font-medium text-slate-300">Tipo de Propietario</label>
+			<label for="owner-type" class="mb-2 block text-sm font-medium text-slate-300"
+				>Tipo de Propietario</label
+			>
 			<select
 				id="owner-type"
 				bind:value={ownerType}
@@ -141,7 +148,9 @@
 
 		<!-- ID del propietario -->
 		<div>
-			<label for="owner-id" class="mb-2 block text-sm font-medium text-slate-300">ID del Propietario</label>
+			<label for="owner-id" class="mb-2 block text-sm font-medium text-slate-300"
+				>ID del Propietario</label
+			>
 			<input
 				id="owner-id"
 				type="text"
@@ -184,7 +193,9 @@
 
 		<!-- Visibilidad -->
 		<div>
-			<label for="visibility" class="mb-2 block text-sm font-medium text-slate-300">Visibilidad</label>
+			<label for="visibility" class="mb-2 block text-sm font-medium text-slate-300"
+				>Visibilidad</label
+			>
 			<select
 				id="visibility"
 				bind:value={visibility}
@@ -199,7 +210,9 @@
 
 		<!-- Metadata (opcional) -->
 		<div>
-			<label for="metadata" class="mb-2 block text-sm font-medium text-slate-300">Metadata (JSON opcional)</label>
+			<label for="metadata" class="mb-2 block text-sm font-medium text-slate-300"
+				>Metadata (JSON opcional)</label
+			>
 			<textarea
 				id="metadata"
 				bind:value={metadata}

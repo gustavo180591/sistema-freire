@@ -10,8 +10,8 @@
 </script>
 
 <div class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white">
-	<header class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-		<div class="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
+	<header class="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+		<div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
 			<h1 class="text-xl font-bold text-slate-900 dark:text-white">Sistema Freire</h1>
 		</div>
 	</header>

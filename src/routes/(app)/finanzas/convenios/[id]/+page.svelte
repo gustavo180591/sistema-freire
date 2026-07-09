@@ -91,8 +91,10 @@
 	let statusResult: { success: boolean; result?: unknown; error?: string } | null = $state(null);
 	let exceptionResult: { success: boolean; result?: unknown; error?: string } | null = $state(null);
 
-	let formStatusResult: { success: boolean; result?: unknown; error?: string } | null = $state(null);
-	let formExceptionResult: { success: boolean; result?: unknown; error?: string } | null = $state(null);
+	let formStatusResult: { success: boolean; result?: unknown; error?: string } | null =
+		$state(null);
+	let formExceptionResult: { success: boolean; result?: unknown; error?: string } | null =
+		$state(null);
 
 	function getStatusColor(status: string): string {
 		switch (status) {
@@ -153,9 +155,11 @@
 
 	<!-- Status Card -->
 	<div class="rounded-lg border border-slate-700 bg-slate-800/50 p-6">
-		<div class="flex items-center justify-between mb-4">
+		<div class="mb-4 flex items-center justify-between">
 			<h2 class="text-lg font-semibold text-white">Estado del Convenio</h2>
-			<span class={`rounded-full px-3 py-1 text-xs font-medium border ${getStatusColor(data.agreement.status)}`}>
+			<span
+				class={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusColor(data.agreement.status)}`}
+			>
 				{data.agreement.status}
 			</span>
 		</div>
@@ -204,7 +208,9 @@
 				</div>
 				<div>
 					<p class="text-sm text-slate-400">Fecha</p>
-					<p class="text-white">{new Date(data.activeException.exceptionAt).toLocaleDateString('es-AR')}</p>
+					<p class="text-white">
+						{new Date(data.activeException.exceptionAt).toLocaleDateString('es-AR')}
+					</p>
 				</div>
 				<div>
 					<p class="text-sm text-slate-400">Motivo</p>
@@ -281,7 +287,9 @@
 					</div>
 					<div class="text-right">
 						<p class="text-sm font-medium text-white">${installment.amount.toString()}</p>
-						<span class={`rounded-full px-2 py-1 text-xs font-medium border ${getInstallmentStatusColor(installment.status)}`}>
+						<span
+							class={`rounded-full border px-2 py-1 text-xs font-medium ${getInstallmentStatusColor(installment.status)}`}
+						>
 							{installment.status}
 						</span>
 						{#if data.agreement.status === 'ACTIVE' && installment.status !== 'PAID' && installment.status !== 'CANCELLED' && installment.status !== 'WAIVED'}
@@ -334,7 +342,8 @@
 								Fecha: {new Date(payment.paidAt).toLocaleDateString('es-AR')}
 							</p>
 							<p class="text-xs text-slate-400">
-								Método: {payment.method} {payment.reference ? `(${payment.reference})` : ''}
+								Método: {payment.method}
+								{payment.reference ? `(${payment.reference})` : ''}
 							</p>
 						</div>
 						<div class="text-right">
@@ -380,7 +389,7 @@
 			<div class="space-y-2">
 				{#each data.events as event (event.id)}
 					<div class="rounded-lg border border-slate-700 bg-slate-900 p-3">
-						<div class="flex justify-between items-start">
+						<div class="flex items-start justify-between">
 							<div>
 								<p class="text-sm font-medium text-white">{event.eventType}</p>
 								<p class="text-xs text-slate-400">{event.description}</p>
@@ -395,7 +404,8 @@
 							</div>
 							<div class="text-right">
 								<p class="text-xs text-slate-400">
-									{new Date(event.createdAt).toLocaleDateString('es-AR')} {new Date(event.createdAt).toLocaleTimeString('es-AR')}
+									{new Date(event.createdAt).toLocaleDateString('es-AR')}
+									{new Date(event.createdAt).toLocaleTimeString('es-AR')}
 								</p>
 								<p class="text-xs text-slate-400">{event.userName}</p>
 							</div>

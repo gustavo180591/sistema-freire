@@ -186,7 +186,18 @@ async function main() {
 		}
 
 		// Cuotas mensuales (Marzo a Diciembre)
-		const meses = ['Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+		const meses = [
+			'Marzo',
+			'Abril',
+			'Mayo',
+			'Junio',
+			'Julio',
+			'Agosto',
+			'Septiembre',
+			'Octubre',
+			'Noviembre',
+			'Diciembre'
+		];
 		for (const mes of meses) {
 			const existingCuota = await prisma.studentCharge.findFirst({
 				where: {

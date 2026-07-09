@@ -56,7 +56,7 @@
 			const url = `/api/documents${queryString ? `?${queryString}` : ''}`;
 
 			const response = await fetch(url);
-			
+
 			if (response.status === 401) {
 				// Unauthorized - redirect to login
 				goto('/login');
@@ -124,7 +124,7 @@
 	async function handleDownload(document: Document) {
 		try {
 			const response = await fetch(`/api/documents/${document.id}/download`);
-			
+
 			if (response.status === 401) {
 				goto('/login');
 				return;
@@ -249,7 +249,12 @@
 		<div class="rounded-2xl border border-red-900/50 bg-red-950/30 px-6 py-4">
 			<div class="flex items-center gap-3">
 				<svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+					/>
 				</svg>
 				<p class="text-red-400">{uploadError}</p>
 				<button
@@ -258,7 +263,12 @@
 					aria-label="Cerrar error"
 				>
 					<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M6 18L18 6M6 6l12 12"
+						/>
 					</svg>
 				</button>
 			</div>
@@ -267,7 +277,7 @@
 
 	<!-- Upload Form -->
 	{#if showUploadForm}
-		<DocumentUploadForm onUpload={handleUpload} uploading={uploading} error={uploadError} />
+		<DocumentUploadForm onUpload={handleUpload} {uploading} error={uploadError} />
 	{/if}
 
 	<!-- Filters -->
@@ -275,8 +285,8 @@
 
 	<!-- Document List -->
 	<DocumentList
-		documents={documents}
-		loading={loading}
+		{documents}
+		{loading}
 		onView={(doc) => (selectedDocument = doc)}
 		onDownload={handleDownload}
 		onDelete={handleDelete}

@@ -119,7 +119,9 @@ async function main() {
 				}
 			}
 
-			console.log(`✅ Comisión creada: ${subject.name} - División ${i === 0 ? 'A' : 'B'} (${numStudents} alumnos)`);
+			console.log(
+				`✅ Comisión creada: ${subject.name} - División ${i === 0 ? 'A' : 'B'} (${numStudents} alumnos)`
+			);
 		}
 	}
 

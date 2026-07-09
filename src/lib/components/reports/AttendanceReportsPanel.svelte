@@ -107,7 +107,9 @@
 			}
 
 			if (response.status === 403) {
-				onError('No tienes permiso para exportar reportes de asistencia (requiere ATTENDANCE:read)');
+				onError(
+					'No tienes permiso para exportar reportes de asistencia (requiere ATTENDANCE:read)'
+				);
 				return;
 			}
 
@@ -124,7 +126,9 @@
 			const blobUrl = window.URL.createObjectURL(blob);
 			const a = document.createElement('a');
 			a.href = blobUrl;
-			a.download = response.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'reporte-asistencia.csv';
+			a.download =
+				response.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] ||
+				'reporte-asistencia.csv';
 			document.body.appendChild(a);
 			a.click();
 			window.URL.revokeObjectURL(blobUrl);
@@ -156,7 +160,9 @@
 		<h3 class="mb-4 text-lg font-semibold">Filtros</h3>
 		<div class="grid gap-4 md:grid-cols-3">
 			<div>
-				<label for="studentId" class="mb-2 block text-sm font-medium text-slate-300">ID Alumno</label>
+				<label for="studentId" class="mb-2 block text-sm font-medium text-slate-300"
+					>ID Alumno</label
+				>
 				<input
 					id="studentId"
 					type="text"
@@ -166,7 +172,9 @@
 				/>
 			</div>
 			<div>
-				<label for="subjectId" class="mb-2 block text-sm font-medium text-slate-300">ID Materia</label>
+				<label for="subjectId" class="mb-2 block text-sm font-medium text-slate-300"
+					>ID Materia</label
+				>
 				<input
 					id="subjectId"
 					type="text"
@@ -176,7 +184,9 @@
 				/>
 			</div>
 			<div>
-				<label for="commissionId" class="mb-2 block text-sm font-medium text-slate-300">ID Comisión</label>
+				<label for="commissionId" class="mb-2 block text-sm font-medium text-slate-300"
+					>ID Comisión</label
+				>
 				<input
 					id="commissionId"
 					type="text"
@@ -186,7 +196,9 @@
 				/>
 			</div>
 			<div>
-				<label for="startDate" class="mb-2 block text-sm font-medium text-slate-300">Fecha Desde</label>
+				<label for="startDate" class="mb-2 block text-sm font-medium text-slate-300"
+					>Fecha Desde</label
+				>
 				<input
 					id="startDate"
 					type="date"
@@ -195,7 +207,9 @@
 				/>
 			</div>
 			<div>
-				<label for="endDate" class="mb-2 block text-sm font-medium text-slate-300">Fecha Hasta</label>
+				<label for="endDate" class="mb-2 block text-sm font-medium text-slate-300"
+					>Fecha Hasta</label
+				>
 				<input
 					id="endDate"
 					type="date"
@@ -221,8 +235,12 @@
 	</div>
 
 	{#if loading}
-		<div class="flex items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/70 p-12">
-			<div class="h-12 w-12 animate-spin rounded-full border-4 border-slate-700 border-t-indigo-500"></div>
+		<div
+			class="flex items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/70 p-12"
+		>
+			<div
+				class="h-12 w-12 animate-spin rounded-full border-4 border-slate-700 border-t-indigo-500"
+			></div>
 		</div>
 	{:else if metrics}
 		<div class="grid gap-4 md:grid-cols-3">
@@ -270,16 +288,26 @@
 
 			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
 				<h3 class="mb-4 text-lg font-semibold text-slate-200">Promedio por Materia</h3>
-				<SimpleDistributionList data={metrics.averageBySubject} title="Asistencia por Materia" color="rgb(99, 102, 241)" />
+				<SimpleDistributionList
+					data={metrics.averageBySubject}
+					title="Asistencia por Materia"
+					color="rgb(99, 102, 241)"
+				/>
 			</div>
 
 			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 md:col-span-2">
 				<h3 class="mb-4 text-lg font-semibold text-slate-200">Promedio por Comisión</h3>
-				<SimpleDistributionList data={metrics.averageByCommission} title="Asistencia por Comisión" color="rgb(34, 197, 94)" />
+				<SimpleDistributionList
+					data={metrics.averageByCommission}
+					title="Asistencia por Comisión"
+					color="rgb(34, 197, 94)"
+				/>
 			</div>
 		</div>
 	{:else}
-		<div class="flex flex-col items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/70 p-12">
+		<div
+			class="flex flex-col items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/70 p-12"
+		>
 			<p class="text-lg font-medium text-slate-300">No hay datos disponibles</p>
 		</div>
 	{/if}

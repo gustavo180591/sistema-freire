@@ -42,7 +42,14 @@ async function setupTestData() {
 		// Add FINANCIAL_BLOCK permissions
 		await prisma.permission.createMany({
 			data: [
-				{ roleCode: 'FINANZAS', entity: 'FINANCIAL_BLOCK', canCreate: true, canRead: true, canUpdate: true, canDelete: true }
+				{
+					roleCode: 'FINANZAS',
+					entity: 'FINANCIAL_BLOCK',
+					canCreate: true,
+					canRead: true,
+					canUpdate: true,
+					canDelete: true
+				}
 			],
 			skipDuplicates: true
 		});

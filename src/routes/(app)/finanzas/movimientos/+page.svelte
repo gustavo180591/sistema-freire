@@ -7,24 +7,24 @@
 </script>
 
 <div class="p-6">
-	<h1 class="text-2xl font-bold mb-6">Historial de Movimientos Financieros</h1>
+	<h1 class="mb-6 text-2xl font-bold">Historial de Movimientos Financieros</h1>
 
-	<div class="bg-white p-6 rounded-lg shadow mb-6">
-		<h2 class="text-lg font-semibold mb-4">Filtros</h2>
+	<div class="mb-6 rounded-lg bg-white p-6 shadow">
+		<h2 class="mb-4 text-lg font-semibold">Filtros</h2>
 		<form method="POST" action="?/filterMovements" use:enhance>
-			<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+			<div class="grid grid-cols-1 gap-4 md:grid-cols-4">
 				<div>
-					<label class="block text-sm font-medium mb-2">ID Alumno</label>
+					<label class="mb-2 block text-sm font-medium">ID Alumno</label>
 					<input
 						type="text"
 						name="studentId"
 						value={filters.studentId || ''}
-						class="w-full p-2 border rounded"
+						class="w-full rounded border p-2"
 					/>
 				</div>
 				<div>
-					<label class="block text-sm font-medium mb-2">Tipo de Movimiento</label>
-					<select name="movementType" class="w-full p-2 border rounded">
+					<label class="mb-2 block text-sm font-medium">Tipo de Movimiento</label>
+					<select name="movementType" class="w-full rounded border p-2">
 						<option value="">Todos</option>
 						<option value="CHARGE" selected={filters.movementType === 'CHARGE'}>Cargo</option>
 						<option value="PAYMENT" selected={filters.movementType === 'PAYMENT'}>Pago</option>
@@ -38,47 +38,47 @@
 					</select>
 				</div>
 				<div>
-					<label class="block text-sm font-medium mb-2">Fecha Desde</label>
+					<label class="mb-2 block text-sm font-medium">Fecha Desde</label>
 					<input
 						type="date"
 						name="startDate"
 						value={filters.startDate ? filters.startDate.toISOString().split('T')[0] : ''}
-						class="w-full p-2 border rounded"
+						class="w-full rounded border p-2"
 					/>
 				</div>
 				<div>
-					<label class="block text-sm font-medium mb-2">Fecha Hasta</label>
+					<label class="mb-2 block text-sm font-medium">Fecha Hasta</label>
 					<input
 						type="date"
 						name="endDate"
 						value={filters.endDate ? filters.endDate.toISOString().split('T')[0] : ''}
-						class="w-full p-2 border rounded"
+						class="w-full rounded border p-2"
 					/>
 				</div>
 			</div>
 			<div class="mt-4">
-				<button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+				<button type="submit" class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
 					Filtrar
 				</button>
 			</div>
 		</form>
 	</div>
 
-	<div class="bg-white p-6 rounded-lg shadow">
-		<h2 class="text-lg font-semibold mb-4">
+	<div class="rounded-lg bg-white p-6 shadow">
+		<h2 class="mb-4 text-lg font-semibold">
 			Movimientos ({history.total})
 		</h2>
 		<div class="overflow-x-auto">
 			<table class="min-w-full">
 				<thead>
 					<tr class="border-b">
-						<th class="text-left py-2">Fecha</th>
-						<th class="text-left py-2">Alumno</th>
-						<th class="text-left py-2">Tipo</th>
-						<th class="text-left py-2">Descripción</th>
-						<th class="text-right py-2">Monto</th>
-						<th class="text-right py-2">Balance Anterior</th>
-						<th class="text-right py-2">Balance Posterior</th>
+						<th class="py-2 text-left">Fecha</th>
+						<th class="py-2 text-left">Alumno</th>
+						<th class="py-2 text-left">Tipo</th>
+						<th class="py-2 text-left">Descripción</th>
+						<th class="py-2 text-right">Monto</th>
+						<th class="py-2 text-right">Balance Anterior</th>
+						<th class="py-2 text-right">Balance Posterior</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -94,11 +94,10 @@
 							</td>
 							<td class="py-2">
 								<span
-									class="px-2 py-1 rounded text-xs {movement.movementType === 'PAYMENT' ||
+									class="rounded px-2 py-1 text-xs {movement.movementType === 'PAYMENT' ||
 									movement.movementType === 'ALLOCATION'
 										? 'bg-green-100 text-green-800'
-										: movement.movementType === 'CHARGE' ||
-												movement.movementType === 'LATE_FEE'
+										: movement.movementType === 'CHARGE' || movement.movementType === 'LATE_FEE'
 											? 'bg-red-100 text-red-800'
 											: 'bg-gray-100 text-gray-800'}"
 								>
@@ -106,9 +105,9 @@
 								</span>
 							</td>
 							<td class="py-2">{movement.description}</td>
-							<td class="text-right py-2">${movement.amount.toString()}</td>
-							<td class="text-right py-2">${movement.balanceBefore.toString()}</td>
-							<td class="text-right py-2">${movement.balanceAfter.toString()}</td>
+							<td class="py-2 text-right">${movement.amount.toString()}</td>
+							<td class="py-2 text-right">${movement.balanceBefore.toString()}</td>
+							<td class="py-2 text-right">${movement.balanceAfter.toString()}</td>
 						</tr>
 					{/each}
 				</tbody>

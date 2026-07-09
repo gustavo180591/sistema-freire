@@ -204,10 +204,16 @@
 		<div class="relative">
 			<div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
 				<div class="flex-1">
-					<p class="text-sm font-semibold tracking-[0.2em] text-indigo-600 uppercase dark:text-indigo-400">
+					<p
+						class="text-sm font-semibold tracking-[0.2em] text-indigo-600 uppercase dark:text-indigo-400"
+					>
 						Panel institucional
 					</p>
-					<h1 class="mt-2 text-3xl font-bold tracking-tight md:text-4xl text-slate-900 dark:text-white">Dashboard general</h1>
+					<h1
+						class="mt-2 text-3xl font-bold tracking-tight text-slate-900 md:text-4xl dark:text-white"
+					>
+						Dashboard general
+					</h1>
 					<p class="mt-3 max-w-3xl text-sm text-slate-600 md:text-base dark:text-slate-400">
 						Vista consolidada del estado académico, financiero y administrativo del Instituto
 						Superior de Formación Docente ISFD "PAULO FREIRE" 1117.
@@ -249,8 +255,12 @@
 				<div class="flex items-start justify-between">
 					<div class="flex-1">
 						<p class="text-sm font-medium text-slate-600 dark:text-slate-400">{metric.title}</p>
-						<h2 class="mt-3 text-3xl font-bold text-slate-900 md:text-4xl dark:text-white">{metric.value}</h2>
-						<p class="mt-2 text-xs text-slate-500 md:text-sm dark:text-slate-500">{metric.description}</p>
+						<h2 class="mt-3 text-3xl font-bold text-slate-900 md:text-4xl dark:text-white">
+							{metric.value}
+						</h2>
+						<p class="mt-2 text-xs text-slate-500 md:text-sm dark:text-slate-500">
+							{metric.description}
+						</p>
 					</div>
 					<div
 						class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl {metric.bgColor}"
@@ -277,10 +287,14 @@
 	<!-- Alertas y Accesos Rápidos -->
 	<section class="grid gap-6 lg:grid-cols-3">
 		<!-- Alertas Prioritarias -->
-		<div class="rounded-3xl border border-slate-200 bg-white p-6 lg:col-span-2 dark:border-slate-800 dark:bg-slate-900/70">
+		<div
+			class="rounded-3xl border border-slate-200 bg-white p-6 lg:col-span-2 dark:border-slate-800 dark:bg-slate-900/70"
+		>
 			<div class="flex items-center gap-3">
 				<h2 class="text-xl font-semibold text-slate-900 dark:text-white">Alertas prioritarias</h2>
-				<span class="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+				<span
+					class="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+				>
 					{alerts.length}
 				</span>
 			</div>
@@ -367,7 +381,9 @@
 		</div>
 
 		<!-- Accesos Rápidos -->
-		<div class="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900/70">
+		<div
+			class="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900/70"
+		>
 			<h2 class="text-xl font-semibold text-slate-900 dark:text-white">Accesos rápidos</h2>
 			<div class="mt-6 grid gap-3">
 				{#each quickAccess as item}
@@ -394,7 +410,9 @@
 							</svg>
 						</div>
 						<div class="min-w-0 flex-1">
-							<p class="font-medium text-slate-900 transition-colors group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-300">
+							<p
+								class="font-medium text-slate-900 transition-colors group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-300"
+							>
 								{item.label}
 							</p>
 							<p class="text-xs text-slate-500">{item.description}</p>

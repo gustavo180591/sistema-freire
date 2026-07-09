@@ -642,7 +642,9 @@ async function testRollbackOnFailure() {
 		// Verificar que no se creó nada para este alumno
 		const payments = await prisma.payment.findMany({ where: { studentId: testStudentId } });
 		const allocations = await prisma.paymentAllocation.findMany({});
-		const movements = await prisma.financialMovement.findMany({ where: { studentId: testStudentId, entityType: 'Payment' } });
+		const movements = await prisma.financialMovement.findMany({
+			where: { studentId: testStudentId, entityType: 'Payment' }
+		});
 
 		if (payments.length !== 0) {
 			throw new Error(`Debería haber 0 pagos, hay ${payments.length}`);

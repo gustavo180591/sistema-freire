@@ -124,22 +124,30 @@
 
 	function getHolidayForDay(day: number): HolidayType | null {
 		const date = new Date(selectedYear, selectedMonth, day);
-		return data.holidays?.find((h: HolidayType) => {
-			const holidayDate = new Date(h.date);
-			return holidayDate.getDate() === day && 
-			       holidayDate.getMonth() === selectedMonth &&
-			       holidayDate.getFullYear() === selectedYear;
-		}) || null;
+		return (
+			data.holidays?.find((h: HolidayType) => {
+				const holidayDate = new Date(h.date);
+				return (
+					holidayDate.getDate() === day &&
+					holidayDate.getMonth() === selectedMonth &&
+					holidayDate.getFullYear() === selectedYear
+				);
+			}) || null
+		);
 	}
 
 	function getImportantDateForDay(day: number): ImportantDateType | null {
 		const date = new Date(selectedYear, selectedMonth, day);
-		return data.importantDates?.find((d: ImportantDateType) => {
-			const importantDate = new Date(d.date);
-			return importantDate.getDate() === day && 
-			       importantDate.getMonth() === selectedMonth &&
-			       importantDate.getFullYear() === selectedYear;
-		}) || null;
+		return (
+			data.importantDates?.find((d: ImportantDateType) => {
+				const importantDate = new Date(d.date);
+				return (
+					importantDate.getDate() === day &&
+					importantDate.getMonth() === selectedMonth &&
+					importantDate.getFullYear() === selectedYear
+				);
+			}) || null
+		);
 	}
 </script>
 
@@ -165,25 +173,33 @@
 	<div class="mb-6 flex gap-2 border-b border-slate-800 pb-4">
 		<button
 			onclick={() => (activeTab = 'calendario')}
-			class="rounded-lg px-3 py-1.5 text-sm font-medium transition {activeTab === 'calendario' ? 'rounded-xl bg-indigo-500 px-4 py-2 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}"
+			class="rounded-lg px-3 py-1.5 text-sm font-medium transition {activeTab === 'calendario'
+				? 'rounded-xl bg-indigo-500 px-4 py-2 text-white'
+				: 'bg-slate-800 text-slate-400 hover:bg-slate-700'}"
 		>
 			Calendario
 		</button>
 		<button
 			onclick={() => (activeTab = 'laborables')}
-			class="rounded-lg px-3 py-1.5 text-sm font-medium transition {activeTab === 'laborables' ? 'rounded-xl bg-indigo-500 px-4 py-2 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}"
+			class="rounded-lg px-3 py-1.5 text-sm font-medium transition {activeTab === 'laborables'
+				? 'rounded-xl bg-indigo-500 px-4 py-2 text-white'
+				: 'bg-slate-800 text-slate-400 hover:bg-slate-700'}"
 		>
 			Días Laborables
 		</button>
 		<button
 			onclick={() => (activeTab = 'feriados')}
-			class="rounded-lg px-3 py-1.5 text-sm font-medium transition {activeTab === 'feriados' ? 'rounded-xl bg-indigo-500 px-4 py-2 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}"
+			class="rounded-lg px-3 py-1.5 text-sm font-medium transition {activeTab === 'feriados'
+				? 'rounded-xl bg-indigo-500 px-4 py-2 text-white'
+				: 'bg-slate-800 text-slate-400 hover:bg-slate-700'}"
 		>
 			Feriados
 		</button>
 		<button
 			onclick={() => (activeTab = 'fechas')}
-			class="rounded-lg px-3 py-1.5 text-sm font-medium transition {activeTab === 'fechas' ? 'rounded-xl bg-indigo-500 px-4 py-2 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}"
+			class="rounded-lg px-3 py-1.5 text-sm font-medium transition {activeTab === 'fechas'
+				? 'rounded-xl bg-indigo-500 px-4 py-2 text-white'
+				: 'bg-slate-800 text-slate-400 hover:bg-slate-700'}"
 		>
 			Fechas Importantes
 		</button>
@@ -199,11 +215,17 @@
 					class="rounded-xl border border-slate-700 bg-slate-800/50 p-2 text-slate-400 transition hover:bg-slate-700 hover:text-white"
 				>
 					<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M15 19l-7-7 7-7"
+						/>
 					</svg>
 				</button>
 				<h2 class="text-2xl font-bold text-white">
-					{monthNames[selectedMonth]} {selectedYear}
+					{monthNames[selectedMonth]}
+					{selectedYear}
 				</h2>
 				<button
 					onclick={nextMonth}
@@ -211,7 +233,12 @@
 					class="rounded-xl border border-slate-700 bg-slate-800/50 p-2 text-slate-400 transition hover:bg-slate-700 hover:text-white"
 				>
 					<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M9 5l7 7-7 7"
+						/>
 					</svg>
 				</button>
 			</div>
@@ -232,15 +259,21 @@
 						{@const event = holiday || importantDate}
 						{@const countsAttendance = event?.countsAttendance || false}
 						<div
-							class="relative flex aspect-square flex-col items-center justify-center rounded-xl border bg-slate-800/50 p-1 transition hover:border-indigo-500 hover:bg-indigo-500/10 {holiday 
-								? 'border-red-500/50 bg-red-500/10' 
-								: importantDate 
-									? 'border-blue-500/50 bg-blue-500/10' 
-									: working 
-										? 'border-slate-700' 
+							class="relative flex aspect-square flex-col items-center justify-center rounded-xl border bg-slate-800/50 p-1 transition hover:border-indigo-500 hover:bg-indigo-500/10 {holiday
+								? 'border-red-500/50 bg-red-500/10'
+								: importantDate
+									? 'border-blue-500/50 bg-blue-500/10'
+									: working
+										? 'border-slate-700'
 										: 'border-slate-800 bg-slate-900/30 opacity-60'}"
 						>
-							<span class="text-sm font-medium {holiday ? 'text-red-400' : importantDate ? 'text-blue-400' : 'text-slate-300'}">{day}</span>
+							<span
+								class="text-sm font-medium {holiday
+									? 'text-red-400'
+									: importantDate
+										? 'text-blue-400'
+										: 'text-slate-300'}">{day}</span
+							>
 							{#if holiday}
 								<span class="mt-1 truncate text-[10px] text-red-300">{holiday.name}</span>
 							{/if}
@@ -269,7 +302,9 @@
 			<form method="POST" action="?/updateWorkingDays" use:enhance class="space-y-4">
 				<div class="grid gap-4 md:grid-cols-2">
 					{#each dayNames as day, index}
-						<label class="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-800/50 p-4 transition hover:bg-slate-800">
+						<label
+							class="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-800/50 p-4 transition hover:bg-slate-800"
+						>
 							<input
 								type="checkbox"
 								name="days"
@@ -320,12 +355,24 @@
 				</div>
 				<div class="flex flex-col gap-3">
 					<div class="flex items-center gap-2">
-						<input type="checkbox" name="recurring" id="recurring" class="h-4 w-4 rounded border-slate-600 bg-slate-950 text-indigo-500 focus:ring-indigo-500" />
+						<input
+							type="checkbox"
+							name="recurring"
+							id="recurring"
+							class="h-4 w-4 rounded border-slate-600 bg-slate-950 text-indigo-500 focus:ring-indigo-500"
+						/>
 						<label for="recurring" class="text-sm text-slate-400">Repetir anualmente</label>
 					</div>
 					<div class="flex items-center gap-2">
-						<input type="checkbox" name="countsAttendance" id="countsAttendance" class="h-4 w-4 rounded border-slate-600 bg-slate-950 text-indigo-500 focus:ring-indigo-500" />
-						<label for="countsAttendance" class="text-sm text-slate-400">Cuenta asistencia (se debe tomar asistencia igual)</label>
+						<input
+							type="checkbox"
+							name="countsAttendance"
+							id="countsAttendance"
+							class="h-4 w-4 rounded border-slate-600 bg-slate-950 text-indigo-500 focus:ring-indigo-500"
+						/>
+						<label for="countsAttendance" class="text-sm text-slate-400"
+							>Cuenta asistencia (se debe tomar asistencia igual)</label
+						>
 					</div>
 				</div>
 				<button
@@ -339,10 +386,17 @@
 				<h3 class="mb-3 text-lg font-semibold text-white">Feriados Configurados</h3>
 				<div class="space-y-2">
 					{#each data.holidays || [] as holiday}
-						<div class="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-800/50 p-4">
+						<div
+							class="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-800/50 p-4"
+						>
 							<div>
 								<p class="font-medium text-white">{holiday.name}</p>
-								<p class="text-sm text-slate-400">{new Date(holiday.date).toLocaleDateString('es-AR', { day: 'numeric', month: 'long' })}</p>
+								<p class="text-sm text-slate-400">
+									{new Date(holiday.date).toLocaleDateString('es-AR', {
+										day: 'numeric',
+										month: 'long'
+									})}
+								</p>
 								{#if holiday.countsAttendance}
 									<p class="text-xs text-green-400">✓ Cuenta asistencia</p>
 								{/if}
@@ -350,7 +404,7 @@
 							<div class="flex gap-2">
 								<button
 									type="button"
-									onclick={() => editingHoliday = holiday}
+									onclick={() => (editingHoliday = holiday)}
 									class="rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-sm text-indigo-400 hover:bg-indigo-500/20"
 								>
 									Editar
@@ -378,7 +432,9 @@
 	{#if activeTab === 'fechas'}
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<h2 class="mb-4 text-xl font-bold text-white">Fechas Importantes</h2>
-			<p class="mb-6 text-slate-400">Configura fechas importantes como aniversarios de la institución.</p>
+			<p class="mb-6 text-slate-400">
+				Configura fechas importantes como aniversarios de la institución.
+			</p>
 			<form method="POST" action="?/addImportantDate" use:enhance class="space-y-4">
 				<div class="grid gap-4 md:grid-cols-2">
 					<div>
@@ -403,12 +459,24 @@
 				</div>
 				<div class="flex flex-col gap-3">
 					<div class="flex items-center gap-2">
-						<input type="checkbox" name="recurring" id="recurringDate" class="h-4 w-4 rounded border-slate-600 bg-slate-950 text-indigo-500 focus:ring-indigo-500" />
+						<input
+							type="checkbox"
+							name="recurring"
+							id="recurringDate"
+							class="h-4 w-4 rounded border-slate-600 bg-slate-950 text-indigo-500 focus:ring-indigo-500"
+						/>
 						<label for="recurringDate" class="text-sm text-slate-400">Repetir anualmente</label>
 					</div>
 					<div class="flex items-center gap-2">
-						<input type="checkbox" name="countsAttendance" id="countsAttendanceDate" class="h-4 w-4 rounded border-slate-600 bg-slate-950 text-indigo-500 focus:ring-indigo-500" />
-						<label for="countsAttendanceDate" class="text-sm text-slate-400">Cuenta asistencia (se debe tomar asistencia igual)</label>
+						<input
+							type="checkbox"
+							name="countsAttendance"
+							id="countsAttendanceDate"
+							class="h-4 w-4 rounded border-slate-600 bg-slate-950 text-indigo-500 focus:ring-indigo-500"
+						/>
+						<label for="countsAttendanceDate" class="text-sm text-slate-400"
+							>Cuenta asistencia (se debe tomar asistencia igual)</label
+						>
 					</div>
 				</div>
 				<button
@@ -422,10 +490,17 @@
 				<h3 class="mb-3 text-lg font-semibold text-white">Fechas Importantes Configuradas</h3>
 				<div class="space-y-2">
 					{#each data.importantDates || [] as date}
-						<div class="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-800/50 p-4">
+						<div
+							class="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-800/50 p-4"
+						>
 							<div>
 								<p class="font-medium text-white">{date.name}</p>
-								<p class="text-sm text-slate-400">{new Date(date.date).toLocaleDateString('es-AR', { day: 'numeric', month: 'long' })}</p>
+								<p class="text-sm text-slate-400">
+									{new Date(date.date).toLocaleDateString('es-AR', {
+										day: 'numeric',
+										month: 'long'
+									})}
+								</p>
 								{#if date.countsAttendance}
 									<p class="text-xs text-green-400">✓ Cuenta asistencia</p>
 								{/if}
@@ -433,7 +508,7 @@
 							<div class="flex gap-2">
 								<button
 									type="button"
-									onclick={() => editingImportantDate = date}
+									onclick={() => (editingImportantDate = date)}
 									class="rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-sm text-indigo-400 hover:bg-indigo-500/20"
 								>
 									Editar

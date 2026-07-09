@@ -67,7 +67,7 @@
 		const k = 1024;
 		const sizes = ['Bytes', 'KB', 'MB', 'GB'];
 		const i = Math.floor(Math.log(bytes) / Math.log(k));
-		return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+		return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 	}
 
 	function formatDate(dateString: string): string {
@@ -135,7 +135,12 @@
 					class="text-slate-400 transition-colors hover:text-slate-300"
 				>
 					<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M6 18L18 6M6 6l12 12"
+						/>
 					</svg>
 				</button>
 			</div>
@@ -201,18 +206,28 @@
 				{#if document.metadata}
 					<div>
 						<p class="mb-1 text-sm font-medium text-slate-400">Metadata</p>
-						<pre class="rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs text-slate-300 overflow-x-auto">{JSON.stringify(document.metadata, null, 2)}</pre>
+						<pre
+							class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs text-slate-300">{JSON.stringify(
+								document.metadata,
+								null,
+								2
+							)}</pre>
 					</div>
 				{/if}
 
 				<!-- Acciones -->
-				<div class="flex flex-wrap gap-3 pt-4 border-t border-slate-800">
+				<div class="flex flex-wrap gap-3 border-t border-slate-800 pt-4">
 					<button
 						onclick={handleDownload}
 						class="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
 					>
 						<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+							/>
 						</svg>
 						Descargar
 					</button>
@@ -223,7 +238,12 @@
 							class="flex items-center gap-2 rounded-xl border border-red-600 bg-red-600/10 px-5 py-2.5 text-sm font-semibold text-red-400 transition hover:bg-red-600/20"
 						>
 							<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+								/>
 							</svg>
 							Eliminar
 						</button>
@@ -233,7 +253,12 @@
 							class="flex items-center gap-2 rounded-xl border border-amber-600 bg-amber-600/10 px-5 py-2.5 text-sm font-semibold text-amber-400 transition hover:bg-amber-600/20"
 						>
 							<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+								/>
 							</svg>
 							Restaurar
 						</button>

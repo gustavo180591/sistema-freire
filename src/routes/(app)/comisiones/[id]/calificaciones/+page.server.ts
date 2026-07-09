@@ -188,7 +188,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			subjectCode: commission.subject.code,
 			career: commission.career?.name || 'Sin carrera',
 			academicTerm: commission.academicTerm?.name || 'Sin período',
-			teacher: commission.teacher ? `${commission.teacher.user.firstName} ${commission.teacher.user.lastName}` : 'Sin docente',
+			teacher: commission.teacher
+				? `${commission.teacher.user.firstName} ${commission.teacher.user.lastName}`
+				: 'Sin docente',
 			location: commission.location?.name || 'Sin localidad',
 			active: commission.active
 		},

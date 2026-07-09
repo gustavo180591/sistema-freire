@@ -1,6 +1,6 @@
 /**
  * Test script for Payment Agreement Effective Debt Calculation (Phase 5.2)
- * 
+ *
  * This script tests the effective debt calculation methods that consider payment agreements.
  * It verifies that:
  * - Debt is not duplicated when charges are covered by active agreements
@@ -23,7 +23,7 @@ const TEST_STUDENT_DNI = '12345678-' + Date.now();
 // Cleanup function
 async function cleanup() {
 	console.log('🧹 Cleaning up test data...');
-	
+
 	try {
 		// Delete payments first (due to foreign key constraints)
 		await prisma.payment.deleteMany({
@@ -207,7 +207,13 @@ async function createTestChargeConcept() {
 }
 
 // Helper function to create test student charge
-async function createTestStudentCharge(studentId: string, conceptId: string, academicTermId: string, amount: Decimal, dueDate?: Date) {
+async function createTestStudentCharge(
+	studentId: string,
+	conceptId: string,
+	academicTermId: string,
+	amount: Decimal,
+	dueDate?: Date
+) {
 	const charge = await prisma.studentCharge.create({
 		data: {
 			studentId,
@@ -225,9 +231,14 @@ async function createTestStudentCharge(studentId: string, conceptId: string, aca
 }
 
 // Helper function to create test agreement
-async function createTestAgreement(studentId: string, chargeIds: string[], installments: Array<{ installmentNumber: number; dueDate: Date; amount: Decimal }>, status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'DEFAULTED' | 'CANCELLED' = 'ACTIVE') {
+async function createTestAgreement(
+	studentId: string,
+	chargeIds: string[],
+	installments: Array<{ installmentNumber: number; dueDate: Date; amount: Decimal }>,
+	status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'DEFAULTED' | 'CANCELLED' = 'ACTIVE'
+) {
 	const currentYear = new Date().getFullYear();
-	
+
 	// Get next agreement number
 	const numberRecord = await prisma.paymentAgreementNumber.upsert({
 		where: { year: currentYear },
@@ -295,14 +306,26 @@ async function createTestAgreement(studentId: string, chargeIds: string[], insta
 // Test 1: Student without agreements maintains original debt
 async function testStudentWithoutAgreements() {
 	console.log('\n📋 Test 1: Student without agreements maintains original debt');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create charges
-	const charge1 = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
-	const charge2 = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(5000), new Date('2027-01-01'));
+	const charge1 = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
+	const charge2 = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(5000),
+		new Date('2027-01-01')
+	);
 
 	// Calculate effective debt
 	const effectiveDebt = await paymentAgreementService.getStudentEffectiveDebt(student.id);
@@ -336,22 +359,33 @@ async function testStudentWithoutAgreements() {
 // Test 2: Student with DRAFT agreement does not exclude original debt
 async function testDraftAgreementDoesNotExcludeDebt() {
 	console.log('\n📋 Test 2: Student with DRAFT agreement does not exclude original debt');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Create DRAFT agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'DRAFT');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'DRAFT'
+	);
 
 	// Calculate effective debt
 	const effectiveDebt = await paymentAgreementService.getStudentEffectiveDebt(student.id);
@@ -384,22 +418,33 @@ async function testDraftAgreementDoesNotExcludeDebt() {
 // Test 3: Student with ACTIVE agreement excludes covered debt
 async function testActiveAgreementExcludesCoveredDebt() {
 	console.log('\n📋 Test 3: Student with ACTIVE agreement excludes covered debt');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Create ACTIVE agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'ACTIVE');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'ACTIVE'
+	);
 
 	// Calculate effective debt
 	const effectiveDebt = await paymentAgreementService.getStudentEffectiveDebt(student.id);
@@ -407,7 +452,9 @@ async function testActiveAgreementExcludesCoveredDebt() {
 	console.log(`✅ Original total debt: ${effectiveDebt.originalTotalDebt.toString()}`);
 	console.log(`✅ Agreement covered debt: ${effectiveDebt.agreementCoveredDebt.toString()}`);
 	console.log(`✅ Uncovered debt: ${effectiveDebt.uncoveredDebt.toString()}`);
-	console.log(`✅ Agreement installment total: ${effectiveDebt.agreementInstallmentTotal.toString()}`);
+	console.log(
+		`✅ Agreement installment total: ${effectiveDebt.agreementInstallmentTotal.toString()}`
+	);
 	console.log(`✅ Effective total debt: ${effectiveDebt.effectiveTotalDebt.toString()}`);
 
 	if (effectiveDebt.agreementCoveredDebt.equals(new Decimal(10000))) {
@@ -446,38 +493,53 @@ async function testActiveAgreementExcludesCoveredDebt() {
 // Test 4: Agreement installments sum as agreement debt
 async function testAgreementInstallmentsSumAsDebt() {
 	console.log('\n📋 Test 4: Agreement installments sum as agreement debt');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(15000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(15000),
+		new Date('2024-01-01')
+	);
 
 	// Create ACTIVE agreement with multiple installments
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(5000)
-		},
-		{
-			installmentNumber: 2,
-			dueDate: new Date('2027-06-01'),
-			amount: new Decimal(5000)
-		},
-		{
-			installmentNumber: 3,
-			dueDate: new Date('2027-12-01'),
-			amount: new Decimal(5000)
-		}
-	], 'ACTIVE');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(5000)
+			},
+			{
+				installmentNumber: 2,
+				dueDate: new Date('2027-06-01'),
+				amount: new Decimal(5000)
+			},
+			{
+				installmentNumber: 3,
+				dueDate: new Date('2027-12-01'),
+				amount: new Decimal(5000)
+			}
+		],
+		'ACTIVE'
+	);
 
 	// Calculate effective debt
 	const effectiveDebt = await paymentAgreementService.getStudentEffectiveDebt(student.id);
 
-	console.log(`✅ Agreement installment total: ${effectiveDebt.agreementInstallmentTotal.toString()}`);
-	console.log(`✅ Agreement installment pending: ${effectiveDebt.agreementInstallmentPending.toString()}`);
+	console.log(
+		`✅ Agreement installment total: ${effectiveDebt.agreementInstallmentTotal.toString()}`
+	);
+	console.log(
+		`✅ Agreement installment pending: ${effectiveDebt.agreementInstallmentPending.toString()}`
+	);
 
 	if (effectiveDebt.agreementInstallmentTotal.equals(new Decimal(15000))) {
 		console.log('✅ Agreement installment total is 15000 (sum of all installments)');
@@ -497,32 +559,43 @@ async function testAgreementInstallmentsSumAsDebt() {
 // Test 5: Paid installments do not sum as pending debt
 async function testPaidInstallmentsDoNotSumAsPending() {
 	console.log('\n📋 Test 5: Paid installments do not sum as pending debt');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(15000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(15000),
+		new Date('2024-01-01')
+	);
 
 	// Create ACTIVE agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(5000)
-		},
-		{
-			installmentNumber: 2,
-			dueDate: new Date('2027-06-01'),
-			amount: new Decimal(5000)
-		},
-		{
-			installmentNumber: 3,
-			dueDate: new Date('2027-12-01'),
-			amount: new Decimal(5000)
-		}
-	], 'ACTIVE');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(5000)
+			},
+			{
+				installmentNumber: 2,
+				dueDate: new Date('2027-06-01'),
+				amount: new Decimal(5000)
+			},
+			{
+				installmentNumber: 3,
+				dueDate: new Date('2027-12-01'),
+				amount: new Decimal(5000)
+			}
+		],
+		'ACTIVE'
+	);
 
 	// Mark first installment as paid
 	await prisma.paymentAgreementInstallment.update({
@@ -543,8 +616,12 @@ async function testPaidInstallmentsDoNotSumAsPending() {
 	// Calculate effective debt
 	const effectiveDebt = await paymentAgreementService.getStudentEffectiveDebt(student.id);
 
-	console.log(`✅ Agreement installment total: ${effectiveDebt.agreementInstallmentTotal.toString()}`);
-	console.log(`✅ Agreement installment pending: ${effectiveDebt.agreementInstallmentPending.toString()}`);
+	console.log(
+		`✅ Agreement installment total: ${effectiveDebt.agreementInstallmentTotal.toString()}`
+	);
+	console.log(
+		`✅ Agreement installment pending: ${effectiveDebt.agreementInstallmentPending.toString()}`
+	);
 
 	if (effectiveDebt.agreementInstallmentTotal.equals(new Decimal(10000))) {
 		console.log('✅ Agreement installment total is 10000 (excludes paid installment)');
@@ -564,28 +641,43 @@ async function testPaidInstallmentsDoNotSumAsPending() {
 // Test 6: COMPLETED agreement has 0 debt
 async function testCompletedAgreementHasZeroDebt() {
 	console.log('\n📋 Test 6: COMPLETED agreement has 0 debt');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Create COMPLETED agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'COMPLETED');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'COMPLETED'
+	);
 
 	// Calculate effective debt
 	const effectiveDebt = await paymentAgreementService.getStudentEffectiveDebt(student.id);
 
-	console.log(`✅ Agreement installment total: ${effectiveDebt.agreementInstallmentTotal.toString()}`);
-	console.log(`✅ Agreement installment pending: ${effectiveDebt.agreementInstallmentPending.toString()}`);
+	console.log(
+		`✅ Agreement installment total: ${effectiveDebt.agreementInstallmentTotal.toString()}`
+	);
+	console.log(
+		`✅ Agreement installment pending: ${effectiveDebt.agreementInstallmentPending.toString()}`
+	);
 
 	if (effectiveDebt.agreementInstallmentTotal.equals(new Decimal(0))) {
 		console.log('✅ COMPLETED agreement has 0 installment debt');
@@ -605,28 +697,41 @@ async function testCompletedAgreementHasZeroDebt() {
 // Test 7: DEFAULTED agreement appears as defaulted debt
 async function testDefaultedAgreementAppearsAsDefaulted() {
 	console.log('\n📋 Test 7: DEFAULTED agreement appears as defaulted debt');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Create DEFAULTED agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2024-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'DEFAULTED');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2024-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'DEFAULTED'
+	);
 
 	// Calculate effective debt
 	const effectiveDebt = await paymentAgreementService.getStudentEffectiveDebt(student.id);
 
 	console.log(`✅ Defaulted agreement debt: ${effectiveDebt.defaultedAgreementDebt.toString()}`);
-	console.log(`✅ Agreement installment total: ${effectiveDebt.agreementInstallmentTotal.toString()}`);
+	console.log(
+		`✅ Agreement installment total: ${effectiveDebt.agreementInstallmentTotal.toString()}`
+	);
 
 	if (effectiveDebt.defaultedAgreementDebt.equals(new Decimal(10000))) {
 		console.log('✅ DEFAULTED agreement appears as 10000 defaulted debt');
@@ -646,23 +751,40 @@ async function testDefaultedAgreementAppearsAsDefaulted() {
 // Test 8: Uncovered charges remain as payable debt
 async function testUncoveredChargesRemainAsPayable() {
 	console.log('\n📋 Test 8: Uncovered charges remain as payable debt');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create two charges
-	const charge1 = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
-	const charge2 = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(5000), new Date('2027-01-01'));
+	const charge1 = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
+	const charge2 = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(5000),
+		new Date('2027-01-01')
+	);
 
 	// Create ACTIVE agreement covering only charge1
-	const agreement = await createTestAgreement(student.id, [charge1.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'ACTIVE');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge1.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'ACTIVE'
+	);
 
 	// Calculate effective debt
 	const effectiveDebt = await paymentAgreementService.getStudentEffectiveDebt(student.id);
@@ -670,7 +792,9 @@ async function testUncoveredChargesRemainAsPayable() {
 	console.log(`✅ Original total debt: ${effectiveDebt.originalTotalDebt.toString()}`);
 	console.log(`✅ Agreement covered debt: ${effectiveDebt.agreementCoveredDebt.toString()}`);
 	console.log(`✅ Uncovered debt: ${effectiveDebt.uncoveredDebt.toString()}`);
-	console.log(`✅ Agreement installment total: ${effectiveDebt.agreementInstallmentTotal.toString()}`);
+	console.log(
+		`✅ Agreement installment total: ${effectiveDebt.agreementInstallmentTotal.toString()}`
+	);
 	console.log(`✅ Effective total debt: ${effectiveDebt.effectiveTotalDebt.toString()}`);
 
 	if (effectiveDebt.agreementCoveredDebt.equals(new Decimal(10000))) {
@@ -697,25 +821,36 @@ async function testUncoveredChargesRemainAsPayable() {
 // Test 9: No modification of StudentCharge
 async function testNoStudentChargeModification() {
 	console.log('\n📋 Test 9: No modification of StudentCharge');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	const originalChargeStatus = charge.status;
 	const originalChargePaidAmount = charge.paidAmount;
 
 	// Create ACTIVE agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'ACTIVE');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'ACTIVE'
+	);
 
 	// Calculate effective debt
 	await paymentAgreementService.getStudentEffectiveDebt(student.id);
@@ -743,13 +878,19 @@ async function testNoStudentChargeModification() {
 // Test 10: No modification of FinancialBlock
 async function testNoFinancialBlockModification() {
 	console.log('\n📋 Test 10: No modification of FinancialBlock');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Count existing blocks
 	const initialBlockCount = await prisma.financialBlock.count({
@@ -757,13 +898,18 @@ async function testNoFinancialBlockModification() {
 	});
 
 	// Create ACTIVE agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'ACTIVE');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'ACTIVE'
+	);
 
 	// Calculate effective debt
 	await paymentAgreementService.getStudentEffectiveDebt(student.id);
@@ -785,22 +931,33 @@ async function testNoFinancialBlockModification() {
 // Test 11: No debt duplication
 async function testNoDebtDuplication() {
 	console.log('\n📋 Test 11: No debt duplication');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Create ACTIVE agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'ACTIVE');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'ACTIVE'
+	);
 
 	// Calculate effective debt
 	const effectiveDebt = await paymentAgreementService.getStudentEffectiveDebt(student.id);
@@ -808,16 +965,22 @@ async function testNoDebtDuplication() {
 	console.log(`✅ Original total debt: ${effectiveDebt.originalTotalDebt.toString()}`);
 	console.log(`✅ Agreement covered debt: ${effectiveDebt.agreementCoveredDebt.toString()}`);
 	console.log(`✅ Uncovered debt: ${effectiveDebt.uncoveredDebt.toString()}`);
-	console.log(`✅ Agreement installment total: ${effectiveDebt.agreementInstallmentTotal.toString()}`);
+	console.log(
+		`✅ Agreement installment total: ${effectiveDebt.agreementInstallmentTotal.toString()}`
+	);
 	console.log(`✅ Effective total debt: ${effectiveDebt.effectiveTotalDebt.toString()}`);
 
 	// Verify no duplication: effective debt should equal uncovered + agreement installments
-	const expectedEffectiveDebt = effectiveDebt.uncoveredDebt.add(effectiveDebt.agreementInstallmentTotal);
+	const expectedEffectiveDebt = effectiveDebt.uncoveredDebt.add(
+		effectiveDebt.agreementInstallmentTotal
+	);
 
 	if (effectiveDebt.effectiveTotalDebt.equals(expectedEffectiveDebt)) {
 		console.log('✅ No debt duplication (effective = uncovered + agreement installments)');
 	} else {
-		throw new Error('Debt duplication detected: effective debt should equal uncovered + agreement installments');
+		throw new Error(
+			'Debt duplication detected: effective debt should equal uncovered + agreement installments'
+		);
 	}
 
 	// Verify original debt is greater than or equal to effective debt (when agreements cover debt)
@@ -839,13 +1002,31 @@ async function runTests() {
 	let failedTests = 0;
 
 	const tests = [
-		{ name: 'Student without agreements maintains original debt', fn: testStudentWithoutAgreements },
-		{ name: 'Student with DRAFT agreement does not exclude original debt', fn: testDraftAgreementDoesNotExcludeDebt },
-		{ name: 'Student with ACTIVE agreement excludes covered debt', fn: testActiveAgreementExcludesCoveredDebt },
-		{ name: 'Agreement installments sum as agreement debt', fn: testAgreementInstallmentsSumAsDebt },
-		{ name: 'Paid installments do not sum as pending debt', fn: testPaidInstallmentsDoNotSumAsPending },
+		{
+			name: 'Student without agreements maintains original debt',
+			fn: testStudentWithoutAgreements
+		},
+		{
+			name: 'Student with DRAFT agreement does not exclude original debt',
+			fn: testDraftAgreementDoesNotExcludeDebt
+		},
+		{
+			name: 'Student with ACTIVE agreement excludes covered debt',
+			fn: testActiveAgreementExcludesCoveredDebt
+		},
+		{
+			name: 'Agreement installments sum as agreement debt',
+			fn: testAgreementInstallmentsSumAsDebt
+		},
+		{
+			name: 'Paid installments do not sum as pending debt',
+			fn: testPaidInstallmentsDoNotSumAsPending
+		},
 		{ name: 'COMPLETED agreement has 0 debt', fn: testCompletedAgreementHasZeroDebt },
-		{ name: 'DEFAULTED agreement appears as defaulted debt', fn: testDefaultedAgreementAppearsAsDefaulted },
+		{
+			name: 'DEFAULTED agreement appears as defaulted debt',
+			fn: testDefaultedAgreementAppearsAsDefaulted
+		},
 		{ name: 'Uncovered charges remain as payable debt', fn: testUncoveredChargesRemainAsPayable },
 		{ name: 'No StudentCharge modification', fn: testNoStudentChargeModification },
 		{ name: 'No FinancialBlock modification', fn: testNoFinancialBlockModification },

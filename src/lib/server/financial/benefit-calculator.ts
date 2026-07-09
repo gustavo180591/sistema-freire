@@ -12,12 +12,12 @@ export interface BenefitsConfig {
 	becadoFeeAmount: number;
 	recursantFeeAmount: number;
 	enrollmentAmount: number;
-	
+
 	// Configuración de beneficios
 	benefitsStartMonth: number; // 1-12 (enero-diciembre)
 	benefitsEndMonth: number; // 1-12 (enero-diciembre)
 	benefitsMonths: number[]; // Array de meses donde aplican beneficios [3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-	
+
 	recursantBenefitType: RecursantBenefitType;
 	recursantBenefitValue: number;
 	benefitCombinationStrategy: BenefitCombinationStrategy;
@@ -73,7 +73,13 @@ export function calculateChargeBenefit(
 			benefitType: 'NONE',
 			benefitReason: 'Los beneficios no aplican para este mes',
 			installmentNumber,
-			ruleSnapshot: createRuleSnapshot(baseAmount, installmentNumber, config, studentBenefitInfo, 'NONE')
+			ruleSnapshot: createRuleSnapshot(
+				baseAmount,
+				installmentNumber,
+				config,
+				studentBenefitInfo,
+				'NONE'
+			)
 		};
 	}
 
@@ -86,7 +92,11 @@ export function calculateChargeBenefit(
 	const amounts = [
 		{ type: 'NONE' as BenefitType, amount: normalAmount, reason: 'Sin beneficio' },
 		{ type: 'SCHOLARSHIP' as BenefitType, amount: scholarshipAmount, reason: 'Beca aplicada' },
-		{ type: 'RECURSANT' as BenefitType, amount: recursantAmount, reason: 'Beneficio recursante aplicado' }
+		{
+			type: 'RECURSANT' as BenefitType,
+			amount: recursantAmount,
+			reason: 'Beneficio recursante aplicado'
+		}
 	];
 
 	// Filtrar solo las opciones que aplican según el tipo de alumno
@@ -105,7 +115,13 @@ export function calculateChargeBenefit(
 			benefitType: 'NONE',
 			benefitReason: 'Alumno no tiene beneficios aplicables',
 			installmentNumber,
-			ruleSnapshot: createRuleSnapshot(baseAmount, installmentNumber, config, studentBenefitInfo, 'NONE')
+			ruleSnapshot: createRuleSnapshot(
+				baseAmount,
+				installmentNumber,
+				config,
+				studentBenefitInfo,
+				'NONE'
+			)
 		};
 	}
 
@@ -116,7 +132,8 @@ export function calculateChargeBenefit(
 
 	// Calcular descuento aplicado
 	const discountApplied = DecimalHelpers.subtract(baseAmount, bestOption.amount);
-	const scholarshipApplied = bestOption.type === 'SCHOLARSHIP' ? discountApplied : DecimalHelpers.zero();
+	const scholarshipApplied =
+		bestOption.type === 'SCHOLARSHIP' ? discountApplied : DecimalHelpers.zero();
 
 	return {
 		finalAmount: bestOption.amount,
@@ -125,7 +142,13 @@ export function calculateChargeBenefit(
 		benefitType: bestOption.type,
 		benefitReason: `${bestOption.reason} (monto más favorable)`,
 		installmentNumber,
-		ruleSnapshot: createRuleSnapshot(baseAmount, installmentNumber, config, studentBenefitInfo, bestOption.type)
+		ruleSnapshot: createRuleSnapshot(
+			baseAmount,
+			installmentNumber,
+			config,
+			studentBenefitInfo,
+			bestOption.type
+		)
 	};
 }
 

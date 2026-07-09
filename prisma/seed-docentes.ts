@@ -207,7 +207,9 @@ async function main() {
 			}
 		}
 
-		console.log(`✅ Docente creado: ${docente.firstName} ${docente.lastName} (${docente.observations})`);
+		console.log(
+			`✅ Docente creado: ${docente.firstName} ${docente.lastName} (${docente.observations})`
+		);
 	}
 
 	console.log('\n📊 RESUMEN:');

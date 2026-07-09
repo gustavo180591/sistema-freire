@@ -52,7 +52,9 @@
 						{/if}
 					</div>
 					{#if student.isRecursante}
-						<div class="inline-flex rounded-full border border-amber-700/50 bg-amber-950/30 px-4 py-2 text-sm">
+						<div
+							class="inline-flex rounded-full border border-amber-700/50 bg-amber-950/30 px-4 py-2 text-sm"
+						>
 							<span class="text-amber-400">Recursante</span>
 						</div>
 					{/if}
@@ -203,17 +205,21 @@
 											{subject.attendancePresent}/{subject.attendanceTotal} · {subject.attendancePercent}%
 										</span>
 										{#if subject.attendancePercent >= 75}
-											<span class="rounded-full bg-green-950/30 border border-green-800 px-2 py-0.5 text-xs text-green-400">
+											<span
+												class="rounded-full border border-green-800 bg-green-950/30 px-2 py-0.5 text-xs text-green-400"
+											>
 												OK
 											</span>
 										{:else}
-											<span class="rounded-full bg-red-950/30 border border-red-800 px-2 py-0.5 text-xs text-red-400">
+											<span
+												class="rounded-full border border-red-800 bg-red-950/30 px-2 py-0.5 text-xs text-red-400"
+											>
 												Baja
 											</span>
 										{/if}
 									</div>
 								{:else}
-									<span class="text-slate-500 text-sm">Sin registros</span>
+									<span class="text-sm text-slate-500">Sin registros</span>
 								{/if}
 							</td>
 							<td class="px-6 py-4">

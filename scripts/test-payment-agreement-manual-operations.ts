@@ -339,7 +339,11 @@ async function testManualStatusEvaluation() {
 			results.push({ testName: 'Manual status evaluation', passed: true, message: 'Success' });
 		} else {
 			console.log('  ❌ Manual status evaluation failed\n');
-			results.push({ testName: 'Manual status evaluation', passed: false, message: 'Invalid result' });
+			results.push({
+				testName: 'Manual status evaluation',
+				passed: false,
+				message: 'Invalid result'
+			});
 		}
 	} catch (error) {
 		console.log('  ❌ Manual status evaluation error:', error);
@@ -372,14 +376,26 @@ async function testManualBlockExceptionEvaluation() {
 
 		if (result && result.exceptionApplied !== undefined && result.exceptionRevoked !== undefined) {
 			console.log('  ✅ Manual block exception evaluation works\n');
-			results.push({ testName: 'Manual block exception evaluation', passed: true, message: 'Success' });
+			results.push({
+				testName: 'Manual block exception evaluation',
+				passed: true,
+				message: 'Success'
+			});
 		} else {
 			console.log('  ❌ Manual block exception evaluation failed\n');
-			results.push({ testName: 'Manual block exception evaluation', passed: false, message: 'Invalid result' });
+			results.push({
+				testName: 'Manual block exception evaluation',
+				passed: false,
+				message: 'Invalid result'
+			});
 		}
 	} catch (error) {
 		console.log('  ❌ Manual block exception evaluation error:', error);
-		results.push({ testName: 'Manual block exception evaluation', passed: false, message: String(error) });
+		results.push({
+			testName: 'Manual block exception evaluation',
+			passed: false,
+			message: String(error)
+		});
 	} finally {
 		await cleanupTestData();
 	}
@@ -405,18 +421,34 @@ async function testActiveUpToDateAppliesException() {
 
 			if (block && block.exceptionGranted && block.exceptionAgreementId === activeAgreement.id) {
 				console.log('  ✅ ACTIVE up-to-date applies exception\n');
-				results.push({ testName: 'ACTIVE up-to-date applies exception', passed: true, message: 'Success' });
+				results.push({
+					testName: 'ACTIVE up-to-date applies exception',
+					passed: true,
+					message: 'Success'
+				});
 			} else {
 				console.log('  ❌ Exception not applied correctly\n');
-				results.push({ testName: 'ACTIVE up-to-date applies exception', passed: false, message: 'Exception not applied' });
+				results.push({
+					testName: 'ACTIVE up-to-date applies exception',
+					passed: false,
+					message: 'Exception not applied'
+				});
 			}
 		} else {
 			console.log('  ❌ Exception not applied\n');
-			results.push({ testName: 'ACTIVE up-to-date applies exception', passed: false, message: 'Exception not applied' });
+			results.push({
+				testName: 'ACTIVE up-to-date applies exception',
+				passed: false,
+				message: 'Exception not applied'
+			});
 		}
 	} catch (error) {
 		console.log('  ❌ Error:', error);
-		results.push({ testName: 'ACTIVE up-to-date applies exception', passed: false, message: String(error) });
+		results.push({
+			testName: 'ACTIVE up-to-date applies exception',
+			passed: false,
+			message: String(error)
+		});
 	} finally {
 		await cleanupTestData();
 	}
@@ -462,18 +494,34 @@ async function testActiveOverdueRevokesException() {
 
 			if (block && !block.exceptionGranted && block.exceptionAgreementId === null) {
 				console.log('  ✅ ACTIVE + OVERDUE revokes exception\n');
-				results.push({ testName: 'ACTIVE + OVERDUE revokes exception', passed: true, message: 'Success' });
+				results.push({
+					testName: 'ACTIVE + OVERDUE revokes exception',
+					passed: true,
+					message: 'Success'
+				});
 			} else {
 				console.log('  ❌ Exception not revoked correctly\n');
-				results.push({ testName: 'ACTIVE + OVERDUE revokes exception', passed: false, message: 'Exception not revoked' });
+				results.push({
+					testName: 'ACTIVE + OVERDUE revokes exception',
+					passed: false,
+					message: 'Exception not revoked'
+				});
 			}
 		} else {
 			console.log('  ❌ Exception not revoked\n');
-			results.push({ testName: 'ACTIVE + OVERDUE revokes exception', passed: false, message: 'Exception not revoked' });
+			results.push({
+				testName: 'ACTIVE + OVERDUE revokes exception',
+				passed: false,
+				message: 'Exception not revoked'
+			});
 		}
 	} catch (error) {
 		console.log('  ❌ Error:', error);
-		results.push({ testName: 'ACTIVE + OVERDUE revokes exception', passed: false, message: String(error) });
+		results.push({
+			testName: 'ACTIVE + OVERDUE revokes exception',
+			passed: false,
+			message: String(error)
+		});
 	} finally {
 		await cleanupTestData();
 	}
@@ -532,15 +580,27 @@ async function testCompletedRevokesException() {
 				results.push({ testName: 'COMPLETED revokes exception', passed: true, message: 'Success' });
 			} else {
 				console.log('  ❌ Exception not revoked correctly\n');
-				results.push({ testName: 'COMPLETED revokes exception', passed: false, message: 'Exception not revoked' });
+				results.push({
+					testName: 'COMPLETED revokes exception',
+					passed: false,
+					message: 'Exception not revoked'
+				});
 			}
 		} else {
 			console.log('  ❌ Exception not revoked\n');
-			results.push({ testName: 'COMPLETED revokes exception', passed: false, message: 'Exception not revoked' });
+			results.push({
+				testName: 'COMPLETED revokes exception',
+				passed: false,
+				message: 'Exception not revoked'
+			});
 		}
 	} catch (error) {
 		console.log('  ❌ Error:', error);
-		results.push({ testName: 'COMPLETED revokes exception', passed: false, message: String(error) });
+		results.push({
+			testName: 'COMPLETED revokes exception',
+			passed: false,
+			message: String(error)
+		});
 	} finally {
 		await cleanupTestData();
 	}
@@ -572,11 +632,19 @@ async function testNoStudentChargeModification() {
 			results.push({ testName: 'No StudentCharge modification', passed: true, message: 'Success' });
 		} else {
 			console.log('  ❌ StudentCharge was modified\n');
-			results.push({ testName: 'No StudentCharge modification', passed: false, message: 'StudentCharge modified' });
+			results.push({
+				testName: 'No StudentCharge modification',
+				passed: false,
+				message: 'StudentCharge modified'
+			});
 		}
 	} catch (error) {
 		console.log('  ❌ Error:', error);
-		results.push({ testName: 'No StudentCharge modification', passed: false, message: String(error) });
+		results.push({
+			testName: 'No StudentCharge modification',
+			passed: false,
+			message: String(error)
+		});
 	} finally {
 		await cleanupTestData();
 	}
@@ -608,7 +676,11 @@ async function testNoNewFinancialBlock() {
 			results.push({ testName: 'No new FinancialBlock', passed: true, message: 'Success' });
 		} else {
 			console.log('  ❌ New FinancialBlock was created\n');
-			results.push({ testName: 'No new FinancialBlock', passed: false, message: 'New block created' });
+			results.push({
+				testName: 'No new FinancialBlock',
+				passed: false,
+				message: 'New block created'
+			});
 		}
 	} catch (error) {
 		console.log('  ❌ Error:', error);
@@ -674,7 +746,11 @@ async function testPermissionsValidation() {
 			console.log('  ✅ User without roles cannot evaluate status');
 		} else {
 			console.log('  ❌ User without roles should not be able to evaluate status');
-			results.push({ testName: 'Permissions validation', passed: false, message: 'User without roles can evaluate status' });
+			results.push({
+				testName: 'Permissions validation',
+				passed: false,
+				message: 'User without roles can evaluate status'
+			});
 			return;
 		}
 
@@ -684,7 +760,11 @@ async function testPermissionsValidation() {
 			console.log('  ✅ User without roles cannot evaluate block exception');
 		} else {
 			console.log('  ❌ User without roles should not be able to evaluate block exception');
-			results.push({ testName: 'Permissions validation', passed: false, message: 'User without roles can evaluate block exception' });
+			results.push({
+				testName: 'Permissions validation',
+				passed: false,
+				message: 'User without roles can evaluate block exception'
+			});
 			return;
 		}
 
@@ -695,7 +775,11 @@ async function testPermissionsValidation() {
 			console.log('  ✅ SUPERADMIN can evaluate status');
 		} else {
 			console.log('  ❌ SUPERADMIN should be able to evaluate status');
-			results.push({ testName: 'Permissions validation', passed: false, message: 'SUPERADMIN cannot evaluate status' });
+			results.push({
+				testName: 'Permissions validation',
+				passed: false,
+				message: 'SUPERADMIN cannot evaluate status'
+			});
 			return;
 		}
 
@@ -706,7 +790,11 @@ async function testPermissionsValidation() {
 			console.log('  ✅ FINANZAS can evaluate status');
 		} else {
 			console.log('  ❌ FINANZAS should be able to evaluate status');
-			results.push({ testName: 'Permissions validation', passed: false, message: 'FINANZAS cannot evaluate status' });
+			results.push({
+				testName: 'Permissions validation',
+				passed: false,
+				message: 'FINANZAS cannot evaluate status'
+			});
 			return;
 		}
 
@@ -717,7 +805,11 @@ async function testPermissionsValidation() {
 			console.log('  ✅ ALUMNO cannot evaluate status');
 		} else {
 			console.log('  ❌ ALUMNO should not be able to evaluate status');
-			results.push({ testName: 'Permissions validation', passed: false, message: 'ALUMNO can evaluate status' });
+			results.push({
+				testName: 'Permissions validation',
+				passed: false,
+				message: 'ALUMNO can evaluate status'
+			});
 			return;
 		}
 
@@ -727,12 +819,20 @@ async function testPermissionsValidation() {
 			console.log('  ✅ Null user cannot evaluate status');
 		} else {
 			console.log('  ❌ Null user should not be able to evaluate status');
-			results.push({ testName: 'Permissions validation', passed: false, message: 'Null user can evaluate status' });
+			results.push({
+				testName: 'Permissions validation',
+				passed: false,
+				message: 'Null user can evaluate status'
+			});
 			return;
 		}
 
 		console.log('  ✅ All permission checks passed\n');
-		results.push({ testName: 'Permissions validation', passed: true, message: 'All permission checks passed' });
+		results.push({
+			testName: 'Permissions validation',
+			passed: true,
+			message: 'All permission checks passed'
+		});
 	} catch (error) {
 		console.log('  ❌ Error:', error);
 		results.push({ testName: 'Permissions validation', passed: false, message: String(error) });
@@ -772,9 +872,11 @@ async function runTests() {
 
 	if (failed > 0) {
 		console.log('\n❌ Failed tests:');
-		results.filter((r) => !r.passed).forEach((r) => {
-			console.log(`  - ${r.testName}: ${r.message}`);
-		});
+		results
+			.filter((r) => !r.passed)
+			.forEach((r) => {
+				console.log(`  - ${r.testName}: ${r.message}`);
+			});
 		process.exit(1);
 	} else {
 		console.log('\n✅ All tests passed');

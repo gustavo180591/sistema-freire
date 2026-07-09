@@ -2,7 +2,10 @@
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
 
-	let { data, form }: { data: PageData; form?: { success?: boolean; error?: string; message?: string } } = $props();
+	let {
+		data,
+		form
+	}: { data: PageData; form?: { success?: boolean; error?: string; message?: string } } = $props();
 
 	const isTeacher = $derived(data.user.roles.some((ur) => ur.role.code === 'DOCENTE'));
 
@@ -125,7 +128,7 @@
 		</form>
 	</div>
 
-		<!-- Card Sedes Habilitadas -->
+	<!-- Card Sedes Habilitadas -->
 	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 		<h2 class="mb-4 text-xl font-bold">Sedes Habilitadas</h2>
 		<form method="POST" action="?/updateLocations" use:enhance class="space-y-4">
@@ -138,9 +141,7 @@
 							type="checkbox"
 							name="locationIds"
 							value={location.id}
-							checked={data.user.locationPermissions.some(
-								(lp) => lp.location.id === location.id
-							)}
+							checked={data.user.locationPermissions.some((lp) => lp.location.id === location.id)}
 							class="h-5 w-5 rounded border-slate-600 bg-slate-950 text-blue-500 focus:ring-blue-500"
 						/>
 						<div>

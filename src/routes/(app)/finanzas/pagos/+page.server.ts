@@ -69,7 +69,9 @@ export const actions: Actions = {
 			return { success: true, payment: result.payment };
 		} catch (error) {
 			console.error('Error al registrar pago:', error);
-			return fail(500, { error: error instanceof Error ? error.message : 'Error al registrar pago' });
+			return fail(500, {
+				error: error instanceof Error ? error.message : 'Error al registrar pago'
+			});
 		}
 	},
 

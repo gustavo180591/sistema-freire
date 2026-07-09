@@ -1,4 +1,12 @@
-import { PrismaClient, DocumentAccessAction, DocumentStatus, DocumentVisibility, DocumentCategory, DocumentSubType, DocumentOwnerType } from '@prisma/client';
+import {
+	PrismaClient,
+	DocumentAccessAction,
+	DocumentStatus,
+	DocumentVisibility,
+	DocumentCategory,
+	DocumentSubType,
+	DocumentOwnerType
+} from '@prisma/client';
 import type { Document, DocumentAccessLog } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
 import { documentStorageService } from './document-storage.service';
@@ -248,7 +256,9 @@ export class DocumentManagementService {
 	/**
 	 * Get a document with its access logs
 	 */
-	async getDocumentWithAccessLogs(id: string): Promise<{ document: Document; accessLogs: DocumentAccessLog[] } | null> {
+	async getDocumentWithAccessLogs(
+		id: string
+	): Promise<{ document: Document; accessLogs: DocumentAccessLog[] } | null> {
 		const document = await prisma.document.findUnique({
 			where: { id },
 			include: {

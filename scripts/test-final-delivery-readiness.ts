@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx
 /**
  * Final Delivery Readiness Test
- * 
+ *
  * Validates that the system is ready for deployment and handover.
  * Tests documentation, technical compliance, and deployment readiness.
  */
@@ -117,8 +117,12 @@ runTest('No forbidden patterns in new documentation', () => {
 		const path = join(root, doc);
 		if (existsSync(path)) {
 			const content = readFileSync(path, 'utf-8');
-			if (content.includes(forbidden1) || content.includes(forbidden2) || 
-				content.includes(forbidden3) || content.includes(forbidden4)) {
+			if (
+				content.includes(forbidden1) ||
+				content.includes(forbidden2) ||
+				content.includes(forbidden3) ||
+				content.includes(forbidden4)
+			) {
 				throw new Error(`Forbidden pattern found in ${doc}`);
 			}
 		}
@@ -163,7 +167,7 @@ runTest('No raw SQL in services', () => {
 
 	// Check for raw SQL patterns in service files
 	const forbidden = ['queryRaw', 'executeRaw'];
-	
+
 	// Check common service files
 	const serviceFiles = [
 		'src/lib/server/financial.service.ts',
@@ -263,7 +267,7 @@ runTest('No db push in scripts', () => {
 	}
 
 	const forbidden = ['db push', 'migrate reset', 'migrate resolve'];
-	
+
 	// Check common script files
 	const scriptFiles = [
 		'scripts/seed-locations.ts',
@@ -323,7 +327,7 @@ runTest('Document management is closed', () => {
 
 	const files = readdirSync(docMgmtPath);
 	const docMgmtDocs = files.filter((f: string) => f.includes('DOCUMENT') || f.includes('document'));
-	
+
 	if (docMgmtDocs.length === 0) {
 		throw new Error('No document management documentation found');
 	}
@@ -373,7 +377,11 @@ runTest('Deploy to VPS is documented as pending authorization', () => {
 	}
 	const content = readFileSync(deployGuide, 'utf-8');
 	// Check that the guide mentions authorization or manual steps
-	if (!content.includes('autorización') && !content.includes('authorization') && !content.includes('manual')) {
+	if (
+		!content.includes('autorización') &&
+		!content.includes('authorization') &&
+		!content.includes('manual')
+	) {
 		throw new Error('VPS deployment guide should mention authorization or manual steps');
 	}
 });
@@ -386,7 +394,11 @@ runTest('Next steps are documented', () => {
 	}
 	const content = readFileSync(handoverGuide, 'utf-8');
 	// Check for next steps section
-	if (!content.includes('Próximos Pasos') && !content.includes('Próximos pasos') && !content.includes('Next steps')) {
+	if (
+		!content.includes('Próximos Pasos') &&
+		!content.includes('Próximos pasos') &&
+		!content.includes('Next steps')
+	) {
 		throw new Error('Handover guide should document next steps');
 	}
 });
@@ -444,7 +456,7 @@ runTest('Git repository initialized', () => {
 runTest('.env is not committed (should be in .gitignore)', () => {
 	const envPath = join(root, '.env');
 	const gitignorePath = join(root, '.gitignore');
-	
+
 	if (existsSync(gitignorePath)) {
 		const gitignore = readFileSync(gitignorePath, 'utf-8');
 		if (!gitignore.includes('.env')) {
@@ -457,7 +469,7 @@ runTest('.env is not committed (should be in .gitignore)', () => {
 runTest('Storage directories exist', () => {
 	const storagePrivate = join(root, 'storage/private');
 	const staticUploads = join(root, 'static/uploads');
-	
+
 	if (!existsSync(storagePrivate)) {
 		throw new Error('storage/private directory not found');
 	}

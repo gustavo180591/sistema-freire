@@ -9,7 +9,9 @@ async function main() {
 	// Obtener ubicaciones
 	const locations = await prisma.location.findMany();
 	if (locations.length < 2) {
-		throw new Error('Se requieren al menos 2 ubicaciones. Ejecuta primero: npx tsx prisma/seed-locations.ts');
+		throw new Error(
+			'Se requieren al menos 2 ubicaciones. Ejecuta primero: npx tsx prisma/seed-locations.ts'
+		);
 	}
 
 	console.log(`📍 Ubicaciones encontradas: ${locations.length}`);
@@ -100,7 +102,9 @@ async function main() {
 			}
 		}
 
-		console.log(`✅ Preceptor creado: ${preceptor.firstName} ${preceptor.lastName} (${preceptor.email})`);
+		console.log(
+			`✅ Preceptor creado: ${preceptor.firstName} ${preceptor.lastName} (${preceptor.email})`
+		);
 	}
 
 	// Crear Secretarios (uno por localidad)
@@ -174,8 +178,11 @@ async function main() {
 			});
 		}
 
-		const locationName = locations.find(l => l.id === secretario.locationId)?.name || 'Desconocida';
-		console.log(`✅ Secretaria creada: ${secretario.firstName} ${secretario.lastName} (${secretario.email}) - ${locationName}`);
+		const locationName =
+			locations.find((l) => l.id === secretario.locationId)?.name || 'Desconocida';
+		console.log(
+			`✅ Secretaria creada: ${secretario.firstName} ${secretario.lastName} (${secretario.email}) - ${locationName}`
+		);
 	}
 
 	// Crear Director

@@ -1,14 +1,14 @@
 /**
  * Payment Agreement Batch Evaluation Script
  * Phase 6.1
- * 
+ *
  * This script evaluates all active payment agreements in batch.
  * It can be run manually or scheduled via cron.
- * 
+ *
  * Usage:
  *   npx tsx scripts/evaluate-payment-agreements.ts
  *   npx tsx scripts/evaluate-payment-agreements.ts --dry-run
- * 
+ *
  * Environment:
  *   DATABASE_URL must be set
  */
@@ -30,9 +30,9 @@ function parseArgs(): CliOptions {
 
 async function main() {
 	console.log('🔄 Payment Agreement Batch Evaluation\n');
-	
+
 	const options = parseArgs();
-	
+
 	if (options.dryRun) {
 		console.log('⚠️  DRY RUN MODE - No changes will be made\n');
 	} else {
@@ -41,7 +41,7 @@ async function main() {
 
 	try {
 		const startTime = Date.now();
-		
+
 		// Execute batch evaluation
 		const results = await paymentAgreementService.evaluateAllActiveAgreementsStatus({
 			dryRun: options.dryRun,
@@ -68,7 +68,9 @@ async function main() {
 			console.log('❌ Errors:');
 			console.log('═══════════════════════════════════════════════════════════');
 			for (const error of results.errors) {
-				console.log(`  Agreement ${error.agreementNumber}/${error.agreementYear} (${error.agreementId}):`);
+				console.log(
+					`  Agreement ${error.agreementNumber}/${error.agreementYear} (${error.agreementId}):`
+				);
 				console.log(`    ${error.error}`);
 			}
 			console.log('═══════════════════════════════════════════════════════════\n');

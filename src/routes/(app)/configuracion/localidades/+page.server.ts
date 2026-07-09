@@ -46,7 +46,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const totalLocations = locationsWithCounts.length;
 	const activeLocations = locationsWithCounts.filter((l) => l.active).length;
 	const inactiveLocations = totalLocations - activeLocations;
-	const totalCareerAssociations = locationsWithCounts.reduce((sum, loc) => sum + loc._count.careers, 0);
+	const totalCareerAssociations = locationsWithCounts.reduce(
+		(sum, loc) => sum + loc._count.careers,
+		0
+	);
 
 	return {
 		locations: locationsWithCounts,

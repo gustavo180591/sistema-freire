@@ -35,85 +35,88 @@
 </script>
 
 <div class="container mx-auto p-6">
-	<h1 class="text-2xl font-bold mb-6">Control de Deuda y Bloqueos</h1>
+	<h1 class="mb-6 text-2xl font-bold">Control de Deuda y Bloqueos</h1>
 
 	{#if data.studentStatus}
-		<div class="bg-white rounded-lg shadow p-6 mb-6">
-			<h2 class="text-xl font-semibold mb-4">Estado Financiero del Alumno</h2>
+		<div class="mb-6 rounded-lg bg-white p-6 shadow">
+			<h2 class="mb-4 text-xl font-semibold">Estado Financiero del Alumno</h2>
 			<p class="text-gray-600">Vista de deuda y bloqueos en desarrollo.</p>
 		</div>
 
 		<!-- Phase 5.5: Agreement Debt Summary -->
-		<div class="bg-white rounded-lg shadow p-6">
-			<div class="flex items-center justify-between mb-4">
+		<div class="rounded-lg bg-white p-6 shadow">
+			<div class="mb-4 flex items-center justify-between">
 				<h2 class="text-xl font-semibold">Deuda con Convenios de Pago</h2>
 				<button
 					type="button"
 					onclick={() => loadAgreementDebt(data.studentStatus.student.id)}
 					disabled={loadingAgreementDebt}
-					class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+					class="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
 				>
 					{loadingAgreementDebt ? 'Cargando...' : 'Ver Deuda Efectiva'}
 				</button>
 			</div>
 
 			{#if agreementDebtError}
-				<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+				<div class="rounded border border-red-200 bg-red-50 px-4 py-3 text-red-700">
 					{agreementDebtError}
 				</div>
 			{/if}
 
 			{#if showAgreementDebt && agreementDebtData?.agreementDebtSummary}
-				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-					<div class="bg-gray-50 p-4 rounded-lg">
-						<p class="text-sm text-gray-600 mb-1">Deuda Original Total</p>
+				<div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+					<div class="rounded-lg bg-gray-50 p-4">
+						<p class="mb-1 text-sm text-gray-600">Deuda Original Total</p>
 						<p class="text-2xl font-bold text-gray-900">
 							${agreementDebtData.agreementDebtSummary.originalDebtTotal.toString()}
 						</p>
 					</div>
-					<div class="bg-blue-50 p-4 rounded-lg">
-						<p class="text-sm text-gray-600 mb-1">Cubierta por Convenios Activos</p>
+					<div class="rounded-lg bg-blue-50 p-4">
+						<p class="mb-1 text-sm text-gray-600">Cubierta por Convenios Activos</p>
 						<p class="text-2xl font-bold text-blue-600">
 							${agreementDebtData.agreementDebtSummary.originalDebtCoveredByActiveAgreements.toString()}
 						</p>
 					</div>
-					<div class="bg-green-50 p-4 rounded-lg">
-						<p class="text-sm text-gray-600 mb-1">Deuda Exigible Efectiva</p>
+					<div class="rounded-lg bg-green-50 p-4">
+						<p class="mb-1 text-sm text-gray-600">Deuda Exigible Efectiva</p>
 						<p class="text-2xl font-bold text-green-600">
 							${agreementDebtData.agreementDebtSummary.effectiveTotalDebt.toString()}
 						</p>
 					</div>
-					<div class="bg-purple-50 p-4 rounded-lg">
-						<p class="text-sm text-gray-600 mb-1">Pendiente de Convenios</p>
+					<div class="rounded-lg bg-purple-50 p-4">
+						<p class="mb-1 text-sm text-gray-600">Pendiente de Convenios</p>
 						<p class="text-2xl font-bold text-purple-600">
 							${agreementDebtData.agreementDebtSummary.agreementPendingDebt.toString()}
 						</p>
 					</div>
-					<div class="bg-orange-50 p-4 rounded-lg">
-						<p class="text-sm text-gray-600 mb-1">Vencida de Convenios</p>
+					<div class="rounded-lg bg-orange-50 p-4">
+						<p class="mb-1 text-sm text-gray-600">Vencida de Convenios</p>
 						<p class="text-2xl font-bold text-orange-600">
 							${agreementDebtData.agreementDebtSummary.agreementOverdueDebt.toString()}
 						</p>
 					</div>
-					<div class="bg-red-50 p-4 rounded-lg">
-						<p class="text-sm text-gray-600 mb-1">Incumplida de Convenios</p>
+					<div class="rounded-lg bg-red-50 p-4">
+						<p class="mb-1 text-sm text-gray-600">Incumplida de Convenios</p>
 						<p class="text-2xl font-bold text-red-600">
 							${agreementDebtData.agreementDebtSummary.agreementDefaultedDebt.toString()}
 						</p>
 					</div>
 				</div>
 
-				<div class="mt-4 p-4 bg-gray-50 rounded-lg">
+				<div class="mt-4 rounded-lg bg-gray-50 p-4">
 					<p class="text-sm text-gray-600">
-						<strong>Convenios Activos:</strong> {agreementDebtData.agreementDebtSummary.activeAgreementsCount} |
-						<strong>Convenios Completados:</strong> {agreementDebtData.agreementDebtSummary.completedAgreementsCount} |
-						<strong>Convenios Incumplidos:</strong> {agreementDebtData.agreementDebtSummary.defaultedAgreementsCount}
+						<strong>Convenios Activos:</strong>
+						{agreementDebtData.agreementDebtSummary.activeAgreementsCount} |
+						<strong>Convenios Completados:</strong>
+						{agreementDebtData.agreementDebtSummary.completedAgreementsCount} |
+						<strong>Convenios Incumplidos:</strong>
+						{agreementDebtData.agreementDebtSummary.defaultedAgreementsCount}
 					</p>
 				</div>
 			{/if}
 		</div>
 	{:else}
-		<div class="bg-white rounded-lg shadow p-6">
+		<div class="rounded-lg bg-white p-6 shadow">
 			<p class="text-gray-600">Seleccione un alumno para ver su estado financiero.</p>
 		</div>
 	{/if}

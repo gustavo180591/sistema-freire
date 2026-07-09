@@ -8,7 +8,12 @@ import {
 	requireDeleteDocumentPermission,
 	requireRestoreDocumentPermission
 } from './document-permissions';
-import type { DocumentOwnerType, DocumentCategory, DocumentSubType, DocumentVisibility } from '@prisma/client';
+import type {
+	DocumentOwnerType,
+	DocumentCategory,
+	DocumentSubType,
+	DocumentVisibility
+} from '@prisma/client';
 import { DocumentStatus, Prisma } from '@prisma/client';
 
 /**

@@ -92,9 +92,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	const progress = totalCareerSubjects > 0
-		? Math.round((subjects.filter((s) => s.approved).length / totalCareerSubjects) * 100)
-		: 0;
+	const progress =
+		totalCareerSubjects > 0
+			? Math.round((subjects.filter((s) => s.approved).length / totalCareerSubjects) * 100)
+			: 0;
 
 	// Calcular deuda financiera real
 	const totalDebt = student.studentCharges.reduce((sum, charge) => {

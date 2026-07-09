@@ -37,10 +37,10 @@ export class DocumentStorageService {
 		const uuid = crypto.randomUUID();
 
 		const storageKey = `${params.ownerType}/${params.ownerId}/${params.category}/${year}/${month}/${uuid}.${params.extension}`;
-		
+
 		// Validate the generated storage key
 		validateStorageKey(storageKey);
-		
+
 		return storageKey;
 	}
 
@@ -87,10 +87,7 @@ export class DocumentStorageService {
 	/**
 	 * Save a document file to storage
 	 */
-	async saveDocumentFile(params: {
-		file: File;
-		storageKey: string;
-	}): Promise<void> {
+	async saveDocumentFile(params: { file: File; storageKey: string }): Promise<void> {
 		// Validate storage key
 		validateStorageKey(params.storageKey);
 

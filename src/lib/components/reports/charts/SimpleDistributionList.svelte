@@ -26,13 +26,15 @@
 		<div class="space-y-2">
 			{#each entries as entry}
 				<div class="flex items-center gap-3">
-					<div class="w-32 shrink-0 text-sm text-slate-400 truncate" title={entry.label}>
+					<div class="w-32 shrink-0 truncate text-sm text-slate-400" title={entry.label}>
 						{entry.label}
 					</div>
 					<div class="flex-1">
 						<div
 							class="h-2 rounded-md transition-all duration-300"
-							style="width: {maxValue > 0 ? (entry.value / maxValue) * 100 : 0}%; background-color: {color};"
+							style="width: {maxValue > 0
+								? (entry.value / maxValue) * 100
+								: 0}%; background-color: {color};"
 						></div>
 					</div>
 					<div class="w-16 shrink-0 text-right text-sm text-slate-300">

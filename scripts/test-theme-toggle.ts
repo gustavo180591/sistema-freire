@@ -206,8 +206,12 @@ runTest('No forbidden patterns in theme files', () => {
 		const path = join(root, file);
 		if (existsSync(path)) {
 			const content = readFileSync(path, 'utf-8');
-			if (content.includes(forbidden1) || content.includes(forbidden2) || 
-				content.includes(forbidden3) || content.includes(forbidden4)) {
+			if (
+				content.includes(forbidden1) ||
+				content.includes(forbidden2) ||
+				content.includes(forbidden3) ||
+				content.includes(forbidden4)
+			) {
 				throw new Error(`Forbidden pattern found in ${file}`);
 			}
 		}

@@ -53,7 +53,9 @@
 				</div>
 				<div>
 					<p class="text-sm text-slate-400">DNI</p>
-					<p class="font-medium">{data.user.dni || data.user.student?.dni || data.user.teacher?.dni || '-'}</p>
+					<p class="font-medium">
+						{data.user.dni || data.user.student?.dni || data.user.teacher?.dni || '-'}
+					</p>
 				</div>
 				<div>
 					<p class="text-sm text-slate-400">Estado</p>

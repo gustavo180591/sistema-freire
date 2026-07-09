@@ -8,7 +8,14 @@
 		showPercentage?: boolean;
 	}
 
-	let { value, total, label, color = 'rgb(99, 102, 241)', height = 8, showPercentage = true }: Props = $props();
+	let {
+		value,
+		total,
+		label,
+		color = 'rgb(99, 102, 241)',
+		height = 8,
+		showPercentage = true
+	}: Props = $props();
 
 	const percentage = $derived(total > 0 ? (value / total) * 100 : 0);
 </script>
@@ -22,7 +29,7 @@
 			{/if}
 		</div>
 	{/if}
-	<div class="w-full bg-slate-800 rounded-full overflow-hidden" style="height: {height}px;">
+	<div class="w-full overflow-hidden rounded-full bg-slate-800" style="height: {height}px;">
 		<div
 			class="h-full rounded-full transition-all duration-300"
 			style="width: {percentage}%; background-color: {color};"

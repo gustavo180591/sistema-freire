@@ -5,19 +5,19 @@ import type { RequestHandler } from './$types';
 
 /**
  * GET /api/reports/attendance/export
- * 
+ *
  * Returns attendance report as CSV
- * 
+ *
  * Permissions:
  * - ATTENDANCE:read (explicit permission required)
- * 
+ *
  * Supported filters:
  * - studentId
  * - subjectId
  * - commissionId
  * - startDate
  * - endDate
- * 
+ *
  * Note: "justified" absences are based on provisional criterion (presence of notes field),
  * not a formal justification system.
  */
@@ -38,7 +38,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 		const filters = parseFilters(url);
 
 		const { csv, filename } = await exportAttendanceReport(filters);
-		
+
 		return new Response(csv, {
 			status: 200,
 			headers: {
@@ -48,7 +48,10 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 		});
 	} catch (error) {
 		// Handle validation errors
-		if (error instanceof Error && (error.message.includes('Invalid') || error.message.includes('startDate'))) {
+		if (
+			error instanceof Error &&
+			(error.message.includes('Invalid') || error.message.includes('startDate'))
+		) {
 			return new Response(error.message, { status: 400 });
 		}
 

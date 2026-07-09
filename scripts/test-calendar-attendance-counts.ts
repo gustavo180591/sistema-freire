@@ -32,7 +32,11 @@ test('schema.prisma has countsAttendance Boolean @default(false) in Holiday', ()
 	const schema = readFileSync(schemaPath, 'utf-8');
 	const holidayModel = schema.match(/model Holiday \{[\s\S]*?\n\}/)?.[0];
 	if (!holidayModel) return false;
-	return holidayModel.includes('countsAttendance') && holidayModel.includes('Boolean') && holidayModel.includes('@default(false)');
+	return (
+		holidayModel.includes('countsAttendance') &&
+		holidayModel.includes('Boolean') &&
+		holidayModel.includes('@default(false)')
+	);
 });
 
 // Test 2: schema.prisma has countsAttendance in ImportantDate
@@ -41,42 +45,70 @@ test('schema.prisma has countsAttendance Boolean @default(false) in ImportantDat
 	const schema = readFileSync(schemaPath, 'utf-8');
 	const importantDateModel = schema.match(/model ImportantDate \{[\s\S]*?\n\}/)?.[0];
 	if (!importantDateModel) return false;
-	return importantDateModel.includes('countsAttendance') && importantDateModel.includes('Boolean') && importantDateModel.includes('@default(false)');
+	return (
+		importantDateModel.includes('countsAttendance') &&
+		importantDateModel.includes('Boolean') &&
+		importantDateModel.includes('@default(false)')
+	);
 });
 
 // Test 3: migration add_calendar_config_tables exists
 test('migration add_calendar_config_tables exists', () => {
-	const migrationPath = join(ROOT, 'prisma/migrations/20260705004825_add_calendar_config_tables/migration.sql');
+	const migrationPath = join(
+		ROOT,
+		'prisma/migrations/20260705004825_add_calendar_config_tables/migration.sql'
+	);
 	return existsSync(migrationPath);
 });
 
 // Test 4: migration add_calendar_attendance_counts exists
 test('migration add_calendar_attendance_counts exists', () => {
-	const migrationPath = join(ROOT, 'prisma/migrations/20260705005020_add_calendar_attendance_counts/migration.sql');
+	const migrationPath = join(
+		ROOT,
+		'prisma/migrations/20260705005020_add_calendar_attendance_counts/migration.sql'
+	);
 	return existsSync(migrationPath);
 });
 
 // Test 5: migration adds countsAttendance column
 test('migration adds countsAttendance column', () => {
-	const migrationPath = join(ROOT, 'prisma/migrations/20260705005020_add_calendar_attendance_counts/migration.sql');
+	const migrationPath = join(
+		ROOT,
+		'prisma/migrations/20260705005020_add_calendar_attendance_counts/migration.sql'
+	);
 	const migration = readFileSync(migrationPath, 'utf-8');
 	return migration.includes('countsAttendance') && migration.includes('ADD COLUMN');
 });
 
 // Test 6: migration only touches calendar tables
 test('migration add_calendar_attendance_counts only touches holidays and important_dates', () => {
-	const migrationPath = join(ROOT, 'prisma/migrations/20260705005020_add_calendar_attendance_counts/migration.sql');
+	const migrationPath = join(
+		ROOT,
+		'prisma/migrations/20260705005020_add_calendar_attendance_counts/migration.sql'
+	);
 	const migration = readFileSync(migrationPath, 'utf-8');
-	
+
 	// Check for forbidden table operations
-	const forbiddenTables = ['users', 'careers', 'students', 'teachers', 'subjects', 'enrollments', 'financial', 'receipts', 'payments', 'documents', 'calendar_config'];
-	
+	const forbiddenTables = [
+		'users',
+		'careers',
+		'students',
+		'teachers',
+		'subjects',
+		'enrollments',
+		'financial',
+		'receipts',
+		'payments',
+		'documents',
+		'calendar_config'
+	];
+
 	for (const table of forbiddenTables) {
 		if (migration.toLowerCase().includes(table)) {
 			return false;
 		}
 	}
-	
+
 	// Check that it only touches holidays and important_dates
 	return migration.includes('holidays') && migration.includes('important_dates');
 });
@@ -124,7 +156,11 @@ test('UI shows "Cuenta asistencia" when countsAttendance is true', () => {
 test('No changes to financial module files', () => {
 	const serverPath = join(ROOT, 'src/routes/(app)/configuracion/calendario/+page.server.ts');
 	const server = readFileSync(serverPath, 'utf-8');
-	return !server.toLowerCase().includes('financial') && !server.toLowerCase().includes('receipt') && !server.toLowerCase().includes('payment');
+	return (
+		!server.toLowerCase().includes('financial') &&
+		!server.toLowerCase().includes('receipt') &&
+		!server.toLowerCase().includes('payment')
+	);
 });
 
 // Test 13: No new endpoints created
@@ -132,10 +168,16 @@ test('No new endpoints created (only server actions)', () => {
 	const serverPath = join(ROOT, 'src/routes/(app)/configuracion/calendario/+page.server.ts');
 	const server = readFileSync(serverPath, 'utf-8');
 	// Check that only existing actions are present: addHoliday, deleteHoliday, addImportantDate, deleteImportantDate, updateWorkingDays
-	const allowedActions = ['addHoliday', 'deleteHoliday', 'addImportantDate', 'deleteImportantDate', 'updateWorkingDays'];
+	const allowedActions = [
+		'addHoliday',
+		'deleteHoliday',
+		'addImportantDate',
+		'deleteImportantDate',
+		'updateWorkingDays'
+	];
 	const lines = server.split('\n');
-	const actionLines = lines.filter(line => line.match(/^\s*[a-zA-Z]+:\s+async/));
-	
+	const actionLines = lines.filter((line) => line.match(/^\s*[a-zA-Z]+:\s+async/));
+
 	// Count actions
 	let foundActions = 0;
 	for (const line of actionLines) {
@@ -144,7 +186,7 @@ test('No new endpoints created (only server actions)', () => {
 			foundActions++;
 		}
 	}
-	
+
 	// Should have exactly 5 actions
 	return foundActions === 5;
 });
@@ -162,21 +204,23 @@ test('No SQL raw queries used', () => {
 test('No forbidden patterns', () => {
 	const serverPath = join(ROOT, 'src/routes/(app)/configuracion/calendario/+page.server.ts');
 	const pagePath = join(ROOT, 'src/routes/(app)/configuracion/calendario/+page.svelte');
-	
+
 	const server = readFileSync(serverPath, 'utf-8');
 	const page = readFileSync(pagePath, 'utf-8');
-	
+
 	const tsIgnore = '@' + 'ts-ignore';
 	const tsExpect = '@' + 'ts-expect-error';
 	const anyType = ': ' + 'any';
 	const anyCast = 'as ' + 'any';
-	
+
 	const combined = server + page;
-	
-	return !combined.includes(tsIgnore) && 
-	       !combined.includes(tsExpect) && 
-	       !combined.includes(anyType) && 
-	       !combined.includes(anyCast);
+
+	return (
+		!combined.includes(tsIgnore) &&
+		!combined.includes(tsExpect) &&
+		!combined.includes(anyType) &&
+		!combined.includes(anyCast)
+	);
 });
 
 // Test 16: Checkbox uses 'on' value (not 'true')

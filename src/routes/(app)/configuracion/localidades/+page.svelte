@@ -9,7 +9,7 @@
 	let showCreateModal = $state(false);
 	let showEditModal = $state(false);
 	let showCareersModal = $state(false);
-	let selectedLocation = $state<typeof data.locations[0] | null>(null);
+	let selectedLocation = $state<(typeof data.locations)[0] | null>(null);
 
 	// Form state
 	let formData = $state({
@@ -42,7 +42,7 @@
 		showCreateModal = true;
 	}
 
-	function openEditModal(location: typeof data.locations[0]) {
+	function openEditModal(location: (typeof data.locations)[0]) {
 		selectedLocation = location;
 		formData = {
 			name: location.name,
@@ -58,9 +58,11 @@
 		showEditModal = true;
 	}
 
-	function openCareersModal(location: typeof data.locations[0]) {
+	function openCareersModal(location: (typeof data.locations)[0]) {
 		selectedLocation = location;
-		selectedCareers = new Set(location.careers.map((c: typeof location.careers[0]) => c.careerId));
+		selectedCareers = new Set(
+			location.careers.map((c: (typeof location.careers)[0]) => c.careerId)
+		);
 		showCareersModal = true;
 	}
 
@@ -78,7 +80,7 @@
 			: '<span class="inline-flex items-center rounded-full bg-slate-500/10 px-2.5 py-0.5 text-xs font-medium text-slate-400">Inactiva</span>';
 	}
 
-	function formatLocation(location: typeof data.locations[0]) {
+	function formatLocation(location: (typeof data.locations)[0]) {
 		const parts = [];
 		if (location.address) parts.push(location.address);
 		if (location.city) parts.push(location.city);
@@ -146,7 +148,7 @@
 	</div>
 
 	<!-- Locations Table -->
-	<div class="rounded-2xl border border-slate-800 bg-slate-900/70 overflow-hidden">
+	<div class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70">
 		<table class="w-full">
 			<thead>
 				<tr class="border-b border-slate-800 bg-slate-800/50">
@@ -226,17 +228,29 @@
 					aria-label="Cerrar modal"
 				>
 					<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M6 18L18 6M6 6l12 12"
+						/>
 					</svg>
 				</button>
 			</div>
-			<form method="POST" action="?/createLocation" class="space-y-4" use:enhance={() => {
-				loading = true;
-				return handleFormSuccess();
-			}}>
+			<form
+				method="POST"
+				action="?/createLocation"
+				class="space-y-4"
+				use:enhance={() => {
+					loading = true;
+					return handleFormSuccess();
+				}}
+			>
 				<div class="grid gap-4 md:grid-cols-2">
 					<div>
-						<label for="create-name" class="mb-2 block text-sm font-medium text-slate-300">Nombre</label>
+						<label for="create-name" class="mb-2 block text-sm font-medium text-slate-300"
+							>Nombre</label
+						>
 						<input
 							id="create-name"
 							type="text"
@@ -246,7 +260,9 @@
 						/>
 					</div>
 					<div>
-						<label for="create-code" class="mb-2 block text-sm font-medium text-slate-300">Código</label>
+						<label for="create-code" class="mb-2 block text-sm font-medium text-slate-300"
+							>Código</label
+						>
 						<input
 							id="create-code"
 							type="text"
@@ -257,7 +273,9 @@
 					</div>
 				</div>
 				<div>
-					<label for="create-address" class="mb-2 block text-sm font-medium text-slate-300">Dirección</label>
+					<label for="create-address" class="mb-2 block text-sm font-medium text-slate-300"
+						>Dirección</label
+					>
 					<input
 						id="create-address"
 						type="text"
@@ -267,7 +285,9 @@
 				</div>
 				<div class="grid gap-4 md:grid-cols-2">
 					<div>
-						<label for="create-city" class="mb-2 block text-sm font-medium text-slate-300">Ciudad</label>
+						<label for="create-city" class="mb-2 block text-sm font-medium text-slate-300"
+							>Ciudad</label
+						>
 						<input
 							id="create-city"
 							type="text"
@@ -276,7 +296,9 @@
 						/>
 					</div>
 					<div>
-						<label for="create-province" class="mb-2 block text-sm font-medium text-slate-300">Provincia</label>
+						<label for="create-province" class="mb-2 block text-sm font-medium text-slate-300"
+							>Provincia</label
+						>
 						<input
 							id="create-province"
 							type="text"
@@ -287,7 +309,9 @@
 				</div>
 				<div class="grid gap-4 md:grid-cols-2">
 					<div>
-						<label for="create-phone" class="mb-2 block text-sm font-medium text-slate-300">Teléfono</label>
+						<label for="create-phone" class="mb-2 block text-sm font-medium text-slate-300"
+							>Teléfono</label
+						>
 						<input
 							id="create-phone"
 							type="text"
@@ -296,7 +320,9 @@
 						/>
 					</div>
 					<div>
-						<label for="create-email" class="mb-2 block text-sm font-medium text-slate-300">Email</label>
+						<label for="create-email" class="mb-2 block text-sm font-medium text-slate-300"
+							>Email</label
+						>
 						<input
 							id="create-email"
 							type="email"
@@ -307,7 +333,9 @@
 				</div>
 				<div class="grid gap-4 md:grid-cols-2">
 					<div>
-						<label for="create-displayOrder" class="mb-2 block text-sm font-medium text-slate-300">Orden de Visualización</label>
+						<label for="create-displayOrder" class="mb-2 block text-sm font-medium text-slate-300"
+							>Orden de Visualización</label
+						>
 						<input
 							id="create-displayOrder"
 							type="number"
@@ -358,18 +386,30 @@
 					aria-label="Cerrar modal"
 				>
 					<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M6 18L18 6M6 6l12 12"
+						/>
 					</svg>
 				</button>
 			</div>
-			<form method="POST" action="?/updateLocation" class="space-y-4" use:enhance={() => {
-				loading = true;
-				return handleFormSuccess();
-			}}>
+			<form
+				method="POST"
+				action="?/updateLocation"
+				class="space-y-4"
+				use:enhance={() => {
+					loading = true;
+					return handleFormSuccess();
+				}}
+			>
 				<input type="hidden" name="id" value={selectedLocation?.id} />
 				<div class="grid gap-4 md:grid-cols-2">
 					<div>
-						<label for="edit-name" class="mb-2 block text-sm font-medium text-slate-300">Nombre</label>
+						<label for="edit-name" class="mb-2 block text-sm font-medium text-slate-300"
+							>Nombre</label
+						>
 						<input
 							id="edit-name"
 							name="name"
@@ -380,7 +420,9 @@
 						/>
 					</div>
 					<div>
-						<label for="edit-code" class="mb-2 block text-sm font-medium text-slate-300">Código</label>
+						<label for="edit-code" class="mb-2 block text-sm font-medium text-slate-300"
+							>Código</label
+						>
 						<input
 							id="edit-code"
 							name="code"
@@ -392,7 +434,9 @@
 					</div>
 				</div>
 				<div>
-					<label for="edit-address" class="mb-2 block text-sm font-medium text-slate-300">Dirección</label>
+					<label for="edit-address" class="mb-2 block text-sm font-medium text-slate-300"
+						>Dirección</label
+					>
 					<input
 						id="edit-address"
 						name="address"
@@ -403,7 +447,9 @@
 				</div>
 				<div class="grid gap-4 md:grid-cols-2">
 					<div>
-						<label for="edit-city" class="mb-2 block text-sm font-medium text-slate-300">Ciudad</label>
+						<label for="edit-city" class="mb-2 block text-sm font-medium text-slate-300"
+							>Ciudad</label
+						>
 						<input
 							id="edit-city"
 							name="city"
@@ -413,7 +459,9 @@
 						/>
 					</div>
 					<div>
-						<label for="edit-province" class="mb-2 block text-sm font-medium text-slate-300">Provincia</label>
+						<label for="edit-province" class="mb-2 block text-sm font-medium text-slate-300"
+							>Provincia</label
+						>
 						<input
 							id="edit-province"
 							name="province"
@@ -425,7 +473,9 @@
 				</div>
 				<div class="grid gap-4 md:grid-cols-2">
 					<div>
-						<label for="edit-phone" class="mb-2 block text-sm font-medium text-slate-300">Teléfono</label>
+						<label for="edit-phone" class="mb-2 block text-sm font-medium text-slate-300"
+							>Teléfono</label
+						>
 						<input
 							id="edit-phone"
 							name="phone"
@@ -435,7 +485,9 @@
 						/>
 					</div>
 					<div>
-						<label for="edit-email" class="mb-2 block text-sm font-medium text-slate-300">Email</label>
+						<label for="edit-email" class="mb-2 block text-sm font-medium text-slate-300"
+							>Email</label
+						>
 						<input
 							id="edit-email"
 							name="email"
@@ -447,7 +499,9 @@
 				</div>
 				<div class="grid gap-4 md:grid-cols-2">
 					<div>
-						<label for="edit-displayOrder" class="mb-2 block text-sm font-medium text-slate-300">Orden de Visualización</label>
+						<label for="edit-displayOrder" class="mb-2 block text-sm font-medium text-slate-300"
+							>Orden de Visualización</label
+						>
 						<input
 							id="edit-displayOrder"
 							name="displayOrder"
@@ -500,21 +554,32 @@
 					aria-label="Cerrar modal"
 				>
 					<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M6 18L18 6M6 6l12 12"
+						/>
 					</svg>
 				</button>
 			</div>
-			<form method="POST" action="?/updateCareerLocations" use:enhance={() => {
-				loading = true;
-				return handleFormSuccess();
-			}}>
+			<form
+				method="POST"
+				action="?/updateCareerLocations"
+				use:enhance={() => {
+					loading = true;
+					return handleFormSuccess();
+				}}
+			>
 				<input type="hidden" name="locationId" value={selectedLocation?.id} />
 				{#each Array.from(selectedCareers) as careerId}
 					<input type="hidden" name="careerIds" value={careerId} />
 				{/each}
-				<div class="space-y-3 max-h-96 overflow-y-auto">
+				<div class="max-h-96 space-y-3 overflow-y-auto">
 					{#each data.careers as career}
-						<label class="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-800/50 p-4 transition hover:bg-slate-800">
+						<label
+							class="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-800/50 p-4 transition hover:bg-slate-800"
+						>
 							<input
 								type="checkbox"
 								checked={selectedCareers.has(career.id)}

@@ -21,7 +21,12 @@ export function escapeCsvField(value: string | number | boolean | null | undefin
 	}
 
 	// Check if field needs quoting (contains comma, quote, newline, or space)
-	const needsQuoting = strValue.includes(',') || strValue.includes('"') || strValue.includes('\n') || strValue.includes('\r') || strValue.includes(' ');
+	const needsQuoting =
+		strValue.includes(',') ||
+		strValue.includes('"') ||
+		strValue.includes('\n') ||
+		strValue.includes('\r') ||
+		strValue.includes(' ');
 
 	if (needsQuoting) {
 		// Escape double quotes by doubling them
@@ -35,8 +40,13 @@ export function escapeCsvField(value: string | number | boolean | null | undefin
 /**
  * Convert an object to CSV row
  */
-export function objectToCsvRow<T extends Record<string, unknown>>(obj: T, headers: string[]): string {
-	return headers.map((header) => escapeCsvField(obj[header] as string | number | boolean | null | undefined)).join(',');
+export function objectToCsvRow<T extends Record<string, unknown>>(
+	obj: T,
+	headers: string[]
+): string {
+	return headers
+		.map((header) => escapeCsvField(obj[header] as string | number | boolean | null | undefined))
+		.join(',');
 }
 
 /**

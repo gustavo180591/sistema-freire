@@ -33,9 +33,7 @@ async function main() {
 
 	for (const evaluation of evaluations) {
 		// Obtener inscripciones de la materia de la evaluación
-		const evaluationEnrollments = enrollments.filter(
-			(e) => e.subjectId === evaluation.subjectId
-		);
+		const evaluationEnrollments = enrollments.filter((e) => e.subjectId === evaluation.subjectId);
 
 		for (const enrollment of evaluationEnrollments.slice(0, 15)) {
 			const gradeValue = 6 + Math.random() * 4; // 6-10
@@ -58,7 +56,12 @@ async function main() {
 						value: Math.round(gradeValue * 10) / 10,
 						createdByUserId: user.id,
 						updatedByUserId: user.id,
-						observations: gradeValue >= 8 ? 'Excelente desempeño' : gradeValue >= 6 ? 'Aprobado' : 'Necesita mejorar'
+						observations:
+							gradeValue >= 8
+								? 'Excelente desempeño'
+								: gradeValue >= 6
+									? 'Aprobado'
+									: 'Necesita mejorar'
 					}
 				});
 

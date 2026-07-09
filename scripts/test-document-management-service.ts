@@ -1,4 +1,12 @@
-import { PrismaClient, DocumentCategory, DocumentSubType, DocumentVisibility, DocumentOwnerType, DocumentAccessAction, UserStatus } from '@prisma/client';
+import {
+	PrismaClient,
+	DocumentCategory,
+	DocumentSubType,
+	DocumentVisibility,
+	DocumentOwnerType,
+	DocumentAccessAction,
+	UserStatus
+} from '@prisma/client';
 import { documentManagementService } from '../src/lib/server/document-management/document-management.service';
 import { documentStorageService } from '../src/lib/server/document-management/document-storage.service';
 
@@ -8,7 +16,8 @@ const prisma = new PrismaClient();
  * Create a minimal valid PDF file for testing
  */
 function createTestPdfFile(): File {
-	const pdfContent = '%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Count 0\n/Kids []\n>>\nendobj\nxref\n0 3\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\ntrailer\n<<\n/Size 3\n/Root 1 0 R\n>>\nstartxref\n109\n%%EOF';
+	const pdfContent =
+		'%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Count 0\n/Kids []\n>>\nendobj\nxref\n0 3\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\ntrailer\n<<\n/Size 3\n/Root 1 0 R\n>>\nstartxref\n109\n%%EOF';
 	const buffer = Buffer.from(pdfContent, 'utf-8');
 	return new File([buffer], 'test-document.pdf', { type: 'application/pdf' });
 }
@@ -147,7 +156,9 @@ async function testDocumentManagementService() {
 		if (docWithUploader && docWithUploader.uploadedBy) {
 			console.log(`✅ Document.uploadedBy relation exists`);
 			console.log(`   - Uploader ID: ${docWithUploader.uploadedBy.id}`);
-			console.log(`   - Uploader name: ${docWithUploader.uploadedBy.firstName} ${docWithUploader.uploadedBy.lastName}\n`);
+			console.log(
+				`   - Uploader name: ${docWithUploader.uploadedBy.firstName} ${docWithUploader.uploadedBy.lastName}\n`
+			);
 		} else {
 			throw new Error('Document.uploadedBy relation does not exist');
 		}
@@ -239,7 +250,10 @@ async function testDocumentManagementService() {
 
 		// Test 13: Soft delete document
 		console.log('Test 13: Soft deleting document...');
-		const deletedDocument = await documentManagementService.softDeleteDocument(document.id, testUser.id);
+		const deletedDocument = await documentManagementService.softDeleteDocument(
+			document.id,
+			testUser.id
+		);
 		if (deletedDocument.status === 'DELETED' && deletedDocument.deletedAt) {
 			console.log(`✅ Document soft deleted`);
 			console.log(`   - Status: ${deletedDocument.status}`);
@@ -263,7 +277,8 @@ async function testDocumentManagementService() {
 		const allLogs = await prisma.documentAccessLog.findMany({
 			where: { documentId: document.id }
 		});
-		if (allLogs.length >= 3) { // UPLOAD, VIEW, DOWNLOAD
+		if (allLogs.length >= 3) {
+			// UPLOAD, VIEW, DOWNLOAD
 			console.log(`✅ Access logs preserved: ${allLogs.length} log(s)\n`);
 		} else {
 			throw new Error('Access logs were not preserved');
@@ -271,7 +286,10 @@ async function testDocumentManagementService() {
 
 		// Test 16: Restore document
 		console.log('Test 16: Restoring document...');
-		const restoredDocument = await documentManagementService.restoreDocument(document.id, testUser.id);
+		const restoredDocument = await documentManagementService.restoreDocument(
+			document.id,
+			testUser.id
+		);
 		if (restoredDocument.status === 'ACTIVE' && !restoredDocument.deletedAt) {
 			console.log(`✅ Document restored`);
 			console.log(`   - Status: ${restoredDocument.status}`);
@@ -295,14 +313,17 @@ async function testDocumentManagementService() {
 		console.log('Test 17.1: Verifying no absolute paths exposed in service responses...');
 		if (documentWithLogs) {
 			const docStr = JSON.stringify(documentWithLogs.document);
-			if (docStr.includes('/home/') || docStr.includes('/storage/') || docStr.includes('/private/')) {
+			if (
+				docStr.includes('/home/') ||
+				docStr.includes('/storage/') ||
+				docStr.includes('/private/')
+			) {
 				throw new Error('Service response contains absolute filesystem paths');
 			}
 			console.log(`✅ No absolute paths exposed in document response\n`);
 		}
 
 		console.log('✅ All document management service tests passed successfully!\n');
-
 	} catch (error) {
 		console.error('❌ Test failed:', error);
 		throw error;

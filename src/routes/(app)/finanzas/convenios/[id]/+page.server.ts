@@ -94,16 +94,21 @@ export async function load({ locals, params }) {
 			amount: p.amount,
 			method: p.method,
 			reference: p.reference,
-			receipt: p.receipt ? {
-				id: p.receipt.id,
-				receiptNumber: p.receipt.receiptNumber,
-				receiptYear: p.receipt.receiptYear,
-				issuedAt: p.receipt.issuedAt,
-				totalAmount: p.receipt.totalAmount
-			} : null,
+			receipt: p.receipt
+				? {
+						id: p.receipt.id,
+						receiptNumber: p.receipt.receiptNumber,
+						receiptYear: p.receipt.receiptYear,
+						issuedAt: p.receipt.issuedAt,
+						totalAmount: p.receipt.totalAmount
+					}
+				: null,
 			installment: p.allocations[0]?.installment || null
 		})),
-		activeException: activeException && activeException.exceptionAgreementId === params.id ? activeException : null,
+		activeException:
+			activeException && activeException.exceptionAgreementId === params.id
+				? activeException
+				: null,
 		events: events.map((e) => ({
 			id: e.id,
 			eventType: e.eventType,

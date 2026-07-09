@@ -45,7 +45,11 @@ runTest('Panels import chart components', () => {
 	for (const panel of panels) {
 		const path = join(process.cwd(), panel);
 		const content = readFileSync(path, 'utf-8');
-		if (!content.includes('SimpleProgressBar') && !content.includes('SimpleMetricComparison') && !content.includes('SimpleDistributionList')) {
+		if (
+			!content.includes('SimpleProgressBar') &&
+			!content.includes('SimpleMetricComparison') &&
+			!content.includes('SimpleDistributionList')
+		) {
 			throw new Error(`Panel ${panel} does not import any chart component`);
 		}
 	}
@@ -57,7 +61,16 @@ runTest('No new chart library dependencies', () => {
 	const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
 	const dependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
 
-	const chartLibraries = ['chart.js', 'recharts', 'victory', 'nivo', 'd3', 'plotly', 'echarts', 'highcharts'];
+	const chartLibraries = [
+		'chart.js',
+		'recharts',
+		'victory',
+		'nivo',
+		'd3',
+		'plotly',
+		'echarts',
+		'highcharts'
+	];
 	for (const lib of chartLibraries) {
 		if (dependencies[lib]) {
 			throw new Error(`Found chart library dependency: ${lib}`);
@@ -199,7 +212,10 @@ runTest('Endpoints still exist', () => {
 
 // Test 11: Empty states shown in chart components
 runTest('Empty states shown in chart components', () => {
-	const distributionListPath = join(process.cwd(), 'src/lib/components/reports/charts/SimpleDistributionList.svelte');
+	const distributionListPath = join(
+		process.cwd(),
+		'src/lib/components/reports/charts/SimpleDistributionList.svelte'
+	);
 	const content = readFileSync(distributionListPath, 'utf-8');
 	if (!content.includes('No hay datos disponibles')) {
 		throw new Error('SimpleDistributionList does not show empty state');
@@ -217,7 +233,11 @@ runTest('Division by zero protection in chart components', () => {
 	for (const component of chartComponents) {
 		const path = join(process.cwd(), component);
 		const content = readFileSync(path, 'utf-8');
-		if (!content.includes('total > 0') && !content.includes('maxValue > 0') && !content.includes('calculatedTotal > 0')) {
+		if (
+			!content.includes('total > 0') &&
+			!content.includes('maxValue > 0') &&
+			!content.includes('calculatedTotal > 0')
+		) {
 			throw new Error(`${component} does not protect against division by zero`);
 		}
 	}
@@ -225,7 +245,10 @@ runTest('Division by zero protection in chart components', () => {
 
 // Test 13: Attendance uses "con observación" not "justificada formal"
 runTest('Attendance uses "con observación" not "justificada formal"', () => {
-	const attendancePanelPath = join(process.cwd(), 'src/lib/components/reports/AttendanceReportsPanel.svelte');
+	const attendancePanelPath = join(
+		process.cwd(),
+		'src/lib/components/reports/AttendanceReportsPanel.svelte'
+	);
 	const content = readFileSync(attendancePanelPath, 'utf-8');
 	if (content.includes('justificada formal') || content.includes('Justificada Formal')) {
 		throw new Error('Attendance panel uses "justificada formal" instead of "con observación"');

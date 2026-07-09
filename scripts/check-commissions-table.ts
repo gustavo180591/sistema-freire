@@ -16,7 +16,7 @@ async function main() {
 	} catch (e) {
 		console.log('Error checking commissions table:', e);
 	}
-	
+
 	// Verificar si hay datos en commissions
 	try {
 		const count = await prisma.$queryRaw`

@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 async function main() {
 	const count = await prisma.subjectCommission.count();
 	console.log('SubjectCommission count:', count);
-	
+
 	if (count > 0) {
 		const sample = await prisma.subjectCommission.findFirst();
 		console.log('Sample record:', sample);

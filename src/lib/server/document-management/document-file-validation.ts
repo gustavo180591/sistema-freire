@@ -45,10 +45,7 @@ export interface SanitizedFileMetadata {
 export function validateDocumentFile(file: File): SanitizedFileMetadata {
 	// Validate MIME type
 	if (!isAllowedMimeType(file.type)) {
-		throw new DocumentValidationError(
-			`MIME type ${file.type} is not allowed`,
-			'INVALID_MIME_TYPE'
-		);
+		throw new DocumentValidationError(`MIME type ${file.type} is not allowed`, 'INVALID_MIME_TYPE');
 	}
 
 	// Validate file size

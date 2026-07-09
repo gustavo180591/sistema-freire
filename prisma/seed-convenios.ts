@@ -80,7 +80,10 @@ async function main() {
 
 			// Relacionar con cargos financieros
 			const relatedCharge = charges.find(
-				(c) => c.studentId === student.id && c.periodLabel === `2026-${['Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][i]}`
+				(c) =>
+					c.studentId === student.id &&
+					c.periodLabel ===
+						`2026-${['Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][i]}`
 			);
 
 			if (relatedCharge) {

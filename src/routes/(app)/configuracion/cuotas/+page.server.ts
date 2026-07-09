@@ -45,14 +45,26 @@ export async function load({ locals }) {
 			benefitsConfig = {
 				normalFeeAmount: typeof value.normalFeeAmount === 'number' ? value.normalFeeAmount : 50000,
 				becadoFeeAmount: typeof value.becadoFeeAmount === 'number' ? value.becadoFeeAmount : 25000,
-				recursantFeeAmount: typeof value.recursantFeeAmount === 'number' ? value.recursantFeeAmount : 30000,
-				enrollmentAmount: typeof value.enrollmentAmount === 'number' ? value.enrollmentAmount : 50000,
-				benefitsStartMonth: typeof value.benefitsStartMonth === 'number' ? value.benefitsStartMonth : 3,
+				recursantFeeAmount:
+					typeof value.recursantFeeAmount === 'number' ? value.recursantFeeAmount : 30000,
+				enrollmentAmount:
+					typeof value.enrollmentAmount === 'number' ? value.enrollmentAmount : 50000,
+				benefitsStartMonth:
+					typeof value.benefitsStartMonth === 'number' ? value.benefitsStartMonth : 3,
 				benefitsEndMonth: typeof value.benefitsEndMonth === 'number' ? value.benefitsEndMonth : 12,
-				benefitsMonths: Array.isArray(value.benefitsMonths) ? (value.benefitsMonths as unknown as number[]) : [3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-				recursantBenefitType: typeof value.recursantBenefitType === 'string' ? value.recursantBenefitType : 'FIXED_FINAL_AMOUNT',
-				recursantBenefitValue: typeof value.recursantBenefitValue === 'number' ? value.recursantBenefitValue : 30000,
-				benefitCombinationStrategy: typeof value.benefitCombinationStrategy === 'string' ? value.benefitCombinationStrategy : 'BEST_AMOUNT'
+				benefitsMonths: Array.isArray(value.benefitsMonths)
+					? (value.benefitsMonths as unknown as number[])
+					: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+				recursantBenefitType:
+					typeof value.recursantBenefitType === 'string'
+						? value.recursantBenefitType
+						: 'FIXED_FINAL_AMOUNT',
+				recursantBenefitValue:
+					typeof value.recursantBenefitValue === 'number' ? value.recursantBenefitValue : 30000,
+				benefitCombinationStrategy:
+					typeof value.benefitCombinationStrategy === 'string'
+						? value.benefitCombinationStrategy
+						: 'BEST_AMOUNT'
 			};
 		}
 	}

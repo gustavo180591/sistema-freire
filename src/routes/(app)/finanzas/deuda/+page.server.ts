@@ -104,7 +104,9 @@ export const actions = {
 			const status = await financialService.getStudentFinancialStatusWithAgreements(studentId);
 			return { success: true, status };
 		} catch (e) {
-			return fail(400, { error: e instanceof Error ? e.message : 'Error al calcular deuda con convenios' });
+			return fail(400, {
+				error: e instanceof Error ? e.message : 'Error al calcular deuda con convenios'
+			});
 		}
 	},
 

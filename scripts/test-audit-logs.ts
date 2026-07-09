@@ -1,4 +1,13 @@
-import { PrismaClient, EvaluationType, GradeStatus, RoleCode, TrainingField, TermType, SubjectType, AuditAction } from '@prisma/client';
+import {
+	PrismaClient,
+	EvaluationType,
+	GradeStatus,
+	RoleCode,
+	TrainingField,
+	TermType,
+	SubjectType,
+	AuditAction
+} from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { EvaluationService } from '../src/lib/server/academic/evaluation-service';
 

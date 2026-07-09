@@ -45,7 +45,8 @@ export async function GET({ params, locals, request }) {
 			documentId: document.id,
 			userId: user.id,
 			action: 'DOWNLOAD',
-			ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+			ipAddress:
+				request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
 			userAgent: request.headers.get('user-agent') || undefined
 		});
 

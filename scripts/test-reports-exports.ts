@@ -82,7 +82,7 @@ runTest('Export helpers has escapeCsvField function', () => {
 runTest('Export helpers has CSV injection protection', () => {
 	const path = join(process.cwd(), 'src/lib/server/reports/report-export.helpers.ts');
 	const content = readFileSync(path, 'utf-8');
-	if (!content.includes("dangerousPrefixes")) {
+	if (!content.includes('dangerousPrefixes')) {
 		throw new Error('CSV injection protection not found');
 	}
 });
@@ -296,7 +296,12 @@ runTest('No Prisma in export service', () => {
 
 // Test 28: No forbidden patterns in export code
 runTest('No forbidden patterns in export code', () => {
-	const patterns = ['$' + 'queryRaw', '$' + 'executeRaw', '@' + 'ts-ignore', '@' + 'ts-expect-error'];
+	const patterns = [
+		'$' + 'queryRaw',
+		'$' + 'executeRaw',
+		'@' + 'ts-ignore',
+		'@' + 'ts-expect-error'
+	];
 	const paths = [
 		'src/lib/server/reports/report-export.helpers.ts',
 		'src/lib/server/reports/report-export.service.ts',
@@ -321,10 +326,12 @@ runTest('No forbidden patterns in export code', () => {
 runTest('Export service reuses existing report services', () => {
 	const path = join(process.cwd(), 'src/lib/server/reports/report-export.service.ts');
 	const content = readFileSync(path, 'utf-8');
-	if (!content.includes('getInstitutionalMetrics') || 
-	    !content.includes('getFinancialReportMetrics') ||
-	    !content.includes('getAcademicReportMetrics') ||
-	    !content.includes('getAttendanceReportMetrics')) {
+	if (
+		!content.includes('getInstitutionalMetrics') ||
+		!content.includes('getFinancialReportMetrics') ||
+		!content.includes('getAcademicReportMetrics') ||
+		!content.includes('getAttendanceReportMetrics')
+	) {
 		throw new Error('Export service does not reuse existing report services');
 	}
 });

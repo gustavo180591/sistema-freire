@@ -1182,10 +1182,7 @@ class PaymentAgreementService {
 		// Execute evaluation in transaction
 		const result = await prisma.$transaction(async (tx) => {
 			// Mark overdue installments
-			const { markedCount, installmentIds } = await this.markOverdueInstallments(
-				agreementId,
-				tx
-			);
+			const { markedCount, installmentIds } = await this.markOverdueInstallments(agreementId, tx);
 
 			// Evaluate completion
 			const { shouldComplete } = await this.evaluateAgreementCompletion(agreementId, tx);
@@ -1409,14 +1406,22 @@ class PaymentAgreementService {
 			// Calculate installment debt for ACTIVE and DEFAULTED agreements
 			if (agreement.status === 'ACTIVE' || agreement.status === 'DEFAULTED') {
 				for (const installment of agreement.installments) {
-					if (installment.status === 'PAID' || installment.status === 'CANCELLED' || installment.status === 'WAIVED') {
+					if (
+						installment.status === 'PAID' ||
+						installment.status === 'CANCELLED' ||
+						installment.status === 'WAIVED'
+					) {
 						continue;
 					}
 
 					const pending = installment.pendingAmount;
 					agreementInstallmentTotal = agreementInstallmentTotal.add(pending);
 
-					if (installment.status === 'PENDING' || installment.status === 'PARTIAL' || installment.status === 'OVERDUE') {
+					if (
+						installment.status === 'PENDING' ||
+						installment.status === 'PARTIAL' ||
+						installment.status === 'OVERDUE'
+					) {
 						agreementInstallmentPending = agreementInstallmentPending.add(pending);
 					}
 
@@ -1474,10 +1479,7 @@ class PaymentAgreementService {
 					}
 				}
 			},
-			orderBy: [
-				{ agreementYear: 'desc' },
-				{ agreementNumber: 'desc' }
-			]
+			orderBy: [{ agreementYear: 'desc' }, { agreementNumber: 'desc' }]
 		});
 
 		const now = new Date();
@@ -1488,13 +1490,21 @@ class PaymentAgreementService {
 			let installmentOverdue = new Decimal(0);
 
 			for (const installment of agreement.installments) {
-				if (installment.status === 'PAID' || installment.status === 'CANCELLED' || installment.status === 'WAIVED') {
+				if (
+					installment.status === 'PAID' ||
+					installment.status === 'CANCELLED' ||
+					installment.status === 'WAIVED'
+				) {
 					continue;
 				}
 
 				const pending = installment.pendingAmount;
 
-				if (installment.status === 'PENDING' || installment.status === 'PARTIAL' || installment.status === 'OVERDUE') {
+				if (
+					installment.status === 'PENDING' ||
+					installment.status === 'PARTIAL' ||
+					installment.status === 'OVERDUE'
+				) {
 					installmentPending = installmentPending.add(pending);
 				}
 
@@ -1641,7 +1651,9 @@ class PaymentAgreementService {
 
 		// Validate agreement status
 		if (agreement.status !== 'ACTIVE') {
-			throw new Error(`Solo convenios ACTIVOS pueden generar excepción de bloqueo. Estado actual: ${agreement.status}`);
+			throw new Error(
+				`Solo convenios ACTIVOS pueden generar excepción de bloqueo. Estado actual: ${agreement.status}`
+			);
 		}
 
 		// Check if agreement has overdue installments
@@ -1674,7 +1686,8 @@ class PaymentAgreementService {
 
 		// Check for existing exception for this agreement
 		const existingException = activeBlocks.find(
-			(block) => block.exceptionAgreementId === agreementId && block.exceptionSource === 'PAYMENT_AGREEMENT'
+			(block) =>
+				block.exceptionAgreementId === agreementId && block.exceptionSource === 'PAYMENT_AGREEMENT'
 		);
 
 		if (existingException) {
@@ -1855,7 +1868,9 @@ class PaymentAgreementService {
 	/**
 	 * Phase 5.3: Get active block exception for a student's agreement
 	 */
-	async getActiveAgreementBlockException(studentId: string): Promise<ActiveAgreementBlockException | null> {
+	async getActiveAgreementBlockException(
+		studentId: string
+	): Promise<ActiveAgreementBlockException | null> {
 		const block = await prisma.financialBlock.findFirst({
 			where: {
 				studentId,
@@ -1987,12 +2002,20 @@ class PaymentAgreementService {
 		}
 
 		// If should not have exception but has one, revoke it
-		if (!evaluation.shouldHaveException && currentException && currentException.exceptionAgreementId === agreementId) {
+		if (
+			!evaluation.shouldHaveException &&
+			currentException &&
+			currentException.exceptionAgreementId === agreementId
+		) {
 			return await this.revokeAgreementBlockException(agreementId, userId, userName);
 		}
 
 		// If should have exception and already has one for this agreement, no action needed
-		if (evaluation.shouldHaveException && currentException && currentException.exceptionAgreementId === agreementId) {
+		if (
+			evaluation.shouldHaveException &&
+			currentException &&
+			currentException.exceptionAgreementId === agreementId
+		) {
 			return {
 				agreementId,
 				agreementNumber: agreement.agreementNumber,
@@ -2070,10 +2093,7 @@ class PaymentAgreementService {
 			include: {
 				installments: true
 			},
-			orderBy: [
-				{ agreementYear: 'desc' },
-				{ agreementNumber: 'desc' }
-			]
+			orderBy: [{ agreementYear: 'desc' }, { agreementNumber: 'desc' }]
 		});
 
 		// Count agreements by status
@@ -2127,7 +2147,9 @@ class PaymentAgreementService {
 			.reduce((sum, agreement) => sum.add(agreement.pendingAmount), new Decimal(0));
 
 		// Calculate effective total debt (uncovered debt + agreement installment debt)
-		const effectiveTotalDebt = debtSummary.effectiveDebt.uncoveredDebt.add(debtSummary.effectiveDebt.agreementInstallmentPending);
+		const effectiveTotalDebt = debtSummary.effectiveDebt.uncoveredDebt.add(
+			debtSummary.effectiveDebt.agreementInstallmentPending
+		);
 
 		return {
 			studentId: student.id,
@@ -2190,16 +2212,46 @@ class PaymentAgreementService {
 		}
 
 		// Calculate aggregates
-		const totalOriginalDebt = studentReports.reduce((sum, r) => sum.add(r.originalDebtTotal), new Decimal(0));
-		const totalOriginalDebtCoveredByAgreements = studentReports.reduce((sum, r) => sum.add(r.originalDebtCoveredByActiveAgreements), new Decimal(0));
-		const totalOriginalDebtStillEnforceable = studentReports.reduce((sum, r) => sum.add(r.originalDebtStillEnforceable), new Decimal(0));
-		const totalAgreementPendingDebt = studentReports.reduce((sum, r) => sum.add(r.agreementPendingDebt), new Decimal(0));
-		const totalAgreementOverdueDebt = studentReports.reduce((sum, r) => sum.add(r.agreementOverdueDebt), new Decimal(0));
-		const totalAgreementDefaultedDebt = studentReports.reduce((sum, r) => sum.add(r.agreementDefaultedDebt), new Decimal(0));
-		const totalEffectiveDebt = studentReports.reduce((sum, r) => sum.add(r.effectiveTotalDebt), new Decimal(0));
-		const totalActiveAgreements = studentReports.reduce((sum, r) => sum + r.activeAgreementsCount, 0);
-		const totalDefaultedAgreements = studentReports.reduce((sum, r) => sum + r.defaultedAgreementsCount, 0);
-		const totalCompletedAgreements = studentReports.reduce((sum, r) => sum + r.completedAgreementsCount, 0);
+		const totalOriginalDebt = studentReports.reduce(
+			(sum, r) => sum.add(r.originalDebtTotal),
+			new Decimal(0)
+		);
+		const totalOriginalDebtCoveredByAgreements = studentReports.reduce(
+			(sum, r) => sum.add(r.originalDebtCoveredByActiveAgreements),
+			new Decimal(0)
+		);
+		const totalOriginalDebtStillEnforceable = studentReports.reduce(
+			(sum, r) => sum.add(r.originalDebtStillEnforceable),
+			new Decimal(0)
+		);
+		const totalAgreementPendingDebt = studentReports.reduce(
+			(sum, r) => sum.add(r.agreementPendingDebt),
+			new Decimal(0)
+		);
+		const totalAgreementOverdueDebt = studentReports.reduce(
+			(sum, r) => sum.add(r.agreementOverdueDebt),
+			new Decimal(0)
+		);
+		const totalAgreementDefaultedDebt = studentReports.reduce(
+			(sum, r) => sum.add(r.agreementDefaultedDebt),
+			new Decimal(0)
+		);
+		const totalEffectiveDebt = studentReports.reduce(
+			(sum, r) => sum.add(r.effectiveTotalDebt),
+			new Decimal(0)
+		);
+		const totalActiveAgreements = studentReports.reduce(
+			(sum, r) => sum + r.activeAgreementsCount,
+			0
+		);
+		const totalDefaultedAgreements = studentReports.reduce(
+			(sum, r) => sum + r.defaultedAgreementsCount,
+			0
+		);
+		const totalCompletedAgreements = studentReports.reduce(
+			(sum, r) => sum + r.completedAgreementsCount,
+			0
+		);
 
 		return {
 			totalStudents: studentReports.length,
@@ -2223,10 +2275,10 @@ class PaymentAgreementService {
 	async getDebtorStudentsWithAgreements(): Promise<StudentIntegratedDebtReport[]> {
 		// Get students with effective debt > 0
 		const report = await this.getAggregatedFinancialReport();
-		
+
 		// Filter students with effective debt
 		const debtors = report.studentReports.filter((r) => r.effectiveTotalDebt.gt(0));
-		
+
 		// Sort by effective debt descending
 		debtors.sort((a, b) => {
 			if (b.effectiveTotalDebt.gt(a.effectiveTotalDebt)) return 1;
@@ -2240,22 +2292,24 @@ class PaymentAgreementService {
 	/**
 	 * Phase 6.1: Batch evaluation of all active payment agreements
 	 * Evaluates status for all ACTIVE agreements in a safe, idempotent batch operation
-	 * 
+	 *
 	 * This method is designed for automated execution (e.g., cron jobs) and manual scripts.
 	 * It processes each agreement independently, so errors in one agreement don't affect others.
-	 * 
+	 *
 	 * @param options - Optional configuration
 	 * @param options.dryRun - If true, evaluates without making changes (default: false)
 	 * @param options.systemUserId - User ID to use for audit logs (default: 'SYSTEM')
 	 * @param options.systemUserName - User name to use for audit logs (default: 'System Batch')
-	 * 
+	 *
 	 * @returns Summary of batch evaluation results
 	 */
-	async evaluateAllActiveAgreementsStatus(options: {
-		dryRun?: boolean;
-		systemUserId?: string;
-		systemUserName?: string;
-	} = {}): Promise<{
+	async evaluateAllActiveAgreementsStatus(
+		options: {
+			dryRun?: boolean;
+			systemUserId?: string;
+			systemUserName?: string;
+		} = {}
+	): Promise<{
 		totalEvaluated: number;
 		installmentsMarkedOverdue: number;
 		agreementsCompleted: number;
@@ -2276,10 +2330,7 @@ class PaymentAgreementService {
 			include: {
 				installments: true
 			},
-			orderBy: [
-				{ agreementYear: 'asc' },
-				{ agreementNumber: 'asc' }
-			]
+			orderBy: [{ agreementYear: 'asc' }, { agreementNumber: 'asc' }]
 		});
 
 		const results = {
@@ -2305,7 +2356,7 @@ class PaymentAgreementService {
 					const overdueInstallments = agreement.installments.filter(
 						(inst) => inst.status === 'PENDING' && inst.dueDate < now
 					);
-					
+
 					const totalPaid = agreement.installments.reduce(
 						(sum, inst) => sum.add(inst.paidAmount),
 						new Decimal(0)
@@ -2365,22 +2416,24 @@ class PaymentAgreementService {
 	/**
 	 * Phase 6.2: Batch evaluation of agreement block exceptions
 	 * Evaluates and manages block exceptions for all relevant agreements in a safe, idempotent batch operation
-	 * 
+	 *
 	 * This method is designed for automated execution (e.g., cron jobs) and manual scripts.
 	 * It processes each agreement independently, so errors in one agreement don't affect others.
-	 * 
+	 *
 	 * @param options - Optional configuration
 	 * @param options.dryRun - If true, evaluates without making changes (default: false)
 	 * @param options.systemUserId - User ID to use for audit logs (default: 'SYSTEM')
 	 * @param options.systemUserName - User name to use for audit logs (default: 'System Batch')
-	 * 
+	 *
 	 * @returns Summary of batch evaluation results
 	 */
-	async evaluateAllAgreementBlockExceptions(options: {
-		dryRun?: boolean;
-		systemUserId?: string;
-		systemUserName?: string;
-	} = {}): Promise<{
+	async evaluateAllAgreementBlockExceptions(
+		options: {
+			dryRun?: boolean;
+			systemUserId?: string;
+			systemUserName?: string;
+		} = {}
+	): Promise<{
 		totalEvaluated: number;
 		exceptionsApplied: number;
 		exceptionsRevoked: number;
@@ -2407,10 +2460,7 @@ class PaymentAgreementService {
 			include: {
 				installments: true
 			},
-			orderBy: [
-				{ agreementYear: 'asc' },
-				{ agreementNumber: 'asc' }
-			]
+			orderBy: [{ agreementYear: 'asc' }, { agreementNumber: 'asc' }]
 		});
 
 		const results = {
@@ -2438,7 +2488,11 @@ class PaymentAgreementService {
 					// Simulate what would happen
 					if (evaluation.shouldHaveException && !currentException) {
 						results.exceptionsApplied++;
-					} else if (!evaluation.shouldHaveException && currentException && currentException.exceptionAgreementId === agreement.id) {
+					} else if (
+						!evaluation.shouldHaveException &&
+						currentException &&
+						currentException.exceptionAgreementId === agreement.id
+					) {
 						results.exceptionsRevoked++;
 					} else {
 						results.agreementsUnchanged++;

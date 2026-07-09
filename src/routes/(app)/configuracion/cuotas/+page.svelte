@@ -27,14 +27,15 @@
 	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8 dark:border-slate-700">
 		<h2 class="mb-6 text-2xl font-bold text-white">Configuración de Cuotas y Beneficios</h2>
 		<p class="mb-8 text-slate-400">
-			Configura los montos de cuotas por tipo de alumno, inscripción y los meses donde aplican los beneficios.
+			Configura los montos de cuotas por tipo de alumno, inscripción y los meses donde aplican los
+			beneficios.
 		</p>
 
 		<form method="POST" class="space-y-8">
 			<!-- Montos por Tipo de Alumno -->
 			<div class="space-y-6">
 				<h3 class="text-lg font-semibold text-white">Montos de Cuotas</h3>
-				
+
 				<div class="grid gap-6 md:grid-cols-3">
 					<!-- Cuota Normal -->
 					<div>
@@ -42,7 +43,7 @@
 							Cuota Normal
 						</label>
 						<div class="relative">
-							<span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+							<span class="absolute top-1/2 left-4 -translate-y-1/2 text-slate-400">$</span>
 							<input
 								id="normalFeeAmount"
 								name="normalFeeAmount"
@@ -62,7 +63,7 @@
 							Cuota Becado
 						</label>
 						<div class="relative">
-							<span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+							<span class="absolute top-1/2 left-4 -translate-y-1/2 text-slate-400">$</span>
 							<input
 								id="becadoFeeAmount"
 								name="becadoFeeAmount"
@@ -82,7 +83,7 @@
 							Cuota Recursante
 						</label>
 						<div class="relative">
-							<span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+							<span class="absolute top-1/2 left-4 -translate-y-1/2 text-slate-400">$</span>
 							<input
 								id="recursantFeeAmount"
 								name="recursantFeeAmount"
@@ -103,7 +104,7 @@
 						Monto de Inscripción
 					</label>
 					<div class="relative">
-						<span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+						<span class="absolute top-1/2 left-4 -translate-y-1/2 text-slate-400">$</span>
 						<input
 							id="enrollmentAmount"
 							name="enrollmentAmount"
@@ -129,7 +130,9 @@
 					</label>
 					<div class="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
 						{#each MONTHS as month}
-							<label class="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950 p-3 transition hover:border-indigo-500 dark:border-slate-600">
+							<label
+								class="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950 p-3 transition hover:border-indigo-500 dark:border-slate-600"
+							>
 								<input
 									type="checkbox"
 									name="month_{month.value}"

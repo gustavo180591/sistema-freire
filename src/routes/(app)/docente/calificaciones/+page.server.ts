@@ -332,7 +332,7 @@ export const actions: Actions = {
 			// Delegar al servicio
 			const result = await evaluationService.loadGradesBatch({
 				evaluationId,
-				grades: validGrades.map(g => ({
+				grades: validGrades.map((g) => ({
 					...g,
 					observations: g.observations || undefined
 				})),

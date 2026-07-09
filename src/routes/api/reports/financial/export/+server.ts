@@ -5,12 +5,12 @@ import type { RequestHandler } from './$types';
 
 /**
  * GET /api/reports/financial/export
- * 
+ *
  * Returns financial report as CSV
- * 
+ *
  * Permissions:
  * - FINANCIAL_REPORT:read (explicit permission required)
- * 
+ *
  * Supported filters:
  * - studentId
  * - startDate
@@ -33,7 +33,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 		const filters = parseFilters(url);
 
 		const { csv, filename } = await exportFinancialReport(filters);
-		
+
 		return new Response(csv, {
 			status: 200,
 			headers: {
@@ -43,7 +43,10 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 		});
 	} catch (error) {
 		// Handle validation errors
-		if (error instanceof Error && (error.message.includes('Invalid') || error.message.includes('startDate'))) {
+		if (
+			error instanceof Error &&
+			(error.message.includes('Invalid') || error.message.includes('startDate'))
+		) {
 			return new Response(error.message, { status: 400 });
 		}
 

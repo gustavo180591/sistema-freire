@@ -20,7 +20,10 @@ function test(description: string, condition: boolean) {
 
 // 1. Verificar existencia de archivos
 const schemaPath = join(projectRoot, 'prisma/schema.prisma');
-const migrationPath = join(projectRoot, 'prisma/migrations/20260708024357_add_student_location/migration.sql');
+const migrationPath = join(
+	projectRoot,
+	'prisma/migrations/20260708024357_add_student_location/migration.sql'
+);
 
 test('Existe prisma/schema.prisma', existsSync(schemaPath));
 test('Existe migración add_student_location', existsSync(migrationPath));
@@ -42,7 +45,10 @@ test('Student.location usa onDelete Restrict', schemaContent.includes('onDelete:
 
 // 4. Verificar Location.displayOrder
 test('Location tiene campo displayOrder', schemaContent.includes('displayOrder'));
-test('Location.displayOrder tiene default 0', schemaContent.includes('displayOrder    Int                      @default(0)'));
+test(
+	'Location.displayOrder tiene default 0',
+	schemaContent.includes('displayOrder    Int                      @default(0)')
+);
 
 // 5. Verificar Location.students relation
 test('Location tiene relación students', schemaContent.includes('students        Student[]'));
@@ -53,10 +59,22 @@ test('Student tiene índice en locationId', schemaContent.includes('@@index([loc
 // 7. Verificar que la migración solo agrega los campos necesarios
 if (existsSync(migrationPath)) {
 	const migrationContent = readFileSync(migrationPath, 'utf-8');
-	test('Migración agrega displayOrder a locations', migrationContent.includes('ADD COLUMN     "displayOrder"'));
-	test('Migración agrega locationId a students', migrationContent.includes('ADD COLUMN     "locationId"'));
-	test('Migración crea FK a locations', migrationContent.includes('FOREIGN KEY ("locationId") REFERENCES "locations"("id")'));
-	test('Migración no usa SQL raw prohibido', !migrationContent.includes('DROP') && !migrationContent.includes('DELETE FROM'));
+	test(
+		'Migración agrega displayOrder a locations',
+		migrationContent.includes('ADD COLUMN     "displayOrder"')
+	);
+	test(
+		'Migración agrega locationId a students',
+		migrationContent.includes('ADD COLUMN     "locationId"')
+	);
+	test(
+		'Migración crea FK a locations',
+		migrationContent.includes('FOREIGN KEY ("locationId") REFERENCES "locations"("id")')
+	);
+	test(
+		'Migración no usa SQL raw prohibido',
+		!migrationContent.includes('DROP') && !migrationContent.includes('DELETE FROM')
+	);
 }
 
 // 8. Verificar que no se tocaron otros modelos
@@ -68,12 +86,32 @@ const teacherModelMatch = schemaContent.match(/model Teacher[\s\S]*?@@map\("teac
 test('No se modificó Teacher', !teacherModelMatch || !teacherModelMatch[0].includes('locationId'));
 
 // 9. Verificar que Student.locality sigue existiendo (domicilio personal)
-test('Student.locality sigue existiendo (domicilio personal)', schemaContent.includes('locality           String?'));
+test(
+	'Student.locality sigue existiendo (domicilio personal)',
+	schemaContent.includes('locality           String?')
+);
 
 // 10. Verificar que no hay patrones prohibidos en el schema
 const fromCodes = (...codes: number[]) => String.fromCharCode(...codes);
 const tsIgnore = fromCodes(64, 116, 115, 45, 105, 103, 110, 111, 114, 101);
-const tsExpect = fromCodes(64, 116, 115, 45, 101, 120, 112, 101, 99, 116, 45, 101, 114, 114, 111, 114);
+const tsExpect = fromCodes(
+	64,
+	116,
+	115,
+	45,
+	101,
+	120,
+	112,
+	101,
+	99,
+	116,
+	45,
+	101,
+	114,
+	114,
+	111,
+	114
+);
 const anyType = fromCodes(58, 32, 97, 110, 121);
 const asAny = fromCodes(97, 115, 32, 97, 110, 121);
 test('No hay ' + tsIgnore + ' en schema', !schemaContent.includes(tsIgnore));
@@ -83,9 +121,15 @@ test('No hay ' + asAny + ' en schema', !schemaContent.includes(asAny));
 
 // 11. Verificar que no se crearon nuevos endpoints (no aplica a schema, pero verificamos estructura)
 const paymentModelMatch = schemaContent.match(/model Payment[\s\S]*?@@map\("payments"\)/s);
-test('Schema no tiene cambios en modelos financieros', !paymentModelMatch || !paymentModelMatch[0].includes('locationId'));
+test(
+	'Schema no tiene cambios en modelos financieros',
+	!paymentModelMatch || !paymentModelMatch[0].includes('locationId')
+);
 const attendanceModelMatch = schemaContent.match(/model Attendance[\s\S]*?@@map\("attendance/);
-test('Schema no tiene cambios en modelos de asistencia', !attendanceModelMatch || !attendanceModelMatch[0].includes('locationId'));
+test(
+	'Schema no tiene cambios en modelos de asistencia',
+	!attendanceModelMatch || !attendanceModelMatch[0].includes('locationId')
+);
 
 // Resumen
 console.log('\n📊 Resumen del test:');

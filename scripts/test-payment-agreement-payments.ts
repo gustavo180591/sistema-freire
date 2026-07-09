@@ -575,9 +575,7 @@ async function runTests() {
 
 		// Verify pending amount is 0
 		if (!finalAgreement.pendingAmount.equals(new Decimal(0))) {
-			throw new Error(
-				`Expected pending amount 0, got ${finalAgreement.pendingAmount.toString()}`
-			);
+			throw new Error(`Expected pending amount 0, got ${finalAgreement.pendingAmount.toString()}`);
 		}
 		console.log('✓ Agreement pending amount is 0');
 

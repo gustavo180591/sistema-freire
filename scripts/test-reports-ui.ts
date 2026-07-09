@@ -167,7 +167,11 @@ runTest('UI handles 403', () => {
 runTest('UI handles financial filters', () => {
 	const path = join(process.cwd(), 'src/lib/components/reports/FinancialReportsPanel.svelte');
 	const content = readFileSync(path, 'utf-8');
-	if (!content.includes('studentId') || !content.includes('startDate') || !content.includes('endDate')) {
+	if (
+		!content.includes('studentId') ||
+		!content.includes('startDate') ||
+		!content.includes('endDate')
+	) {
 		throw new Error('Does not handle financial filters');
 	}
 });
@@ -176,7 +180,11 @@ runTest('UI handles financial filters', () => {
 runTest('UI handles academic filters', () => {
 	const path = join(process.cwd(), 'src/lib/components/reports/AcademicReportsPanel.svelte');
 	const content = readFileSync(path, 'utf-8');
-	if (!content.includes('careerId') || !content.includes('subjectId') || !content.includes('studentId')) {
+	if (
+		!content.includes('careerId') ||
+		!content.includes('subjectId') ||
+		!content.includes('studentId')
+	) {
 		throw new Error('Does not handle academic filters');
 	}
 });
@@ -316,7 +324,7 @@ runTest('No forbidden patterns in UI', () => {
 // Test 20: Check if no new API routes created outside Phase 2
 runTest('No new API routes created outside Phase 2', () => {
 	const apiReportsDir = join(process.cwd(), 'src/routes/api/reports');
-	
+
 	if (!existsSync(apiReportsDir)) {
 		throw new Error('API reports directory does not exist');
 	}

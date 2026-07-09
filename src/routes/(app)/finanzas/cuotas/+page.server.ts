@@ -176,7 +176,9 @@ export const actions: Actions = {
 
 			return { success: true, count: results.length };
 		} catch (err) {
-			return fail(400, { error: err instanceof Error ? err.message : 'Error al crear cuotas masivas' });
+			return fail(400, {
+				error: err instanceof Error ? err.message : 'Error al crear cuotas masivas'
+			});
 		}
 	}
 };

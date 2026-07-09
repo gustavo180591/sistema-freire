@@ -15,13 +15,15 @@ async function createTestStudent() {
 		}
 	});
 
-	const career = await prisma.career.findFirst() || await prisma.career.create({
-		data: {
-			code: 'TEST-FIN-INT',
-			name: 'Test Career Financial Integration',
-			durationYears: 5
-		}
-	});
+	const career =
+		(await prisma.career.findFirst()) ||
+		(await prisma.career.create({
+			data: {
+				code: 'TEST-FIN-INT',
+				name: 'Test Career Financial Integration',
+				durationYears: 5
+			}
+		}));
 
 	const student = await prisma.student.create({
 		data: {
@@ -204,7 +206,13 @@ async function testOriginalMethodsStillWork() {
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Test getStudentFinancialStatus
 	const status = await financialService.getStudentFinancialStatus(student.id);
@@ -247,10 +255,18 @@ async function testNewMethodsReturnExtendedFields() {
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Test getStudentFinancialStatusWithAgreements
-	const statusWithAgreements = await financialService.getStudentFinancialStatusWithAgreements(student.id);
+	const statusWithAgreements = await financialService.getStudentFinancialStatusWithAgreements(
+		student.id
+	);
 
 	if (statusWithAgreements.agreementDebtSummary) {
 		console.log('✅ getStudentFinancialStatusWithAgreements returns agreementDebtSummary');
@@ -274,7 +290,9 @@ async function testNewMethodsReturnExtendedFields() {
 	}
 
 	// Test getPeriodFinancialReportWithAgreements
-	const periodReportWithAgreements = await financialService.getPeriodFinancialReportWithAgreements({});
+	const periodReportWithAgreements = await financialService.getPeriodFinancialReportWithAgreements(
+		{}
+	);
 
 	if (periodReportWithAgreements.agreementSummary) {
 		console.log('✅ getPeriodFinancialReportWithAgreements returns agreementSummary');
@@ -299,15 +317,31 @@ async function testStudentWithoutAgreementMaintainsOriginalDebt() {
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Get status with agreements
-	const statusWithAgreements = await financialService.getStudentFinancialStatusWithAgreements(student.id);
+	const statusWithAgreements = await financialService.getStudentFinancialStatusWithAgreements(
+		student.id
+	);
 
-	console.log(`✅ Original debt total: ${statusWithAgreements.agreementDebtSummary.originalDebtTotal.toString()}`);
-	console.log(`✅ Original debt covered by agreements: ${statusWithAgreements.agreementDebtSummary.originalDebtCoveredByActiveAgreements.toString()}`);
-	console.log(`✅ Original debt still enforceable: ${statusWithAgreements.agreementDebtSummary.originalDebtStillEnforceable.toString()}`);
-	console.log(`✅ Effective total debt: ${statusWithAgreements.agreementDebtSummary.effectiveTotalDebt.toString()}`);
+	console.log(
+		`✅ Original debt total: ${statusWithAgreements.agreementDebtSummary.originalDebtTotal.toString()}`
+	);
+	console.log(
+		`✅ Original debt covered by agreements: ${statusWithAgreements.agreementDebtSummary.originalDebtCoveredByActiveAgreements.toString()}`
+	);
+	console.log(
+		`✅ Original debt still enforceable: ${statusWithAgreements.agreementDebtSummary.originalDebtStillEnforceable.toString()}`
+	);
+	console.log(
+		`✅ Effective total debt: ${statusWithAgreements.agreementDebtSummary.effectiveTotalDebt.toString()}`
+	);
 
 	if (statusWithAgreements.agreementDebtSummary.originalDebtTotal.equals(new Decimal(10000))) {
 		console.log('✅ Original debt total is correct');
@@ -315,13 +349,21 @@ async function testStudentWithoutAgreementMaintainsOriginalDebt() {
 		throw new Error('Original debt total should be 10000');
 	}
 
-	if (statusWithAgreements.agreementDebtSummary.originalDebtCoveredByActiveAgreements.equals(new Decimal(0))) {
+	if (
+		statusWithAgreements.agreementDebtSummary.originalDebtCoveredByActiveAgreements.equals(
+			new Decimal(0)
+		)
+	) {
 		console.log('✅ No debt covered by agreements');
 	} else {
 		throw new Error('No debt should be covered by agreements');
 	}
 
-	if (statusWithAgreements.agreementDebtSummary.originalDebtStillEnforceable.equals(new Decimal(10000))) {
+	if (
+		statusWithAgreements.agreementDebtSummary.originalDebtStillEnforceable.equals(
+			new Decimal(10000)
+		)
+	) {
 		console.log('✅ All original debt is still enforceable');
 	} else {
 		throw new Error('All original debt should be enforceable');
@@ -350,33 +392,62 @@ async function testActiveAgreementAvoidsDuplication() {
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Create ACTIVE agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'ACTIVE');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'ACTIVE'
+	);
 
 	// Get status with agreements
-	const statusWithAgreements = await financialService.getStudentFinancialStatusWithAgreements(student.id);
+	const statusWithAgreements = await financialService.getStudentFinancialStatusWithAgreements(
+		student.id
+	);
 
-	console.log(`✅ Original debt total: ${statusWithAgreements.agreementDebtSummary.originalDebtTotal.toString()}`);
-	console.log(`✅ Original debt covered by agreements: ${statusWithAgreements.agreementDebtSummary.originalDebtCoveredByActiveAgreements.toString()}`);
-	console.log(`✅ Original debt still enforceable: ${statusWithAgreements.agreementDebtSummary.originalDebtStillEnforceable.toString()}`);
-	console.log(`✅ Agreement pending debt: ${statusWithAgreements.agreementDebtSummary.agreementPendingDebt.toString()}`);
-	console.log(`✅ Effective total debt: ${statusWithAgreements.agreementDebtSummary.effectiveTotalDebt.toString()}`);
+	console.log(
+		`✅ Original debt total: ${statusWithAgreements.agreementDebtSummary.originalDebtTotal.toString()}`
+	);
+	console.log(
+		`✅ Original debt covered by agreements: ${statusWithAgreements.agreementDebtSummary.originalDebtCoveredByActiveAgreements.toString()}`
+	);
+	console.log(
+		`✅ Original debt still enforceable: ${statusWithAgreements.agreementDebtSummary.originalDebtStillEnforceable.toString()}`
+	);
+	console.log(
+		`✅ Agreement pending debt: ${statusWithAgreements.agreementDebtSummary.agreementPendingDebt.toString()}`
+	);
+	console.log(
+		`✅ Effective total debt: ${statusWithAgreements.agreementDebtSummary.effectiveTotalDebt.toString()}`
+	);
 
-	if (statusWithAgreements.agreementDebtSummary.originalDebtCoveredByActiveAgreements.equals(new Decimal(10000))) {
+	if (
+		statusWithAgreements.agreementDebtSummary.originalDebtCoveredByActiveAgreements.equals(
+			new Decimal(10000)
+		)
+	) {
 		console.log('✅ ACTIVE agreement covers original debt');
 	} else {
 		throw new Error('ACTIVE agreement should cover original debt');
 	}
 
-	if (statusWithAgreements.agreementDebtSummary.originalDebtStillEnforceable.equals(new Decimal(0))) {
+	if (
+		statusWithAgreements.agreementDebtSummary.originalDebtStillEnforceable.equals(new Decimal(0))
+	) {
 		console.log('✅ No original debt is enforceable');
 	} else {
 		throw new Error('No original debt should be enforceable');
@@ -414,16 +485,27 @@ async function testCompletedAgreementNoPendingDebt() {
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Create COMPLETED agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'COMPLETED');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'COMPLETED'
+	);
 
 	// Mark installments as paid
 	await prisma.paymentAgreementInstallment.updateMany({
@@ -444,10 +526,16 @@ async function testCompletedAgreementNoPendingDebt() {
 	});
 
 	// Get status with agreements
-	const statusWithAgreements = await financialService.getStudentFinancialStatusWithAgreements(student.id);
+	const statusWithAgreements = await financialService.getStudentFinancialStatusWithAgreements(
+		student.id
+	);
 
-	console.log(`✅ Agreement pending debt: ${statusWithAgreements.agreementDebtSummary.agreementPendingDebt.toString()}`);
-	console.log(`✅ Effective total debt: ${statusWithAgreements.agreementDebtSummary.effectiveTotalDebt.toString()}`);
+	console.log(
+		`✅ Agreement pending debt: ${statusWithAgreements.agreementDebtSummary.agreementPendingDebt.toString()}`
+	);
+	console.log(
+		`✅ Effective total debt: ${statusWithAgreements.agreementDebtSummary.effectiveTotalDebt.toString()}`
+	);
 
 	if (statusWithAgreements.agreementDebtSummary.agreementPendingDebt.equals(new Decimal(0))) {
 		console.log('✅ COMPLETED agreement has no pending debt');
@@ -460,7 +548,9 @@ async function testCompletedAgreementNoPendingDebt() {
 	if (statusWithAgreements.agreementDebtSummary.effectiveTotalDebt.equals(new Decimal(10000))) {
 		console.log('✅ Effective debt equals original debt (COMPLETED does not cover)');
 	} else {
-		throw new Error('Effective debt should equal original debt (COMPLETED does not cover original debt)');
+		throw new Error(
+			'Effective debt should equal original debt (COMPLETED does not cover original debt)'
+		);
 	}
 
 	// Cleanup
@@ -483,22 +573,39 @@ async function testDefaultedAgreementAppearsSeparately() {
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Create DEFAULTED agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'DEFAULTED');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'DEFAULTED'
+	);
 
 	// Get status with agreements
-	const statusWithAgreements = await financialService.getStudentFinancialStatusWithAgreements(student.id);
+	const statusWithAgreements = await financialService.getStudentFinancialStatusWithAgreements(
+		student.id
+	);
 
-	console.log(`✅ Agreement defaulted debt: ${statusWithAgreements.agreementDebtSummary.agreementDefaultedDebt.toString()}`);
-	console.log(`✅ Defaulted agreements count: ${statusWithAgreements.agreementDebtSummary.defaultedAgreementsCount}`);
+	console.log(
+		`✅ Agreement defaulted debt: ${statusWithAgreements.agreementDebtSummary.agreementDefaultedDebt.toString()}`
+	);
+	console.log(
+		`✅ Defaulted agreements count: ${statusWithAgreements.agreementDebtSummary.defaultedAgreementsCount}`
+	);
 
 	if (statusWithAgreements.agreementDebtSummary.agreementDefaultedDebt.equals(new Decimal(10000))) {
 		console.log('✅ DEFAULTED agreement appears as defaulted debt');
@@ -537,13 +644,15 @@ async function testMultipleStudentsAggregateCorrectly() {
 			lastName: 'Financial Integration 1'
 		}
 	});
-	const career = await prisma.career.findFirst() || await prisma.career.create({
-		data: {
-			code: 'TEST-FIN-INT-AGG',
-			name: 'Test Career Financial Integration Agg',
-			durationYears: 5
-		}
-	});
+	const career =
+		(await prisma.career.findFirst()) ||
+		(await prisma.career.create({
+			data: {
+				code: 'TEST-FIN-INT-AGG',
+				name: 'Test Career Financial Integration Agg',
+				durationYears: 5
+			}
+		}));
 	const student1 = await prisma.student.create({
 		data: {
 			id: student1Id,
@@ -580,14 +689,30 @@ async function testMultipleStudentsAggregateCorrectly() {
 	const concept = await createTestChargeConcept();
 
 	// Create charges
-	const charge1 = await createTestStudentCharge(student1.id, concept.id, academicTerm.id, new Decimal(5000), new Date('2024-01-01'));
-	const charge2 = await createTestStudentCharge(student2.id, concept.id, academicTerm.id, new Decimal(3000), new Date('2024-01-01'));
+	const charge1 = await createTestStudentCharge(
+		student1.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(5000),
+		new Date('2024-01-01')
+	);
+	const charge2 = await createTestStudentCharge(
+		student2.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(3000),
+		new Date('2024-01-01')
+	);
 
 	// Get dashboard metrics with agreements
 	const metricsWithAgreements = await financialService.getFinancialDashboardMetricsWithAgreements();
 
-	console.log(`✅ Total students: ${metricsWithAgreements.agreementMetrics.totalOriginalDebt.toString()}`);
-	console.log(`✅ Total effective debt: ${metricsWithAgreements.agreementMetrics.totalEffectiveDebt.toString()}`);
+	console.log(
+		`✅ Total students: ${metricsWithAgreements.agreementMetrics.totalOriginalDebt.toString()}`
+	);
+	console.log(
+		`✅ Total effective debt: ${metricsWithAgreements.agreementMetrics.totalEffectiveDebt.toString()}`
+	);
 
 	// Cleanup second student
 	await prisma.studentCharge.deleteMany({ where: { studentId: student2.id } });
@@ -611,19 +736,30 @@ async function testNoStudentChargeModification() {
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	const originalChargeStatus = charge.status;
 	const originalChargePaidAmount = charge.paidAmount;
 
 	// Create ACTIVE agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'ACTIVE');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'ACTIVE'
+	);
 
 	// Get status with agreements
 	await financialService.getStudentFinancialStatusWithAgreements(student.id);
@@ -665,7 +801,13 @@ async function testNoFinancialBlockModification() {
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Create a financial block
 	const block = await prisma.financialBlock.create({
@@ -684,13 +826,18 @@ async function testNoFinancialBlockModification() {
 	const originalBlockReason = block.blockReason;
 
 	// Create ACTIVE agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'ACTIVE');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'ACTIVE'
+	);
 
 	// Get status with agreements
 	await financialService.getStudentFinancialStatusWithAgreements(student.id);
@@ -733,15 +880,25 @@ async function testDeudaEndpointWorks() {
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Get status with agreements (simulating the endpoint call)
-	const statusWithAgreements = await financialService.getStudentFinancialStatusWithAgreements(student.id);
+	const statusWithAgreements = await financialService.getStudentFinancialStatusWithAgreements(
+		student.id
+	);
 
 	if (statusWithAgreements.agreementDebtSummary) {
 		console.log('✅ getStudentFinancialStatusWithAgreements works for /finanzas/deuda endpoint');
 	} else {
-		throw new Error('getStudentFinancialStatusWithAgreements should work for /finanzas/deuda endpoint');
+		throw new Error(
+			'getStudentFinancialStatusWithAgreements should work for /finanzas/deuda endpoint'
+		);
 	}
 
 	// Cleanup
@@ -763,9 +920,15 @@ async function runTests() {
 	const tests = [
 		{ name: 'Original methods still work', fn: testOriginalMethodsStillWork },
 		{ name: 'New methods return extended fields', fn: testNewMethodsReturnExtendedFields },
-		{ name: 'Student without agreement maintains original debt', fn: testStudentWithoutAgreementMaintainsOriginalDebt },
+		{
+			name: 'Student without agreement maintains original debt',
+			fn: testStudentWithoutAgreementMaintainsOriginalDebt
+		},
 		{ name: 'ACTIVE agreement avoids duplication', fn: testActiveAgreementAvoidsDuplication },
-		{ name: 'COMPLETED agreement does not add pending debt', fn: testCompletedAgreementNoPendingDebt },
+		{
+			name: 'COMPLETED agreement does not add pending debt',
+			fn: testCompletedAgreementNoPendingDebt
+		},
 		{ name: 'DEFAULTED agreement appears separately', fn: testDefaultedAgreementAppearsSeparately },
 		{ name: 'Multiple students aggregate correctly', fn: testMultipleStudentsAggregateCorrectly },
 		{ name: 'No StudentCharge modification', fn: testNoStudentChargeModification },

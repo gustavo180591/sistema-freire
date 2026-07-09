@@ -20,14 +20,24 @@ function test(description: string, condition: boolean) {
 
 // 1. Verificar existencia de archivos
 const configPagePath = join(projectRoot, 'src/routes/(app)/configuracion/+page.svelte');
-const localidadesServerPath = join(projectRoot, 'src/routes/(app)/configuracion/localidades/+page.server.ts');
-const localidadesPagePath = join(projectRoot, 'src/routes/(app)/configuracion/localidades/+page.svelte');
+const localidadesServerPath = join(
+	projectRoot,
+	'src/routes/(app)/configuracion/localidades/+page.server.ts'
+);
+const localidadesPagePath = join(
+	projectRoot,
+	'src/routes/(app)/configuracion/localidades/+page.svelte'
+);
 
 test('Existe /configuracion/+page.svelte', existsSync(configPagePath));
 test('Existe /configuracion/localidades/+page.server.ts', existsSync(localidadesServerPath));
 test('Existe /configuracion/localidades/+page.svelte', existsSync(localidadesPagePath));
 
-if (!existsSync(configPagePath) || !existsSync(localidadesServerPath) || !existsSync(localidadesPagePath)) {
+if (
+	!existsSync(configPagePath) ||
+	!existsSync(localidadesServerPath) ||
+	!existsSync(localidadesPagePath)
+) {
 	console.log('\n❌ Archivos faltantes. Abortando test.');
 	process.exit(1);
 }
@@ -37,12 +47,22 @@ const localidadesServerContent = readFileSync(localidadesServerPath, 'utf-8');
 const localidadesPageContent = readFileSync(localidadesPagePath, 'utf-8');
 
 // 2. Verificar tarjeta en /configuracion
-test('Tarjeta Localidades/Sedes existe en /configuracion', configPageContent.includes('Localidades / Sedes'));
-test('Tarjeta enlaza a /configuracion/localidades', configPageContent.includes('href="/configuracion/localidades"'));
+test(
+	'Tarjeta Localidades/Sedes existe en /configuracion',
+	configPageContent.includes('Localidades / Sedes')
+);
+test(
+	'Tarjeta enlaza a /configuracion/localidades',
+	configPageContent.includes('href="/configuracion/localidades"')
+);
 
 // 3. Verificar uso de modelos Prisma
 test('Usa modelo Location', localidadesServerContent.includes('prisma.location'));
-test('Usa relación CareerLocation', localidadesServerContent.includes('careers') || localidadesServerContent.includes('CareerLocation'));
+test(
+	'Usa relación CareerLocation',
+	localidadesServerContent.includes('careers') ||
+		localidadesServerContent.includes('CareerLocation')
+);
 
 // 4. Verificar KPIs en la UI
 test('Muestra KPI Total de Sedes', localidadesPageContent.includes('Total de Sedes'));
@@ -65,13 +85,19 @@ test('Botón Editar existe', localidadesPageContent.includes('Editar'));
 test('Botón Configurar Carreras existe', localidadesPageContent.includes('Configurar carreras'));
 
 // 7. Verificar formulario de sede
-test('Formulario de sede existe', localidadesPageContent.includes('Nombre') && localidadesPageContent.includes('Código'));
+test(
+	'Formulario de sede existe',
+	localidadesPageContent.includes('Nombre') && localidadesPageContent.includes('Código')
+);
 test('Campo Dirección existe', localidadesPageContent.includes('Dirección'));
 test('Campo Ciudad existe', localidadesPageContent.includes('Ciudad'));
 test('Campo Provincia existe', localidadesPageContent.includes('Provincia'));
 test('Campo Teléfono existe', localidadesPageContent.includes('Teléfono'));
 test('Campo Email existe', localidadesPageContent.includes('Email'));
-test('Campo Orden de Visualización existe', localidadesPageContent.includes('Orden de Visualización'));
+test(
+	'Campo Orden de Visualización existe',
+	localidadesPageContent.includes('Orden de Visualización')
+);
 test('Campo Activa existe', localidadesPageContent.includes('Activa'));
 
 // 8. Verificar modal de carreras
@@ -86,13 +112,39 @@ test('No hay ' + queryRaw + ' en Svelte', !localidadesPageContent.includes(query
 test('No hay ' + executeRaw + ' en Svelte', !localidadesPageContent.includes(executeRaw));
 
 // 10. Verificar que no se tocaron módulos ajenos
-test('No menciona Finanzas', !localidadesServerContent.includes('finance') && !localidadesPageContent.includes('finance'));
-test('No menciona Calendario (módulo ajenos)', !localidadesServerContent.includes('calendar') && !localidadesPageContent.includes('calendar'));
-test('No menciona /alumnos', !localidadesServerContent.includes('/alumnos') && !localidadesPageContent.includes('/alumnos'));
+test(
+	'No menciona Finanzas',
+	!localidadesServerContent.includes('finance') && !localidadesPageContent.includes('finance')
+);
+test(
+	'No menciona Calendario (módulo ajenos)',
+	!localidadesServerContent.includes('calendar') && !localidadesPageContent.includes('calendar')
+);
+test(
+	'No menciona /alumnos',
+	!localidadesServerContent.includes('/alumnos') && !localidadesPageContent.includes('/alumnos')
+);
 
 // 11. Verificar patrones prohibidos
 const tsIgnore = fromCodes(64, 116, 115, 45, 105, 103, 110, 111, 114, 101);
-const tsExpect = fromCodes(64, 116, 115, 45, 101, 120, 112, 101, 99, 116, 45, 101, 114, 114, 111, 114);
+const tsExpect = fromCodes(
+	64,
+	116,
+	115,
+	45,
+	101,
+	120,
+	112,
+	101,
+	99,
+	116,
+	45,
+	101,
+	114,
+	114,
+	111,
+	114
+);
 const anyType = fromCodes(58, 32, 97, 110, 121);
 const asAny = fromCodes(97, 115, 32, 97, 110, 121);
 
@@ -113,19 +165,35 @@ test('No se crearon migraciones nuevas de sedes', true); // Simplified check
 test('Existe export const actions', localidadesServerContent.includes('export const actions'));
 test('Existe acción createLocation', localidadesServerContent.includes('createLocation'));
 test('Existe acción updateLocation', localidadesServerContent.includes('updateLocation'));
-test('Existe acción toggleLocationStatus', localidadesServerContent.includes('toggleLocationStatus'));
-test('Existe acción updateCareerLocations', localidadesServerContent.includes('updateCareerLocations'));
+test(
+	'Existe acción toggleLocationStatus',
+	localidadesServerContent.includes('toggleLocationStatus')
+);
+test(
+	'Existe acción updateCareerLocations',
+	localidadesServerContent.includes('updateCareerLocations')
+);
 test('Se usa CareerLocation en acciones', localidadesServerContent.includes('CareerLocation'));
-test('No hay hard delete de Location', !localidadesServerContent.match(/prisma\.location\s*\.\s*delete\(/) && !localidadesServerContent.match(/Location\s*\.\s*delete\(/));
+test(
+	'No hay hard delete de Location',
+	!localidadesServerContent.match(/prisma\.location\s*\.\s*delete\(/) &&
+		!localidadesServerContent.match(/Location\s*\.\s*delete\(/)
+);
 test('load valida autorización', localidadesServerContent.includes('requireRole'));
 test('createLocation valida autorización', localidadesServerContent.includes('requireRole'));
 test('updateLocation valida autorización', localidadesServerContent.includes('requireRole'));
 test('toggleLocationStatus valida autorización', localidadesServerContent.includes('requireRole'));
 test('updateCareerLocations valida autorización', localidadesServerContent.includes('requireRole'));
-test('Existe caso 403 o SUPERADMIN', localidadesServerContent.includes('SUPERADMIN') || localidadesServerContent.includes('403'));
+test(
+	'Existe caso 403 o SUPERADMIN',
+	localidadesServerContent.includes('SUPERADMIN') || localidadesServerContent.includes('403')
+);
 test('No basta con locals.user', localidadesServerContent.includes('requireRole'));
 test('No hay Prisma directo en Svelte', !localidadesPageContent.includes('prisma.'));
-test('No hay endpoints nuevos', !localidadesServerContent.includes('POST') || localidadesServerContent.includes('actions'));
+test(
+	'No hay endpoints nuevos',
+	!localidadesServerContent.includes('POST') || localidadesServerContent.includes('actions')
+);
 
 // Resumen
 console.log('\n📊 Resumen del test:');

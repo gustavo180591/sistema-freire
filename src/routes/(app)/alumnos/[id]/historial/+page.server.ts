@@ -63,8 +63,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		// Como AttendanceRecord está vinculado a Subject, y SubjectCommission está vinculado a Subject,
 		// agrupamos por subjectId + attendanceId para evitar mezclar comisiones diferentes
 		const subjectId = entry.attendance.subjectId;
-		const commissionKey = enrollments.find((e) => e.subjectId === subjectId)?.commissionId || subjectId;
-		
+		const commissionKey =
+			enrollments.find((e) => e.subjectId === subjectId)?.commissionId || subjectId;
+
 		if (!attendanceByCommission.has(commissionKey)) {
 			attendanceByCommission.set(commissionKey, { present: 0, total: 0 });
 		}
@@ -80,9 +81,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		// Usar commissionId como clave para buscar asistencia específica de esa comisión
 		const attendanceKey = enrollment.commissionId || enrollment.subjectId;
 		const attendanceStats = attendanceByCommission.get(attendanceKey) || { present: 0, total: 0 };
-		const attendancePercent = attendanceStats.total > 0
-			? Math.round((attendanceStats.present / attendanceStats.total) * 100)
-			: 0;
+		const attendancePercent =
+			attendanceStats.total > 0
+				? Math.round((attendanceStats.present / attendanceStats.total) * 100)
+				: 0;
 
 		// Buscar status académico si existe
 		const subjectStatus = student.subjectStatuses.find((s) => s.subjectId === enrollment.subjectId);
@@ -140,10 +142,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	// Calcular métricas adicionales
 	const currentSubjects = subjects.filter((s) => s.status === 'ACTIVE').length;
 	const regularSubjects = subjects.filter((s) => s.regularityStatus === 'REGULAR').length;
-	const averageAttendance = subjects.length > 0
-		? Math.round(subjects.reduce((sum, s) => sum + s.attendancePercent, 0) / subjects.length)
-		: 0;
-	const lowAttendanceSubjects = subjects.filter((s) => s.attendancePercent < 75 && s.attendanceTotal > 0).length;
+	const averageAttendance =
+		subjects.length > 0
+			? Math.round(subjects.reduce((sum, s) => sum + s.attendancePercent, 0) / subjects.length)
+			: 0;
+	const lowAttendanceSubjects = subjects.filter(
+		(s) => s.attendancePercent < 75 && s.attendanceTotal > 0
+	).length;
 
 	return {
 		student: {

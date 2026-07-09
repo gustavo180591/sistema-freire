@@ -22,7 +22,7 @@
 	/>
 </svelte:head>
 
-<div class="min-h-screen bg-slate-950 text-white relative">
+<div class="relative min-h-screen bg-slate-950 text-white">
 	<div class="absolute top-4 right-4 z-10">
 		<ThemeToggle />
 	</div>
@@ -140,7 +140,7 @@
 					<button
 						type="submit"
 						disabled={form?.locked}
-						class="w-full rounded-2xl bg-black px-6 py-3 font-semibold text-white transition hover:scale-[1.01] dark:bg-white dark:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+						class="w-full rounded-2xl bg-black px-6 py-3 font-semibold text-white transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-slate-950"
 					>
 						{form?.locked ? `Bloqueado (${form.minutesLeft} min)` : 'Ingresar al sistema'}
 					</button>

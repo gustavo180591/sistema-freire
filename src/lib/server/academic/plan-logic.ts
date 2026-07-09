@@ -1,4 +1,11 @@
-import { PrismaClient, CorrelativeType, SubjectType, CourseStatus, FinalExamStatus, AcademicStatus } from '@prisma/client';
+import {
+	PrismaClient,
+	CorrelativeType,
+	SubjectType,
+	CourseStatus,
+	FinalExamStatus,
+	AcademicStatus
+} from '@prisma/client';
 import type { StudentSubjectStatus, SubjectCorrelative, Subject, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -353,7 +360,8 @@ export async function calculateFinalStatus(
 	}
 
 	// Determinar approved y promoted (campos heredados para compatibilidad)
-	const approved = academicStatus === AcademicStatus.APROBADO || academicStatus === AcademicStatus.PROMOCIONADO;
+	const approved =
+		academicStatus === AcademicStatus.APROBADO || academicStatus === AcademicStatus.PROMOCIONADO;
 	const promoted = academicStatus === AcademicStatus.PROMOCIONADO;
 	const promotionDate = promoted ? new Date() : undefined;
 

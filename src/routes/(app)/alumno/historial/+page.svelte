@@ -100,16 +100,24 @@
 		<div class="flex items-center justify-between">
 			<div>
 				<p class="text-sm text-slate-400">Deuda pendiente</p>
-				<h2 class="mt-2 text-3xl font-bold {financial.totalDebt > 0 ? 'text-red-400' : 'text-emerald-400'}">
+				<h2
+					class="mt-2 text-3xl font-bold {financial.totalDebt > 0
+						? 'text-red-400'
+						: 'text-emerald-400'}"
+				>
 					{currency.format(financial.totalDebt)}
 				</h2>
 			</div>
 			{#if financial.totalDebt > 0}
-				<div class="rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400">
+				<div
+					class="rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400"
+				>
 					Pendiente de pago
 				</div>
 			{:else}
-				<div class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-400">
+				<div
+					class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-400"
+				>
 					Al día
 				</div>
 			{/if}
@@ -139,12 +147,18 @@
 							</span>
 						</td>
 						<td class="px-6 py-4">
-							<span class="rounded-full border px-3 py-1 text-xs {getRegularityBadgeColor(subject.regularityStatus)}">
+							<span
+								class="rounded-full border px-3 py-1 text-xs {getRegularityBadgeColor(
+									subject.regularityStatus
+								)}"
+							>
 								{subject.regularityStatus}
 							</span>
 						</td>
 						<td class="px-6 py-4">
-							<span class="rounded-full border px-3 py-1 text-xs {getApprovedBadge(subject.approved)}">
+							<span
+								class="rounded-full border px-3 py-1 text-xs {getApprovedBadge(subject.approved)}"
+							>
 								{subject.approved ? 'Sí' : 'No'}
 							</span>
 						</td>

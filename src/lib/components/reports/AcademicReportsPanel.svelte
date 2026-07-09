@@ -122,7 +122,9 @@
 			const blobUrl = window.URL.createObjectURL(blob);
 			const a = document.createElement('a');
 			a.href = blobUrl;
-			a.download = response.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'reporte-academico.csv';
+			a.download =
+				response.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] ||
+				'reporte-academico.csv';
 			document.body.appendChild(a);
 			a.click();
 			window.URL.revokeObjectURL(blobUrl);
@@ -154,7 +156,9 @@
 		<h3 class="mb-4 text-lg font-semibold">Filtros</h3>
 		<div class="grid gap-4 md:grid-cols-3">
 			<div>
-				<label for="careerId" class="mb-2 block text-sm font-medium text-slate-300">ID Carrera</label>
+				<label for="careerId" class="mb-2 block text-sm font-medium text-slate-300"
+					>ID Carrera</label
+				>
 				<input
 					id="careerId"
 					type="text"
@@ -164,7 +168,9 @@
 				/>
 			</div>
 			<div>
-				<label for="subjectId" class="mb-2 block text-sm font-medium text-slate-300">ID Materia</label>
+				<label for="subjectId" class="mb-2 block text-sm font-medium text-slate-300"
+					>ID Materia</label
+				>
 				<input
 					id="subjectId"
 					type="text"
@@ -174,7 +180,9 @@
 				/>
 			</div>
 			<div>
-				<label for="studentId" class="mb-2 block text-sm font-medium text-slate-300">ID Alumno</label>
+				<label for="studentId" class="mb-2 block text-sm font-medium text-slate-300"
+					>ID Alumno</label
+				>
 				<input
 					id="studentId"
 					type="text"
@@ -201,8 +209,12 @@
 	</div>
 
 	{#if loading}
-		<div class="flex items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/70 p-12">
-			<div class="h-12 w-12 animate-spin rounded-full border-4 border-slate-700 border-t-indigo-500"></div>
+		<div
+			class="flex items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/70 p-12"
+		>
+			<div
+				class="h-12 w-12 animate-spin rounded-full border-4 border-slate-700 border-t-indigo-500"
+			></div>
 		</div>
 	{:else if metrics}
 		<div class="grid gap-4 md:grid-cols-3">
@@ -255,20 +267,24 @@
 				<h3 class="mb-4 text-lg font-semibold text-slate-200">Alumnos en Riesgo</h3>
 				<div class="text-center">
 					<div class="text-4xl font-bold text-amber-500">{metrics.riskStudents}</div>
-					<div class="text-sm text-slate-400 mt-1">alumnos en riesgo académico</div>
+					<div class="mt-1 text-sm text-slate-400">alumnos en riesgo académico</div>
 				</div>
 			</div>
 
 			<div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
 				<h3 class="mb-4 text-lg font-semibold text-slate-200">Promedio de Calificaciones</h3>
 				<div class="text-center">
-					<div class="text-4xl font-bold text-indigo-500">{formatPercent(metrics.averageGrade)}</div>
-					<div class="text-sm text-slate-400 mt-1">promedio general</div>
+					<div class="text-4xl font-bold text-indigo-500">
+						{formatPercent(metrics.averageGrade)}
+					</div>
+					<div class="mt-1 text-sm text-slate-400">promedio general</div>
 				</div>
 			</div>
 		</div>
 	{:else}
-		<div class="flex flex-col items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/70 p-12">
+		<div
+			class="flex flex-col items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/70 p-12"
+		>
 			<p class="text-lg font-medium text-slate-300">No hay datos disponibles</p>
 		</div>
 	{/if}

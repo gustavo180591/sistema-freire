@@ -90,11 +90,15 @@
 			<div class="flex items-center gap-6">
 				<a href={homeUrl()} class="flex items-center gap-2 transition hover:opacity-80">
 					<img src={logoPath} alt="Logo" class="h-16 w-auto" />
-					<span class="text-lg font-bold text-slate-900 dark:text-white">ISFD "PAULO FREIRE" 1117</span>
+					<span class="text-lg font-bold text-slate-900 dark:text-white"
+						>ISFD "PAULO FREIRE" 1117</span
+					>
 				</a>
 				{#if currentSection()}
 					<span class="hidden text-slate-400 md:block dark:text-slate-500">/</span>
-					<span class="hidden text-sm font-medium text-slate-600 md:block dark:text-slate-300">{currentSection()}</span>
+					<span class="hidden text-sm font-medium text-slate-600 md:block dark:text-slate-300"
+						>{currentSection()}</span
+					>
 				{/if}
 			</div>
 
@@ -112,7 +116,9 @@
 							>
 								{user.firstName[0]}{user.lastName[0]}
 							</div>
-							<span class="hidden text-sm font-medium text-slate-900 lg:block dark:text-white">{user.firstName}</span>
+							<span class="hidden text-sm font-medium text-slate-900 lg:block dark:text-white"
+								>{user.firstName}</span
+							>
 							<svg
 								class="h-4 w-4 text-slate-500 dark:text-slate-400"
 								fill="none"
@@ -133,7 +139,9 @@
 								class="absolute top-full right-0 mt-2 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-black/20 backdrop-blur-sm dark:border-slate-700/50 dark:bg-slate-900/95"
 							>
 								<!-- User Info Header -->
-								<div class="bg-linear-to-br from-slate-100 to-slate-200 p-4 dark:from-slate-800 dark:to-slate-900">
+								<div
+									class="bg-linear-to-br from-slate-100 to-slate-200 p-4 dark:from-slate-800 dark:to-slate-900"
+								>
 									<div class="flex items-center gap-3">
 										<div
 											class="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white shadow-lg"
@@ -145,7 +153,9 @@
 												{user.firstName}
 												{user.lastName}
 											</p>
-											<p class="truncate text-xs text-slate-600 dark:text-slate-400">{user.email}</p>
+											<p class="truncate text-xs text-slate-600 dark:text-slate-400">
+												{user.email}
+											</p>
 										</div>
 									</div>
 								</div>

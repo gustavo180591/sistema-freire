@@ -278,13 +278,13 @@
 						<ul class="mt-1 space-y-1">
 							{#each visibleItems as item}
 								<li>
-										<a
-											href={item.href}
-											class="light-hover-contrast group/link relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200 {isActive(
-												item.href
-											)
-												? 'border-l-2 border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-600/20 dark:text-indigo-400'
-												: 'border-l-2 border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white'}"
+									<a
+										href={item.href}
+										class="light-hover-contrast group/link relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200 {isActive(
+											item.href
+										)
+											? 'border-l-2 border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-600/20 dark:text-indigo-400'
+											: 'border-l-2 border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white'}"
 										aria-current={isActive(item.href) ? 'page' : undefined}
 									>
 										<svg
@@ -329,7 +329,9 @@
 			<div class="border-b border-slate-200 p-4 dark:border-slate-800">
 				<div class="flex items-center gap-2">
 					<img src="/logo.png" alt="Logo" class="h-16 w-auto" />
-					<span class="text-lg font-bold text-slate-900 dark:text-white">ISFD "PAULO FREIRE" 1117</span>
+					<span class="text-lg font-bold text-slate-900 dark:text-white"
+						>ISFD "PAULO FREIRE" 1117</span
+					>
 				</div>
 			</div>
 
@@ -395,7 +397,9 @@
 									</ul>
 								{/if}
 							{:else}
-								<h3 class="px-3 py-2 text-xs font-semibold tracking-wider text-slate-600 uppercase dark:text-slate-500">
+								<h3
+									class="px-3 py-2 text-xs font-semibold tracking-wider text-slate-600 uppercase dark:text-slate-500"
+								>
 									{group.category}
 								</h3>
 								<ul class="mt-1 space-y-1">

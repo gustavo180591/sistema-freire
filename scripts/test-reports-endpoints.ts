@@ -1,6 +1,14 @@
 import { prisma } from '../src/lib/server/db/prisma';
-import { hasExplicitPermission, checkExplicitPermission, isSuperAdmin } from '../src/lib/server/reports/report-permissions';
-import { parseFilters, formatApiResponse, formatApiError } from '../src/lib/server/reports/report-api-helpers';
+import {
+	hasExplicitPermission,
+	checkExplicitPermission,
+	isSuperAdmin
+} from '../src/lib/server/reports/report-permissions';
+import {
+	parseFilters,
+	formatApiResponse,
+	formatApiError
+} from '../src/lib/server/reports/report-api-helpers';
 
 console.log('=== Reports Endpoints Test ===\n');
 
@@ -83,15 +91,20 @@ await runTest('isSuperAdmin returns false for non-SUPERADMIN', async () => {
 // Test 6: checkExplicitPermission returns true for SUPERADMIN
 await runTest('checkExplicitPermission returns true for SUPERADMIN', async () => {
 	const hasPerm = await checkExplicitPermission(superAdminUser, 'FINANCIAL_REPORT', 'read');
-	if (!hasPerm) throw new Error('SUPERADMIN should have FINANCIAL_REPORT:read via checkExplicitPermission');
+	if (!hasPerm)
+		throw new Error('SUPERADMIN should have FINANCIAL_REPORT:read via checkExplicitPermission');
 });
 
 // Test 7: checkExplicitPermission returns false for user without permission record
-await runTest('checkExplicitPermission returns false for user without permission record', async () => {
-	// Assuming ALUMNO has no FINANCIAL_REPORT permission record
-	const hasPerm = await checkExplicitPermission(alumnoUser, 'FINANCIAL_REPORT', 'read');
-	if (hasPerm) throw new Error('ALUMNO should not have FINANCIAL_REPORT:read without explicit permission');
-});
+await runTest(
+	'checkExplicitPermission returns false for user without permission record',
+	async () => {
+		// Assuming ALUMNO has no FINANCIAL_REPORT permission record
+		const hasPerm = await checkExplicitPermission(alumnoUser, 'FINANCIAL_REPORT', 'read');
+		if (hasPerm)
+			throw new Error('ALUMNO should not have FINANCIAL_REPORT:read without explicit permission');
+	}
+);
 
 // Test 8: parseFilters handles empty URL
 await runTest('parseFilters handles empty URL', async () => {
@@ -202,11 +215,11 @@ await runTest('formatApiError returns correct structure', async () => {
 // Test 20: Verify no data mutation in services (check PaymentAgreement count before/after)
 await runTest('No data mutation when querying services', async () => {
 	const countBefore = await prisma.paymentAgreement.count();
-	
+
 	// Call a service that queries PaymentAgreement
 	const { getFinancialReportMetrics } = await import('../src/lib/server/reports/reports.service');
 	await getFinancialReportMetrics();
-	
+
 	const countAfter = await prisma.paymentAgreement.count();
 	if (countBefore !== countAfter) {
 		throw new Error('PaymentAgreement count changed after query - data was mutated');
@@ -218,18 +231,18 @@ await runTest('No PaymentAgreement status changes when querying services', async
 	const agreementsBefore = await prisma.paymentAgreement.findMany({
 		select: { id: true, status: true }
 	});
-	
+
 	const { getFinancialReportMetrics } = await import('../src/lib/server/reports/reports.service');
 	await getFinancialReportMetrics();
-	
+
 	const agreementsAfter = await prisma.paymentAgreement.findMany({
 		select: { id: true, status: true }
 	});
-	
+
 	if (agreementsBefore.length !== agreementsAfter.length) {
 		throw new Error('PaymentAgreement count changed');
 	}
-	
+
 	for (let i = 0; i < agreementsBefore.length; i++) {
 		if (agreementsBefore[i].id !== agreementsAfter[i].id) {
 			throw new Error('PaymentAgreement IDs changed');
@@ -244,10 +257,10 @@ await runTest('No PaymentAgreement status changes when querying services', async
 await runTest('No forbidden patterns in reports code', async () => {
 	const fs = await import('fs');
 	const path = await import('path');
-	
+
 	const reportsDir = path.join(process.cwd(), 'src/lib/server/reports');
 	const files = fs.readdirSync(reportsDir);
-	
+
 	// Build forbidden patterns using concatenation to avoid literal matches
 	const queryRawPattern = '$' + 'queryRaw';
 	const executeRawPattern = '$' + 'executeRaw';
@@ -255,12 +268,12 @@ await runTest('No forbidden patterns in reports code', async () => {
 	const tsExpectErrorPattern = '@ts-' + 'expect-error';
 	const anyPattern = ':' + ' any';
 	const asAnyPattern = 'as' + ' any';
-	
+
 	for (const file of files) {
 		if (file.endsWith('.ts')) {
 			const filePath = path.join(reportsDir, file);
 			const content = fs.readFileSync(filePath, 'utf-8');
-			
+
 			if (content.includes(queryRawPattern)) {
 				throw new Error(`Found ${queryRawPattern} in ${file}`);
 			}

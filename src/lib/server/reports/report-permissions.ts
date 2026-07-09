@@ -23,7 +23,15 @@ export async function hasExplicitPermission(
 	const permissionRecord = await prisma.permission.findUnique({
 		where: {
 			roleCode_entity: {
-				roleCode: roleCode as 'SUPERADMIN' | 'DIRECTOR' | 'SECRETARIA' | 'FINANZAS' | 'LIQUIDADOR' | 'DOCENTE' | 'PRECEPTOR' | 'ALUMNO',
+				roleCode: roleCode as
+					| 'SUPERADMIN'
+					| 'DIRECTOR'
+					| 'SECRETARIA'
+					| 'FINANZAS'
+					| 'LIQUIDADOR'
+					| 'DOCENTE'
+					| 'PRECEPTOR'
+					| 'ALUMNO',
 				entity
 			}
 		}

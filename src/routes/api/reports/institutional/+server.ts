@@ -6,12 +6,12 @@ import { formatApiResponse, formatApiError } from '$lib/server/reports/report-ap
 
 /**
  * GET /api/reports/institutional
- * 
+ *
  * Returns institutional KPIs
- * 
+ *
  * Permissions:
  * - SUPERADMIN only
- * 
+ *
  * No filters supported
  */
 export const GET: RequestHandler = async ({ locals }) => {

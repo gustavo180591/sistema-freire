@@ -32,7 +32,10 @@
 
 <svelte:head>
 	<title>Dashboard de Reportes | ISFD "PAULO FREIRE" 1117</title>
-	<meta name="description" content="Dashboard de reportes institucionales, financieros, académicos y de asistencia" />
+	<meta
+		name="description"
+		content="Dashboard de reportes institucionales, financieros, académicos y de asistencia"
+	/>
 </svelte:head>
 
 <div class="space-y-8">
@@ -80,7 +83,7 @@
 	{/if}
 
 	<!-- Tabs -->
-	<ReportSectionTabs activeTab={activeTab} onTabChange={handleTabChange} />
+	<ReportSectionTabs {activeTab} onTabChange={handleTabChange} />
 
 	<!-- Loading State -->
 	{#if loading}

@@ -10,7 +10,7 @@ const prisma = new PrismaClient({
 
 async function main() {
 	console.log('=== Verificando regla ON DELETE de commissionId FK ===\n');
-	
+
 	const result = await prisma.$queryRaw`
 		SELECT
 			tc.constraint_name,
@@ -31,7 +31,7 @@ async function main() {
 			AND tc.table_name = 'evaluations'
 			AND kcu.column_name = 'commissionId';
 	`;
-	
+
 	console.log('Foreign key de commissionId:');
 	for (const fk of result as any[]) {
 		console.log(`  Constraint: ${fk.constraint_name}`);
@@ -39,12 +39,11 @@ async function main() {
 		console.log(`  References: ${fk.foreign_table_name}.${fk.foreign_column_name}`);
 		console.log(`  ON DELETE: ${fk.delete_rule}`);
 	}
-	
+
 	await prisma.$disconnect();
 }
 
-main()
-	.catch((e) => {
-		console.error(e);
-		process.exit(1);
-	});
+main().catch((e) => {
+	console.error(e);
+	process.exit(1);
+});

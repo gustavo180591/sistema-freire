@@ -59,7 +59,9 @@
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<p class="text-sm text-slate-400">Deuda total</p>
-			<h2 class="mt-3 text-4xl font-bold">{currency.format(formatDecimal(data?.metrics?.totalDebt ?? 0))}</h2>
+			<h2 class="mt-3 text-4xl font-bold">
+				{currency.format(formatDecimal(data?.metrics?.totalDebt ?? 0))}
+			</h2>
 			<p class="mt-2 text-sm text-slate-500">Saldo pendiente consolidado</p>
 		</div>
 
@@ -71,14 +73,17 @@
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<p class="text-sm text-slate-400">Importe cobrado</p>
-			<h2 class="mt-3 text-4xl font-bold">{currency.format(formatDecimal(data?.metrics?.totalCollected ?? 0))}</h2>
+			<h2 class="mt-3 text-4xl font-bold">
+				{currency.format(formatDecimal(data?.metrics?.totalCollected ?? 0))}
+			</h2>
 			<p class="mt-2 text-sm text-slate-500">Ingresos registrados</p>
 		</div>
 	</section>
 
 	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 		<p class="text-sm text-slate-400">
-			Para ver reportes detallados por alumno, período o movimientos, utiliza las opciones de navegación.
+			Para ver reportes detallados por alumno, período o movimientos, utiliza las opciones de
+			navegación.
 		</p>
 	</section>
 </div>

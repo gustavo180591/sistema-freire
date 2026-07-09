@@ -1,6 +1,6 @@
 /**
  * Test script for Payment Agreement Status Evaluation (Phase 5.1)
- * 
+ *
  * Tests:
  * - Overdue installment marking
  * - Agreement completion detection
@@ -26,7 +26,7 @@ const TEST_STUDENT_DNI = '12345678-' + Date.now();
 // Cleanup function
 async function cleanup() {
 	console.log('🧹 Cleaning up test data...');
-	
+
 	try {
 		// Delete payments first (due to foreign key constraints)
 		await prisma.payment.deleteMany({
@@ -211,7 +211,11 @@ async function createTestChargeConcept() {
 }
 
 // Helper function to create test student charge
-async function createTestStudentCharge(studentId: string, conceptId: string, academicTermId: string) {
+async function createTestStudentCharge(
+	studentId: string,
+	conceptId: string,
+	academicTermId: string
+) {
 	const charge = await prisma.studentCharge.create({
 		data: {
 			studentId,
@@ -229,9 +233,13 @@ async function createTestStudentCharge(studentId: string, conceptId: string, aca
 }
 
 // Helper function to create test agreement
-async function createTestAgreement(studentId: string, chargeIds: string[], installments: Array<{ installmentNumber: number; dueDate: Date; amount: Decimal }>) {
+async function createTestAgreement(
+	studentId: string,
+	chargeIds: string[],
+	installments: Array<{ installmentNumber: number; dueDate: Date; amount: Decimal }>
+) {
 	const currentYear = new Date().getFullYear();
-	
+
 	// Get next agreement number
 	const numberRecord = await prisma.paymentAgreementNumber.upsert({
 		where: { year: currentYear },
@@ -297,25 +305,29 @@ async function createTestAgreement(studentId: string, chargeIds: string[], insta
 // Test 1: Overdue installment marking (PENDING)
 async function testOverdueInstallmentMarking() {
 	console.log('\n📋 Test 1: Overdue installment marking (PENDING)');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id);
 
 	// Create agreement with overdue installment
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2024-01-01'), // Past date
-			amount: new Decimal(5000)
-		},
-		{
-			installmentNumber: 2,
-			dueDate: new Date('2027-01-01'), // Future date
-			amount: new Decimal(5000)
-		}
-	]);
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2024-01-01'), // Past date
+				amount: new Decimal(5000)
+			},
+			{
+				installmentNumber: 2,
+				dueDate: new Date('2027-01-01'), // Future date
+				amount: new Decimal(5000)
+			}
+		]
+	);
 
 	// Evaluate status
 	const result = await paymentAgreementService.evaluateAgreementFinancialStatus(
@@ -387,20 +399,24 @@ async function testOverdueInstallmentMarking() {
 // Test 1b: Overdue installment marking (PARTIAL)
 async function testOverdueInstallmentPartial() {
 	console.log('\n📋 Test 1b: Overdue installment marking (PARTIAL)');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id);
 
 	// Create agreement with partial overdue installment
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2024-01-01'), // Past date
-			amount: new Decimal(5000)
-		}
-	]);
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2024-01-01'), // Past date
+				amount: new Decimal(5000)
+			}
+		]
+	);
 
 	// Mark installment as PARTIAL
 	await prisma.paymentAgreementInstallment.update({
@@ -444,20 +460,24 @@ async function testOverdueInstallmentPartial() {
 // Test 1c: Paid overdue installment should not change
 async function testOverdueInstallmentPaid() {
 	console.log('\n📋 Test 1c: Paid overdue installment should not change');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id);
 
 	// Create agreement with paid overdue installment
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2024-01-01'), // Past date
-			amount: new Decimal(5000)
-		}
-	]);
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2024-01-01'), // Past date
+				amount: new Decimal(5000)
+			}
+		]
+	);
 
 	// Mark installment as PAID
 	await prisma.paymentAgreementInstallment.update({
@@ -502,25 +522,29 @@ async function testOverdueInstallmentPaid() {
 // Test 2: Agreement completion detection
 async function testAgreementCompletion() {
 	console.log('\n📋 Test 2: Agreement completion detection');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id);
 
 	// Create agreement with all installments paid
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2024-01-01'),
-			amount: new Decimal(5000)
-		},
-		{
-			installmentNumber: 2,
-			dueDate: new Date('2024-06-01'),
-			amount: new Decimal(5000)
-		}
-	]);
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2024-01-01'),
+				amount: new Decimal(5000)
+			},
+			{
+				installmentNumber: 2,
+				dueDate: new Date('2024-06-01'),
+				amount: new Decimal(5000)
+			}
+		]
+	);
 
 	// Mark all installments as paid
 	await prisma.paymentAgreementInstallment.updateMany({
@@ -576,35 +600,39 @@ async function testAgreementCompletion() {
 // Test 3: Agreement default detection
 async function testAgreementDefault() {
 	console.log('\n📋 Test 3: Agreement default detection');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id);
 
 	// Create agreement with 2 consecutive overdue installments
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2024-01-01'), // Past date
-			amount: new Decimal(2500)
-		},
-		{
-			installmentNumber: 2,
-			dueDate: new Date('2024-02-01'), // Past date
-			amount: new Decimal(2500)
-		},
-		{
-			installmentNumber: 3,
-			dueDate: new Date('2025-01-01'), // Future date
-			amount: new Decimal(2500)
-		},
-		{
-			installmentNumber: 4,
-			dueDate: new Date('2025-06-01'), // Future date
-			amount: new Decimal(2500)
-		}
-	]);
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2024-01-01'), // Past date
+				amount: new Decimal(2500)
+			},
+			{
+				installmentNumber: 2,
+				dueDate: new Date('2024-02-01'), // Past date
+				amount: new Decimal(2500)
+			},
+			{
+				installmentNumber: 3,
+				dueDate: new Date('2025-01-01'), // Future date
+				amount: new Decimal(2500)
+			},
+			{
+				installmentNumber: 4,
+				dueDate: new Date('2025-06-01'), // Future date
+				amount: new Decimal(2500)
+			}
+		]
+	);
 
 	// Evaluate status
 	const result = await paymentAgreementService.evaluateAgreementFinancialStatus(
@@ -630,7 +658,7 @@ async function testAgreementDefault() {
 // Test 4: No modification of StudentCharge
 async function testNoStudentChargeModification() {
 	console.log('\n📋 Test 4: No modification of StudentCharge');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
@@ -640,13 +668,17 @@ async function testNoStudentChargeModification() {
 	const originalChargePaidAmount = charge.paidAmount;
 
 	// Create agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2024-01-01'),
-			amount: new Decimal(10000)
-		}
-	]);
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2024-01-01'),
+				amount: new Decimal(10000)
+			}
+		]
+	);
 
 	// Evaluate status
 	await paymentAgreementService.evaluateAgreementFinancialStatus(
@@ -678,7 +710,7 @@ async function testNoStudentChargeModification() {
 // Test 5: No creation/modification of FinancialBlock
 async function testNoFinancialBlockModification() {
 	console.log('\n📋 Test 5: No creation/modification of FinancialBlock');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
@@ -690,13 +722,17 @@ async function testNoFinancialBlockModification() {
 	});
 
 	// Create agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2024-01-01'),
-			amount: new Decimal(10000)
-		}
-	]);
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2024-01-01'),
+				amount: new Decimal(10000)
+			}
+		]
+	);
 
 	// Evaluate status
 	await paymentAgreementService.evaluateAgreementFinancialStatus(
@@ -722,20 +758,24 @@ async function testNoFinancialBlockModification() {
 // Test 6: Transaction rollback on failure
 async function testTransactionRollback() {
 	console.log('\n📋 Test 6: Transaction rollback on failure');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id);
 
 	// Create agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2024-01-01'),
-			amount: new Decimal(10000)
-		}
-	]);
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2024-01-01'),
+				amount: new Decimal(10000)
+			}
+		]
+	);
 
 	// Try to evaluate with invalid agreement ID
 	try {
@@ -801,7 +841,7 @@ async function runTests() {
 
 	console.log('\n=====================================================');
 	console.log(`📊 Test Results: ${passedTests}/${tests.length} passed`);
-	
+
 	if (failedTests > 0) {
 		console.log(`❌ ${failedTests} test(s) failed`);
 		process.exit(1);

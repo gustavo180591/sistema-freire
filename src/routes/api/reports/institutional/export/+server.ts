@@ -4,12 +4,12 @@ import type { RequestHandler } from './$types';
 
 /**
  * GET /api/reports/institutional/export
- * 
+ *
  * Returns institutional report as CSV
- * 
+ *
  * Permissions:
  * - SUPERADMIN only
- * 
+ *
  * No filters supported
  */
 export const GET: RequestHandler = async ({ locals }) => {
@@ -25,7 +25,7 @@ export const GET: RequestHandler = async ({ locals }) => {
 
 	try {
 		const { csv, filename } = await exportInstitutionalReport();
-		
+
 		return new Response(csv, {
 			status: 200,
 			headers: {

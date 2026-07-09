@@ -30,7 +30,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		user,
-		workingDays: workingDaysConfig?.value as number[] || [1, 2, 3, 4, 5], // Lunes-Viernes por defecto
+		workingDays: (workingDaysConfig?.value as number[]) || [1, 2, 3, 4, 5], // Lunes-Viernes por defecto
 		holidays,
 		importantDates
 	};
@@ -46,7 +46,11 @@ export const actions: Actions = {
 			await prisma.calendarConfig.upsert({
 				where: { key: 'working_days' },
 				update: { value: days },
-				create: { key: 'working_days', value: days, description: 'Días laborables de la semana (0=Domingo, 6=Sábado)' }
+				create: {
+					key: 'working_days',
+					value: days,
+					description: 'Días laborables de la semana (0=Domingo, 6=Sábado)'
+				}
 			});
 
 			return { success: true };

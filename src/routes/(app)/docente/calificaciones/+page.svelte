@@ -234,7 +234,9 @@
 													max={evaluation?.maxScore ? Number(evaluation.maxScore) : 10}
 													step="0.01"
 													value={getStudentGrade(student.id, 'value') ||
-														(existingGrade && existingGrade.value !== null ? Number(existingGrade.value) : '')}
+														(existingGrade && existingGrade.value !== null
+															? Number(existingGrade.value)
+															: '')}
 													placeholder="0"
 													class="w-24 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-slate-500"
 												/>

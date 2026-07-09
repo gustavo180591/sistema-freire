@@ -51,7 +51,6 @@
 		{ value: 'EXPIRED', label: 'Expirado' }
 	];
 
-
 	function clearFilters() {
 		filters = {};
 		onFilterChange(filters);
@@ -72,7 +71,9 @@
 	<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 		<!-- Categoría -->
 		<div>
-			<label for="filter-category" class="mb-2 block text-sm font-medium text-slate-300">Categoría</label>
+			<label for="filter-category" class="mb-2 block text-sm font-medium text-slate-300"
+				>Categoría</label
+			>
 			<select
 				id="filter-category"
 				bind:value={filters.category}
@@ -86,7 +87,9 @@
 
 		<!-- Subtipo -->
 		<div>
-			<label for="filter-subtype" class="mb-2 block text-sm font-medium text-slate-300">Subtipo</label>
+			<label for="filter-subtype" class="mb-2 block text-sm font-medium text-slate-300"
+				>Subtipo</label
+			>
 			<select
 				id="filter-subtype"
 				bind:value={filters.subType}
@@ -100,7 +103,9 @@
 
 		<!-- Visibilidad -->
 		<div>
-			<label for="filter-visibility" class="mb-2 block text-sm font-medium text-slate-300">Visibilidad</label>
+			<label for="filter-visibility" class="mb-2 block text-sm font-medium text-slate-300"
+				>Visibilidad</label
+			>
 			<select
 				id="filter-visibility"
 				bind:value={filters.visibility}
@@ -114,7 +119,8 @@
 
 		<!-- Estado -->
 		<div>
-			<label for="filter-status" class="mb-2 block text-sm font-medium text-slate-300">Estado</label>
+			<label for="filter-status" class="mb-2 block text-sm font-medium text-slate-300">Estado</label
+			>
 			<select
 				id="filter-status"
 				bind:value={filters.status}
@@ -128,7 +134,9 @@
 
 		<!-- Tipo de propietario -->
 		<div>
-			<label for="filter-owner-type" class="mb-2 block text-sm font-medium text-slate-300">Tipo de Propietario</label>
+			<label for="filter-owner-type" class="mb-2 block text-sm font-medium text-slate-300"
+				>Tipo de Propietario</label
+			>
 			<select
 				id="filter-owner-type"
 				bind:value={filters.ownerType}
@@ -145,7 +153,9 @@
 
 		<!-- ID del propietario -->
 		<div>
-			<label for="filter-owner-id" class="mb-2 block text-sm font-medium text-slate-300">ID del Propietario</label>
+			<label for="filter-owner-id" class="mb-2 block text-sm font-medium text-slate-300"
+				>ID del Propietario</label
+			>
 			<input
 				id="filter-owner-id"
 				type="text"

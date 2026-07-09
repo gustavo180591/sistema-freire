@@ -99,7 +99,9 @@
 			}
 
 			if (response.status === 403) {
-				onError('No tienes permiso para exportar reportes financieros (requiere FINANCIAL_REPORT:read)');
+				onError(
+					'No tienes permiso para exportar reportes financieros (requiere FINANCIAL_REPORT:read)'
+				);
 				return;
 			}
 
@@ -116,7 +118,9 @@
 			const blobUrl = window.URL.createObjectURL(blob);
 			const a = document.createElement('a');
 			a.href = blobUrl;
-			a.download = response.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'reporte-financiero.csv';
+			a.download =
+				response.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] ||
+				'reporte-financiero.csv';
 			document.body.appendChild(a);
 			a.click();
 			window.URL.revokeObjectURL(blobUrl);
@@ -151,7 +155,9 @@
 		<h3 class="mb-4 text-lg font-semibold">Filtros</h3>
 		<div class="grid gap-4 md:grid-cols-3">
 			<div>
-				<label for="studentId" class="mb-2 block text-sm font-medium text-slate-300">ID Alumno</label>
+				<label for="studentId" class="mb-2 block text-sm font-medium text-slate-300"
+					>ID Alumno</label
+				>
 				<input
 					id="studentId"
 					type="text"
@@ -161,7 +167,9 @@
 				/>
 			</div>
 			<div>
-				<label for="startDate" class="mb-2 block text-sm font-medium text-slate-300">Fecha Desde</label>
+				<label for="startDate" class="mb-2 block text-sm font-medium text-slate-300"
+					>Fecha Desde</label
+				>
 				<input
 					id="startDate"
 					type="date"
@@ -170,7 +178,9 @@
 				/>
 			</div>
 			<div>
-				<label for="endDate" class="mb-2 block text-sm font-medium text-slate-300">Fecha Hasta</label>
+				<label for="endDate" class="mb-2 block text-sm font-medium text-slate-300"
+					>Fecha Hasta</label
+				>
 				<input
 					id="endDate"
 					type="date"
@@ -196,8 +206,12 @@
 	</div>
 
 	{#if loading}
-		<div class="flex items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/70 p-12">
-			<div class="h-12 w-12 animate-spin rounded-full border-4 border-slate-700 border-t-indigo-500"></div>
+		<div
+			class="flex items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/70 p-12"
+		>
+			<div
+				class="h-12 w-12 animate-spin rounded-full border-4 border-slate-700 border-t-indigo-500"
+			></div>
 		</div>
 	{:else if metrics}
 		<div class="grid gap-4 md:grid-cols-3">
@@ -237,7 +251,7 @@
 				<h3 class="mb-4 text-lg font-semibold text-slate-200">Alumnos con Deuda</h3>
 				<div class="text-center">
 					<div class="text-4xl font-bold text-amber-500">{metrics.studentsWithDebt}</div>
-					<div class="text-sm text-slate-400 mt-1">alumnos con deuda pendiente</div>
+					<div class="mt-1 text-sm text-slate-400">alumnos con deuda pendiente</div>
 				</div>
 			</div>
 
@@ -245,12 +259,14 @@
 				<h3 class="mb-4 text-lg font-semibold text-slate-200">Convenios Activos</h3>
 				<div class="text-center">
 					<div class="text-4xl font-bold text-indigo-500">{metrics.activeAgreements}</div>
-					<div class="text-sm text-slate-400 mt-1">convenios de pago activos</div>
+					<div class="mt-1 text-sm text-slate-400">convenios de pago activos</div>
 				</div>
 			</div>
 		</div>
 	{:else}
-		<div class="flex flex-col items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/70 p-12">
+		<div
+			class="flex flex-col items-center justify-center rounded-3xl border border-slate-800 bg-slate-900/70 p-12"
+		>
 			<p class="text-lg font-medium text-slate-300">No hay datos disponibles</p>
 		</div>
 	{/if}

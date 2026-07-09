@@ -2,16 +2,20 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getFinancialReportMetrics } from '$lib/server/reports/reports.service';
 import { checkExplicitPermission } from '$lib/server/reports/report-permissions';
-import { parseFilters, formatApiResponse, formatApiError } from '$lib/server/reports/report-api-helpers';
+import {
+	parseFilters,
+	formatApiResponse,
+	formatApiError
+} from '$lib/server/reports/report-api-helpers';
 
 /**
  * GET /api/reports/financial
- * 
+ *
  * Returns financial report metrics
- * 
+ *
  * Permissions:
  * - FINANCIAL_REPORT:read (explicit permission required)
- * 
+ *
  * Supported filters:
  * - studentId
  * - startDate
@@ -37,7 +41,10 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 		return json(formatApiResponse(result.data, filters));
 	} catch (error) {
 		// Handle validation errors
-		if (error instanceof Error && (error.message.includes('Invalid') || error.message.includes('startDate'))) {
+		if (
+			error instanceof Error &&
+			(error.message.includes('Invalid') || error.message.includes('startDate'))
+		) {
 			return json(formatApiError(error.message), { status: 400 });
 		}
 

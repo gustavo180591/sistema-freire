@@ -452,7 +452,9 @@
 								<td class="px-6 py-4 text-sm font-semibold whitespace-nowrap text-white"
 									>{grade.value}</td
 								>
-								<td class="px-6 py-4 text-sm whitespace-nowrap text-slate-300">{grade.evaluationTitle}</td>
+								<td class="px-6 py-4 text-sm whitespace-nowrap text-slate-300"
+									>{grade.evaluationTitle}</td
+								>
 								<td class="px-6 py-4 text-sm whitespace-nowrap text-slate-300"
 									>{new Date(grade.createdAt).toLocaleDateString()}</td
 								>

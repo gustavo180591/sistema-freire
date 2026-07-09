@@ -6,30 +6,33 @@
 </script>
 
 <div class="p-6">
-	<h1 class="text-2xl font-bold mb-6">Estado Financiero: {report.student.user.firstName} {report.student.user.lastName}</h1>
+	<h1 class="mb-6 text-2xl font-bold">
+		Estado Financiero: {report.student.user.firstName}
+		{report.student.user.lastName}
+	</h1>
 
-	<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-		<div class="bg-white p-4 rounded-lg shadow">
+	<div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+		<div class="rounded-lg bg-white p-4 shadow">
 			<h3 class="text-sm font-medium text-gray-500">Total Cuotas</h3>
 			<p class="text-2xl font-bold">${report.totalCharges.toString()}</p>
 		</div>
-		<div class="bg-white p-4 rounded-lg shadow">
+		<div class="rounded-lg bg-white p-4 shadow">
 			<h3 class="text-sm font-medium text-gray-500">Total Pagado</h3>
 			<p class="text-2xl font-bold text-green-600">${report.totalPaid.toString()}</p>
 		</div>
-		<div class="bg-white p-4 rounded-lg shadow">
+		<div class="rounded-lg bg-white p-4 shadow">
 			<h3 class="text-sm font-medium text-gray-500">Deuda Pendiente</h3>
 			<p class="text-2xl font-bold text-orange-600">${report.totalPending.toString()}</p>
 		</div>
-		<div class="bg-white p-4 rounded-lg shadow">
+		<div class="rounded-lg bg-white p-4 shadow">
 			<h3 class="text-sm font-medium text-gray-500">Deuda Vencida</h3>
 			<p class="text-2xl font-bold text-red-600">${report.overdueDebt.toString()}</p>
 		</div>
 	</div>
 
 	{#if report.activeBlocks.length > 0}
-		<div class="bg-red-50 border border-red-200 p-4 rounded-lg mb-6">
-			<h3 class="text-lg font-semibold text-red-800 mb-2">Bloqueos Activos</h3>
+		<div class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4">
+			<h3 class="mb-2 text-lg font-semibold text-red-800">Bloqueos Activos</h3>
 			{#each report.activeBlocks as block}
 				<div class="text-sm text-red-700">
 					<strong>{block.blockType}</strong>: {block.blockReason}
@@ -41,18 +44,18 @@
 		</div>
 	{/if}
 
-	<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-		<div class="bg-white p-6 rounded-lg shadow">
-			<h2 class="text-lg font-semibold mb-4">Cuotas</h2>
+	<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+		<div class="rounded-lg bg-white p-6 shadow">
+			<h2 class="mb-4 text-lg font-semibold">Cuotas</h2>
 			<div class="overflow-x-auto">
 				<table class="min-w-full">
 					<thead>
 						<tr class="border-b">
-							<th class="text-left py-2">Concepto</th>
-							<th class="text-left py-2">Período</th>
-							<th class="text-right py-2">Monto</th>
-							<th class="text-right py-2">Pagado</th>
-							<th class="text-right py-2">Estado</th>
+							<th class="py-2 text-left">Concepto</th>
+							<th class="py-2 text-left">Período</th>
+							<th class="py-2 text-right">Monto</th>
+							<th class="py-2 text-right">Pagado</th>
+							<th class="py-2 text-right">Estado</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -60,11 +63,11 @@
 							<tr class="border-b">
 								<td class="py-2">{charge.concept.name}</td>
 								<td class="py-2">{charge.periodLabel}</td>
-								<td class="text-right py-2">${charge.finalAmount.toString()}</td>
-								<td class="text-right py-2">${charge.paidAmount.toString()}</td>
-								<td class="text-right py-2">
+								<td class="py-2 text-right">${charge.finalAmount.toString()}</td>
+								<td class="py-2 text-right">${charge.paidAmount.toString()}</td>
+								<td class="py-2 text-right">
 									<span
-										class="px-2 py-1 rounded text-xs {charge.status === 'PAID'
+										class="rounded px-2 py-1 text-xs {charge.status === 'PAID'
 											? 'bg-green-100 text-green-800'
 											: charge.status === 'PARTIAL'
 												? 'bg-yellow-100 text-yellow-800'
@@ -80,16 +83,16 @@
 			</div>
 		</div>
 
-		<div class="bg-white p-6 rounded-lg shadow">
-			<h2 class="text-lg font-semibold mb-4">Pagos Recientes</h2>
+		<div class="rounded-lg bg-white p-6 shadow">
+			<h2 class="mb-4 text-lg font-semibold">Pagos Recientes</h2>
 			<div class="overflow-x-auto">
 				<table class="min-w-full">
 					<thead>
 						<tr class="border-b">
-							<th class="text-left py-2">Fecha</th>
-							<th class="text-left py-2">Método</th>
-							<th class="text-right py-2">Monto</th>
-							<th class="text-left py-2">Estado</th>
+							<th class="py-2 text-left">Fecha</th>
+							<th class="py-2 text-left">Método</th>
+							<th class="py-2 text-right">Monto</th>
+							<th class="py-2 text-left">Estado</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -97,12 +100,13 @@
 							<tr class="border-b">
 								<td class="py-2">{new Date(payment.paidAt).toLocaleDateString()}</td>
 								<td class="py-2">{payment.method}</td>
-								<td class="text-right py-2">${payment.amount.toString()}</td>
+								<td class="py-2 text-right">${payment.amount.toString()}</td>
 								<td class="py-2">
 									{#if payment.isCancelled}
-										<span class="px-2 py-1 rounded text-xs bg-red-100 text-red-800">Anulado</span>
+										<span class="rounded bg-red-100 px-2 py-1 text-xs text-red-800">Anulado</span>
 									{:else}
-										<span class="px-2 py-1 rounded text-xs bg-green-100 text-green-800">Activo</span>
+										<span class="rounded bg-green-100 px-2 py-1 text-xs text-green-800">Activo</span
+										>
 									{/if}
 								</td>
 							</tr>

@@ -24,7 +24,13 @@ async function main() {
 	console.log('\n📄 Creando documentos de alumnos...');
 	let documentsCount = 0;
 
-	const tiposDocumentos = ['DNI', 'MEDICAL_CERTIFICATE', 'PHOTO_ID', 'CONSTANCY', 'SECONDARY_TITLE'];
+	const tiposDocumentos = [
+		'DNI',
+		'MEDICAL_CERTIFICATE',
+		'PHOTO_ID',
+		'CONSTANCY',
+		'SECONDARY_TITLE'
+	];
 
 	for (const student of students) {
 		const uploadedBy = users[Math.floor(Math.random() * users.length)];

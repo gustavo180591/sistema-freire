@@ -1,6 +1,6 @@
 /**
  * Test script for Payment Agreement Block Exceptions (Phase 5.3)
- * 
+ *
  * This script tests the block exception logic for payment agreements.
  * It verifies that:
  * - Active and up-to-date agreements can generate block exceptions
@@ -29,7 +29,7 @@ const TEST_STUDENT_DNI = '87654321-' + Date.now();
 // Cleanup function
 async function cleanup() {
 	console.log('🧹 Cleaning up test data...');
-	
+
 	try {
 		// Delete payments first (due to foreign key constraints)
 		await prisma.payment.deleteMany({
@@ -220,7 +220,13 @@ async function createTestChargeConcept() {
 }
 
 // Helper function to create test student charge
-async function createTestStudentCharge(studentId: string, conceptId: string, academicTermId: string, amount: Decimal, dueDate?: Date) {
+async function createTestStudentCharge(
+	studentId: string,
+	conceptId: string,
+	academicTermId: string,
+	amount: Decimal,
+	dueDate?: Date
+) {
 	const charge = await prisma.studentCharge.create({
 		data: {
 			studentId,
@@ -238,9 +244,14 @@ async function createTestStudentCharge(studentId: string, conceptId: string, aca
 }
 
 // Helper function to create test agreement
-async function createTestAgreement(studentId: string, chargeIds: string[], installments: Array<{ installmentNumber: number; dueDate: Date; amount: Decimal }>, status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'DEFAULTED' | 'CANCELLED' = 'ACTIVE') {
+async function createTestAgreement(
+	studentId: string,
+	chargeIds: string[],
+	installments: Array<{ installmentNumber: number; dueDate: Date; amount: Decimal }>,
+	status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'DEFAULTED' | 'CANCELLED' = 'ACTIVE'
+) {
 	const currentYear = new Date().getFullYear();
-	
+
 	// Get next agreement number
 	const numberRecord = await prisma.paymentAgreementNumber.upsert({
 		where: { year: currentYear },
@@ -325,25 +336,36 @@ async function createTestFinancialBlock(studentId: string) {
 // Test 1: ACTIVE and up-to-date agreement generates block exception
 async function testActiveAgreementGeneratesException() {
 	console.log('\n📋 Test 1: ACTIVE and up-to-date agreement generates block exception');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Create financial block
 	const block = await createTestFinancialBlock(student.id);
 
 	// Create ACTIVE agreement with future due date
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'ACTIVE');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'ACTIVE'
+	);
 
 	// Apply block exception
 	const result = await paymentAgreementService.applyAgreementBlockException(
@@ -418,25 +440,36 @@ async function testActiveAgreementGeneratesException() {
 // Test 2: No duplicate exceptions
 async function testNoDuplicateExceptions() {
 	console.log('\n📋 Test 2: No duplicate exceptions');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Create financial block
 	const block = await createTestFinancialBlock(student.id);
 
 	// Create ACTIVE agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'ACTIVE');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'ACTIVE'
+	);
 
 	// Apply exception first time
 	const result1 = await paymentAgreementService.applyAgreementBlockException(
@@ -467,25 +500,36 @@ async function testNoDuplicateExceptions() {
 // Test 3: DRAFT agreement does not generate exception
 async function testDraftAgreementNoException() {
 	console.log('\n📋 Test 3: DRAFT agreement does not generate exception');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Create financial block
 	const block = await createTestFinancialBlock(student.id);
 
 	// Create DRAFT agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'DRAFT');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'DRAFT'
+	);
 
 	// Try to apply exception
 	try {
@@ -509,25 +553,36 @@ async function testDraftAgreementNoException() {
 // Test 4: CANCELLED agreement does not generate exception
 async function testCancelledAgreementNoException() {
 	console.log('\n📋 Test 4: CANCELLED agreement does not generate exception');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Create financial block
 	const block = await createTestFinancialBlock(student.id);
 
 	// Create CANCELLED agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'CANCELLED');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'CANCELLED'
+	);
 
 	// Try to apply exception
 	try {
@@ -551,25 +606,36 @@ async function testCancelledAgreementNoException() {
 // Test 5: COMPLETED agreement does not generate active exception
 async function testCompletedAgreementNoActiveException() {
 	console.log('\n📋 Test 5: COMPLETED agreement does not generate active exception');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Create financial block
 	const block = await createTestFinancialBlock(student.id);
 
 	// Create COMPLETED agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'COMPLETED');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'COMPLETED'
+	);
 
 	// Try to apply exception
 	try {
@@ -593,25 +659,36 @@ async function testCompletedAgreementNoActiveException() {
 // Test 6: Overdue installment revokes exception
 async function testOverdueInstallmentRevokesException() {
 	console.log('\n📋 Test 6: Overdue installment revokes exception');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Create financial block
 	const block = await createTestFinancialBlock(student.id);
 
 	// Create ACTIVE agreement with past due date
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2024-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'ACTIVE');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2024-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'ACTIVE'
+	);
 
 	// Mark installment as overdue
 	await prisma.paymentAgreementInstallment.update({
@@ -649,25 +726,36 @@ async function testOverdueInstallmentRevokesException() {
 // Test 7: DEFAULTED agreement revokes exception
 async function testDefaultedAgreementRevokesException() {
 	console.log('\n📋 Test 7: DEFAULTED agreement revokes exception');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Create financial block
 	const block = await createTestFinancialBlock(student.id);
 
 	// Create ACTIVE agreement first
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'ACTIVE');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'ACTIVE'
+	);
 
 	// Apply exception
 	await paymentAgreementService.applyAgreementBlockException(
@@ -735,13 +823,19 @@ async function testDefaultedAgreementRevokesException() {
 // Test 8: No StudentCharge modification
 async function testNoStudentChargeModification() {
 	console.log('\n📋 Test 8: No StudentCharge modification');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	const originalChargeStatus = charge.status;
 	const originalChargePaidAmount = charge.paidAmount;
@@ -750,13 +844,18 @@ async function testNoStudentChargeModification() {
 	const block = await createTestFinancialBlock(student.id);
 
 	// Create ACTIVE agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'ACTIVE');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'ACTIVE'
+	);
 
 	// Apply exception
 	await paymentAgreementService.applyAgreementBlockException(
@@ -788,25 +887,36 @@ async function testNoStudentChargeModification() {
 // Test 9: evaluateAgreementBlockStatus coordinator
 async function testEvaluateAgreementBlockStatus() {
 	console.log('\n📋 Test 9: evaluateAgreementBlockStatus coordinator');
-	
+
 	const student = await createTestStudent();
 	const academicTerm = await createTestAcademicTerm();
 	const concept = await createTestChargeConcept();
 
 	// Create charge
-	const charge = await createTestStudentCharge(student.id, concept.id, academicTerm.id, new Decimal(10000), new Date('2024-01-01'));
+	const charge = await createTestStudentCharge(
+		student.id,
+		concept.id,
+		academicTerm.id,
+		new Decimal(10000),
+		new Date('2024-01-01')
+	);
 
 	// Create financial block
 	const block = await createTestFinancialBlock(student.id);
 
 	// Create ACTIVE agreement
-	const agreement = await createTestAgreement(student.id, [charge.id], [
-		{
-			installmentNumber: 1,
-			dueDate: new Date('2027-01-01'),
-			amount: new Decimal(10000)
-		}
-	], 'ACTIVE');
+	const agreement = await createTestAgreement(
+		student.id,
+		[charge.id],
+		[
+			{
+				installmentNumber: 1,
+				dueDate: new Date('2027-01-01'),
+				amount: new Decimal(10000)
+			}
+		],
+		'ACTIVE'
+	);
 
 	// Evaluate and apply exception
 	const result = await paymentAgreementService.evaluateAgreementBlockStatus(
@@ -846,11 +956,20 @@ async function runTests() {
 	let failedTests = 0;
 
 	const tests = [
-		{ name: 'ACTIVE and up-to-date agreement generates block exception', fn: testActiveAgreementGeneratesException },
+		{
+			name: 'ACTIVE and up-to-date agreement generates block exception',
+			fn: testActiveAgreementGeneratesException
+		},
 		{ name: 'No duplicate exceptions', fn: testNoDuplicateExceptions },
 		{ name: 'DRAFT agreement does not generate exception', fn: testDraftAgreementNoException },
-		{ name: 'CANCELLED agreement does not generate exception', fn: testCancelledAgreementNoException },
-		{ name: 'COMPLETED agreement does not generate active exception', fn: testCompletedAgreementNoActiveException },
+		{
+			name: 'CANCELLED agreement does not generate exception',
+			fn: testCancelledAgreementNoException
+		},
+		{
+			name: 'COMPLETED agreement does not generate active exception',
+			fn: testCompletedAgreementNoActiveException
+		},
 		{ name: 'Overdue installment revokes exception', fn: testOverdueInstallmentRevokesException },
 		{ name: 'DEFAULTED agreement revokes exception', fn: testDefaultedAgreementRevokesException },
 		{ name: 'No StudentCharge modification', fn: testNoStudentChargeModification },

@@ -110,11 +110,14 @@ async function getStudentsByCareer(filters?: ReportFilters): Promise<Record<stri
 
 	const careerMap = new Map(careers.map((c) => [c.id, c.name]));
 
-	return grouped.reduce((acc, item) => {
-		const careerName = careerMap.get(item.careerId) || 'Unknown';
-		acc[careerName] = item._count;
-		return acc;
-	}, {} as Record<string, number>);
+	return grouped.reduce(
+		(acc, item) => {
+			const careerName = careerMap.get(item.careerId) || 'Unknown';
+			acc[careerName] = item._count;
+			return acc;
+		},
+		{} as Record<string, number>
+	);
 }
 
 /**
@@ -128,10 +131,13 @@ async function getStudentsByStatus(filters?: ReportFilters): Promise<Record<stri
 		_count: true
 	});
 
-	return grouped.reduce((acc, item) => {
-		acc[item.status] = item._count;
-		return acc;
-	}, {} as Record<string, number>);
+	return grouped.reduce(
+		(acc, item) => {
+			acc[item.status] = item._count;
+			return acc;
+		},
+		{} as Record<string, number>
+	);
 }
 
 /**

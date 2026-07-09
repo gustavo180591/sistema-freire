@@ -1,7 +1,16 @@
 import { error, json } from '@sveltejs/kit';
 import { documentManagementService } from '$lib/server/document-management/document-management.service';
-import { requireCreateDocumentPermission, requireListDocumentsPermission } from '$lib/server/document-management/document-permissions';
-import type { DocumentOwnerType, DocumentCategory, DocumentSubType, DocumentVisibility, DocumentStatus } from '@prisma/client';
+import {
+	requireCreateDocumentPermission,
+	requireListDocumentsPermission
+} from '$lib/server/document-management/document-permissions';
+import type {
+	DocumentOwnerType,
+	DocumentCategory,
+	DocumentSubType,
+	DocumentVisibility,
+	DocumentStatus
+} from '@prisma/client';
 
 /**
  * POST /api/documents
@@ -35,7 +44,10 @@ export async function POST({ request, locals }) {
 
 		// Validate required fields
 		if (!ownerType || !ownerId || !category || !subType || !visibility) {
-			throw error(400, 'Faltan campos requeridos: ownerType, ownerId, category, subType, visibility');
+			throw error(
+				400,
+				'Faltan campos requeridos: ownerType, ownerId, category, subType, visibility'
+			);
 		}
 
 		// Parse optional metadata

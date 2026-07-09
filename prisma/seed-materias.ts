@@ -119,7 +119,7 @@ async function seed() {
 		console.log('Asociando carreras a ubicaciones...');
 
 		// Lengua Alem -> Leandro N. Alem
-		const alemLocation = locations.find(l => l.name === 'Leandro N. Alem');
+		const alemLocation = locations.find((l) => l.name === 'Leandro N. Alem');
 		if (alemLocation) {
 			await prisma.careerLocation.upsert({
 				where: {
@@ -138,7 +138,7 @@ async function seed() {
 		}
 
 		// Lengua Capiovi -> Capiovi
-		const capioviLocation = locations.find(l => l.name === 'Capiovi');
+		const capioviLocation = locations.find((l) => l.name === 'Capiovi');
 		if (capioviLocation) {
 			await prisma.careerLocation.upsert({
 				where: {

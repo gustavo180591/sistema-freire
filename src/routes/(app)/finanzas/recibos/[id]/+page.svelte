@@ -51,30 +51,27 @@
 	<div class="no-print mb-4 flex gap-2">
 		<button
 			onclick={printReceipt}
-			class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+			class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
 		>
 			Imprimir Recibo
 		</button>
-		<a
-			href="/finanzas/recibos"
-			class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
-		>
+		<a href="/finanzas/recibos" class="rounded bg-gray-600 px-4 py-2 text-white hover:bg-gray-700">
 			Volver
 		</a>
 	</div>
 
-	<div class="receipt-container bg-white rounded-lg shadow p-8 max-w-4xl mx-auto">
+	<div class="receipt-container mx-auto max-w-4xl rounded-lg bg-white p-8 shadow">
 		<!-- Header -->
-		<div class="border-b-2 border-gray-800 pb-4 mb-6">
-			<h1 class="text-2xl font-bold text-center">RECIBO INSTITUCIONAL</h1>
-			<p class="text-center text-gray-600 mt-2">Comprobante de Pago</p>
+		<div class="mb-6 border-b-2 border-gray-800 pb-4">
+			<h1 class="text-center text-2xl font-bold">RECIBO INSTITUCIONAL</h1>
+			<p class="mt-2 text-center text-gray-600">Comprobante de Pago</p>
 		</div>
 
 		<!-- Receipt Info -->
-		<div class="grid grid-cols-2 gap-4 mb-6">
+		<div class="mb-6 grid grid-cols-2 gap-4">
 			<div>
 				<p class="text-sm text-gray-600">Número de Recibo</p>
-				<p class="font-bold text-lg">#{receipt.receiptNumber}/{receipt.receiptYear}</p>
+				<p class="text-lg font-bold">#{receipt.receiptNumber}/{receipt.receiptYear}</p>
 			</div>
 			<div>
 				<p class="text-sm text-gray-600">Fecha de Emisión</p>
@@ -83,8 +80,8 @@
 		</div>
 
 		<!-- Student Info -->
-		<div class="bg-gray-50 rounded p-4 mb-6">
-			<h2 class="font-bold text-lg mb-3">Datos del Alumno</h2>
+		<div class="mb-6 rounded bg-gray-50 p-4">
+			<h2 class="mb-3 text-lg font-bold">Datos del Alumno</h2>
 			<div class="grid grid-cols-2 gap-2 text-sm">
 				<div>
 					<span class="text-gray-600">Nombre:</span>
@@ -103,7 +100,7 @@
 
 		<!-- Items Table -->
 		<div class="mb-6">
-			<h2 class="font-bold text-lg mb-3">Detalle de Conceptos</h2>
+			<h2 class="mb-3 text-lg font-bold">Detalle de Conceptos</h2>
 			<table class="w-full border-collapse">
 				<thead>
 					<tr class="bg-gray-100">
@@ -147,8 +144,8 @@
 		</div>
 
 		<!-- Payment Info -->
-		<div class="bg-gray-50 rounded p-4 mb-6">
-			<h2 class="font-bold text-lg mb-3">Información de Pago</h2>
+		<div class="mb-6 rounded bg-gray-50 p-4">
+			<h2 class="mb-3 text-lg font-bold">Información de Pago</h2>
 			<div class="grid grid-cols-2 gap-2 text-sm">
 				<div>
 					<span class="text-gray-600">Método de Pago:</span>
@@ -166,13 +163,13 @@
 		<!-- Observations -->
 		{#if receipt.observations}
 			<div class="mb-6">
-				<h2 class="font-bold text-lg mb-2">Observaciones</h2>
-				<p class="text-sm text-gray-700 bg-gray-50 p-3 rounded">{receipt.observations}</p>
+				<h2 class="mb-2 text-lg font-bold">Observaciones</h2>
+				<p class="rounded bg-gray-50 p-3 text-sm text-gray-700">{receipt.observations}</p>
 			</div>
 		{/if}
 
 		<!-- Footer -->
-		<div class="border-t-2 border-gray-800 pt-4 mt-6">
+		<div class="mt-6 border-t-2 border-gray-800 pt-4">
 			<div class="grid grid-cols-2 gap-4 text-sm text-gray-600">
 				<div>
 					<p>Emitido por: {receipt.issuedByName}</p>

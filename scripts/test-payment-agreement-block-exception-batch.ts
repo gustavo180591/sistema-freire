@@ -1,9 +1,9 @@
 /**
  * Payment Agreement Block Exception Batch Evaluation Test Script
  * Phase 6.2
- * 
+ *
  * Tests the batch evaluation functionality for agreement block exceptions.
- * 
+ *
  * Usage:
  *   DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire" npx tsx scripts/test-payment-agreement-block-exception-batch.ts
  */
@@ -563,7 +563,9 @@ async function testBlockExceptionBatch() {
 		const blocksAfterApply = await prisma.financialBlock.findMany({
 			where: { studentId: TEST_STUDENT_ID }
 		});
-		const blockWithException = blocksAfterApply.find((b) => b.exceptionGranted && b.exceptionAgreementId === agreements[0].id);
+		const blockWithException = blocksAfterApply.find(
+			(b) => b.exceptionGranted && b.exceptionAgreementId === agreements[0].id
+		);
 		if (blockWithException) {
 			console.log('  ✅ ACTIVE up-to-date agreement applies exception\n');
 		} else {
@@ -615,7 +617,9 @@ async function testBlockExceptionBatch() {
 		const blocksBeforeOverdue = await prisma.financialBlock.findMany({
 			where: { studentId: TEST_STUDENT_ID }
 		});
-		const exceptionBeforeOverdue = blocksBeforeOverdue.find((b) => b.exceptionAgreementId === agreements[1].id && b.exceptionGranted);
+		const exceptionBeforeOverdue = blocksBeforeOverdue.find(
+			(b) => b.exceptionAgreementId === agreements[1].id && b.exceptionGranted
+		);
 		if (!exceptionBeforeOverdue) {
 			console.log('  ❌ Could not manually apply exception for test');
 			testPassed = false;
@@ -631,7 +635,9 @@ async function testBlockExceptionBatch() {
 		const blocksAfterOverdue = await prisma.financialBlock.findMany({
 			where: { studentId: TEST_STUDENT_ID }
 		});
-		const exceptionForOverdue = blocksAfterOverdue.find((b) => b.exceptionAgreementId === agreements[1].id && b.exceptionGranted);
+		const exceptionForOverdue = blocksAfterOverdue.find(
+			(b) => b.exceptionAgreementId === agreements[1].id && b.exceptionGranted
+		);
 		if (!exceptionForOverdue && overdueResults.exceptionsRevoked >= 1) {
 			console.log('  ✅ ACTIVE with OVERDUE installment revokes exception (batch)\n');
 		} else {
@@ -665,7 +671,9 @@ async function testBlockExceptionBatch() {
 		const blocksAfterDefaulted = await prisma.financialBlock.findMany({
 			where: { studentId: TEST_STUDENT_ID }
 		});
-		const exceptionForDefaulted = blocksAfterDefaulted.find((b) => b.exceptionAgreementId === agreements[2].id && b.exceptionGranted);
+		const exceptionForDefaulted = blocksAfterDefaulted.find(
+			(b) => b.exceptionAgreementId === agreements[2].id && b.exceptionGranted
+		);
 		if (!exceptionForDefaulted && defaultedResults.exceptionsRevoked >= 1) {
 			console.log('  ✅ DEFAULTED agreement revokes exception\n');
 		} else {
@@ -697,7 +705,9 @@ async function testBlockExceptionBatch() {
 		const blocksAfterCompleted = await prisma.financialBlock.findMany({
 			where: { studentId: TEST_STUDENT_ID }
 		});
-		const exceptionForCompleted = blocksAfterCompleted.find((b) => b.exceptionAgreementId === agreements[3].id && b.exceptionGranted);
+		const exceptionForCompleted = blocksAfterCompleted.find(
+			(b) => b.exceptionAgreementId === agreements[3].id && b.exceptionGranted
+		);
 		if (!exceptionForCompleted && completedResults.exceptionsRevoked >= 1) {
 			console.log('  ✅ COMPLETED agreement revokes unnecessary exception\n');
 		} else {
@@ -749,10 +759,11 @@ async function testBlockExceptionBatch() {
 		const blocksAfterDryRun = await prisma.financialBlock.findMany({
 			where: { studentId: TEST_STUDENT_ID }
 		});
-		
-		const blocksChanged = blocksAfterDryRun.some((b, i) => 
-			b.exceptionGranted !== blocksBeforeDryRun[i]?.exceptionGranted ||
-			b.exceptionAgreementId !== blocksBeforeDryRun[i]?.exceptionAgreementId
+
+		const blocksChanged = blocksAfterDryRun.some(
+			(b, i) =>
+				b.exceptionGranted !== blocksBeforeDryRun[i]?.exceptionGranted ||
+				b.exceptionAgreementId !== blocksBeforeDryRun[i]?.exceptionAgreementId
 		);
 		if (!blocksChanged) {
 			console.log('  ✅ --dry-run does not modify FinancialBlock\n');
@@ -824,7 +835,9 @@ async function testBlockExceptionBatch() {
 		const blocksBeforeDryRunOverdue = await prisma.financialBlock.findMany({
 			where: { studentId: TEST_STUDENT_ID }
 		});
-		const exceptionBeforeDryRunOverdue = blocksBeforeDryRunOverdue.find((b) => b.exceptionAgreementId === agreements[1].id && b.exceptionGranted);
+		const exceptionBeforeDryRunOverdue = blocksBeforeDryRunOverdue.find(
+			(b) => b.exceptionAgreementId === agreements[1].id && b.exceptionGranted
+		);
 
 		// Run dry-run batch
 		const dryRunOverdueResults = await paymentAgreementService.evaluateAllAgreementBlockExceptions({
@@ -836,7 +849,9 @@ async function testBlockExceptionBatch() {
 		const blocksAfterDryRunOverdue = await prisma.financialBlock.findMany({
 			where: { studentId: TEST_STUDENT_ID }
 		});
-		const exceptionAfterDryRunOverdue = blocksAfterDryRunOverdue.find((b) => b.exceptionAgreementId === agreements[1].id && b.exceptionGranted);
+		const exceptionAfterDryRunOverdue = blocksAfterDryRunOverdue.find(
+			(b) => b.exceptionAgreementId === agreements[1].id && b.exceptionGranted
+		);
 
 		const eventsAfterDryRunOverdue = await prisma.paymentAgreementEvent.findMany({
 			where: {
@@ -846,10 +861,14 @@ async function testBlockExceptionBatch() {
 		});
 
 		// Verify: reports revocation, but doesn't actually revoke
-		if (dryRunOverdueResults.exceptionsRevoked >= 1 && exceptionAfterDryRunOverdue && eventsAfterDryRunOverdue.length === 0) {
-			console.log('  ✅ --dry-run reports revocation but doesn\'t modify (ACTIVE + OVERDUE)\n');
+		if (
+			dryRunOverdueResults.exceptionsRevoked >= 1 &&
+			exceptionAfterDryRunOverdue &&
+			eventsAfterDryRunOverdue.length === 0
+		) {
+			console.log("  ✅ --dry-run reports revocation but doesn't modify (ACTIVE + OVERDUE)\n");
 		} else {
-			console.log('  ❌ --dry-run didn\'t behave correctly for ACTIVE + OVERDUE');
+			console.log("  ❌ --dry-run didn't behave correctly for ACTIVE + OVERDUE");
 			console.log(`     Exceptions revoked (reported): ${dryRunOverdueResults.exceptionsRevoked}`);
 			console.log(`     Exception still exists: ${!!exceptionAfterDryRunOverdue}`);
 			console.log(`     Events created: ${eventsAfterDryRunOverdue.length}`);
@@ -957,12 +976,18 @@ async function testBlockExceptionBatch() {
 		});
 
 		// Check that no new events were created for agreement 2 specifically
-		if (eventsAfterIdempotency.length === eventsBeforeIdempotency.length && 
-		    idempotencyResults.exceptionsRevoked === 0) {
-			console.log('  ✅ Repeated batch execution is idempotent (no duplicate events for agreement 2)\n');
+		if (
+			eventsAfterIdempotency.length === eventsBeforeIdempotency.length &&
+			idempotencyResults.exceptionsRevoked === 0
+		) {
+			console.log(
+				'  ✅ Repeated batch execution is idempotent (no duplicate events for agreement 2)\n'
+			);
 		} else {
 			console.log('  ❌ Batch execution is not idempotent for agreement 2');
-			console.log(`     Events before: ${eventsBeforeIdempotency.length}, after: ${eventsAfterIdempotency.length}`);
+			console.log(
+				`     Events before: ${eventsBeforeIdempotency.length}, after: ${eventsAfterIdempotency.length}`
+			);
 			console.log(`     Exceptions revoked: ${idempotencyResults.exceptionsRevoked}`);
 			testPassed = false;
 		}
@@ -1038,7 +1063,6 @@ async function testBlockExceptionBatch() {
 		console.log('─────────────────────────────────────────────────────────');
 		// This is verified by the finally block execution
 		console.log('  ✅ Cleanup complete in finally (verified by finally block)\n');
-
 	} catch (error) {
 		console.error('❌ Test error:', error instanceof Error ? error.message : String(error));
 		testPassed = false;

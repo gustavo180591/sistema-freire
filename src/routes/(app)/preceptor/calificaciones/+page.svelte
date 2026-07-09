@@ -23,9 +23,14 @@
 			<table class="w-full">
 				<thead class="bg-slate-800">
 					<tr>
-						<th class="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase">Estudiante</th>
-						<th class="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase">Materia</th>
-						<th class="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase">Evaluación</th>
+						<th class="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase"
+							>Estudiante</th
+						>
+						<th class="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase">Materia</th
+						>
+						<th class="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase"
+							>Evaluación</th
+						>
 						<th class="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase">Nota</th>
 						<th class="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase">Estado</th>
 						<th class="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase">Fecha</th>
@@ -39,7 +44,9 @@
 							<td class="px-4 py-3 text-sm text-slate-300">{grade.evaluationTitle}</td>
 							<td class="px-4 py-3 text-sm font-semibold text-white">{grade.value}</td>
 							<td class="px-4 py-3 text-sm text-slate-300">{grade.status}</td>
-							<td class="px-4 py-3 text-sm text-slate-300">{new Date(grade.createdAt).toLocaleDateString()}</td>
+							<td class="px-4 py-3 text-sm text-slate-300"
+								>{new Date(grade.createdAt).toLocaleDateString()}</td
+							>
 						</tr>
 					{/each}
 					{#if data.grades.length === 0}

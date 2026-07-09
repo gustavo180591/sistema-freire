@@ -48,9 +48,7 @@ async function main() {
 			recordsCount++;
 
 			// Crear entradas de asistencia para alumnos de esta comisión
-			const commissionEnrollments = enrollments.filter(
-				(e) => e.commissionId === commission.id
-			);
+			const commissionEnrollments = enrollments.filter((e) => e.commissionId === commission.id);
 
 			for (const enrollment of commissionEnrollments.slice(0, 20)) {
 				const present = Math.random() > 0.2;

@@ -5,7 +5,12 @@ import { getInstitutionalMetrics } from './institutional-reports.service';
 import { getFinancialReportMetrics } from './financial-reports.service';
 import { getAcademicReportMetrics } from './academic-reports.service';
 import { getAttendanceReportMetrics } from './attendance-reports.service';
-import { generateCsv, generateSafeFilename, CSV_HEADERS, CSV_HEADER_LABELS } from './report-export.helpers';
+import {
+	generateCsv,
+	generateSafeFilename,
+	CSV_HEADERS,
+	CSV_HEADER_LABELS
+} from './report-export.helpers';
 import type { ReportFilters } from './reports.types';
 
 /**
@@ -22,7 +27,9 @@ export async function exportInstitutionalReport(): Promise<{ csv: string; filena
 /**
  * Export financial report as CSV
  */
-export async function exportFinancialReport(filters?: ReportFilters): Promise<{ csv: string; filename: string }> {
+export async function exportFinancialReport(
+	filters?: ReportFilters
+): Promise<{ csv: string; filename: string }> {
 	const result = await getFinancialReportMetrics(filters);
 	const headers = CSV_HEADERS.financial;
 	const csv = generateCsv([result.data], headers, CSV_HEADER_LABELS.financial);
@@ -33,7 +40,9 @@ export async function exportFinancialReport(filters?: ReportFilters): Promise<{ 
 /**
  * Export academic report as CSV
  */
-export async function exportAcademicReport(filters?: ReportFilters): Promise<{ csv: string; filename: string }> {
+export async function exportAcademicReport(
+	filters?: ReportFilters
+): Promise<{ csv: string; filename: string }> {
 	const result = await getAcademicReportMetrics(filters);
 	const headers = CSV_HEADERS.academic;
 	const csv = generateCsv([result.data], headers, CSV_HEADER_LABELS.academic);
@@ -44,7 +53,9 @@ export async function exportAcademicReport(filters?: ReportFilters): Promise<{ c
 /**
  * Export attendance report as CSV
  */
-export async function exportAttendanceReport(filters?: ReportFilters): Promise<{ csv: string; filename: string }> {
+export async function exportAttendanceReport(
+	filters?: ReportFilters
+): Promise<{ csv: string; filename: string }> {
 	const result = await getAttendanceReportMetrics(filters);
 	const headers = CSV_HEADERS.attendance;
 	const csv = generateCsv([result.data], headers, CSV_HEADER_LABELS.attendance);

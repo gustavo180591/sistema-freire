@@ -21,10 +21,17 @@ async function main() {
 			AND typname IN ('EvaluationType', 'GradeStatus', 'CourseStatus', 'FinalExamStatus', 'AcademicStatus', 'RegularityStatus')
 			ORDER BY typname;
 		`;
-		
-		const expectedEnums = ['EvaluationType', 'GradeStatus', 'CourseStatus', 'FinalExamStatus', 'AcademicStatus', 'RegularityStatus'];
-		const foundEnums = (enums as any[]).map(e => e.typname);
-		
+
+		const expectedEnums = [
+			'EvaluationType',
+			'GradeStatus',
+			'CourseStatus',
+			'FinalExamStatus',
+			'AcademicStatus',
+			'RegularityStatus'
+		];
+		const foundEnums = (enums as any[]).map((e) => e.typname);
+
 		for (const expected of expectedEnums) {
 			if (foundEnums.includes(expected)) {
 				console.log(`  ✓ ${expected}`);
@@ -42,17 +49,33 @@ async function main() {
 			AND table_schema = 'public'
 			ORDER BY ordinal_position;
 		`;
-		
+
 		const expectedEvaluationColumns = [
-			'id', 'subjectId', 'commissionId', 'title', 'description', 'type',
-			'evaluationDate', 'maxScore', 'minPassingScore', 'weight',
-			'parentEvaluationId', 'createdByUserId', 'createdAt', 'updatedAt',
-			'isClosed', 'closedAt', 'closedByUserId', 'closedReason',
-			'reopenedAt', 'reopenedByUserId', 'reopenReason'
+			'id',
+			'subjectId',
+			'commissionId',
+			'title',
+			'description',
+			'type',
+			'evaluationDate',
+			'maxScore',
+			'minPassingScore',
+			'weight',
+			'parentEvaluationId',
+			'createdByUserId',
+			'createdAt',
+			'updatedAt',
+			'isClosed',
+			'closedAt',
+			'closedByUserId',
+			'closedReason',
+			'reopenedAt',
+			'reopenedByUserId',
+			'reopenReason'
 		];
-		
-		const foundEvaluationColumns = (evaluationColumns as any[]).map(c => c.column_name);
-		
+
+		const foundEvaluationColumns = (evaluationColumns as any[]).map((c) => c.column_name);
+
 		for (const expected of expectedEvaluationColumns) {
 			if (foundEvaluationColumns.includes(expected)) {
 				console.log(`  ✓ ${expected}`);
@@ -70,14 +93,21 @@ async function main() {
 			AND table_schema = 'public'
 			ORDER BY ordinal_position;
 		`;
-		
+
 		const expectedGradeColumns = [
-			'id', 'evaluationId', 'studentId', 'value', 'status',
-			'observations', 'createdByUserId', 'createdAt', 'updatedAt'
+			'id',
+			'evaluationId',
+			'studentId',
+			'value',
+			'status',
+			'observations',
+			'createdByUserId',
+			'createdAt',
+			'updatedAt'
 		];
-		
-		const foundGradeColumns = (gradeColumns as any[]).map(c => c.column_name);
-		
+
+		const foundGradeColumns = (gradeColumns as any[]).map((c) => c.column_name);
+
 		for (const expected of expectedGradeColumns) {
 			if (foundGradeColumns.includes(expected)) {
 				console.log(`  ✓ ${expected}`);
@@ -96,10 +126,10 @@ async function main() {
 			AND column_name IN ('finalExamStatus', 'finalExamScore', 'regularityStatus')
 			ORDER BY column_name;
 		`;
-		
+
 		const expectedSSSColumns = ['finalExamStatus', 'finalExamScore', 'regularityStatus'];
-		const foundSSSColumns = (sssColumns as any[]).map(c => c.column_name);
-		
+		const foundSSSColumns = (sssColumns as any[]).map((c) => c.column_name);
+
 		for (const expected of expectedSSSColumns) {
 			if (foundSSSColumns.includes(expected)) {
 				console.log(`  ✓ ${expected}`);
@@ -127,10 +157,12 @@ async function main() {
 				AND tc.table_name = 'evaluations'
 			ORDER BY tc.constraint_name;
 		`;
-		
+
 		console.log('  Foreign keys encontradas:');
 		for (const fk of evaluationFKs as any[]) {
-			console.log(`    - ${fk.constraint_name}: ${fk.column_name} -> ${fk.foreign_table_name}.${fk.foreign_column_name}`);
+			console.log(
+				`    - ${fk.constraint_name}: ${fk.column_name} -> ${fk.foreign_table_name}.${fk.foreign_column_name}`
+			);
 		}
 
 		// 6. Verificar constraint único en grades
@@ -147,12 +179,12 @@ async function main() {
 				AND tc.table_name = 'grades'
 			ORDER BY tc.constraint_name, kcu.ordinal_position;
 		`;
-		
+
 		console.log('  Constraints únicos encontrados:');
 		for (const u of gradeUnique as any[]) {
 			console.log(`    - ${u.constraint_name}: ${u.column_name}`);
 		}
-		
+
 		// Also check for unique indexes (PostgreSQL treats them as constraints)
 		const gradeUniqueIndexes = await prisma.$queryRaw`
 			SELECT
@@ -167,19 +199,24 @@ async function main() {
 			AND NOT ix.indisprimary
 			ORDER BY i.relname, a.attnum;
 		`;
-		
+
 		console.log('  Índices únicos encontrados:');
 		for (const idx of gradeUniqueIndexes as any[]) {
 			console.log(`    - ${idx.index_name} (${idx.column_name})`);
 		}
-		
-		const uniqueColumns = (gradeUnique as any[]).map(u => u.column_name);
-		const uniqueIndexColumns = (gradeUniqueIndexes as any[]).map(i => i.column_name);
-		
+
+		const uniqueColumns = (gradeUnique as any[]).map((u) => u.column_name);
+		const uniqueIndexColumns = (gradeUniqueIndexes as any[]).map((i) => i.column_name);
+
 		if (uniqueColumns.includes('evaluationId') && uniqueColumns.includes('studentId')) {
 			console.log('  ✓ Constraint único [evaluationId, studentId] encontrado');
-		} else if (uniqueIndexColumns.includes('evaluationId') && uniqueIndexColumns.includes('studentId')) {
-			console.log('  ✓ Índice único [evaluationId, studentId] encontrado (funciona como constraint)');
+		} else if (
+			uniqueIndexColumns.includes('evaluationId') &&
+			uniqueIndexColumns.includes('studentId')
+		) {
+			console.log(
+				'  ✓ Índice único [evaluationId, studentId] encontrado (funciona como constraint)'
+			);
 		} else {
 			console.log('  ✗ Constraint único [evaluationId, studentId] NO ENCONTRADO');
 		}
@@ -203,7 +240,7 @@ async function main() {
 				AND ccu.table_name = 'evaluations'
 				AND kcu.column_name = 'parentEvaluationId'
 		`;
-		
+
 		if ((recuperatoryFK as any[]).length > 0) {
 			console.log('  ✓ Autorrelación parentEvaluationId encontrada');
 		} else {
@@ -220,10 +257,18 @@ async function main() {
 			AND column_name IN ('isClosed', 'closedAt', 'closedByUserId', 'closedReason', 'reopenedAt', 'reopenedByUserId', 'reopenReason')
 			ORDER BY column_name;
 		`;
-		
-		const expectedCloseReopen = ['isClosed', 'closedAt', 'closedByUserId', 'closedReason', 'reopenedAt', 'reopenedByUserId', 'reopenReason'];
-		const foundCloseReopen = (closeReopenColumns as any[]).map(c => c.column_name);
-		
+
+		const expectedCloseReopen = [
+			'isClosed',
+			'closedAt',
+			'closedByUserId',
+			'closedReason',
+			'reopenedAt',
+			'reopenedByUserId',
+			'reopenReason'
+		];
+		const foundCloseReopen = (closeReopenColumns as any[]).map((c) => c.column_name);
+
 		for (const expected of expectedCloseReopen) {
 			if (foundCloseReopen.includes(expected)) {
 				console.log(`  ✓ ${expected}`);
@@ -246,7 +291,7 @@ async function main() {
 			AND NOT ix.indisprimary
 			ORDER BY t.relname, i.relname, a.attnum;
 		`;
-		
+
 		console.log('  Índices encontrados:');
 		for (const idx of indexes as any[]) {
 			console.log(`    - ${idx.index_name} (${idx.column_name})`);
@@ -259,7 +304,7 @@ async function main() {
 			FROM _prisma_migrations
 			ORDER BY started_at;
 		`;
-		
+
 		console.log(`  Migraciones aplicadas: ${(migrations as any[]).length}`);
 		console.log('  Últimas 5 migraciones:');
 		for (const m of (migrations as any[]).slice(-5)) {
@@ -267,7 +312,6 @@ async function main() {
 		}
 
 		console.log('\n=== Verificación Completada ===');
-
 	} catch (error) {
 		console.error('Error en verificación:', error);
 		throw error;

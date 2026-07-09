@@ -13,6 +13,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		where: { id: params.id },
 		include: {
 			career: true,
+			location: true,
 			subjectStatuses: {
 				include: {
 					subject: true
@@ -26,55 +27,84 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		throw error(404, 'Alumno no encontrado');
 	}
 
-	// Determinar si el alumno es de primer año
-	const isFirstYear = student.currentYear === 1;
-
-	let subjects = student.subjectStatuses.map((status) => ({
-		id: status.id,
-		subject: status.subject.name,
-		subjectId: status.subject.id,
-		yearLevel: status.subject.yearLevel,
-		attendancePercent: Number(status.attendancePercent),
-		regularityStatus: status.regularityStatus,
-		approved: status.approved,
-		hasStatus: true
-	}));
-
-	// Si es de primer año, agregar todas las materias de primer año de la carrera
-	if (isFirstYear && student.careerId) {
-		const firstYearSubjects = await prisma.subject.findMany({
-			where: {
-				active: true,
-				yearLevel: 1,
-				careerSubjects: {
-					some: {
-						careerId: student.careerId
-					}
+	// Cargar inscripciones a materias (SubjectEnrollment)
+	const enrollments = await prisma.subjectEnrollment.findMany({
+		where: {
+			studentId: student.id,
+			status: 'ACTIVE'
+		},
+		include: {
+			subject: true,
+			commission: {
+				include: {
+					academicTerm: true,
+					location: true
 				}
 			},
-			orderBy: { name: 'asc' }
-		});
+			academicTerm: true
+		}
+	});
 
-		// Agregar materias que no tienen status asignado
-		const subjectIdsWithStatus = new Set(student.subjectStatuses.map((s) => s.subjectId));
-		const subjectsWithoutStatus = firstYearSubjects
-			.filter((s) => !subjectIdsWithStatus.has(s.id))
-			.map((s) => ({
-				id: s.id,
-				subject: s.name,
-				subjectId: s.id,
-				yearLevel: s.yearLevel,
-				attendancePercent: 0,
-				regularityStatus: 'LIBRE' as const,
-				approved: false,
-				hasStatus: false
-			}));
+	// Cargar asistencias del alumno
+	const attendanceEntries = await prisma.attendanceEntry.findMany({
+		where: {
+			studentId: student.id
+		},
+		include: {
+			attendance: true
+		}
+	});
 
-		subjects = [...subjects, ...subjectsWithoutStatus];
+	// Agrupar asistencias por comisión (más preciso que por materia sola)
+	const attendanceByCommission = new Map<string, { present: number; total: number }>();
+	for (const entry of attendanceEntries) {
+		const key = entry.attendance.id; // Usar attendanceId como clave única por registro
+		// Para agrupar por comisión, necesitamos saber a qué comisión pertenece el registro
+		// Como AttendanceRecord está vinculado a Subject, y SubjectCommission está vinculado a Subject,
+		// agrupamos por subjectId + attendanceId para evitar mezclar comisiones diferentes
+		const subjectId = entry.attendance.subjectId;
+		const commissionKey = enrollments.find((e) => e.subjectId === subjectId)?.commissionId || subjectId;
+		
+		if (!attendanceByCommission.has(commissionKey)) {
+			attendanceByCommission.set(commissionKey, { present: 0, total: 0 });
+		}
+		const stats = attendanceByCommission.get(commissionKey)!;
+		stats.total++;
+		if (entry.present) {
+			stats.present++;
+		}
 	}
 
+	// Construir lista de materias con datos reales (solo inscripciones activas)
+	const subjects = enrollments.map((enrollment) => {
+		// Usar commissionId como clave para buscar asistencia específica de esa comisión
+		const attendanceKey = enrollment.commissionId || enrollment.subjectId;
+		const attendanceStats = attendanceByCommission.get(attendanceKey) || { present: 0, total: 0 };
+		const attendancePercent = attendanceStats.total > 0
+			? Math.round((attendanceStats.present / attendanceStats.total) * 100)
+			: 0;
+
+		// Buscar status académico si existe
+		const subjectStatus = student.subjectStatuses.find((s) => s.subjectId === enrollment.subjectId);
+
+		return {
+			id: enrollment.id,
+			subject: enrollment.subject.name,
+			subjectId: enrollment.subject.id,
+			yearLevel: enrollment.subject.yearLevel,
+			commission: enrollment.commission?.code || null,
+			commissionId: enrollment.commission?.id || null,
+			academicTerm: enrollment.commission?.academicTerm || enrollment.academicTerm,
+			attendancePercent,
+			attendancePresent: attendanceStats.present,
+			attendanceTotal: attendanceStats.total,
+			regularityStatus: subjectStatus?.regularityStatus || 'LIBRE',
+			approved: subjectStatus?.approved || false,
+			status: enrollment.status
+		};
+	});
+
 	// Calcular progreso real del alumno
-	// Obtener todas las materias de la carrera
 	const allCareerSubjects = await prisma.subject.findMany({
 		where: {
 			active: true,
@@ -107,6 +137,14 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	});
 	const totalDebt = totalCharges - Number(totalPayments._sum.amount || 0);
 
+	// Calcular métricas adicionales
+	const currentSubjects = subjects.filter((s) => s.status === 'ACTIVE').length;
+	const regularSubjects = subjects.filter((s) => s.regularityStatus === 'REGULAR').length;
+	const averageAttendance = subjects.length > 0
+		? Math.round(subjects.reduce((sum, s) => sum + s.attendancePercent, 0) / subjects.length)
+		: 0;
+	const lowAttendanceSubjects = subjects.filter((s) => s.attendancePercent < 75 && s.attendanceTotal > 0).length;
+
 	return {
 		student: {
 			id: student.id,
@@ -114,13 +152,18 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			fullName: `${student.firstName} ${student.lastName}`,
 			dni: student.dni,
 			status: student.status,
-			career: student.career.name
+			career: student.career.name,
+			isRecursante: student.isRecursante,
+			location: student.location?.name || null
 		},
 		academic: {
 			totalSubjects: subjects.length,
 			approvedSubjects: approvedCount,
-			regularSubjects: subjects.filter((s) => s.regularityStatus === 'REGULAR').length,
+			regularSubjects,
+			currentSubjects,
 			progress,
+			averageAttendance,
+			lowAttendanceSubjects,
 			subjects
 		},
 		financial: {

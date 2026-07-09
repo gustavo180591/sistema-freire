@@ -33,18 +33,28 @@
 				</h1>
 				<p class="mt-3 text-sm text-slate-400">
 					DNI: {student.dni} · {student.career}
+					{#if student.location}
+						· Sede: {student.location}
+					{/if}
 				</p>
-				<div class="mt-4 inline-flex rounded-full border border-slate-700 px-4 py-2 text-sm">
-					{#if student.status === 'ACTIVE'}
-						<span class="text-green-400">Activo</span>
-					{:else if student.status === 'INACTIVE'}
-						<span class="text-yellow-400">Inactivo</span>
-					{:else if student.status === 'SUSPENDED'}
-						<span class="text-red-400">Suspendido</span>
-					{:else if student.status === 'GRADUATED'}
-						<span class="text-blue-400">Egresado</span>
-					{:else}
-						{student.status}
+				<div class="mt-4 flex flex-wrap gap-2">
+					<div class="inline-flex rounded-full border border-slate-700 px-4 py-2 text-sm">
+						{#if student.status === 'ACTIVE'}
+							<span class="text-green-400">Activo</span>
+						{:else if student.status === 'INACTIVE'}
+							<span class="text-yellow-400">Inactivo</span>
+						{:else if student.status === 'SUSPENDED'}
+							<span class="text-red-400">Suspendido</span>
+						{:else if student.status === 'GRADUATED'}
+							<span class="text-blue-400">Egresado</span>
+						{:else}
+							{student.status}
+						{/if}
+					</div>
+					{#if student.isRecursante}
+						<div class="inline-flex rounded-full border border-amber-700/50 bg-amber-950/30 px-4 py-2 text-sm">
+							<span class="text-amber-400">Recursante</span>
+						</div>
 					{/if}
 				</div>
 			</div>
@@ -88,7 +98,7 @@
 	</section>
 
 	<!-- KPIs -->
-	<section class="grid gap-4 md:grid-cols-4">
+	<section class="grid gap-4 md:grid-cols-4 lg:grid-cols-6">
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<p class="text-sm text-slate-400">Progreso</p>
 			<h2 class="mt-3 text-4xl font-bold">{academic.progress}%</h2>
@@ -102,6 +112,16 @@
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<p class="text-sm text-slate-400">Regulares</p>
 			<h2 class="mt-3 text-4xl font-bold">{academic.regularSubjects}</h2>
+		</div>
+
+		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+			<p class="text-sm text-slate-400">Cursando</p>
+			<h2 class="mt-3 text-4xl font-bold">{academic.currentSubjects}</h2>
+		</div>
+
+		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+			<p class="text-sm text-slate-400">Asistencia promedio</p>
+			<h2 class="mt-3 text-4xl font-bold">{academic.averageAttendance}%</h2>
 		</div>
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
@@ -138,36 +158,81 @@
 
 	<!-- Historial -->
 	<section class="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70">
-		<table class="w-full text-left">
-			<thead class="border-b border-slate-800 bg-slate-900">
-				<tr>
-					<th class="px-6 py-4 text-sm font-semibold">Materia</th>
-					<th class="px-6 py-4 text-sm font-semibold">Año</th>
-					<th class="px-6 py-4 text-sm font-semibold">Asistencia</th>
-					<th class="px-6 py-4 text-sm font-semibold">Regularidad</th>
-					<th class="px-6 py-4 text-sm font-semibold">Aprobada</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each academic.subjects as subject}
-					<tr class="border-b border-slate-800 last:border-none">
-						<td class="px-6 py-4 font-medium">{subject.subject}</td>
-						<td class="px-6 py-4">{subject.yearLevel}°</td>
-						<td class="px-6 py-4">
-							{subject.attendancePercent}%
-						</td>
-						<td class="px-6 py-4">
-							<span class="rounded-full border border-slate-700 px-3 py-1 text-xs">
-								{subject.regularityStatus}
-							</span>
-						</td>
-						<td class="px-6 py-4">
-							{subject.approved ? 'Sí' : 'No'}
-						</td>
+		{#if academic.subjects.length === 0}
+			<div class="p-12 text-center">
+				<p class="text-slate-400">Este alumno todavía no tiene materias/comisiones asignadas.</p>
+			</div>
+		{:else}
+			<table class="w-full text-left">
+				<thead class="border-b border-slate-800 bg-slate-900">
+					<tr>
+						<th class="px-6 py-4 text-sm font-semibold">Materia</th>
+						<th class="px-6 py-4 text-sm font-semibold">Año</th>
+						<th class="px-6 py-4 text-sm font-semibold">Comisión</th>
+						<th class="px-6 py-4 text-sm font-semibold">Ciclo lectivo</th>
+						<th class="px-6 py-4 text-sm font-semibold">Asistencia</th>
+						<th class="px-6 py-4 text-sm font-semibold">Regularidad</th>
+						<th class="px-6 py-4 text-sm font-semibold">Aprobada</th>
 					</tr>
-				{/each}
-			</tbody>
-		</table>
+				</thead>
+				<tbody>
+					{#each academic.subjects as subject}
+						<tr class="border-b border-slate-800 last:border-none">
+							<td class="px-6 py-4 font-medium">{subject.subject}</td>
+							<td class="px-6 py-4">{subject.yearLevel}°</td>
+							<td class="px-6 py-4">
+								{#if subject.commission}
+									<span class="rounded-full border border-slate-700 px-3 py-1 text-xs">
+										{subject.commission}
+									</span>
+								{:else}
+									<span class="text-slate-500">-</span>
+								{/if}
+							</td>
+							<td class="px-6 py-4">
+								{#if subject.academicTerm}
+									{subject.academicTerm.year}
+								{:else}
+									<span class="text-slate-500">-</span>
+								{/if}
+							</td>
+							<td class="px-6 py-4">
+								{#if subject.attendanceTotal > 0}
+									<div class="flex items-center gap-2">
+										<span class="text-sm">
+											{subject.attendancePresent}/{subject.attendanceTotal} · {subject.attendancePercent}%
+										</span>
+										{#if subject.attendancePercent >= 75}
+											<span class="rounded-full bg-green-950/30 border border-green-800 px-2 py-0.5 text-xs text-green-400">
+												OK
+											</span>
+										{:else}
+											<span class="rounded-full bg-red-950/30 border border-red-800 px-2 py-0.5 text-xs text-red-400">
+												Baja
+											</span>
+										{/if}
+									</div>
+								{:else}
+									<span class="text-slate-500 text-sm">Sin registros</span>
+								{/if}
+							</td>
+							<td class="px-6 py-4">
+								<span class="rounded-full border border-slate-700 px-3 py-1 text-xs">
+									{subject.regularityStatus}
+								</span>
+							</td>
+							<td class="px-6 py-4">
+								{#if subject.approved}
+									<span class="text-green-400">Sí</span>
+								{:else}
+									<span class="text-slate-500">No</span>
+								{/if}
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		{/if}
 	</section>
 </div>
 
@@ -204,17 +269,19 @@
 				use:enhance={() => {
 					return async ({ result, update }) => {
 						if (result.type === 'success' && result.data) {
+							const data = result.data as { message?: string };
 							resetMessage = {
 								type: 'success',
-								text: (result.data as any).message || 'Contraseña restablecida'
+								text: data.message || 'Contraseña restablecida'
 							};
 							showResetModal = false;
 							await update();
 							setTimeout(() => (resetMessage = null), 3000);
 						} else if (result.type === 'failure' && result.data) {
+							const data = result.data as { error?: string };
 							resetMessage = {
 								type: 'error',
-								text: (result.data as any).error || 'Error al restablecer contraseña'
+								text: data.error || 'Error al restablecer contraseña'
 							};
 							await update();
 							setTimeout(() => (resetMessage = null), 3000);

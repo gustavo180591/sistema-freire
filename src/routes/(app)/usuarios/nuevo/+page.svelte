@@ -3,8 +3,18 @@
 	import { enhance } from '$app/forms';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
-	let userType = $state(data.type || 'ALUMNO');
 	let loading = $state(false);
+
+	// $state needs to be initialized with a value, not a reactive reference
+	// data.type comes from server load and doesn't change, so this is safe
+	let userType = $state('ALUMNO');
+
+	// Initialize userType from data when component mounts
+	$effect(() => {
+		if (data?.type) {
+			userType = data.type;
+		}
+	});
 
 	const emailLabel = $derived(userType === 'ALUMNO' ? 'Correo' : 'Correo institucional');
 </script>

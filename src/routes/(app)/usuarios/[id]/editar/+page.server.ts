@@ -128,6 +128,7 @@ export const actions: Actions = {
 		const email = formData.get('email')?.toString();
 		const status = formData.get('status')?.toString();
 		const phone = formData.get('phone')?.toString();
+		const dni = formData.get('dni')?.toString();
 
 		if (!firstName || !lastName || !email) {
 			return fail(400, { error: 'Datos requeridos faltantes' });
@@ -150,6 +151,31 @@ export const actions: Actions = {
 					status: status as 'ACTIVE' | 'INACTIVE' | 'BLOCKED'
 				}
 			});
+
+			// Actualizar DNI si el usuario es alumno o docente
+			if (dni) {
+				// Verificar si es alumno
+				const student = await prisma.student.findUnique({
+					where: { userId: params.id }
+				});
+				if (student) {
+					await prisma.student.update({
+						where: { userId: params.id },
+						data: { dni }
+					});
+				}
+
+				// Verificar si es docente
+				const teacher = await prisma.teacher.findUnique({
+					where: { userId: params.id }
+				});
+				if (teacher) {
+					await prisma.teacher.update({
+						where: { userId: params.id },
+						data: { dni }
+					});
+				}
+			}
 
 			// Registrar en auditoría
 			await auditLog({

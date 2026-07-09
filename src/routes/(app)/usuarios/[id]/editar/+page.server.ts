@@ -130,6 +130,8 @@ export const actions: Actions = {
 		const phone = formData.get('phone')?.toString();
 		const dni = formData.get('dni')?.toString();
 
+		console.log('DNI recibido del formulario:', dni);
+
 		if (!firstName || !lastName || !email) {
 			return fail(400, { error: 'Datos requeridos faltantes' });
 		}

@@ -48,11 +48,14 @@
 	</section>
 
 	<section class="grid gap-4 md:grid-cols-4">
-		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+		<a
+			href="/finanzas/alumnos"
+			class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 transition hover:border-slate-500 hover:bg-slate-800/70"
+		>
 			<p class="text-sm text-slate-400">Alumnos con deuda</p>
 			<h2 class="mt-3 text-4xl font-bold">{data?.metrics?.studentsWithDebt ?? 0}</h2>
 			<p class="mt-2 text-sm text-slate-500">Con posible bloqueo académico</p>
-		</div>
+		</a>
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<p class="text-sm text-slate-400">Deuda total</p>

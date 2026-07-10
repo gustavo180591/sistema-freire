@@ -1,8 +1,9 @@
 import { prisma } from '$lib/server/db/prisma';
-import type { PageServerLoad } from './$types';
-import { error } from '@sveltejs/kit';
+import type { PageServerLoad, Actions } from './$types';
+import { error, fail } from '@sveltejs/kit';
+import bcrypt from 'bcryptjs';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
 	const user = await prisma.user.findUnique({
 		where: { id: params.id },
 		include: {
@@ -33,6 +34,15 @@ export const load: PageServerLoad = async ({ params }) => {
 		throw error(404, 'Usuario no encontrado');
 	}
 
+	// Obtener usuario actual y sus roles
+	const currentUser = locals.user;
+	const currentUserRoles = currentUser?.roles || [];
+
+	// Determinar si el usuario actual puede reestablecer contraseñas
+	const canResetPassword = currentUserRoles.some((role) =>
+		['SUPERADMIN', 'APODERADO', 'DIRECTOR', 'SECRETARIA'].includes(role)
+	);
+
 	// Determinar si el usuario tiene roles administrativos
 	const isAdmin = user.roles.some((ur) =>
 		['SUPERADMIN', 'DIRECTOR', 'SECRETARIA'].includes(ur.role.code)
@@ -55,6 +65,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	return {
 		user,
+		canResetPassword,
 		evaluations: evaluations.map((e) => ({
 			id: e.id,
 			title: e.title,
@@ -65,4 +76,49 @@ export const load: PageServerLoad = async ({ params }) => {
 			creator: `${e.createdByUser.firstName} ${e.createdByUser.lastName}`
 		}))
 	};
+};
+
+export const actions: Actions = {
+	resetPassword: async ({ params, locals }) => {
+		const currentUser = locals.user;
+		if (!currentUser) {
+			return fail(401, { error: 'No autorizado' });
+		}
+
+		const currentUserRoles = currentUser.roles || [];
+
+		// Validar permisos: solo SUPERADMIN, APODERADO, DIRECTOR, SECRETARIA
+		const hasPermission = currentUserRoles.some((role) =>
+			['SUPERADMIN', 'APODERADO', 'DIRECTOR', 'SECRETARIA'].includes(role)
+		);
+
+		if (!hasPermission) {
+			return fail(403, { error: 'No tenés permisos para reestablecer contraseñas' });
+		}
+
+		// Verificar que el usuario existe
+		const user = await prisma.user.findUnique({
+			where: { id: params.id },
+			select: { id: true, email: true, firstName: true, lastName: true }
+		});
+
+		if (!user) {
+			return fail(404, { error: 'Usuario no encontrado' });
+		}
+
+		// Hashear la contraseña por defecto
+		const defaultPassword = '12345678';
+		const passwordHash = await bcrypt.hash(defaultPassword, 10);
+
+		// Actualizar la contraseña
+		await prisma.user.update({
+			where: { id: params.id },
+			data: { passwordHash }
+		});
+
+		return {
+			success: true,
+			message: `Contraseña reestablecida a ${defaultPassword} para ${user.firstName} ${user.lastName}`
+		};
+	}
 };

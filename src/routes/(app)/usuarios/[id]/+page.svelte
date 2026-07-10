@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import { enhance } from '$app/forms';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form?: any } = $props();
 
 	const isTeacher = $derived(data.user.roles.some((ur) => ur.role.code === 'DOCENTE'));
 
@@ -14,6 +15,16 @@
 			['SECRETARIA', 'PRECEPTOR', 'FINANZAS', 'APODERADO'].includes(ur.role.code)
 		)
 	);
+
+	let resettingPassword = $state(false);
+
+	function handleResetPassword() {
+		return async ({ result }: { result: any }) => {
+			if (result.type === 'success') {
+				resettingPassword = false;
+			}
+		};
+	}
 </script>
 
 <svelte:head>
@@ -27,13 +38,52 @@
 			<h1 class="text-3xl font-bold">{data.user.firstName} {data.user.lastName}</h1>
 			<p class="mt-2 text-sm text-slate-400">{data.user.email}</p>
 		</div>
-		<a
-			href="/usuarios/{data.user.id}/editar"
-			class="rounded-2xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.02]"
-		>
-			Editar Usuario
-		</a>
+		<div class="flex gap-3">
+			{#if data.canResetPassword}
+				{#if !resettingPassword}
+					<button
+						onclick={() => (resettingPassword = true)}
+						class="rounded-2xl border border-amber-600 bg-amber-950/30 px-6 py-3 font-semibold text-amber-400 transition hover:bg-amber-950/50"
+					>
+						Reestablecer Contraseña
+					</button>
+				{:else}
+					<form method="POST" action="?/resetPassword" use:enhance={handleResetPassword}>
+						<button
+							type="submit"
+							class="rounded-2xl bg-amber-600 px-6 py-3 font-semibold text-white transition hover:bg-amber-500"
+						>
+							Confirmar Reestablecer
+						</button>
+					</form>
+					<button
+						onclick={() => (resettingPassword = false)}
+						class="rounded-2xl border border-slate-600 px-6 py-3 font-semibold text-slate-300 transition hover:bg-slate-800"
+					>
+						Cancelar
+					</button>
+				{/if}
+			{/if}
+			<a
+				href="/usuarios/{data.user.id}/editar"
+				class="rounded-2xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.02]"
+			>
+				Editar Usuario
+			</a>
+		</div>
 	</div>
+
+	{#if form?.error}
+		<div class="rounded-xl border border-red-800 bg-red-950/30 p-4 text-sm text-red-400">
+			✗ {form.error}
+		</div>
+	{/if}
+
+	{#if form?.success && form?.message}
+		<div class="rounded-xl border border-emerald-800 bg-emerald-950/30 p-4 text-sm text-emerald-400">
+			✓ {form.message}
+		</div>
+	{/if}
 
 	<div class="grid gap-6 md:grid-cols-2">
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">

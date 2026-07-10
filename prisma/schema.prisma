@@ -16,6 +16,7 @@ model User {
   status              UserStatus               @default(ACTIVE)
   phone               String?
   dni                 String?
+  cuil                String?
   createdAt           DateTime                 @default(now())
   updatedAt           DateTime                 @updatedAt
   failedLoginAttempts Int                      @default(0)

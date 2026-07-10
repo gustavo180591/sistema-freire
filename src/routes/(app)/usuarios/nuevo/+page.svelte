@@ -128,6 +128,17 @@
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 					/>
 				</div>
+
+				{#if userType !== 'ALUMNO' && userType !== 'SIN_TIPO'}
+					<div>
+						<label for="cuil" class="mb-2 block text-sm font-medium text-slate-300">CUIL</label>
+						<input
+							id="cuil"
+							name="cuil"
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						/>
+					</div>
+				{/if}
 			</div>
 		</section>
 

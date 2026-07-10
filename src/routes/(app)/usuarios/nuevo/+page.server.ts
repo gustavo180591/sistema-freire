@@ -95,6 +95,7 @@ export const actions: Actions = {
 		const lastName = data.get('lastName')?.toString();
 		const type = data.get('type')?.toString();
 		const dni = data.get('dni')?.toString();
+		const cuil = data.get('cuil')?.toString()?.trim();
 		const careerId = data.get('careerId')?.toString();
 		const alumnoType = data.get('alumnoType')?.toString() || 'normal';
 
@@ -192,6 +193,8 @@ export const actions: Actions = {
 						passwordHash,
 						firstName,
 						lastName,
+						dni: dni || null,
+						cuil: cuil || null,
 						status: 'ACTIVE'
 					}
 				});

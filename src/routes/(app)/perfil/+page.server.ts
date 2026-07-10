@@ -2,6 +2,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { redirect, error, fail } from '@sveltejs/kit';
 import { generateTOTPSecret, generateQRCode, verifyTOTP } from '$lib/server/auth/totp';
+import bcrypt from 'bcryptjs';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
@@ -186,5 +187,56 @@ export const actions: Actions = {
 		});
 
 		return { success: true, message: '2FA desactivado correctamente' };
+	},
+
+	// Cambiar contraseña
+	changePassword: async ({ request, locals }) => {
+		const user = locals.user;
+		if (!user) throw redirect(303, '/login');
+
+		const data = await request.formData();
+		const currentPassword = data.get('currentPassword')?.toString();
+		const newPassword = data.get('newPassword')?.toString();
+
+		if (!currentPassword || !newPassword) {
+			return fail(400, { error: 'Todos los campos son requeridos' });
+		}
+
+		if (newPassword.length < 8) {
+			return fail(400, { error: 'La nueva contraseña debe tener al menos 8 caracteres' });
+		}
+
+		const dbUser = await prisma.user.findUnique({
+			where: { id: user.id },
+			select: { passwordHash: true }
+		});
+
+		if (!dbUser) {
+			return fail(404, { error: 'Usuario no encontrado' });
+		}
+
+		// Verificar contraseña actual
+		const isCurrentPasswordValid = await bcrypt.compare(currentPassword, dbUser.passwordHash);
+
+		if (!isCurrentPasswordValid) {
+			return fail(400, { error: 'La contraseña actual es incorrecta' });
+		}
+
+		// Verificar que la nueva contraseña sea diferente a la actual
+		const isSamePassword = await bcrypt.compare(newPassword, dbUser.passwordHash);
+
+		if (isSamePassword) {
+			return fail(400, { error: 'La nueva contraseña debe ser diferente a la actual' });
+		}
+
+		// Hashear y actualizar la nueva contraseña
+		const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+		await prisma.user.update({
+			where: { id: user.id },
+			data: { passwordHash: newPasswordHash }
+		});
+
+		return { success: true, message: 'Contraseña cambiada correctamente' };
 	}
 };

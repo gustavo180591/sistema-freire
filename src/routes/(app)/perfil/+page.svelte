@@ -14,6 +14,13 @@
 	let verifyCode = $state('');
 	let disableCode = $state('');
 
+	// Estados para cambiar contraseña
+	let changingPassword = $state(false);
+	let showCurrentPassword = $state(false);
+	let showNewPassword = $state(false);
+	let currentPassword = $state('');
+	let newPassword = $state('');
+
 	// Manejar resultado del setup
 	$effect(() => {
 		if (form?.success && form?.qrCode) {
@@ -41,6 +48,17 @@
 				await invalidateAll();
 				disabling = false;
 				disableCode = '';
+			}
+		};
+	}
+
+	function handleChangePassword() {
+		return async ({ result }: { result: any }) => {
+			if (result.type === 'success') {
+				await invalidateAll();
+				changingPassword = false;
+				currentPassword = '';
+				newPassword = '';
 			}
 		};
 	}
@@ -492,6 +510,182 @@
 						</form>
 					</div>
 				{/if}
+			</div>
+		{/if}
+	</div>
+
+	<!-- Seguridad - Cambiar Contraseña -->
+	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-4 md:p-6">
+		<div class="mb-4 flex flex-col gap-4 md:mb-6 md:flex-row md:items-center md:justify-between">
+			<div class="flex items-center gap-3">
+				<div class="rounded-xl bg-amber-950/50 p-2">
+					<svg
+						class="h-5 w-5 text-amber-400"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+						/>
+					</svg>
+				</div>
+				<h2 class="text-lg font-semibold md:text-xl">Cambiar Contraseña</h2>
+			</div>
+		</div>
+
+		{#if !changingPassword}
+			<p class="mb-4 text-sm text-slate-400">
+				Cambiar tu contraseña regularmente ayuda a mantener tu cuenta segura.
+			</p>
+			<button
+				onclick={() => (changingPassword = true)}
+				class="rounded-xl bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-500"
+			>
+				Cambiar Contraseña
+			</button>
+		{:else}
+			<div class="rounded-2xl border border-slate-700 bg-slate-800/50 p-4 md:p-6">
+				{#if form?.error && form?.error.includes('contraseña')}
+					<div class="mb-4 rounded-xl border border-red-800 bg-red-950/30 p-4 text-sm text-red-400">
+						✗ {form.error}
+					</div>
+				{/if}
+
+				{#if form?.success && form?.message && form?.message.includes('contraseña')}
+					<div
+						class="mb-4 rounded-xl border border-emerald-800 bg-emerald-950/30 p-4 text-sm text-emerald-400"
+					>
+						✓ {form.message}
+					</div>
+				{/if}
+
+				<form
+					method="POST"
+					action="?/changePassword"
+					use:enhance={handleChangePassword}
+					class="space-y-4"
+				>
+					<div>
+						<label for="currentPassword" class="mb-2 block text-sm font-medium text-slate-300"
+							>Contraseña Actual</label
+						>
+						<div class="relative">
+							<input
+								id="currentPassword"
+								name="currentPassword"
+								type={showCurrentPassword ? 'text' : 'password'}
+								bind:value={currentPassword}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 pr-10 transition outline-none focus:border-amber-500"
+								required
+							/>
+							<button
+								type="button"
+								onclick={() => (showCurrentPassword = !showCurrentPassword)}
+								class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-300"
+							>
+								{#if showCurrentPassword}
+									<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+										/>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+										/>
+									</svg>
+								{:else}
+									<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+										/>
+									</svg>
+								{/if}
+							</button>
+						</div>
+					</div>
+
+					<div>
+						<label for="newPassword" class="mb-2 block text-sm font-medium text-slate-300"
+							>Nueva Contraseña</label
+						>
+						<div class="relative">
+							<input
+								id="newPassword"
+								name="newPassword"
+								type={showNewPassword ? 'text' : 'password'}
+								bind:value={newPassword}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 pr-10 transition outline-none focus:border-amber-500"
+								required
+								minlength="8"
+							/>
+							<button
+								type="button"
+								onclick={() => (showNewPassword = !showNewPassword)}
+								class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-300"
+							>
+								{#if showNewPassword}
+									<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+										/>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+										/>
+									</svg>
+								{:else}
+									<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+										/>
+									</svg>
+								{/if}
+							</button>
+						</div>
+						<p class="mt-1 text-xs text-slate-500">Mínimo 8 caracteres</p>
+					</div>
+
+					<div class="flex gap-3">
+						<button
+							type="submit"
+							disabled={!currentPassword || !newPassword || newPassword.length < 8}
+							class="rounded-xl bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							Cambiar Contraseña
+						</button>
+						<button
+							type="button"
+							onclick={() => {
+								changingPassword = false;
+								currentPassword = '';
+								newPassword = '';
+							}}
+							class="rounded-xl border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-700"
+						>
+							Cancelar
+						</button>
+					</div>
+				</form>
 			</div>
 		{/if}
 	</div>

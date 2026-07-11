@@ -123,13 +123,10 @@ export const actions: Actions = {
 				}
 			});
 
-			throw redirect(303, `/carreras/${params.id}/planes/${params.planId}`);
+			redirect(303, `/carreras/${params.id}/planes/${params.planId}`);
 		} catch (e) {
 			if (e instanceof Error) {
 				console.error('Error updating study plan:', e);
-				if (e.message.includes('redirect')) {
-					throw e;
-				}
 				return {
 					success: false,
 					errors: {

@@ -98,6 +98,19 @@ export const actions: Actions = {
 		}
 
 		try {
+			// Si se está activando el plan, desactivar los otros planes de la carrera
+			if (active) {
+				await prisma.studyPlan.updateMany({
+					where: {
+						careerId: params.id,
+						id: { not: params.planId }
+					},
+					data: {
+						active: false
+					}
+				});
+			}
+
 			await prisma.studyPlan.update({
 				where: {
 					id: params.planId

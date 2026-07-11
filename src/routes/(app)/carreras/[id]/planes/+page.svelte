@@ -94,6 +94,71 @@
 		</div>
 	</section>
 
+	<!-- Lista de Planes -->
+	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+		<div class="flex items-center justify-between">
+			<h2 class="text-2xl font-semibold">Planes de Estudio</h2>
+			<span class="text-sm text-slate-400">{plans.length} registros</span>
+		</div>
+
+		{#if plans.length === 0}
+			<p class="mt-4 text-slate-400">No hay planes de estudio registrados.</p>
+		{:else}
+			<div class="mt-6 overflow-hidden rounded-2xl border border-slate-800">
+				<table class="w-full text-left">
+					<thead class="border-b border-slate-800 bg-slate-900">
+						<tr>
+							<th class="px-6 py-4 text-sm font-semibold">Plan</th>
+							<th class="px-6 py-4 text-sm font-semibold">Versión</th>
+							<th class="px-6 py-4 text-sm font-semibold">Estado</th>
+							<th class="px-6 py-4 text-right text-sm font-semibold">Acciones</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each plans as plan}
+							<tr class="border-b border-slate-800 last:border-none hover:bg-slate-800/50">
+								<td class="px-6 py-4 font-medium">{plan.name}</td>
+								<td class="px-6 py-4">{plan.version}</td>
+								<td class="px-6 py-4">
+									<span
+										class="rounded-full border px-3 py-1 text-xs {plan.active
+											? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+											: 'border-slate-700 bg-slate-800/50 text-slate-400'}"
+									>
+										{plan.active ? 'Activo' : 'Inactivo'}
+									</span>
+								</td>
+								<td class="px-6 py-4 text-right">
+									<a
+										href={`/carreras/${career.id}/planes/${plan.id}`}
+										class="text-emerald-400 transition-colors hover:text-emerald-300"
+										aria-label="Ver plan"
+										title="Ver plan"
+									>
+										<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+											/>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+											/>
+										</svg>
+									</a>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
+	</section>
+
 	<!-- Malla Curricular por Año -->
 	{#if totalSubjects === 0}
 		<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-12 text-center">

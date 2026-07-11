@@ -86,11 +86,14 @@
 	</section>
 
 	<section class="grid gap-4 md:grid-cols-3">
-		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+		<a
+			href={`/carreras/${career.id}/planes`}
+			class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 transition hover:border-slate-700 hover:bg-slate-900/50"
+		>
 			<p class="text-sm text-slate-400">Planes activos</p>
 			<h2 class="mt-3 text-4xl font-bold">{career.plans.length}</h2>
 			<p class="mt-2 text-sm text-slate-500">Versiones curriculares disponibles</p>
-		</div>
+		</a>
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<p class="text-sm text-slate-400">Alumnos vinculados</p>

@@ -377,7 +377,7 @@
 											>
 												{secretary.lastName}, {secretary.firstName}
 											</p>
-											<p class="text-xs text-slate-500">ID: {secretary.dni}</p>
+											<p class="text-xs text-slate-500">DNI: {secretary.dni}</p>
 										</div>
 									</div>
 								</td>

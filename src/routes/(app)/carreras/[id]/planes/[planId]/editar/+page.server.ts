@@ -122,8 +122,6 @@ export const actions: Actions = {
 					active
 				}
 			});
-
-			redirect(303, `/carreras/${params.id}/planes/${params.planId}`);
 		} catch (e) {
 			if (e instanceof Error) {
 				console.error('Error updating study plan:', e);
@@ -141,5 +139,7 @@ export const actions: Actions = {
 				}
 			};
 		}
+
+		redirect(303, `/carreras/${params.id}/planes/${params.planId}`);
 	}
 };

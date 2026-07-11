@@ -43,34 +43,35 @@ La numeración de recibos se implementa de forma segura ante concurrencia:
 - **Error controlado**: Si ocurre una colisión por el constraint único, Prisma lanza un error que se propaga al cliente
 
 **Implementación en `issueReceipt()`:**
+
 ```typescript
 await prisma.$transaction(async (tx) => {
-  // Get or create receipt number for current year
-  let receiptNumberRecord = await tx.receiptNumber.findUnique({
-    where: { year: currentYear }
-  });
+	// Get or create receipt number for current year
+	let receiptNumberRecord = await tx.receiptNumber.findUnique({
+		where: { year: currentYear }
+	});
 
-  if (!receiptNumberRecord) {
-    receiptNumberRecord = await tx.receiptNumber.create({
-      data: { year: currentYear, lastNumber: 0 }
-    });
-  }
+	if (!receiptNumberRecord) {
+		receiptNumberRecord = await tx.receiptNumber.create({
+			data: { year: currentYear, lastNumber: 0 }
+		});
+	}
 
-  // Increment receipt number
-  const newReceiptNumber = receiptNumberRecord.lastNumber + 1;
-  await tx.receiptNumber.update({
-    where: { year: currentYear },
-    data: { lastNumber: newReceiptNumber }
-  });
+	// Increment receipt number
+	const newReceiptNumber = receiptNumberRecord.lastNumber + 1;
+	await tx.receiptNumber.update({
+		where: { year: currentYear },
+		data: { lastNumber: newReceiptNumber }
+	});
 
-  // Create receipt with the new number
-  const receipt = await tx.receipt.create({
-    data: {
-      receiptNumber: newReceiptNumber,
-      receiptYear: currentYear,
-      // ... other fields
-    }
-  });
+	// Create receipt with the new number
+	const receipt = await tx.receipt.create({
+		data: {
+			receiptNumber: newReceiptNumber,
+			receiptYear: currentYear
+			// ... other fields
+		}
+	});
 });
 ```
 
@@ -111,6 +112,7 @@ La entidad `RECEIPT` está agregada al sistema granular de permisos:
   - `RECEIPT.delete` - Anular recibos
 
 **Validación por rol:**
+
 - **SUPERADMIN**: Tiene todos los permisos automáticamente
 - **DIRECTOR**: Puede emitir, ver y anular recibos si tiene permisos configurados
 - **FINANZAS**: Puede emitir, ver y anular recibos si tiene permisos configurados
@@ -124,6 +126,7 @@ La entidad `RECEIPT` está agregada al sistema granular de permisos:
 Todas las operaciones de recibos registran auditoría en `AuditLog`:
 
 ### Emisión de Recibo
+
 - **Action**: `CREATE`
 - **Entity**: `Receipt`
 - **Metadata**:
@@ -135,6 +138,7 @@ Todas las operaciones de recibos registran auditoría en `AuditLog`:
   - `observations` (si aplica)
 
 ### Anulación de Recibo
+
 - **Action**: `DELETE`
 - **Entity**: `Receipt`
 - **Metadata**:
@@ -146,6 +150,7 @@ Todas las operaciones de recibos registran auditoría en `AuditLog`:
   - `newStatus` (CANCELLED)
 
 ### Reimpresión de Recibo
+
 - **Action**: `UPDATE`
 - **Entity**: `Receipt`
 - **Metadata**:
@@ -184,20 +189,24 @@ La vista imprimible del recibo (`src/routes/(app)/finanzas/recibos/[id]/+page.sv
 #### Métodos Implementados
 
 ##### `issueReceipt(params)`
+
 Emite un recibo institucional asociado a uno o más pagos.
 
 **Parámetros:**
+
 - `paymentIds: string[]` - IDs de los pagos a incluir en el recibo
 - `userId: string` - ID del usuario que emite el recibo
 - `observations?: string` - Observaciones opcionales
 
 **Validaciones:**
+
 - Verifica permisos `RECEIPT.create`
 - Valida que los pagos existan y no estén anulados
 - Valida que todos los pagos pertenezcan al mismo alumno
 - Previene emisión de recibos duplicados para pagos con recibo activo
 
 **Proceso:**
+
 1. Obtiene los pagos con sus allocations y conceptos
 2. Calcula el total y genera los items del recibo
 3. En una transacción:
@@ -210,22 +219,27 @@ Emite un recibo institucional asociado a uno o más pagos.
    - Registra auditoría
 
 **Retorna:**
+
 - `{ receipt: Receipt, items: ReceiptItem[] }`
 
 ##### `cancelReceipt(params)`
+
 Anula un recibo existente (marcado como CANCELLED, sin eliminación física).
 
 **Parámetros:**
+
 - `receiptId: string` - ID del recibo a anular
 - `reason: string` - Motivo de la anulación
 - `userId: string` - ID del usuario que anula el recibo
 
 **Validaciones:**
+
 - Verifica permisos `RECEIPT.delete`
 - Valida que el recibo exista
 - Previene anulación de recibos ya anulados
 
 **Proceso:**
+
 1. Obtiene el recibo
 2. En una transacción:
    - Actualiza el estado a CANCELLED
@@ -234,49 +248,62 @@ Anula un recibo existente (marcado como CANCELLED, sin eliminación física).
    - Registra auditoría
 
 ##### `reprintReceipt(params)`
+
 Reimprime un recibo existente, incrementando el contador de impresiones.
 
 **Parámetros:**
+
 - `receiptId: string` - ID del recibo a reimprimir
 - `userId: string` - ID del usuario que reimprime
 
 **Validaciones:**
+
 - Verifica permisos `RECEIPT.read`
 - Valida que el recibo exista
 
 **Proceso:**
+
 1. Obtiene el recibo
 2. Incrementa el contador de impresiones
 3. Registra auditoría
 
 **Retorna:**
+
 - `Receipt` actualizado
 
 ##### `getReceipt(receiptId, userId)`
+
 Obtiene un recibo específico con sus items.
 
 **Parámetros:**
+
 - `receiptId: string` - ID del recibo
 - `userId: string` - ID del usuario que solicita
 
 **Validaciones:**
+
 - Verifica permisos `RECEIPT.read`
 
 **Retorna:**
+
 - `Receipt | null` con items incluidos
 
 ##### `getStudentReceipts(studentId, userId)`
+
 Obtiene todos los recibos de un alumno.
 
 **Parámetros:**
+
 - `studentId: string` - ID del alumno
 - `userId: string` - ID del usuario que solicita
 
 **Validaciones:**
+
 - Permite acceso si el usuario es el propio alumno
 - Requiere permisos `RECEIPT.read` para otros usuarios
 
 **Retorna:**
+
 - `Receipt[]` ordenados por fecha de emisión descendente
 
 ### 2. Vista HTML Imprimible (`src/routes/(app)/finanzas/recibos/[id]/+page.svelte`)
@@ -307,6 +334,7 @@ Acciones de servidor para:
 - `reprintReceipt` - Reimprimir un recibo
 
 Todas las acciones incluyen:
+
 - Validación de autenticación
 - Manejo de errores con mensajes descriptivos
 - Respuestas apropiadas para el cliente
@@ -319,6 +347,7 @@ Se agregó la entidad `RECEIPT` al sistema de permisos granular:
 - Agregado al objeto `labels` en `getEntityLabel`
 
 Permisos disponibles:
+
 - `RECEIPT.create` - Emitir recibos
 - `RECEIPT.read` - Ver recibos
 - `RECEIPT.update` - Modificar recibos (no implementado aún)
@@ -336,6 +365,7 @@ Suite de pruebas funcionales que valida:
 - Obtención de recibos por alumno
 
 El script incluye:
+
 - Setup de datos de prueba (usuario, alumno, pagos, conceptos)
 - Ejecución de todas las pruebas
 - Cleanup automático de datos de prueba
@@ -344,6 +374,7 @@ El script incluye:
 ## Modelo de Datos
 
 ### Receipt
+
 ```prisma
 model Receipt {
   id               String        @id @default(cuid())
@@ -380,6 +411,7 @@ model Receipt {
 ```
 
 ### ReceiptItem
+
 ```prisma
 model ReceiptItem {
   id             String  @id @default(cuid())
@@ -399,6 +431,7 @@ model ReceiptItem {
 ```
 
 ### ReceiptNumber
+
 ```prisma
 model ReceiptNumber {
   id         String   @id @default(cuid())
@@ -409,6 +442,7 @@ model ReceiptNumber {
 ```
 
 ### ReceiptStatus
+
 ```prisma
 enum ReceiptStatus {
   ISSUED
@@ -445,6 +479,7 @@ Todas las operaciones de recibos registran auditoría:
 - **UPDATE**: Reimpresión de recibo
 
 Metadata de auditoría incluye:
+
 - Número y año del recibo
 - ID y nombre del alumno
 - Monto total
@@ -464,9 +499,9 @@ Metadata de auditoría incluye:
 
 ```typescript
 const result = await financialService.issueReceipt({
-  paymentIds: ['payment-1', 'payment-2'],
-  userId: 'user-id',
-  observations: 'Recibo por cuotas de enero y febrero'
+	paymentIds: ['payment-1', 'payment-2'],
+	userId: 'user-id',
+	observations: 'Recibo por cuotas de enero y febrero'
 });
 
 console.log(`Recibo #${result.receipt.receiptNumber}/${result.receipt.receiptYear} emitido`);
@@ -476,9 +511,9 @@ console.log(`Recibo #${result.receipt.receiptNumber}/${result.receipt.receiptYea
 
 ```typescript
 await financialService.cancelReceipt({
-  receiptId: 'receipt-id',
-  reason: 'Error en el monto',
-  userId: 'user-id'
+	receiptId: 'receipt-id',
+	reason: 'Error en el monto',
+	userId: 'user-id'
 });
 ```
 
@@ -486,8 +521,8 @@ await financialService.cancelReceipt({
 
 ```typescript
 const receipt = await financialService.reprintReceipt({
-  receiptId: 'receipt-id',
-  userId: 'user-id'
+	receiptId: 'receipt-id',
+	userId: 'user-id'
 });
 
 console.log(`Contador de impresiones: ${receipt.printCount}`);
@@ -514,6 +549,7 @@ npx tsx scripts/test-financial-receipts.ts
 ```
 
 El script:
+
 1. Configura datos de prueba
 2. Ejecuta todas las pruebas
 3. Limpia los datos de prueba

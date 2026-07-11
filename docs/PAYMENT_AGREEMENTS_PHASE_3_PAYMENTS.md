@@ -11,6 +11,7 @@ Phase 3 implements the payment registration functionality for payment agreement 
 **Location:** `src/lib/server/payment-agreements/payment-agreement-service.ts`
 
 **Signature:**
+
 ```typescript
 async registerInstallmentPayment(
   input: InstallmentPaymentInput,
@@ -20,35 +21,39 @@ async registerInstallmentPayment(
 ```
 
 **Input Type:**
+
 ```typescript
 type InstallmentPaymentInput = {
-  installmentId: string;
-  amount: Decimal;
-  method: PaymentMethod;
-  reference: string;
-  notes?: string;
-  paidBy: string;
-  paidByName: string;
+	installmentId: string;
+	amount: Decimal;
+	method: PaymentMethod;
+	reference: string;
+	notes?: string;
+	paidBy: string;
+	paidByName: string;
 };
 ```
 
 **Return Type:**
+
 ```typescript
 type PaymentResult = {
-  payment: Payment;
-  allocation: PaymentAllocation;
-  installment: PaymentAgreementInstallment;
-  agreement: PaymentAgreement;
+	payment: Payment;
+	allocation: PaymentAllocation;
+	installment: PaymentAgreementInstallment;
+	agreement: PaymentAgreement;
 };
 ```
 
 ## Flow
 
 ### 1. Permission Validation
+
 - Validates that the user has the required roles (`SUPERADMIN`, `DIRECTOR`, `FINANZAS`, or `ALUMNO` with ownership)
 - Throws error if user lacks permissions
 
 ### 2. Installment Validation
+
 - Fetches the installment with related agreement and student
 - Validates that the installment exists
 - Validates that the agreement is in `ACTIVE` status
@@ -57,9 +62,11 @@ type PaymentResult = {
 - Validates that the payment amount does not exceed the pending amount
 
 ### 3. Transactional Payment Processing
+
 All operations are wrapped in a single Prisma transaction to ensure atomicity:
 
 #### 3.1 Create Payment
+
 - Creates a `Payment` record with:
   - `studentId`: From the agreement
   - `amount`: The payment amount
@@ -69,6 +76,7 @@ All operations are wrapped in a single Prisma transaction to ensure atomicity:
   - `userId`: The user who registered the payment
 
 #### 3.2 Create Payment Allocation
+
 - Creates a `PaymentAllocation` record linking the payment to the installment:
   - `paymentId`: The created payment ID
   - `installmentId`: The installment being paid
@@ -76,6 +84,7 @@ All operations are wrapped in a single Prisma transaction to ensure atomicity:
   - `studentId`: From the agreement
 
 #### 3.3 Update Installment
+
 - Updates the installment's payment information:
   - `paidAmount`: Increased by the payment amount
   - `pendingAmount`: Decreased by the payment amount
@@ -85,12 +94,14 @@ All operations are wrapped in a single Prisma transaction to ensure atomicity:
     - `PENDING` if no payment yet
 
 #### 3.4 Update Agreement Totals
+
 - Recalculates agreement totals:
   - `paidAmount`: Sum of all installment paid amounts
   - `pendingAmount`: Sum of all installment pending amounts
   - `status`: Updated to `COMPLETED` if all installments are paid
 
 #### 3.5 Record Events
+
 - Creates a `PaymentAgreementEvent` record:
   - `eventType`: `PAYMENT_REGISTERED`
   - `description`: Details about the payment
@@ -100,6 +111,7 @@ All operations are wrapped in a single Prisma transaction to ensure atomicity:
   - `userName`: The user's name
 
 #### 3.6 Create Audit Log
+
 - Creates an `AuditLog` record:
   - `action`: `CREATE`
   - `entityType`: `Payment`
@@ -108,11 +120,13 @@ All operations are wrapped in a single Prisma transaction to ensure atomicity:
   - `metadata`: Payment details including amount, method, reference, installmentId, agreementId
 
 ### 4. Return Result
+
 - Returns the created payment, allocation, updated installment, and updated agreement
 
 ## Validations
 
 ### Pre-Payment Validations
+
 1. **Permission Check**: User must have `SUPERADMIN`, `DIRECTOR`, `FINANZAS`, or be the student owner
 2. **Installment Existence**: Installment must exist in the database
 3. **Agreement Status**: Agreement must be in `ACTIVE` status
@@ -121,6 +135,7 @@ All operations are wrapped in a single Prisma transaction to ensure atomicity:
 6. **Amount Limit**: Payment amount must not exceed the installment's pending amount
 
 ### Transactional Validations
+
 - All database operations are performed within a single transaction
 - If any operation fails, the entire transaction is rolled back
 - This ensures data consistency and prevents partial updates
@@ -128,6 +143,7 @@ All operations are wrapped in a single Prisma transaction to ensure atomicity:
 ## Payment Methods
 
 Supported payment methods (from `PaymentMethod` enum):
+
 - `CASH`: Cash payment
 - `BANK_TRANSFER`: Bank transfer
 - `DEBIT_CARD`: Debit card
@@ -162,7 +178,9 @@ ACTIVE ──(all installments paid)──> COMPLETED
 ## Event Logging
 
 ### PaymentAgreementEvent
+
 Each payment registration creates an event with:
+
 - `eventType`: `INSTALLMENT_PAID` (Note: This is the event type available in the PaymentAgreementEventType enum. It represents the registration of a payment for an agreement installment.)
 - `description`: Human-readable description of the payment
 - `userId`: User who registered the payment
@@ -170,7 +188,9 @@ Each payment registration creates an event with:
 - `createdAt`: Timestamp of the event
 
 ### AuditLog
+
 Each payment registration creates an audit log entry with:
+
 - `action`: `CREATE`
 - `entityType`: `Payment`
 - `entityId`: Payment ID
@@ -187,18 +207,21 @@ Each payment registration creates an audit log entry with:
 ## Integration with Existing Models
 
 ### Payment Model
+
 - Uses existing `Payment` model from financial module
 - Links to student via `studentId`
 - Links to user via `userId`
 - Stores payment method, amount, reference, and notes
 
 ### PaymentAllocation Model
+
 - Uses existing `PaymentAllocation` model from financial module
 - Links payment to installment via `installmentId`
 - Stores allocation amount
 - Links to student via `studentId`
 
 ### No Destructive Modifications to StudentCharge
+
 - **Important**: This implementation does NOT modify `StudentCharge` records
 - The original debt remains intact in `StudentCharge`
 - Payment tracking is done through the agreement's installments
@@ -212,6 +235,7 @@ Each payment registration creates an audit log entry with:
 **Server Action:** `registerPayment` in `+page.server.ts`
 
 **Form Fields:**
+
 - `installmentId`: The installment to pay
 - `amount`: Payment amount
 - `method`: Payment method
@@ -219,6 +243,7 @@ Each payment registration creates an audit log entry with:
 - `notes`: Optional notes
 
 **UI Components:** `+page.svelte`
+
 - Displays list of installments with:
   - Installment number
   - Due date
@@ -232,6 +257,7 @@ Each payment registration creates an audit log entry with:
 ## Limitations
 
 ### Phase 3 Limitations
+
 1. **No Receipt Generation**: Receipt generation is not implemented in this phase (deferred to Phase 4)
 2. **No Automatic Blocking**: Automatic blocking logic is not implemented (deferred to later phases)
 3. **No StudentCharge Updates**: Original debt in `StudentCharge` is not modified
@@ -240,6 +266,7 @@ Each payment registration creates an audit log entry with:
 6. **No Payment Plans**: Dynamic payment plan creation is not supported
 
 ### Future Enhancements
+
 - Receipt generation with templates
 - Automatic blocking when payments are overdue
 - Integration with `StudentCharge` to reflect payment status
@@ -250,9 +277,11 @@ Each payment registration creates an audit log entry with:
 ## Testing
 
 ### Functional Test Script
+
 **Location:** `scripts/test-payment-agreement-payments.ts`
 
 **Test Coverage:**
+
 1. Total payment of an installment
 2. Partial payment of an installment
 3. Rejection of payment exceeding pending amount
@@ -267,6 +296,7 @@ Each payment registration creates an audit log entry with:
 12. Transactional rollback test
 
 **Running Tests:**
+
 ```bash
 npx tsx scripts/test-payment-agreement-payments.ts
 ```
@@ -282,6 +312,7 @@ npx tsx scripts/test-payment-agreement-payments.ts
 ## Error Handling
 
 ### Common Errors
+
 - **Permission Denied**: User lacks required permissions
 - **Installment Not Found**: Installment does not exist
 - **Agreement Not Active**: Agreement is not in ACTIVE status
@@ -291,6 +322,7 @@ npx tsx scripts/test-payment-agreement-payments.ts
 - **Amount Exceeds Pending**: Payment amount exceeds pending amount
 
 ### Error Messages
+
 All errors are thrown with descriptive messages to help with debugging and user feedback.
 
 ## Performance Considerations
@@ -303,6 +335,7 @@ All errors are thrown with descriptive messages to help with debugging and user 
 ## Database Schema
 
 ### Payment Model
+
 ```prisma
 model Payment {
   id          String   @id @default(cuid())
@@ -325,6 +358,7 @@ model Payment {
 ```
 
 ### PaymentAllocation Model
+
 ```prisma
 model PaymentAllocation {
   id           String   @id @default(cuid())
@@ -350,6 +384,7 @@ model PaymentAllocation {
 ## Summary
 
 Phase 3 successfully implements payment registration for payment agreement installments with:
+
 - Full integration with existing `Payment` and `PaymentAllocation` models
 - Comprehensive validation and error handling
 - Transactional integrity

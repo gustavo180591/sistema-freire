@@ -11,12 +11,14 @@ Mejorar la UI de reportes agregando visualizaciones simples y livianas para que 
 Componente de barras horizontales simples para mostrar comparaciones de valores.
 
 **Props:**
+
 - `data`: Array de `{ label: string; value: number; color?: string }`
 - `maxValue`: Valor máximo opcional (auto-calculado si no se proporciona)
 - `height`: Altura de las barras en px (default: 24)
 - `showValues`: Mostrar valores numéricos (default: true)
 
 **Características:**
+
 - Barras horizontales con ancho proporcional al valor
 - Colores personalizables por barra
 - Etiquetas truncadas con tooltip
@@ -28,6 +30,7 @@ Componente de barras horizontales simples para mostrar comparaciones de valores.
 Componente de barra de progreso circular para mostrar porcentajes.
 
 **Props:**
+
 - `value`: Valor actual
 - `total`: Valor total
 - `label`: Etiqueta opcional
@@ -36,6 +39,7 @@ Componente de barra de progreso circular para mostrar porcentajes.
 - `showPercentage`: Mostrar porcentaje (default: true)
 
 **Características:**
+
 - Barra de progreso con porcentaje calculado
 - Etiqueta opcional arriba de la barra
 - Porcentaje mostrado con 1 decimal
@@ -46,11 +50,13 @@ Componente de barra de progreso circular para mostrar porcentajes.
 Componente de comparación de métricas en tarjetas.
 
 **Props:**
+
 - `metrics`: Array de `{ label: string; value: number; color?: string }`
 - `total`: Total opcional (auto-calculado si no se proporciona)
 - `showTotal`: Mostrar tarjeta de total (default: true)
 
 **Características:**
+
 - Grid de tarjetas con métricas
 - Colores personalizables por métrica
 - Porcentaje del total calculado automáticamente
@@ -62,11 +68,13 @@ Componente de comparación de métricas en tarjetas.
 Componente de lista de distribución con barras horizontales.
 
 **Props:**
+
 - `data`: Record<string, number> (clave-valor)
 - `title`: Título opcional
 - `color`: Color de las barras (default: `rgb(99, 102, 241)`)
 
 **Características:**
+
 - Convierte Record a array y ordena por valor descendente
 - Barras horizontales proporcionales
 - Etiquetas truncadas con tooltip
@@ -79,6 +87,7 @@ Componente de lista de distribución con barras horizontales.
 ### InstitutionalReportsPanel.svelte
 
 **Visualizaciones agregadas:**
+
 1. **Alumnos Activos vs Total** - ProgressBar
    - Muestra porcentaje de alumnos activos sobre total
    - Color: indigo
@@ -99,6 +108,7 @@ Componente de lista de distribución con barras horizontales.
 ### FinancialReportsPanel.svelte
 
 **Visualizaciones agregadas:**
+
 1. **Pagado vs Pendiente** - MetricComparison
    - Compara pagado vs pendiente
    - Colores: verde (pagado), rojo (pendiente)
@@ -118,6 +128,7 @@ Componente de lista de distribución con barras horizontales.
 ### AcademicReportsPanel.svelte
 
 **Visualizaciones agregadas:**
+
 1. **Alumnos Activos vs Total** - ProgressBar
    - Muestra porcentaje de alumnos activos sobre total
    - Color: indigo
@@ -145,6 +156,7 @@ Componente de lista de distribución con barras horizontales.
 ### AttendanceReportsPanel.svelte
 
 **Visualizaciones agregadas:**
+
 1. **Presentes vs Ausentes** - MetricComparison
    - Compara presentes vs ausentes
    - Colores: verde (presentes), rojo (ausentes)
@@ -181,6 +193,7 @@ Componente de lista de distribución con barras horizontales.
 ## Seguridad
 
 **No se usaron patrones prohibidos del proyecto:**
+
 - Consultas raw de Prisma
 - Ejecuciones raw de Prisma
 - Tipo any
@@ -199,6 +212,7 @@ Componente de lista de distribución con barras horizontales.
 **No se crearon migraciones.**
 
 **No se usó:**
+
 - `npx prisma db push`
 - `npx prisma migrate reset`
 - `npx prisma migrate resolve`
@@ -218,6 +232,7 @@ Componente de lista de distribución con barras horizontales.
 ## Próximos pasos (Fase 6)
 
 Fase 6 implementará:
+
 - Auditoría integral del módulo
 - Performance optimization
 - Prueba manual completa

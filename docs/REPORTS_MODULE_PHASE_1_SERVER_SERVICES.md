@@ -25,12 +25,12 @@ scripts/
 
 ### 1.2 Servicios implementados
 
-| Servicio | Función principal | Métricas |
-|----------|-------------------|-----------|
-| **InstitutionalReportsService** | KPIs globales del sistema | 18 métricas |
-| **FinancialReportsService** | Reportes financieros con filtros | 12 métricas |
-| **AcademicReportsService** | Reportes académicos con filtros | 16 métricas |
-| **AttendanceReportsService** | Reportes de asistencia con filtros | 9 métricas |
+| Servicio                        | Función principal                  | Métricas    |
+| ------------------------------- | ---------------------------------- | ----------- |
+| **InstitutionalReportsService** | KPIs globales del sistema          | 18 métricas |
+| **FinancialReportsService**     | Reportes financieros con filtros   | 12 métricas |
+| **AcademicReportsService**      | Reportes académicos con filtros    | 16 métricas |
+| **AttendanceReportsService**    | Reportes de asistencia con filtros | 9 métricas  |
 
 ---
 
@@ -151,12 +151,13 @@ export type ReportResult<T> = {
 ### 3.1 Función principal
 
 ```typescript
-export async function getInstitutionalMetrics(): Promise<ReportResult<InstitutionalMetrics>>
+export async function getInstitutionalMetrics(): Promise<ReportResult<InstitutionalMetrics>>;
 ```
 
 ### 3.2 Métricas implementadas
 
 **Académicas:**
+
 - `totalStudents` - Total de alumnos
 - `activeStudents` - Alumnos activos
 - `totalTeachers` - Total de docentes
@@ -167,18 +168,21 @@ export async function getInstitutionalMetrics(): Promise<ReportResult<Institutio
 - `activeSubjects` - Materias activas
 
 **Institucionales:**
+
 - `totalUsers` - Total de usuarios
 - `activeUsers` - Usuarios activos
 - `totalDocuments` - Total de documentos
 - `documentsByCategory` - Documentos por categoría
 
 **Financieras:**
+
 - `totalDebt` - Deuda total
 - `totalCollected` - Total cobrado
 - `totalPending` - Deuda pendiente
 - `overdueDebt` - Deuda vencida
 
 **Asistencia:**
+
 - `averageAttendance` - Asistencia promedio
 - `lowAttendanceCount` - Alumnos con baja asistencia (< 75%)
 
@@ -206,12 +210,13 @@ export async function getInstitutionalMetrics(): Promise<ReportResult<Institutio
 ```typescript
 export async function getFinancialReportMetrics(
 	filters?: ReportFilters
-): Promise<ReportResult<FinancialReportMetrics>>
+): Promise<ReportResult<FinancialReportMetrics>>;
 ```
 
 ### 4.2 Métricas implementadas
 
 **Cargos y Pagos:**
+
 - `totalCharges` - Total de cuotas generadas
 - `totalPaid` - Total pagado
 - `totalPending` - Deuda pendiente
@@ -221,10 +226,12 @@ export async function getFinancialReportMetrics(
 - `totalCollected` - Total cobrado
 
 **Recibos:**
+
 - `receiptsIssued` - Recibos emitidos
 - `receiptsCancelled` - Recibos anulados
 
 **Convenios de Pago (reutilizando módulo existente):**
+
 - `activeAgreements` - Convenios activos
 - `overdueAgreements` - Convenios vencidos
 - `defaultedAgreements` - Convenios incumplidos
@@ -266,6 +273,7 @@ export async function getFinancialReportMetrics(
 ### 4.7 Integración con Convenios de Pago
 
 Reutiliza lógica existente del módulo Convenios de Pago sin duplicar código:
+
 - Consulta directa a PaymentAgreement
 - Estados: ACTIVE, OVERDUE, DEFAULTED
 - Sin modificar lógica del módulo existente
@@ -279,33 +287,38 @@ Reutiliza lógica existente del módulo Convenios de Pago sin duplicar código:
 ```typescript
 export async function getAcademicReportMetrics(
 	filters?: ReportFilters
-): Promise<ReportResult<AcademicReportMetrics>>
+): Promise<ReportResult<AcademicReportMetrics>>;
 ```
 
 ### 5.2 Métricas implementadas
 
 **Alumnos:**
+
 - `totalStudents` - Total de alumnos
 - `activeStudents` - Alumnos activos
 - `studentsByCareer` - Alumnos por carrera
 - `studentsByStatus` - Alumnos por estado
 
 **Materias y Docentes:**
+
 - `totalSubjects` - Total de materias
 - `activeSubjects` - Materias activas
 - `totalTeachers` - Total de docentes
 - `activeTeachers` - Docentes activos
 
 **Comisiones:**
+
 - `totalCommissions` - Total de comisiones
 - `activeCommissions` - Comisiones activas
 
 **Evaluaciones y Calificaciones:**
+
 - `totalEvaluations` - Total de evaluaciones
 - `totalGrades` - Total de calificaciones
 - `averageGrade` - Promedio de calificaciones
 
 **Regularidad y Riesgo:**
+
 - `regularCount` - Alumnos regulares
 - `libreCount` - Alumnos libres
 - `riskStudents` - Alumnos en riesgo (asistencia < 75%)
@@ -360,16 +373,18 @@ export async function getAcademicReportMetrics(
 ```typescript
 export async function getAttendanceReportMetrics(
 	filters?: ReportFilters
-): Promise<ReportResult<AttendanceReportMetrics>>
+): Promise<ReportResult<AttendanceReportMetrics>>;
 ```
 
 ### 6.2 Métricas implementadas
 
 **Registros y Entradas:**
+
 - `totalAttendanceRecords` - Total de registros de clase
 - `totalAttendanceEntries` - Total de entradas de asistencia
 
 **Asistencia:**
+
 - `presentCount` - Total de presentes
 - `absentCount` - Total de ausentes
 - `justifiedCount` - Ausencias justificadas (con notas)
@@ -377,6 +392,7 @@ export async function getAttendanceReportMetrics(
 - `averageAttendance` - Porcentaje promedio de asistencia
 
 **Promedios por entidad:**
+
 - `averageBySubject` - Promedio de asistencia por materia
 - `averageByCommission` - Promedio de asistencia por comisión
 
@@ -422,18 +438,18 @@ export async function getAttendanceReportMetrics(
 
 ### 7.1 Test implementados
 
-| Test | Descripción |
-|------|-------------|
-| **Institutional Metrics** | Verifica métricas institucionales |
-| **Financial Reports (No Filters)** | Verifica métricas financieras sin filtros |
-| **Financial Reports (Date Filter)** | Verifica métricas financieras con filtro de fecha |
-| **Academic Reports (No Filters)** | Verifica métricas académicas sin filtros |
-| **Academic Reports (Career Filter)** | Verifica métricas académicas con filtro de carrera |
-| **Attendance Reports (No Filters)** | Verifica métricas de asistencia sin filtros |
+| Test                                 | Descripción                                         |
+| ------------------------------------ | --------------------------------------------------- |
+| **Institutional Metrics**            | Verifica métricas institucionales                   |
+| **Financial Reports (No Filters)**   | Verifica métricas financieras sin filtros           |
+| **Financial Reports (Date Filter)**  | Verifica métricas financieras con filtro de fecha   |
+| **Academic Reports (No Filters)**    | Verifica métricas académicas sin filtros            |
+| **Academic Reports (Career Filter)** | Verifica métricas académicas con filtro de carrera  |
+| **Attendance Reports (No Filters)**  | Verifica métricas de asistencia sin filtros         |
 | **Attendance Reports (Date Filter)** | Verifica métricas de asistencia con filtro de fecha |
-| **ReportResult Structure** | Verifica estructura de ReportResult |
-| **Payment Agreements Integration** | Verifica integración con Convenios de Pago |
-| **Academic Regularity Metrics** | Verifica métricas de regularidad académica |
+| **ReportResult Structure**           | Verifica estructura de ReportResult                 |
+| **Payment Agreements Integration**   | Verifica integración con Convenios de Pago          |
+| **Academic Regularity Metrics**      | Verifica métricas de regularidad académica          |
 
 ### 7.2 Ejecución
 
@@ -577,10 +593,10 @@ docs/REPORTS_MODULE_PHASE_1_SERVER_SERVICES.md
 ### 12.2 Permisos a agregar
 
 ```typescript
-'ACADEMIC_REPORT'      // Reportes académicos
-'ATTENDANCE_REPORT'    // Reportes de asistencia
-'INSTITUTIONAL_REPORT' // Reportes institucionales
-'REPORTS_EXPORT'       // Exportación de reportes
+'ACADEMIC_REPORT'; // Reportes académicos
+'ATTENDANCE_REPORT'; // Reportes de asistencia
+'INSTITUTIONAL_REPORT'; // Reportes institucionales
+'REPORTS_EXPORT'; // Exportación de reportes
 ```
 
 ---
@@ -601,6 +617,7 @@ La Fase 1 del Módulo de Reportes ha sido implementada exitosamente con:
 - ✅ Validaciones exitosas
 
 La implementación sigue las mejores prácticas de:
+
 - Separación de responsabilidades (servicios especializados)
 - Tipado fuerte de TypeScript
 - Reutilización de lógica existente (Convenios de Pago)

@@ -5,6 +5,7 @@
 ### Estado actual del sistema
 
 **Schema existente:**
+
 - `FinancialBlock`: Tiene campos para excepciones (`exceptionSource`, `exceptionAgreementId`)
 - `FinancialBlockExceptionSource`: Enum con `MANUAL` y `PAYMENT_AGREEMENT`
 - `StudentCharge`: Tiene `status` (PENDING, PARTIAL, PAID, CANCELLED), `paidAmount`, `finalAmount`, `isOverdue`, `overdueSince`
@@ -13,21 +14,25 @@
 - `PaymentAgreementChargeRelation`: Tiene `originalChargeStatus`, `newStatus`, `relationType` (REFINANCED)
 
 **Enums existentes:**
+
 - `ChargeStatus`: PENDING, PARTIAL, PAID, CANCELLED (NO tiene REFINANCED)
 - `PaymentAgreementEventType`: CREATED, ACTIVATED, MODIFIED, CANCELLED, REFINANCED, INSTALLMENT_PAID, INSTALLMENT_OVERDUE, DEFAULTED, STATUS_CHANGED, BLOCK_EXCEPTION, BLOCK_REACTIVATED (YA tiene los eventos necesarios)
 
 **Lógica existente en FinancialService:**
+
 - `calculateDebtSummary()`: Calcula deuda basándose en `StudentCharge` con status PENDING/PARTIAL
 - `checkFinancialBlock()`: Verifica si el alumno tiene bloqueos activos
 - `evaluateAndApplyFinancialBlock()`: Aplica bloqueos basándose en deuda vencida
 - `getStudentFinancialData()`: Obtiene datos financieros del alumno (cuotas, pagos, recibos, bloqueos)
 
 **Lógica existente en PaymentAgreementService:**
+
 - `activateAgreement()`: Activa convenio (DRAFT -> ACTIVE) pero NO modifica las cuotas originales
 - `getAgreementSummary()`: Calcula resumen del convenio (cuotas pendientes, vencidas)
 - `registerInstallmentPayment()`: Registra pagos de cuotas
 
 **Lógica existente en reportes financieros:**
+
 - `getFinancialReport()`: Calcula deuda basándose en `StudentCharge` (no considera convenios)
 
 ### Problemas identificados
@@ -47,6 +52,7 @@
 ### 1. ¿Qué pasa con la deuda original cuando se activa un convenio?
 
 **Respuesta:** La deuda original NO se modifica destructivamente. El convenio crea una `PaymentAgreementChargeRelation` que:
+
 - Guarda un snapshot del estado original (`originalChargeStatus`, `originalChargeAmount`, `originalChargePaidAmount`)
 - Tiene `relationType = REFINANCED`
 - NO cambia el status de `StudentCharge`
@@ -82,6 +88,7 @@
 **Respuesta:** Actualmente NUNCA. No hay lógica para marcar cuotas como OVERDUE.
 
 **Propuesta:** Una cuota pasa a `OVERDUE` cuando:
+
 - `dueDate` < fecha actual
 - `status` es `PENDING` o `PARTIAL`
 - `paidAmount` < `amount`
@@ -92,6 +99,7 @@
 **Respuesta:** Actualmente NUNCA. No hay lógica para marcar convenios como DEFAULTED.
 
 **Propuesta:** Un convenio pasa a `DEFAULTED` cuando:
+
 - Tiene 2 o más cuotas consecutivas en `OVERDUE`
 - O tiene más del 50% de las cuotas en `OVERDUE`
 - Y está en status `ACTIVE`
@@ -101,6 +109,7 @@
 **Respuesta:** Actualmente NUNCA. No hay lógica para marcar convenios como COMPLETED.
 
 **Propuesta:** Un convenio pasa a `COMPLETED` cuando:
+
 - Todas las cuotas están en `PAID`
 - `paidAmount` >= `agreedAmount`
 - Y está en status `ACTIVE`
@@ -110,16 +119,18 @@
 **Respuesta:** Actualmente solo se calcula deuda de `StudentCharge`.
 
 **Propuesta:** El saldo financiero efectivo debería ser:
+
 - Deuda original NO cubierta por convenios ACTIVE (cuotas sin convenio)
-- + Deuda de convenios ACTIVE (cuotas pendientes)
+- - Deuda de convenios ACTIVE (cuotas pendientes)
 - - Deuda de convenios COMPLETED (no se cuenta)
-- + Deuda de convenios DEFAULTED (se puede volver exigible según reglas)
+- - Deuda de convenios DEFAULTED (se puede volver exigible según reglas)
 
 ### 10. ¿Cómo se evita duplicar deuda en reportes?
 
 **Respuesta:** Actualmente NO se evita. Los reportes suman deuda original sin considerar convenios.
 
 **Propuesta:** Los reportes deberían:
+
 - Usar `PaymentAgreementChargeRelation` para identificar cargos cubiertos por convenios
 - Excluir o separar cargos cubiertos por convenios ACTIVE y al día
 - Incluir deuda de convenios activos
@@ -130,6 +141,7 @@
 **Respuesta:** Actualmente no se muestra deuda convenida en reportes.
 
 **Propuesta:** Los reportes deberían mostrar:
+
 - Deuda original total
 - Deuda original cubierta por convenios (no exigible temporalmente)
 - Deuda original exigible (no cubierta por convenios)
@@ -141,6 +153,7 @@
 **Respuesta:** Actualmente el convenio no pasa a `COMPLETED` automáticamente.
 
 **Propuesta:** Al completar el pago del convenio:
+
 - Convenio pasa a `COMPLETED`
 - `completedAt` se setea
 - Evento `DEFAULTED` (reutilizando enum existente) se registra
@@ -152,6 +165,7 @@
 **Respuesta:** Actualmente no hay consecuencias automáticas.
 
 **Propuesta:** Si el alumno incumple una cuota:
+
 - Cuota pasa a `OVERDUE`
 - `overdueSince` se setea
 - Si hay múltiples cuotas vencidas, convenio podría pasar a `DEFAULTED`
@@ -163,6 +177,7 @@
 **Respuesta:** Actualmente no hay lógica específica para esto.
 
 **Propuesta:** Permisos que deberían poder crear excepciones:
+
 - `AGREEMENT_MANAGE` (gestionar convenios)
 - `BLOCK_EXCEPTION_CREATE` (crear excepciones de bloqueo)
 - Roles: SUPERADMIN, FINANCIERO, DIRECTOR
@@ -172,6 +187,7 @@
 **Respuesta:** Actualmente se auditan cambios de convenio pero no excepciones de bloqueo.
 
 **Propuesta:** Debe auditarse:
+
 - Creación de excepción de bloqueo por convenio
 - Revocación de excepción de bloqueo
 - Cambio de status de cuota a `OVERDUE`
@@ -183,6 +199,7 @@
 **Respuesta:** Actualmente se registran eventos de convenio pero no de deuda/bloqueos.
 
 **Propuesta:** Eventos de convenio (usando enum existente):
+
 - `INSTALLMENT_OVERDUE`: Cuota vencida (YA existe en enum)
 - `DEFAULTED`: Convenio incumplido (YA existe en enum)
 - `BLOCK_EXCEPTION`: Excepción de bloqueo (YA existe en enum)
@@ -190,6 +207,7 @@
 ### 17. ¿Qué queda fuera de esta fase?
 
 **Respuesta:** Quedan fuera:
+
 - Cambios a `StudentCharge.status` (REFINANCED)
 - Cron jobs automáticos para marcar cuotas vencidas
 - Cron jobs automáticos para marcar convenios incumplidos
@@ -205,6 +223,7 @@
 ### 1. ¿Cómo se define "convenio al día"?
 
 **Respuesta:** Un convenio está al día cuando:
+
 - Status es `ACTIVE`
 - No tiene cuotas en `OVERDUE`
 - No tiene cuotas vencidas (según días de gracia configurados)
@@ -217,6 +236,7 @@
 ### 3. ¿Cuándo un convenio pasa de `ACTIVE` a `DEFAULTED`?
 
 **Respuesta:** Un convenio pasa a `DEFAULTED` cuando:
+
 - Tiene 2 o más cuotas consecutivas en `OVERDUE`
 - O tiene más del 50% de las cuotas en `OVERDUE`
 - Y está en status `ACTIVE`
@@ -224,6 +244,7 @@
 ### 4. ¿Una sola cuota vencida ya revoca excepción?
 
 **Respuesta:** NO. Una sola cuota vencida NO revoca la excepción automáticamente. La excepción se revoca cuando:
+
 - El convenio pasa a `DEFAULTED` (criterios de incumplimiento)
 - O manualmente por un usuario con permisos
 
@@ -238,6 +259,7 @@
 ### 7. ¿Cómo se evita duplicación en reportes sin cambiar `StudentCharge.status`?
 
 **Respuesta:** Usando `PaymentAgreementChargeRelation` para identificar cargos cubiertos por convenios. Los reportes deben:
+
 - Consultar `PaymentAgreementChargeRelation` para saber qué cargos están cubiertos
 - Excluir o separar cargos cubiertos por convenios ACTIVE y al día
 - Incluir deuda de convenios activos
@@ -245,6 +267,7 @@
 ### 8. ¿Cómo se calcula deuda efectiva cuando hay cargos parcialmente cubiertos por convenio?
 
 **Respuesta:** Los cargos parcialmente cubiertos por convenio se tratan como:
+
 - La parte cubierta por el convenio: deuda del convenio
 - La parte NO cubierta: deuda original exigible
 - Esto requiere que `PaymentAgreementChargeRelation.amountIncluded` represente el monto cubierto
@@ -252,6 +275,7 @@
 ### 9. ¿Qué permisos pueden forzar/revocar excepciones?
 
 **Respuesta:** Permisos:
+
 - `AGREEMENT_MANAGE`: Gestionar convenios (incluye excepciones)
 - `BLOCK_EXCEPTION_CREATE`: Crear excepciones de bloqueo
 - `BLOCK_EXCEPTION_REVOKE`: Revocar excepciones de bloqueo
@@ -261,11 +285,13 @@
 
 **Respuesta:**
 **Manuales en Fase 5.1-5.4:**
+
 - Evaluación de estado financiero del convenio (trigger manual)
 - Aplicación/revocación de excepciones de bloqueo (trigger manual)
 - Cálculo de deuda efectiva (read-only, siempre disponible)
 
 **Automáticas en Fase 5.5 (opcional):**
+
 - Cron job para marcar cuotas vencidas
 - Cron job para evaluar convenios
 - Cron job para aplicar/revocar excepciones
@@ -275,27 +301,35 @@
 ## Reglas de negocio propuestas
 
 ### R1: Deuda original no destructiva
+
 La deuda original nunca se borra ni se modifica destructivamente. NO se cambia `StudentCharge.status` en Fase 5.1. La refinanciación se representa mediante `PaymentAgreementChargeRelation`.
 
 ### R2: Convenio como capa de refinanciación
+
 El convenio actúa como una capa de refinanciación que reemplaza temporalmente la deuda original en términos de deuda exigible. La deuda original se mantiene intacta pero se excluye del cálculo de deuda efectiva.
 
 ### R3: Excepción de bloqueo automática
+
 Al activar un convenio, se genera automáticamente una excepción de bloqueo (`exceptionSource = PAYMENT_AGREEMENT`) que evita el bloqueo financiero por la deuda original refinanciada.
 
 ### R4: Revocación de excepción por mora
+
 Si el convenio entra en mora (cuotas OVERDUE), la excepción de bloqueo se revoca automáticamente, permitiendo que el bloqueo se aplique nuevamente.
 
 ### R5: Trazabilidad completa
+
 Todos los cambios de status (cuotas, convenios, bloqueos) deben quedar trazados con eventos y auditoría.
 
 ### R6: No duplicación de deuda
+
 Los reportes financieros no deben sumar dos veces la deuda original y la deuda convenida. Los cargos cubiertos por convenios se excluyen de la deuda efectiva usando `PaymentAgreementChargeRelation`.
 
 ### R7: Bloqueos basados en deuda efectiva
+
 Los bloqueos deben basarse en deuda exigible real (original no refinanciada + convenios activos), no en deuda ya cubierta por convenio activo al día.
 
 ### R8: Estados de cuota de convenio
+
 - `PENDING`: Cuota pendiente de pago
 - `PARTIAL`: Cuota pagada parcialmente
 - `PAID`: Cuota pagada completamente
@@ -304,6 +338,7 @@ Los bloqueos deben basarse en deuda exigible real (original no refinanciada + co
 - `WAIVED`: Cuota condonada
 
 ### R9: Estados de convenio
+
 - `DRAFT`: Borrador (no activo)
 - `ACTIVE`: Activo (en curso)
 - `COMPLETED`: Completado (todas las cuotas pagadas)
@@ -311,7 +346,9 @@ Los bloqueos deben basarse en deuda exigible real (original no refinanciada + co
 - `DEFAULTED`: Incumplido (mora significativa)
 
 ### R10: Criterios de incumplimiento
+
 Un convenio se marca como `DEFAULTED` cuando:
+
 - Tiene 2 o más cuotas consecutivas en `OVERDUE`
 - O tiene más del 50% de las cuotas en `OVERDUE`
 
@@ -322,35 +359,45 @@ Un convenio se marca como `DEFAULTED` cuando:
 ### PaymentAgreementService
 
 #### `evaluateAgreementFinancialStatus(agreementId: string)`
+
 Evalúa el estado financiero de un convenio:
+
 - Marca cuotas vencidas como `OVERDUE`
 - Marca convenio como `DEFAULTED` si corresponde
 - Marca convenio como `COMPLETED` si corresponde
 - Registra eventos correspondientes
 
 #### `markOverdueInstallments(agreementId: string)`
+
 Marca cuotas vencidas:
+
 - Busca cuotas con `dueDate < hoy` (considerando días de gracia) y status `PENDING`/`PARTIAL`
 - Cambia status a `OVERDUE`
 - Setea `overdueSince`
 - Registra evento `INSTALLMENT_OVERDUE` (YA existe en enum)
 
 #### `evaluateAgreementDefault(agreementId: string)`
+
 Evalúa si el convenio debe marcarse como incumplido:
+
 - Cuenta cuotas en `OVERDUE`
 - Verifica si cumple criterios de incumplimiento
 - Si corresponde, cambia status a `DEFAULTED`
 - Registra evento `DEFAULTED` (YA existe en enum)
 
 #### `evaluateAgreementCompletion(agreementId: string)`
+
 Evalúa si el convenio debe marcarse como completado:
+
 - Verifica si todas las cuotas están en `PAID`
 - Verifica si `paidAmount` >= `agreedAmount`
 - Si corresponde, cambia status a `COMPLETED`
 - Registra evento `STATUS_CHANGED` con metadata de completado
 
 #### `applyAgreementBlockException(agreementId: string, userId: string)`
+
 Aplica excepción de bloqueo por convenio:
+
 - Busca bloqueos activos del alumno
 - Crea o actualiza excepción con `exceptionSource = PAYMENT_AGREEMENT`
 - Setea `exceptionAgreementId`
@@ -358,7 +405,9 @@ Aplica excepción de bloqueo por convenio:
 - Registra auditoría
 
 #### `revokeAgreementBlockException(agreementId: string, userId: string, reason: string)`
+
 Revoca excepción de bloqueo por convenio:
+
 - Busca excepción activa del convenio
 - Revoca excepción (setea `exceptionGranted = false`)
 - Registra evento `BLOCK_EXCEPTION` con metadata de revocación
@@ -367,22 +416,28 @@ Revoca excepción de bloqueo por convenio:
 ### FinancialService
 
 #### `getStudentEffectiveDebt(studentId: string)`
+
 Calcula deuda efectiva del alumno:
+
 - Deuda original NO cubierta por convenios ACTIVE (usando `PaymentAgreementChargeRelation`)
-- + Deuda de convenios ACTIVE (cuotas pendientes)
+- - Deuda de convenios ACTIVE (cuotas pendientes)
 - - Deuda de convenios COMPLETED (no se cuenta)
-- + Deuda de convenios DEFAULTED (se puede volver exigible según reglas)
+- - Deuda de convenios DEFAULTED (se puede volver exigible según reglas)
 - Retorna resumen detallado
 
 #### `getStudentAgreementDebtSummary(studentId: string)`
+
 Obtiene resumen de deuda de convenios:
+
 - Convenios activos y su deuda
 - Convenios completados
 - Cuotas vencidas de convenios
 - Excepciones de bloqueo activas
 
 #### `calculateDebtSummaryWithAgreements(studentId: string)`
+
 Versión mejorada de `calculateDebtSummary`:
+
 - Considera cargos cubiertos por convenios (usando `PaymentAgreementChargeRelation`)
 - Considera deuda de convenios
 - Retorna deuda efectiva
@@ -394,6 +449,7 @@ Versión mejorada de `calculateDebtSummary`:
 ### NO se requiere migración para Fase 5.1-5.4
 
 El schema actual ya tiene:
+
 - `FinancialBlock.exceptionSource` y `exceptionAgreementId`
 - `FinancialBlockExceptionSource.PAYMENT_AGREEMENT`
 - `PaymentAgreementEventType` con eventos necesarios (INSTALLMENT_OVERDUE, DEFAULTED, BLOCK_EXCEPTION)
@@ -403,6 +459,7 @@ El schema actual ya tiene:
 ### Cambios opcionales para fases posteriores
 
 Si se decide cambiar `StudentCharge.status` a `REFINANCED` en fases posteriores:
+
 - Agregar `REFINANCED` a `ChargeStatus` enum
 - Migración de schema
 - Actualizar lógica de reportes
@@ -412,21 +469,27 @@ Si se decide cambiar `StudentCharge.status` a `REFINANCED` en fases posteriores:
 ## Riesgos detectados
 
 ### R1 (Bajo): Sin migración en Fase 5.1-5.4
+
 Al no requerir migración, el riesgo es bajo. Se usa schema existente.
 
 ### R2 (Medio): Cálculo de deuda efectiva
+
 El cálculo de deuda efectiva requiere unir `StudentCharge` con `PaymentAgreementChargeRelation`, lo que puede ser complejo. Riesgo: medio, requiere pruebas exhaustivas.
 
 ### R3 (Medio): Excepciones de bloqueo
+
 La lógica de excepciones de bloqueo es compleja y podría interactuar con otras partes del sistema. Riesgo: medio, requiere pruebas exhaustivas.
 
 ### R4 (Alto): Estados automáticos
+
 La actualización automática de estados (OVERDUE, DEFAULTED, COMPLETED) requiere cron jobs o triggers en Fase 5.5. Riesgo: alto, requiere diseño cuidadoso de automatización.
 
 ### R5 (Medio): Reportes financieros
+
 Actualizar reportes financieros para considerar convenios podría afectar métricas existentes. Riesgo: medio, requiere validación de reportes.
 
 ### R6 (Bajo): No cambiar StudentCharge.status
+
 Al no cambiar `StudentCharge.status`, se evita impacto en reportes existentes. Riesgo: bajo.
 
 ---
@@ -434,9 +497,11 @@ Al no cambiar `StudentCharge.status`, se evita impacto en reportes existentes. R
 ## Recomendación de implementación por fases
 
 ### Fase 5.1: Evaluación de estado financiero del convenio
+
 Sin bloqueos todavía.
 
 Implementar:
+
 - `markOverdueInstallments()`
 - `evaluateAgreementDefault()`
 - `evaluateAgreementCompletion()`
@@ -447,7 +512,9 @@ Implementar:
 **NO requiere migración.**
 
 ### Fase 5.2: Deuda efectiva
+
 Implementar métodos read-only:
+
 - `getStudentEffectiveDebt()`
 - `getStudentAgreementDebtSummary()`
 - `calculateDebtSummaryWithAgreements()`
@@ -456,7 +523,9 @@ Implementar métodos read-only:
 **NO requiere migración.**
 
 ### Fase 5.3: Excepciones de bloqueo por convenio
+
 Implementar:
+
 - `applyAgreementBlockException()`
 - `revokeAgreementBlockException()`
 - Integrar con activación de convenio
@@ -467,7 +536,9 @@ Implementar:
 **NO requiere migración.**
 
 ### Fase 5.4: Reportes financieros integrados
+
 Actualizar reportes para evitar duplicar deuda:
+
 - Actualizar `getFinancialReport()` para considerar convenios
 - Usar `PaymentAgreementChargeRelation` para excluir deuda cubierta
 - Mostrar deuda original y deuda convenida
@@ -476,7 +547,9 @@ Actualizar reportes para evitar duplicar deuda:
 **NO requiere migración.**
 
 ### Fase 5.5: Automatización (opcional)
+
 Cron o tarea programada para evaluar vencimientos y bloqueos:
+
 - Cron job para marcar cuotas vencidas
 - Cron job para evaluar convenios
 - Cron job para aplicar/revocar excepciones
@@ -485,7 +558,9 @@ Cron o tarea programada para evaluar vencimientos y bloqueos:
 **NO requiere migración.**
 
 ### Fase 5.6: Opcional - Cambio de StudentCharge.status (solo si se aprueba)
+
 Si se decide cambiar `StudentCharge.status` a `REFINANCED`:
+
 - Agregar `REFINANCED` a `ChargeStatus` enum
 - Migración de schema
 - Actualizar cuotas originales al activar convenio
@@ -499,6 +574,7 @@ Si se decide cambiar `StudentCharge.status` a `REFINANCED`:
 ## Validaciones
 
 ### Al finalizar Fase 5.0 (diseño)
+
 - [x] Investigación de schema completada
 - [x] Investigación de lógica bloqueos completada
 - [x] Investigación de lógica deuda completada
@@ -514,6 +590,7 @@ Si se decide cambiar `StudentCharge.status` a `REFINANCED`:
 - [x] Recomendación de implementación por fases
 
 ### Al finalizar Fase 5.1 (estados)
+
 - [ ] Estados de cuotas funcionando
 - [ ] Estados de convenio funcionando
 - [ ] Eventos registrados (usando enum existente)
@@ -521,18 +598,21 @@ Si se decide cambiar `StudentCharge.status` a `REFINANCED`:
 - [ ] NO migración ejecutada
 
 ### Al finalizar Fase 5.2 (deuda)
+
 - [ ] Cálculo de deuda efectiva funcionando
 - [ ] Resumen de deuda de convenios funcionando
 - [ ] Pruebas de cálculo de deuda
 - [ ] NO migración ejecutada
 
 ### Al finalizar Fase 5.3 (bloqueos)
+
 - [ ] Excepciones de bloqueo funcionando
 - [ ] Integración con activación de convenio
 - [ ] Pruebas de bloqueos
 - [ ] NO migración ejecutada
 
 ### Al finalizar Fase 5.4 (reportes)
+
 - [ ] Reportes financieros actualizados
 - [ ] No duplicación de deuda
 - [ ] Pruebas de reportes
@@ -543,6 +623,7 @@ Si se decide cambiar `StudentCharge.status` a `REFINANCED`:
 ## Conclusión
 
 El sistema actual tiene la infraestructura necesaria para soportar bloqueos y deuda de convenios SIN migración:
+
 - El schema ya tiene campos para excepciones de bloqueo (`exceptionSource`, `exceptionAgreementId`)
 - El enum `FinancialBlockExceptionSource` ya incluye `PAYMENT_AGREEMENT`
 - El enum `PaymentAgreementEventType` ya tiene los eventos necesarios (INSTALLMENT_OVERDUE, DEFAULTED, BLOCK_EXCEPTION)
@@ -550,6 +631,7 @@ El sistema actual tiene la infraestructura necesaria para soportar bloqueos y de
 - `PaymentAgreementChargeRelation` permite identificar cargos cubiertos por convenios
 
 Falta la lógica para:
+
 - Actualizar estados de cuotas y convenios automáticamente
 - Generar excepciones de bloqueo por convenio
 - Calcular deuda efectiva considerando convenios (usando `PaymentAgreementChargeRelation`)

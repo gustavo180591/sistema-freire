@@ -29,6 +29,7 @@ model Receipt {
 The `issueReceipt` method in `FinancialService` was modified to:
 
 1. **Include installment relation in allocations query:**
+
    ```ts
    allocations: {
      include: {
@@ -63,6 +64,7 @@ The `issueReceipt` method in `FinancialService` was modified to:
 ### PaymentAgreementService Integration
 
 **No new methods created.** The existing `registerInstallmentPayment` method creates payments with `PaymentAllocation` records that have:
+
 - `chargeId: null`
 - `installmentId: <installment-id>`
 
@@ -73,11 +75,13 @@ These allocations are now properly handled by the modified `issueReceipt` method
 Added a "Pagos y Recibos" section to the agreement detail page (`src/routes/(app)/finanzas/convenios/[id]/+page.svelte`):
 
 **Server-side (`+page.server.ts`):**
+
 - Query payments with receipts for the agreement
 - Include receipt information and installment details
 - Map to simplified interface for frontend
 
 **Client-side (`+page.svelte`):**
+
 - Display list of payments with their receipts
 - Show receipt number, date, and amount
 - Link to existing receipt viewing route (`/recibos/{id}`)
@@ -102,6 +106,7 @@ Added a "Pagos y Recibos" section to the agreement detail page (`src/routes/(app
 ### Receipt Item Generation
 
 **For charge allocations (original debt payments):**
+
 - `chargeId`: charge.id
 - `concept`: charge.concept.name
 - `periodLabel`: charge.periodLabel
@@ -111,6 +116,7 @@ Added a "Pagos y Recibos" section to the agreement detail page (`src/routes/(app
 - `finalAmount`: allocation.amount
 
 **For installment allocations (agreement payments):**
+
 - `chargeId`: null
 - `concept`: "Cuota {n} - Convenio #{number}"
 - `periodLabel`: "Vencimiento: {date}"
@@ -122,30 +128,36 @@ Added a "Pagos y Recibos" section to the agreement detail page (`src/routes/(app
 ## Relationships
 
 ### Payment → Receipt
+
 - One-to-one via `Payment.receiptId`
 - Receipt can have multiple payments (for combined receipts)
 
 ### PaymentAllocation → Installment
+
 - One-to-one via `PaymentAllocation.installmentId`
 - Installment can have multiple allocations (partial payments)
 
 ### Receipt → Agreement
+
 - One-to-one via `Receipt.agreementId`
 - Agreement can have multiple receipts (one per payment)
 
 ### ReceiptItem → Charge
+
 - Optional via `ReceiptItem.chargeId`
 - Null for agreement installment items
 
 ## Validations
 
 ### Existing Validations (Preserved)
+
 - Payments must exist and not be cancelled
 - All payments must belong to same student
 - Payments cannot have active receipts already
 - User must have RECEIPT.create permission
 
 ### New Behavior
+
 - Receipts can include both charge and installment allocations
 - Receipt items can have `chargeId: null` for installment allocations
 - Agreement fields are set only if installment allocations are present
@@ -153,23 +165,27 @@ Added a "Pagos y Recibos" section to the agreement detail page (`src/routes/(app
 ## Audit Logging
 
 ### Events Logged
+
 - Receipt creation: `CREATE` on `Receipt` entity
 - Description includes receipt number, student, and payment details
 - Metadata includes receipt number, year, student info, total amount, payment IDs, payment method, observations
 
 ### Agreement Events
+
 - No new agreement events added in this phase
 - Existing `INSTALLMENT_PAID` event is still used for payment registration
 
 ## Limitations
 
 ### Current Limitations
+
 - Receipt generation is manual (not automatic after payment)
 - No automatic receipt generation for installment payments
 - No receipt template customization for agreements
 - No separate receipt numbering for agreements
 
 ### Future Enhancements (Not in Phase 4)
+
 - Automatic receipt generation option
 - Receipt templates specific to agreements
 - Separate receipt numbering sequences
@@ -236,12 +252,14 @@ Added a "Pagos y Recibos" section to the agreement detail page (`src/routes/(app
 ## Files Modified
 
 ### Backend
+
 - `src/lib/server/financial/financial-service.ts`
   - Modified `issueReceipt` to include installment relation
   - Added handling for installment allocations
   - Added agreement field setting
 
 ### Frontend
+
 - `src/routes/(app)/finanzas/convenios/[id]/+page.server.ts`
   - Added query for payments with receipts
   - Added mapping to simplified interface
@@ -252,16 +270,19 @@ Added a "Pagos y Recibos" section to the agreement detail page (`src/routes/(app
   - Added receipt display and linking
 
 ### Test
+
 - `scripts/test-payment-agreement-receipts.ts` (new)
   - Comprehensive test suite for receipt functionality
 
 ### Documentation
+
 - `docs/PAYMENT_AGREEMENTS_PHASE_4_RECEIPTS.md` (new)
   - This document
 
 ## Integration with Existing Financial Module
 
 ### Reused Components
+
 - `FinancialService.issueReceipt` - Modified, not duplicated
 - `Receipt` model - Extended usage, no schema changes
 - `ReceiptItem` model - Extended usage, no schema changes
@@ -269,6 +290,7 @@ Added a "Pagos y Recibos" section to the agreement detail page (`src/routes/(app
 - `PaymentAllocation` model - Existing relation preserved
 
 ### No Breaking Changes
+
 - Existing receipt generation for charge payments unchanged
 - Existing receipt viewing unchanged
 - Existing receipt templates unchanged
@@ -277,9 +299,11 @@ Added a "Pagos y Recibos" section to the agreement detail page (`src/routes/(app
 ## Technical Debt
 
 ### Known Issues
+
 - None identified in this phase
 
 ### Future Considerations
+
 - Consider automatic receipt generation option
 - Consider receipt template customization
 - Consider separate receipt numbering for different payment types

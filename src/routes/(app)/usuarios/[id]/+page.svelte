@@ -80,7 +80,9 @@
 	{/if}
 
 	{#if form?.success && form?.message}
-		<div class="rounded-xl border border-emerald-800 bg-emerald-950/30 p-4 text-sm text-emerald-400">
+		<div
+			class="rounded-xl border border-emerald-800 bg-emerald-950/30 p-4 text-sm text-emerald-400"
+		>
 			✓ {form.message}
 		</div>
 	{/if}

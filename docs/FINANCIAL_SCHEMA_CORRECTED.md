@@ -60,6 +60,7 @@ model StudentCharge {
 ```
 
 **Justificación:**
+
 - `academicTermId` ahora es obligatorio para garantizar que el unique `[studentId, conceptId, periodLabel, academicTermId]` funcione correctamente
 - Esto previene cuotas duplicadas por alumno+concepto+período+ciclo académico
 - Si en el futuro se necesitan cuotas sin ciclo académico, se puede agregar un valor "default" o reconsiderar el diseño
@@ -101,6 +102,7 @@ model Payment {
 ```
 
 **Justificación:**
+
 - `reference` nullable es correcto: permite múltiples pagos sin referencia (ej. efectivo)
 - En SQL, NULL != NULL, por lo que `(method, NULL)` no viola el unique
 - **CORRECCIÓN:** Cambiado `onDelete: SetNull` a `onDelete: Restrict` para evitar perder referencia histórica
@@ -145,6 +147,7 @@ model Receipt {
 ```
 
 **Justificación:**
+
 - Unique `[receiptNumber, receiptYear]` asume un solo talonario institucional
 - **Restricción documentada:** Si el instituto implementa múltiples talonarios (por sede, punto de venta), se debe agregar esa dimensión al unique
 - Los recibos usan soft delete (`status = CANCELLED`), no borrado físico
@@ -170,6 +173,7 @@ model ReceiptItem {
 ```
 
 **Justificación:**
+
 - **CORRECCIÓN:** Cambiado `onDelete: Cascade` a `onDelete: Restrict`
 - En finanzas, los recibos no deben borrarse físicamente, solo anularse (soft delete)
 - Esto preserva el historial financiero completo
@@ -199,6 +203,7 @@ model FinancialMovement {
 ```
 
 **Justificación:**
+
 - Sin cambios - modelo append-only correcto
 - No hay onDelete porque no tiene relaciones de integridad referencial
 
@@ -229,6 +234,7 @@ model Discount {
 ```
 
 **Justificación:**
+
 - Sin cambios - modelo correcto
 
 ### LateFee
@@ -254,6 +260,7 @@ model LateFee {
 ```
 
 **Justificación:**
+
 - Sin cambios - `onDelete: Cascade` es correcto para recargos asociados a cuotas
 - Si se borra una cuota, sus recargos también deben borrarse
 
@@ -289,6 +296,7 @@ model FinancialBlock {
 ```
 
 **Justificación:**
+
 - **CORRECCIÓN:** Removido `@@unique([studentId, blockType, isActive])` del schema Prisma
 - En su lugar, se crea índice único parcial en SQL: `CREATE UNIQUE INDEX financial_block_unique_active ON financial_blocks (studentId, blockType) WHERE isActive = true;`
 - Esto permite múltiples bloqueos inactivos del mismo tipo (historial) pero solo uno activo
@@ -312,6 +320,7 @@ model FinancialConfig {
 ```
 
 **Justificación:**
+
 - Sin cambios - modelo correcto
 
 ### ReceiptNumber
@@ -328,6 +337,7 @@ model ReceiptNumber {
 ```
 
 **Justificación:**
+
 - Sin cambios - modelo correcto
 - Estrategia de numeración transaccional se implementa en el servicio con SQL raw
 
@@ -338,17 +348,17 @@ La numeración de recibos debe ser transaccional y segura contra concurrencia. I
 ```typescript
 async getNextReceiptNumber(year: number, tx?: Prisma.TransactionClient): Promise<number> {
   const prismaClient = tx || prisma;
-  
+
   // Usar SQL raw con SELECT FOR UPDATE para bloqueo de fila
   const result = await prismaClient.$queryRaw<Array<{ lastnumber: number }>>`
-    SELECT lastNumber 
-    FROM receipt_numbers 
+    SELECT lastNumber
+    FROM receipt_numbers
     WHERE year = ${year}
     FOR UPDATE
   `;
-  
+
   let nextNumber: number;
-  
+
   if (result.length === 0) {
     // Crear registro para el año si no existe
     await prismaClient.receiptNumber.create({
@@ -363,12 +373,13 @@ async getNextReceiptNumber(year: number, tx?: Prisma.TransactionClient): Promise
       data: { lastNumber: nextNumber }
     });
   }
-  
+
   return nextNumber;
 }
 ```
 
 **Justificación:**
+
 - `SELECT ... FOR UPDATE` bloquea la fila hasta el commit de la transacción
 - Esto garantiza que no haya números duplicados incluso bajo alta concurrencia
 - La operación debe ejecutarse dentro de una transacción Prisma (`$transaction`)
@@ -376,13 +387,13 @@ async getNextReceiptNumber(year: number, tx?: Prisma.TransactionClient): Promise
 
 ## Reglas ON DELETE - Resumen
 
-| Relación | ON DELETE | Justificación |
-|----------|-----------|---------------|
-| PaymentAllocation → StudentCharge | Restrict | Evitar borrar cuotas con pagos asignados |
-| PaymentAllocation → Payment | Restrict | Evitar borrar pagos con asignaciones |
-| ReceiptItem → Receipt | **Restrict** (corregido) | Preservar historial - recibos no se borran físicamente |
-| LateFee → StudentCharge | Cascade | Recargos dependen de la cuota |
-| Payments → Receipt | **Restrict** (corregido) | Preservar referencia histórica - recibos no se borran físicamente |
+| Relación                          | ON DELETE                | Justificación                                                     |
+| --------------------------------- | ------------------------ | ----------------------------------------------------------------- |
+| PaymentAllocation → StudentCharge | Restrict                 | Evitar borrar cuotas con pagos asignados                          |
+| PaymentAllocation → Payment       | Restrict                 | Evitar borrar pagos con asignaciones                              |
+| ReceiptItem → Receipt             | **Restrict** (corregido) | Preservar historial - recibos no se borran físicamente            |
+| LateFee → StudentCharge           | Cascade                  | Recargos dependen de la cuota                                     |
+| Payments → Receipt                | **Restrict** (corregido) | Preservar referencia histórica - recibos no se borran físicamente |
 
 ## Índices Únicos Parciales - SQL Manual
 
@@ -390,12 +401,13 @@ async getNextReceiptNumber(year: number, tx?: Prisma.TransactionClient): Promise
 
 ```sql
 -- Crear índice único parcial para permitir solo un bloqueo activo por tipo
-CREATE UNIQUE INDEX financial_block_unique_active 
-ON financial_blocks (studentId, blockType) 
+CREATE UNIQUE INDEX financial_block_unique_active
+ON financial_blocks (studentId, blockType)
 WHERE isActive = true;
 ```
 
 **Justificación:**
+
 - Permite múltiples bloqueos inactivos del mismo tipo (historial)
 - Garantiza solo un bloqueo activo por tipo
 - Prisma no soporta índices parciales, por lo que se crea en SQL manual
@@ -403,16 +415,19 @@ WHERE isActive = true;
 ## Riesgos de Concurrencia
 
 ### ReceiptNumber
+
 - **Riesgo:** Números duplicados bajo alta concurrencia
 - **Mitigación:** `SELECT ... FOR UPDATE` en transacción Prisma
 - **Verificación:** Pruebas de carga en Fase 4
 
 ### FinancialBlock
+
 - **Riesgo:** Múltiples bloqueos activos del mismo tipo
 - **Mitigación:** Índice único parcial en SQL
 - **Verificación:** Pruebas funcionales en Fase 5
 
 ### Payment
+
 - **Riesgo:** Referencias duplicadas por método
 - **Mitigación:** Unique constraint `[method, reference]`
 - **Verificación:** Pruebas funcionales en Fase 3
@@ -420,34 +435,41 @@ WHERE isActive = true;
 ## Campos Obligatorios vs Opcionales
 
 ### StudentCharge
+
 - `academicTermId`: **Obligatorio** (corregido) - Necesario para unique válido
 
 ### Payment
+
 - `reference`: **Opcional** - Permite pagos sin referencia (efectivo)
 - `receiptId`: **Opcional** - Pagos pueden no tener recibo aún
 
 ### Receipt
+
 - `studentDni`, `studentAddress`: **Opcionales** - Datos adicionales del alumno
 - `paymentReference`: **Opcional** - Referencia externa del pago
 
 ### ReceiptItem
+
 - `chargeId`: **Opcional** - Ítems pueden no estar asociados a cuota (ej. ajustes manuales)
 - `periodLabel`: **Opcional** - No todos los ítems tienen período
 
 ## Justificación de Cada Constraint Financiero
 
 ### StudentCharge - Unique [studentId, conceptId, periodLabel, academicTermId]
+
 - **Propósito:** Prevenir cuotas duplicadas por alumno+concepto+período+ciclo
 - **Justificación:** Un alumno no debe tener dos cuotas del mismo concepto en el mismo período del mismo ciclo académico
 - **Riesgo:** Si `academicTermId` es nullable, el unique no funciona (NULL != NULL)
 - **Mitigación:** Hacer `academicTermId` obligatorio
 
 ### Payment - Unique [method, reference]
+
 - **Propósito:** Prevenir referencias duplicadas por método de pago
 - **Justificación:** Un pago con transferencia bancaria no debe tener el mismo número de comprobante que otro
 - **Comportamiento con NULL:** Múltiples pagos sin referencia (reference = NULL) no violan el unique (correcto para efectivo)
 
 ### Receipt - Unique [receiptNumber, receiptYear]
+
 - **Propósito:** Numeración única de recibos por año
 - **Justificación:** Un talonario institucional único
 - **Restricción:** Si hay múltiples talonarios (por sede, punto de venta), agregar dimensión
@@ -455,18 +477,22 @@ WHERE isActive = true;
 - **Mitigación:** Documentar restricción y planificar extensión si es necesario
 
 ### Discount - Unique [code]
+
 - **Propósito:** Código único de descuento
 - **Justificación:** Evitar códigos duplicados que causen confusión
 
 ### FinancialConfig - Unique [key]
+
 - **Propósito:** Clave única de configuración
 - **Justificación:** Evitar configuraciones duplicadas
 
 ### ReceiptNumber - Unique [year]
+
 - **Propósito:** Un registro de numeración por año
 - **Justificación:** Numeración de recibos se reinicia cada año
 
 ### FinancialBlock - Índice único parcial [studentId, blockType] WHERE isActive = true
+
 - **Propósito:** Solo un bloqueo activo por tipo por alumno
 - **Justificación:** Un alumno no puede tener dos bloqueos activos del mismo tipo (ej. dos bloqueos de inscripción)
 - **Beneficio:** Permite historial de bloqueos inactivos
@@ -475,6 +501,7 @@ WHERE isActive = true;
 ## Verificación Decimal(12,2)
 
 ### Todos los montos financieros usan Decimal(12,2):
+
 - StudentCharge: amount, paidAmount, lateFeeApplied, discountApplied, scholarshipApplied, finalAmount
 - Payment: amount
 - PaymentAllocation: amount
@@ -487,6 +514,7 @@ WHERE isActive = true;
 - FinancialBlock: debtAmount
 
 ### financial-service.ts - Sin conversión a number
+
 - Todos los métodos usan tipos `Decimal` de Prisma
 - Helpers de cálculo decimal operan con `Decimal`
 - No hay conversión a `number` para persistencia

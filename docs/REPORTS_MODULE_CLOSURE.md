@@ -13,6 +13,7 @@ El módulo REPORTES se declara formalmente cerrado a partir de la fecha de este 
 ### Funcionalidades Implementadas
 
 **Servicios Server-Side:**
+
 - Servicio de métricas institucionales
 - Servicio de métricas financieras
 - Servicio de métricas académicas
@@ -23,18 +24,21 @@ El módulo REPORTES se declara formalmente cerrado a partir de la fecha de este 
 - Servicio de exportación CSV
 
 **Endpoints JSON:**
+
 - `GET /api/reports/institutional` - Métricas institucionales
 - `GET /api/reports/financial` - Métricas financieras
 - `GET /api/reports/academic` - Métricas académicas
 - `GET /api/reports/attendance` - Métricas de asistencia
 
 **Endpoints CSV:**
+
 - `GET /api/reports/institutional/export` - Exportar institucional como CSV
 - `GET /api/reports/financial/export` - Exportar financiero como CSV
 - `GET /api/reports/academic/export` - Exportar académico como CSV
 - `GET /api/reports/attendance/export` - Exportar asistencia como CSV
 
 **UI:**
+
 - Dashboard en `/reportes/dashboard`
 - Tabs de secciones (institucional, financiero, académico, asistencia)
 - Paneles de reportes con KPIs
@@ -44,12 +48,14 @@ El módulo REPORTES se declara formalmente cerrado a partir de la fecha de este 
 - Manejo de errores (401, 403, 400, 500)
 
 **Visualizaciones:**
+
 - SimpleBarChart - Barras horizontales
 - SimpleProgressBar - Barra de progreso circular
 - SimpleMetricComparison - Comparación de métricas
 - SimpleDistributionList - Lista de distribución
 
 **Seguridad:**
+
 - Permisos explícitos (SUPERADMIN, FINANCIAL_REPORT:read, GRADE:read, ATTENDANCE:read)
 - Validación de sesión en todos los endpoints
 - Validación de permisos en todos los endpoints
@@ -60,11 +66,13 @@ El módulo REPORTES se declara formalmente cerrado a partir de la fecha de este 
 - No patrones prohibidos
 
 **Pruebas:**
+
 - 5 scripts de prueba (104 tests totales)
 - Todos los tests pasan
 - Cobertura de servicios, endpoints, UI, exports, visualizaciones
 
 **Documentación:**
+
 - Fase 0: Diagnóstico
 - Fase 1: Servicios server-side
 - Fase 2: Endpoints protegidos
@@ -79,17 +87,20 @@ El módulo REPORTES se declara formalmente cerrado a partir de la fecha de este 
 ### Funcionalidades NO Implementadas
 
 **Exportación Avanzada:**
+
 - Exportación PDF profesional
 - Exportación Excel/XLSX
 - Exportación con plantillas personalizadas
 
 **Gráficos Avanzados:**
+
 - Gráficos con librería especializada (Chart.js, D3, Recharts)
 - Gráficos interactivos (zoom, tooltips complejos)
 - Gráficos 3D
 - Animaciones complejas
 
 **Performance:**
+
 - Cache de reportes
 - Reportes programados
 - Envío por email
@@ -97,15 +108,18 @@ El módulo REPORTES se declara formalmente cerrado a partir de la fecha de este 
 - Optimizaciones de consultas
 
 **Auditoría:**
+
 - Auditoría de descarga/exportación
 - Logs de acceso a reportes
 - Tracking de usuario, fecha, filtros
 
 **Permisos:**
+
 - Permisos específicos nuevos (ACADEMIC_REPORT:read, ATTENDANCE_REPORT:read, INSTITUTIONAL_REPORT:read, REPORTS_EXPORT)
 - Permisos granulares por tipo de reporte
 
 **Justificaciones Formales:**
+
 - Modelo de justificaciones de asistencia
 - Flujo de aprobación de justificaciones
 - Tipos de justificación (médica, familiar, administrativa)
@@ -116,36 +130,43 @@ El módulo REPORTES se declara formalmente cerrado a partir de la fecha de este 
 ### Prioridad Alta
 
 **Performance:**
+
 - Implementar cache de reportes (5-10 minutos)
 - Optimizar consultas N+1 en reportes de asistencia
 - Considerar índices en StudentCharge, AttendanceEntry, StudentSubjectStatus
 
 **Justificaciones Formales:**
+
 - Implementar modelo de justificaciones de asistencia
 - Reemplazar criterio provisional (notes) con sistema formal
 
 ### Prioridad Media
 
 **Exportación Avanzada:**
+
 - Evaluar exportación PDF profesional
 - Evaluar exportación Excel/XLSX
 - Requiere aprobación de dependencias
 
 **Gráficos Avanzados:**
+
 - Evaluar librería de gráficos especializada
 - Requiere aprobación de dependencias
 
 **Auditoría:**
+
 - Implementar auditoría de descarga/exportación
 - Implementar logs de acceso a reportes
 
 ### Prioridad Baja
 
 **Permisos:**
+
 - Evaluar permisos específicos por tipo de reporte
 - Evaluar permiso específico para exportación
 
 **Reportes Programados:**
+
 - Evaluar reportes programados
 - Evaluar envío por email
 
@@ -154,6 +175,7 @@ El módulo REPORTES se declara formalmente cerrado a partir de la fecha de este 
 ### Scripts de Prueba
 
 **Existentes:**
+
 - `scripts/test-reports-services.ts` - 10 tests
 - `scripts/test-reports-endpoints.ts` - 22 tests
 - `scripts/test-reports-ui.ts` - 20 tests
@@ -189,6 +211,7 @@ eb7b866 docs(reports): add module diagnosis
 ### Criterios Cumplidos
 
 **Funcionales:**
+
 - [x] Servicios server-side tipados
 - [x] Endpoints protegidos
 - [x] Permisos explícitos
@@ -197,6 +220,7 @@ eb7b866 docs(reports): add module diagnosis
 - [x] Visualizaciones simples
 
 **Seguridad:**
+
 - [x] Sin Prisma en UI
 - [x] Sin SQL raw
 - [x] Sin patrones prohibidos
@@ -207,6 +231,7 @@ eb7b866 docs(reports): add module diagnosis
 - [x] Sin rutas públicas inseguras
 
 **Operativos:**
+
 - [x] Todos los tests pasan
 - [x] npm run check pasa
 - [x] npm run build pasa
@@ -214,6 +239,7 @@ eb7b866 docs(reports): add module diagnosis
 - [x] Documentación completa
 
 **Documentación:**
+
 - [x] Fase 0: Diagnóstico
 - [x] Fase 1: Servicios
 - [x] Fase 2: Endpoints

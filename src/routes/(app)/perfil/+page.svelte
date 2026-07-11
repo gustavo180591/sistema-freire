@@ -519,12 +519,7 @@
 		<div class="mb-4 flex flex-col gap-4 md:mb-6 md:flex-row md:items-center md:justify-between">
 			<div class="flex items-center gap-3">
 				<div class="rounded-xl bg-amber-950/50 p-2">
-					<svg
-						class="h-5 w-5 text-amber-400"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-					>
+					<svg class="h-5 w-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"
@@ -585,7 +580,7 @@
 							<button
 								type="button"
 								onclick={() => (showCurrentPassword = !showCurrentPassword)}
-								class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-300"
+								class="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 transition hover:text-slate-300"
 							>
 								{#if showCurrentPassword}
 									<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -633,7 +628,7 @@
 							<button
 								type="button"
 								onclick={() => (showNewPassword = !showNewPassword)}
-								class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-300"
+								class="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 transition hover:text-slate-300"
 							>
 								{#if showNewPassword}
 									<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

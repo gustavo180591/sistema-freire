@@ -46,6 +46,7 @@ Phase 1.2 implements the server-side storage service and file validation layer f
 **Base Path:** `storage/private/documents/`
 
 **Directory Structure:**
+
 ```
 storage/private/documents/
 └── {ownerType}/
@@ -57,6 +58,7 @@ storage/private/documents/
 ```
 
 **Example:**
+
 ```
 storage/private/documents/USER/user-123/ACADEMIC/2026/06/a1b2c3d4-e5f6-7890-abcd-ef1234567890.pdf
 ```
@@ -68,6 +70,7 @@ storage/private/documents/USER/user-123/ACADEMIC/2026/06/a1b2c3d4-e5f6-7890-abcd
 **Example Storage Key:** `USER/user-123/ACADEMIC/2026/06/a1b2c3d4-e5f6-7890-abcd-ef1234567890.pdf`
 
 **Rationale:**
+
 - Hierarchical structure for efficient organization
 - Time-based partitioning (year/month) for easier maintenance
 - UUID-based filenames prevent collisions
@@ -78,18 +81,19 @@ storage/private/documents/USER/user-123/ACADEMIC/2026/06/a1b2c3d4-e5f6-7890-abcd
 
 ### Allowed MIME Types
 
-| MIME Type | Extensions | Description |
-|-----------|------------|-------------|
-| `application/pdf` | `.pdf` | PDF documents |
-| `image/jpeg` | `.jpg`, `.jpeg` | JPEG images |
-| `image/png` | `.png` | PNG images |
-| `application/vnd.openxmlformats-officedocument.wordprocessingml.document` | `.docx` | Word documents |
+| MIME Type                                                                 | Extensions      | Description    |
+| ------------------------------------------------------------------------- | --------------- | -------------- |
+| `application/pdf`                                                         | `.pdf`          | PDF documents  |
+| `image/jpeg`                                                              | `.jpg`, `.jpeg` | JPEG images    |
+| `image/png`                                                               | `.png`          | PNG images     |
+| `application/vnd.openxmlformats-officedocument.wordprocessingml.document` | `.docx`         | Word documents |
 
 ### File Size Limit
 
 **Maximum Size:** 10 MB (10,485,760 bytes)
 
 **Rationale:**
+
 - Prevents denial of service through large uploads
 - Reasonable limit for document types
 - Can be adjusted per category in future phases
@@ -138,6 +142,7 @@ storage/private/documents/USER/user-123/ACADEMIC/2026/06/a1b2c3d4-e5f6-7890-abcd
 Generates a secure storage key for a document.
 
 **Parameters:**
+
 - `ownerType`: DocumentOwnerType
 - `ownerId`: string
 - `category`: DocumentCategory
@@ -146,6 +151,7 @@ Generates a secure storage key for a document.
 **Returns:** Storage key string
 
 **Validation:**
+
 - Validates generated storage key for path traversal
 - Ensures safe character pattern
 
@@ -154,11 +160,13 @@ Generates a secure storage key for a document.
 Calculates SHA-256 hash of file content.
 
 **Parameters:**
+
 - `file`: File object
 
 **Returns:** Hexadecimal hash string
 
 **Purpose:**
+
 - File integrity verification
 - Future deduplication capability
 - Security verification
@@ -168,16 +176,19 @@ Calculates SHA-256 hash of file content.
 Saves a document file to storage.
 
 **Parameters:**
+
 - `file`: File object
 - `storageKey`: Storage key string
 
 **Validation:**
+
 - Validates storage key
 - Validates file (MIME, extension, size)
 - Creates directories if needed
 - Prevents overwriting existing files
 
 **Error Handling:**
+
 - Throws if file already exists
 - Throws if validation fails
 - Throws if path traversal detected
@@ -187,11 +198,13 @@ Saves a document file to storage.
 Gets the absolute file path for a storage key.
 
 **Parameters:**
+
 - `storageKey`: Storage key string
 
 **Returns:** Absolute file path
 
 **Security:**
+
 - Validates storage key
 - Resolves absolute path
 - Ensures path stays within storage directory
@@ -202,6 +215,7 @@ Gets the absolute file path for a storage key.
 Checks if a document file exists.
 
 **Parameters:**
+
 - `storageKey`: Storage key string
 
 **Returns:** Boolean
@@ -211,6 +225,7 @@ Checks if a document file exists.
 Reads a document file from storage.
 
 **Parameters:**
+
 - `storageKey`: Storage key string
 
 **Returns:** Buffer with file content
@@ -220,9 +235,11 @@ Reads a document file from storage.
 Deletes a document file (for cleanup only).
 
 **Parameters:**
+
 - `storageKey`: Storage key string
 
 **Purpose:**
+
 - Test cleanup utility
 - Not for functional user flows
 - Explicit naming to prevent misuse
@@ -234,6 +251,7 @@ Deletes a document file (for cleanup only).
 **Location:** `storage/private/documents/`
 
 **Rationale:**
+
 - Files not accessible via web server
 - Requires server-side access
 - Prevents unauthorized direct access
@@ -242,6 +260,7 @@ Deletes a document file (for cleanup only).
 ### 2. Path Traversal Prevention
 
 **Implementation:**
+
 - Storage key validation
 - Absolute path rejection
 - Relative path with `..` rejection
@@ -249,19 +268,21 @@ Deletes a document file (for cleanup only).
 - Resolved path boundary checking
 
 **Example:**
+
 ```typescript
 // Rejected
-'../../../etc/passwd'
-'/absolute/path'
-'..\\windows\\system32'
+'../../../etc/passwd';
+'/absolute/path';
+'..\\windows\\system32';
 
 // Accepted
-'USER/user-123/ACADEMIC/2026/06/uuid.pdf'
+'USER/user-123/ACADEMIC/2026/06/uuid.pdf';
 ```
 
 ### 3. Filename Sanitization
 
 **Removed Characters:**
+
 - Path separators: `/`, `\`
 - Path traversal: `..`
 - Windows invalid: `<`, `>`, `:`, `"`, `|`, `?`, `*`
@@ -272,6 +293,7 @@ Deletes a document file (for cleanup only).
 ### 4. MIME Type Validation
 
 **Whitelist Approach:**
+
 - Only explicitly allowed types
 - Rejects all others by default
 - Prevents executable uploads
@@ -280,6 +302,7 @@ Deletes a document file (for cleanup only).
 ### 5. Extension Validation
 
 **Cross-Validation:**
+
 - Extension must match MIME type
 - Case-insensitive comparison
 - Prevents extension spoofing
@@ -287,6 +310,7 @@ Deletes a document file (for cleanup only).
 ### 6. File Size Limits
 
 **Protection:**
+
 - Enforced before storage
 - Prevents DoS via large files
 - Prevents storage exhaustion
@@ -294,6 +318,7 @@ Deletes a document file (for cleanup only).
 ### 7. Hash Calculation
 
 **SHA-256:**
+
 - Cryptographically secure
 - Used for integrity verification
 - Enables future deduplication
@@ -403,6 +428,7 @@ Deletes a document file (for cleanup only).
 ### Test Files
 
 The test suite creates minimal valid files for testing:
+
 - Minimal PDF file (valid PDF structure)
 - Minimal PNG file (valid PNG header)
 - Invalid files for rejection testing
@@ -410,6 +436,7 @@ The test suite creates minimal valid files for testing:
 ## .gitignore Configuration
 
 **Added Rules:**
+
 ```
 storage/
 storage/private/
@@ -417,6 +444,7 @@ storage/private/documents/
 ```
 
 **Rationale:**
+
 - Prevents committing uploaded files
 - Prevents committing test files
 - Keeps repository size manageable
@@ -435,6 +463,7 @@ storage/private/documents/
 ### Next Phase (1.3)
 
 Phase 1.3 will implement:
+
 - API endpoints for upload
 - API endpoints for download
 - Integration with storage service
@@ -449,6 +478,7 @@ Phase 1.3 will implement:
 **Decision:** Use private storage directory.
 
 **Rationale:**
+
 - Prevents unauthorized direct access
 - Enables controlled download via API
 - Allows permission enforcement
@@ -460,6 +490,7 @@ Phase 1.3 will implement:
 **Decision:** Use `{ownerType}/{ownerId}/{category}/{year}/{month}/` structure.
 
 **Rationale:**
+
 - Logical organization
 - Efficient queries by owner
 - Time-based partitioning for maintenance
@@ -471,6 +502,7 @@ Phase 1.3 will implement:
 **Decision:** Use UUID for actual filenames.
 
 **Rationale:**
+
 - Prevents collisions
 - No need for conflict resolution
 - Secure (unpredictable)
@@ -481,6 +513,7 @@ Phase 1.3 will implement:
 **Decision:** Explicit whitelist instead of blacklist.
 
 **Rationale:**
+
 - More secure by default
 - Easier to audit
 - Prevents unknown dangerous types
@@ -491,6 +524,7 @@ Phase 1.3 will implement:
 **Decision:** 10 MB maximum for MVP.
 
 **Rationale:**
+
 - Reasonable for document types
 - Prevents abuse
 - Can be adjusted per category later
@@ -501,6 +535,7 @@ Phase 1.3 will implement:
 **Decision:** Calculate SHA-256 for all files.
 
 **Rationale:**
+
 - Cryptographically secure
 - Industry standard
 - Enables integrity verification
@@ -512,6 +547,7 @@ Phase 1.3 will implement:
 **Decision:** Prevent overwriting existing files.
 
 **Rationale:**
+
 - Prevents accidental data loss
 - Forces explicit handling of duplicates
 - Better audit trail
@@ -530,6 +566,7 @@ All validations passed:
 - Test script execution ✓
 
 No use of:
+
 - `db push`
 - `migrate reset`
 - `migrate resolve`
@@ -554,6 +591,7 @@ Phase 1.2 successfully implemented the storage service and file validation layer
 - **Documentation:** Complete design documentation
 
 **Key security features:**
+
 - Private storage (not web-accessible)
 - Path traversal prevention
 - Filename sanitization

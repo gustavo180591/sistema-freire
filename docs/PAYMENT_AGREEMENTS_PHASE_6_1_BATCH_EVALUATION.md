@@ -82,11 +82,13 @@ scripts/evaluate-payment-agreements.ts
 ### Usage
 
 **Normal execution (with changes):**
+
 ```bash
 DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire" npx tsx scripts/evaluate-payment-agreements.ts
 ```
 
 **Dry run (no changes):**
+
 ```bash
 DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire" npx tsx scripts/evaluate-payment-agreements.ts --dry-run
 ```
@@ -121,6 +123,7 @@ Execution time: 2.34s
 **Condition:** All installments paid (`pendingAmount = 0`)
 
 **Side effects:**
+
 - Sets `completedAt` timestamp
 - Creates `STATUS_CHANGED` event
 - Creates audit log
@@ -131,6 +134,7 @@ Execution time: 2.34s
 **Condition:** 2+ installments overdue
 
 **Side effects:**
+
 - Sets `cancelledAt` timestamp
 - Creates `STATUS_CHANGED` event
 - Creates audit log
@@ -141,6 +145,7 @@ Execution time: 2.34s
 **Condition:** `dueDate < now` and `status = PENDING`
 
 **Side effects:**
+
 - Sets `status = OVERDUE`
 - Sets `overdueSince` timestamp
 - Creates `INSTALLMENT_OVERDUE` event
@@ -151,18 +156,22 @@ Execution time: 2.34s
 ## States NOT Touched
 
 ### COMPLETED Agreements
+
 - Already completed, no re-evaluation
 - Protected by status check in `evaluateAgreementFinancialStatus`
 
 ### DEFAULTED Agreements
+
 - Already defaulted, no re-evaluation
 - Protected by status check in `evaluateAgreementFinancialStatus`
 
 ### CANCELLED Agreements
+
 - Manually cancelled, no evaluation
 - Not included in ACTIVE query
 
 ### DRAFT Agreements
+
 - Not yet activated, no evaluation
 - Not included in ACTIVE query
 
@@ -171,21 +180,25 @@ Execution time: 2.34s
 ## What This Phase Does NOT Do
 
 ### No StudentCharge Modifications
+
 - Original charges are not modified
 - Charge relations are snapshots, not destructive
 - `newStatus` field in charge relations is NOT updated in this phase
 
 ### No FinancialBlock Modifications
+
 - Block exceptions are NOT applied in this phase
 - Block exceptions are NOT revoked in this phase
 - This is reserved for Phase 6.2
 
 ### No Global Report Changes
+
 - Financial reports are not modified
 - Dashboard metrics are not recalculated
 - This is reserved for future phases
 
 ### No Cron Job Creation
+
 - No cron job is created in this phase
 - The script is prepared for cron but not deployed
 - This requires understanding the production environment

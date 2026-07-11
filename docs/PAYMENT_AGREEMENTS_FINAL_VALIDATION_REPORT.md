@@ -11,6 +11,7 @@
 **Contenido:** 238 líneas de SQL (reducido de 381 líneas de la migración contaminada)
 
 **Cambios incluidos:**
+
 - ✅ CREATE TYPE PaymentAgreementStatus
 - ✅ CREATE TYPE PaymentAgreementInstallmentStatus
 - ✅ CREATE TYPE PaymentAgreementChargeRelationType
@@ -30,13 +31,14 @@
 - ✅ CREATE TABLE payment_agreement_numbers
 - ✅ CREATE INDEXs de Convenios
 - ✅ ADD CONSTRAINTs de Convenios
-- ✅ RENAME INDEXs (payment_method_reference_unique, student_charges_studentId_conceptId_periodLabel_academicTermId_)
+- ✅ RENAME INDEXs (payment*method_reference_unique, student_charges_studentId_conceptId_periodLabel_academicTermId*)
 
 ---
 
 ## 2. Confirmación de Que No Contiene Cambios Académicos
 
 **Cambios académicos EXCLUIDOS:**
+
 - ❌ ALTER TYPE AcademicStatus (líneas 39-48 de migración contaminada)
 - ❌ ALTER TYPE CourseStatus (líneas 50-59 de migración contaminada)
 - ❌ ALTER TYPE FinalExamStatus (líneas 61-70 de migración contaminada)
@@ -68,6 +70,7 @@
 **Base temporal:** `sistema_freire_migration_test`
 
 **Comando ejecutado:**
+
 ```bash
 DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire_migration_test" \
 npx prisma migrate reset --force --skip-seed
@@ -92,6 +95,7 @@ npx prisma migrate reset --force --skip-seed
 **Razón:** Las herramientas de línea de comandos de PostgreSQL (createdb, pg_dump, psql) no están disponibles en el entorno. Por lo tanto, no se puede crear otra base temporal (`sistema_freire_recovery_test`) para simular la recuperación completa.
 
 **Alternativas consideradas:**
+
 - Usar la base temporal existente (`sistema_freire_migration_test`) para simular la recuperación
 - **Problema:** La base temporal ya tiene la migración contaminada aplicada exitosamente, por lo que no representa el estado fallido de la base real.
 
@@ -102,6 +106,7 @@ npx prisma migrate reset --force --skip-seed
 ## 5. SQL Exacto de DROP TYPE Propuesto
 
 **SQL propuesto:**
+
 ```sql
 DROP TYPE IF EXISTS "PaymentAgreementChargeRelationType";
 DROP TYPE IF EXISTS "PaymentAgreementEventType";
@@ -116,6 +121,7 @@ DROP TYPE IF EXISTS "PaymentAgreementStatus";
 ## 6. Consulta Exacta de Dependencias de Enums
 
 **Consulta ejecutada:**
+
 ```sql
 SELECT
   d.classid::regclass::text AS dependent_object,
@@ -131,6 +137,7 @@ ORDER BY d.deptype, dependent_object
 ```
 
 **Resultado:**
+
 - `PaymentAgreementChargeRelationType`: 1 dependencia (pg_type -> 205420, tipo 'n' - normal)
 - `PaymentAgreementEventType`: 1 dependencia (pg_type -> 205428, tipo 'n' - normal)
 - `PaymentAgreementInstallmentStatus`: 1 dependencia (pg_type -> 205406, tipo 'n' - normal)
@@ -143,22 +150,26 @@ ORDER BY d.deptype, dependent_object
 ## 7. Comandos Exactos para Recuperación Real
 
 **Paso 1: Marcar migración fallida como rolled-back**
+
 ```bash
 npx prisma migrate resolve --rolled-back 20260620164627_add_payment_agreements_phase1
 ```
 
 **Paso 2: Eliminar enums huérfanos**
+
 ```bash
 # Crear script scripts/clean-orphan-enums.ts con el SQL de DROP TYPE
 npx tsx scripts/clean-orphan-enums.ts
 ```
 
 **Paso 3: Eliminar migración contaminada**
+
 ```bash
 rm -rf prisma/migrations/20260620164627_add_payment_agreements_phase1
 ```
 
 **Paso 4: Crear migración limpia de Convenios**
+
 ```bash
 # Opción A: Usar migrate dev (recomendado)
 npx prisma migrate dev --name add_payment_agreements_phase1_clean
@@ -170,26 +181,31 @@ cp docs/PROPOSED_CLEAN_MIGRATION_PAYMENT_AGREEMENTS.sql \
 ```
 
 **Paso 5: Validar migración limpia**
+
 ```bash
 cat prisma/migrations/20260620170000_add_payment_agreements_phase1_clean/migration.sql
 ```
 
 **Paso 6: Aplicar migración limpia en base real**
+
 ```bash
 npx prisma migrate deploy
 ```
 
 **Paso 7: Generar Prisma Client**
+
 ```bash
 npx prisma generate
 ```
 
 **Paso 8: Ejecutar seed de permisos (si es idempotente)**
+
 ```bash
 npx tsx prisma/seed-permissions.ts
 ```
 
 **Paso 9: Validaciones post-recuperación**
+
 ```bash
 npx prisma format
 npx prisma validate
@@ -211,7 +227,8 @@ git diff --stat
 
 **Nivel:** MEDIO
 **Descripción:** No se pudo simular la recuperación completa en una base temporal separada debido a limitaciones del entorno.
-**Mitigación:** 
+**Mitigación:**
+
 - Diagnóstico exhaustivo de la base real con consultas read-only
 - Verificación de dependencias de enums huérfanos
 - Validación de que la migración limpia no contiene cambios académicos
@@ -223,6 +240,7 @@ git diff --stat
 **Nivel:** BAJO
 **Descripción:** La migración contaminada ya fue commiteada. Reemplazarla puede causar problemas en otros entornos.
 **Mitigación:**
+
 - Confirmar que solo la base real `sistema_freire` tiene la migración fallida
 - No hay otras bases en producción
 - La migración falló antes de aplicar steps completos, por lo que no hay datos afectados
@@ -233,6 +251,7 @@ git diff --stat
 **Nivel:** BAJO
 **Descripción:** Si no se elimina la migración contaminada, el deploy puede volver a intentar aplicarla.
 **Mitigación:**
+
 - Eliminar la migración contaminada después de marcarla como rolled-back
 - Crear una nueva migración limpia con nombre diferente
 - Validar que `migrate status` muestre la nueva migración como pendiente
@@ -242,6 +261,7 @@ git diff --stat
 **Nivel:** BAJO
 **Descripción:** Eliminar enums que tienen dependencias puede causar errores en la base de datos.
 **Mitigación:**
+
 - Verificar dependencias con pg_depend antes de eliminar
 - Confirmado que solo tienen dependencias internas de pg_type
 - Usar `IF EXISTS` para evitar errores
@@ -253,6 +273,7 @@ git diff --stat
 ### 9.1 Por qué es aceptable reemplazarla o recrearla
 
 **Razones:**
+
 1. La migración falló antes de aplicar steps completos (applied_steps_count = 0)
 2. No hay tablas de Convenios creadas en la base real
 3. Solo quedaron enums huérfanos, que pueden eliminarse safely
@@ -276,6 +297,7 @@ git diff --stat
 ### 9.5 Cómo evitar que migrate deploy vuelva a intentar la versión contaminada
 
 **Método:**
+
 1. Marcar la migración fallida como rolled-back con `migrate resolve --rolled-back`
 2. Eliminar el directorio de la migración contaminada
 3. Crear una nueva migración limpia con nombre diferente
@@ -293,6 +315,7 @@ git diff --stat
 ### 10.2 Por Qué
 
 **Razones:**
+
 1. La migración contaminada no se puede aplicar en la base real debido al drift académico
 2. La única forma de corregir el problema es crear una migración limpia
 3. Los riesgos son mitigables y controlables
@@ -305,6 +328,7 @@ git diff --stat
 **Limitación:** No se pudo simular la recuperación completa en una base temporal separada.
 
 **Mitigación:**
+
 - Diagnóstico exhaustivo de la base real con consultas read-only
 - Verificación de dependencias de enums huérfanos
 - Validación de que la migración limpia no contiene cambios académicos
@@ -329,12 +353,14 @@ git diff --stat
 ### 10.5 Validaciones que Deben Pasar Antes y Después
 
 **Validaciones antes:**
+
 - ✅ npx prisma validate (ya ejecutado)
 - ✅ npx prisma migrate status (ya ejecutado, confirma solo migración fallida pendiente)
 - ✅ Verificar dependencias de enums huérfanos (ya ejecutado)
 - ✅ Validar migración limpia (revisión manual completada)
 
 **Validaciones después:**
+
 - ⏳ npx prisma format
 - ⏳ npx prisma validate
 - ⏳ npx prisma generate

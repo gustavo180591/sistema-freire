@@ -9,7 +9,9 @@
 ## 1. Estructura Real de PostgreSQL (Post-Prisma DB Push)
 
 ### Tabla: evaluations
+
 **Columnas:**
+
 - id: text NOT NULL (PK)
 - subjectId: text NOT NULL (FK → subjects.id ON DELETE RESTRICT)
 - commissionId: text NULL (FK → subject_commissions.id ON DELETE RESTRICT)
@@ -34,6 +36,7 @@
 - createdByUserId: text NOT NULL (FK → users.id ON DELETE RESTRICT)
 
 **Índices:**
+
 - evaluations_pkey (PRIMARY KEY)
 - evaluations_subjectId_idx
 - evaluations_commissionId_idx
@@ -43,7 +46,9 @@
 - evaluations_parentEvaluationId_idx
 
 ### Tabla: grades
+
 **Columnas:**
+
 - id: text NOT NULL (PK)
 - evaluationId: text NOT NULL (FK → evaluations.id ON DELETE RESTRICT)
 - studentId: text NOT NULL (FK → students.id ON DELETE RESTRICT)
@@ -56,13 +61,16 @@
 - updatedAt: timestamp without time zone NOT NULL
 
 **Índices:**
+
 - grades_pkey (PRIMARY KEY)
 - grades_studentId_idx
 - grades_evaluationId_idx
 - grades_evaluationId_studentId_key (UNIQUE: evaluationId, studentId)
 
 ### Tabla: student_subject_status
+
 **Columnas:**
+
 - id: text NOT NULL (PK)
 - studentId: text NOT NULL (FK → students.id ON DELETE RESTRICT)
 - subjectId: text NOT NULL (FK → subjects.id ON DELETE RESTRICT)
@@ -81,6 +89,7 @@
 - updatedAt: timestamp without time zone NOT NULL
 
 **Índices:**
+
 - student_subject_status_pkey (PRIMARY KEY)
 - student_subject_status_studentId_subjectId_key (UNIQUE: studentId, subjectId)
 - student_subject_status_studentId_regularityStatus_idx
@@ -89,11 +98,12 @@
 - student_subject_status_studentId_promoted_idx
 
 ### Enums en PostgreSQL
+
 **EvaluationType:** PARCIAL, RECUPERATORIO, TRABAJO_PRACTICO, INTEGRADOR, EXAMEN_FINAL, MESA_EXAMEN, OTRO  
 **GradeStatus:** PRESENT, ABSENT, EXCUSED  
 **CourseStatus:** IN_PROGRESS, PASSED_COURSE, FAILED_COURSE, PROMOTED  
 **FinalExamStatus:** PENDING, NOT_REQUIRED, PASSED, FAILED  
-**AcademicStatus:** EN_COURSE, REGULAR, LIBRE, APROBADO, PROMOCIONADO  
+**AcademicStatus:** EN_COURSE, REGULAR, LIBRE, APROBADO, PROMOCIONADO
 
 ---
 
@@ -104,6 +114,7 @@
 La estructura de PostgreSQL después de `prisma db push` coincide exactamente con `prisma/schema.prisma`. Todas las columnas, tipos, índices, foreign keys y constraints están sincronizados.
 
 **Cambios aplicados por `prisma db push`:**
+
 1. Renombrado de columnas en `evaluations`:
    - `date` → `evaluationDate`
    - `createdBy` → `createdByUserId`
@@ -140,6 +151,7 @@ La estructura de PostgreSQL después de `prisma db push` coincide exactamente co
 `prisma db push` se ejecutó exitosamente el 2025-01-XX con los siguientes cambios:
 
 **Advertencia recibida:**
+
 ```
 ⚠️  There might be data loss when applying the changes:
   • A unique constraint covering the columns `[evaluationId,studentId]` on the table `grades` will be added. If there are existing duplicate values, this will fail.
@@ -166,24 +178,25 @@ La estructura de PostgreSQL después de `prisma db push` coincide exactamente co
 **StudentSubjectStatus:** 1 registro (conservado con datos migrados)
 
 **Registro conservado en student_subject_status:**
+
 ```json
 {
-  "id": "cmq4llj410001vif3757alolr",
-  "studentId": "cmq1tfskw0003vig4whvw4vw3",
-  "subjectId": "cmq1tfljv0008vidckje1dbj0",
-  "attendancePercent": "63.64",
-  "regularityStatus": "LIBRE",
-  "approved": false,
-  "promoted": false,
-  "finalGrade": null,
-  "promotionDate": null,
-  "updatedAt": "2026-06-08T03:15:13.836Z",
-  "academicStatus": "EN_COURSE",
-  "courseAverage": null,
-  "courseStatus": "IN_PROGRESS",
-  "finalApprovalDate": null,
-  "finalExamScore": null,
-  "finalExamStatus": "PENDING"
+	"id": "cmq4llj410001vif3757alolr",
+	"studentId": "cmq1tfskw0003vig4whvw4vw3",
+	"subjectId": "cmq1tfljv0008vidckje1dbj0",
+	"attendancePercent": "63.64",
+	"regularityStatus": "LIBRE",
+	"approved": false,
+	"promoted": false,
+	"finalGrade": null,
+	"promotionDate": null,
+	"updatedAt": "2026-06-08T03:15:13.836Z",
+	"academicStatus": "EN_COURSE",
+	"courseAverage": null,
+	"courseStatus": "IN_PROGRESS",
+	"finalApprovalDate": null,
+	"finalExamScore": null,
+	"finalExamStatus": "PENDING"
 }
 ```
 
@@ -197,6 +210,7 @@ La estructura de PostgreSQL después de `prisma db push` coincide exactamente co
 **Estado:** ✅ Creado antes de modificaciones
 
 **Backup de base de datos:** No se realizó un dump de PostgreSQL, pero esto no es crítico porque:
+
 1. Las tablas `grades` y `evaluations` estaban vacías
 2. El único registro en `student_subject_status` fue preservado
 3. El schema backup permite revertir cambios estructurales si es necesario
@@ -210,6 +224,7 @@ La estructura de PostgreSQL después de `prisma db push` coincide exactamente co
 **Estado:** ✅ CORREGIDO
 
 **Cambios realizados:**
+
 - Tipo de retorno de `calculateFinalStatus` actualizado para usar tipos enum:
   - `courseStatus: CourseStatus` (antes: `string`)
   - `finalExamStatus: FinalExamStatus` (antes: `string`)
@@ -239,11 +254,13 @@ La estructura de PostgreSQL después de `prisma db push` coincide exactamente co
 **Ubicación:** `src/routes/(app)/docente/calificaciones/+page.server.ts` líneas 336, 342
 
 **Código:**
+
 ```typescript
-value: gradeData.value !== null ? Number(gradeData.value) : null
+value: gradeData.value !== null ? Number(gradeData.value) : null;
 ```
 
 **Análisis:**
+
 - Prisma acepta números JavaScript para campos Decimal sin pérdida de precisión
 - El input del formulario usa `step="0.01"`, lo que garantiza valores con 2 decimales
 - La conversión `Number()` es segura para este caso de uso
@@ -258,11 +275,13 @@ value: gradeData.value !== null ? Number(gradeData.value) : null
 **Estado:** ✅ COINCIDE
 
 **Frontend:** `src/routes/(app)/docente/calificaciones/+page.svelte` línea 175
+
 ```html
-<form method="POST" action="?/loadGrades">
+<form method="POST" action="?/loadGrades"></form>
 ```
 
 **Backend:** `src/routes/(app)/docente/calificaciones/+page.server.ts` línea 162
+
 ```typescript
 loadGrades: async ({ request, locals }) => {
 ```
@@ -276,6 +295,7 @@ loadGrades: async ({ request, locals }) => {
 **Estado:** ⚠️ NO USA TRANSACCIÓN
 
 **Análisis:**
+
 - La acción `loadGrades` procesa cada calificación individualmente en un loop
 - Si una calificación falla, se agrega a la lista de errores y se continúa con la siguiente
 - Las calificaciones exitosas se guardan, las fallidas no
@@ -292,6 +312,7 @@ loadGrades: async ({ request, locals }) => {
 **Estado:** ✅ IMPLEMENTADAS
 
 **Validaciones en `loadGrades`:**
+
 1. ✅ Verifica que la evaluación pertenezca al docente (`evaluation.createdByUserId === locals.user.id`)
 2. ✅ Verifica que la materia esté asignada al docente (`SubjectTeacher` relation)
 3. ✅ Verifica que la evaluación no esté cerrada (`evaluation.isClosed`)
@@ -309,14 +330,16 @@ loadGrades: async ({ request, locals }) => {
 **Estado:** ✅ IMPLEMENTADO
 
 **Ubicaciones:**
+
 - `loadGrades`: línea 194-196
 - `editGrade`: línea 419
 - `deleteGrade`: línea 494
 
 **Código:**
+
 ```typescript
 if (evaluation.isClosed) {
-    return { error: 'La evaluación está cerrada y no acepta nuevas calificaciones' };
+	return { error: 'La evaluación está cerrada y no acepta nuevas calificaciones' };
 }
 ```
 
@@ -329,11 +352,13 @@ if (evaluation.isClosed) {
 **Estado:** ✅ CONFIRMADO
 
 **Archivo:** `src/routes/(app)/preceptor/calificaciones/+page.server.ts` línea 92
+
 ```typescript
 export const actions: Actions = {};
 ```
 
 **Frontend:** `src/routes/(app)/preceptor/calificaciones/+page.svelte`
+
 - Solo muestra tabla de calificaciones (read-only)
 - No contiene formulario de carga
 
@@ -348,10 +373,11 @@ export const actions: Actions = {};
 **Ubicación:** `src/routes/(app)/docente/evaluaciones/+page.server.ts` líneas 136-138
 
 **Código:**
+
 ```typescript
 // Bloquear MESA_EXAMEN temporalmente
 if (type === 'MESA_EXAMEN') {
-    return { error: 'Las mesas de examen no están habilitadas temporalmente' };
+	return { error: 'Las mesas de examen no están habilitadas temporalmente' };
 }
 ```
 
@@ -366,6 +392,7 @@ if (type === 'MESA_EXAMEN') {
 **Ubicación:** `src/routes/(app)/docente/evaluaciones/+page.server.ts` líneas 184-203
 
 **Validaciones:**
+
 1. ✅ Verifica que `parentEvaluationId` no sea null para RECUPERATORIO
 2. ✅ Verifica que la evaluación padre exista
 3. ✅ Verifica que sea de la misma materia
@@ -382,6 +409,7 @@ if (type === 'MESA_EXAMEN') {
 **Ubicación:** `src/lib/server/academic/plan-logic.ts` líneas 376-436
 
 **Características:**
+
 1. ✅ Usa transacción (`prisma.$transaction`)
 2. ✅ Actualiza campos nuevos y legacy en una única operación
 3. ✅ No modifica `regularityStatus` (se calcula separadamente)
@@ -398,6 +426,7 @@ if (type === 'MESA_EXAMEN') {
 **Ubicación:** `src/routes/(app)/comisiones/[id]/calificaciones/+page.server.ts`
 
 **Consultas:**
+
 1. ✅ `SubjectEnrollment` - obtiene alumnos inscriptos en la comisión
 2. ✅ `Evaluation` - obtiene evaluaciones de la materia
 3. ✅ `Grade` - obtiene calificaciones con include de evaluation
@@ -414,6 +443,7 @@ if (type === 'MESA_EXAMEN') {
 **Archivo:** `scripts/test-evaluation-module.ts`
 
 **Pruebas implementadas:**
+
 - ✅ Creación de evaluación
 - ✅ Carga masiva (PRESENT, ABSENT, EXCUSED)
 - ✅ Duplicados (constraint único)
@@ -425,6 +455,7 @@ if (type === 'MESA_EXAMEN') {
 - ✅ Limpieza en bloque finally
 
 **Pruebas faltantes:**
+
 - ❌ Pruebas de permisos (roles DOCENTE, PRECEPTOR, etc.)
 - ❌ Prueba de bloqueo de evaluación cerrada (solo verifica a nivel Prisma, no backend)
 - ❌ Prueba de MESA_EXAMEN (bloqueado en código, no probado)
@@ -433,6 +464,7 @@ if (type === 'MESA_EXAMEN') {
 - ❌ Prueba de seguridad (alumno ajeno a comisión)
 
 **Observaciones:**
+
 - No usa IDs hardcodeados (obtiene datos con `findFirst`)
 - Crea datos en orden correcto
 - No ejecuta MESA_EXAMEN
@@ -445,28 +477,34 @@ if (type === 'MESA_EXAMEN') {
 ## 19. Resultado Actualizado de Validaciones
 
 ### Prisma Format
+
 ```
 ✅ Formatted prisma/schema.prisma in 39ms 🚀
 ```
 
 ### Prisma Validate
+
 ```
 ✅ The schema at prisma/schema.prisma is valid 🚀
 ```
 
 ### Prisma Generate
+
 ```
 ✅ Generated Prisma Client (v6.19.2) to ./node_modules/@prisma/client in 284ms
 ```
 
 ### NPM Run Check
+
 ```
 ✅ svelte-check found 0 errors and 77 warnings in 15 files
 ```
+
 - 0 errores TypeScript
 - 77 advertencias (todas de accesibilidad UI, no relacionadas con el código)
 
 ### NPM Run Build
+
 ```
 ✅ built in 5.94s
 ```
@@ -476,6 +514,7 @@ if (type === 'MESA_EXAMEN') {
 ## 20. Git Status y Archivos Temporales
 
 ### Git Status
+
 ```
 modified:   prisma/schema.prisma
 modified:   src/lib/server/academic/plan-logic.ts
@@ -499,16 +538,20 @@ Untracked files:
 ```
 
 ### Archivos Temporales (Eliminar o Ignorar)
+
 **Eliminar después de pruebas:**
+
 - `scripts/check-table-counts.ts` - script de verificación temporal
 - `scripts/inspect-postgresql-structure.ts` - script de inspección temporal
 - `SQL_DIFF_REPORT.md` - reporte anterior (reemplazado por este informe)
 
 **Conservar:**
+
 - `scripts/test-evaluation-module.ts` - script de prueba funcional
 - `prisma/schema-backup.prisma` - backup del schema antes de cambios
 
 **Ignorar en Git:**
+
 - Considerar agregar `scripts/check-table-counts.ts` y `scripts/inspect-postgresql-structure.ts` a `.gitignore` si se usan solo para debugging.
 
 ---
@@ -516,12 +559,15 @@ Untracked files:
 ## 21. Estrategia de Migración a Producción
 
 ### Estado Actual
+
 ✅ **MIGRACIÓN PRISMA FORMAL COMPLETADA**
 
 ### Situación
+
 El módulo cuenta con 26 migraciones formales de Prisma, incluyendo 2 migraciones incrementales que completan el schema del módulo de exámenes y calificaciones. La estrategia de migración ha sido probada exitosamente en bases temporales vacías.
 
 ### Migraciones Implementadas
+
 - **Migraciones originales:** 24 (hasta `20260606023826_add_payslip_upload_tracking`)
 - **Migración incremental 1:** `20260609163939_refactor_exam_and_grade_module` - Refactor del módulo de exámenes
 - **Migración incremental 2:** `20260609170000_create_subject_commissions_and_sync_schema` - Creación de subject_commissions y sincronización de schema
@@ -529,24 +575,30 @@ El módulo cuenta con 26 migraciones formales de Prisma, incluyendo 2 migracione
 ### Estrategia para Producción
 
 #### Para Bases de Datos Nuevas
+
 ```bash
 # Aplicar todas las migraciones en orden
 DATABASE_URL="<production_url>" npx prisma migrate deploy
 ```
 
 #### Para Bases de Datos Existentes (creadas con db push)
+
 1. **Backup obligatorio:**
+
    ```bash
    pg_dump -U postgres -h <host> -d <database> > backup_before_migration.sql
    ```
 
 2. **Inspeccionar schema real:**
+
    ```bash
    DATABASE_URL="<production_url>" npx prisma db pull
    ```
+
    Comparar manualmente con `prisma/schema.prisma`
 
 3. **Aplicar migraciones incrementales específicas:**
+
    ```bash
    DATABASE_URL="<production_url>" npx prisma migrate resolve --applied "20260609163939_refactor_exam_and_grade_module"
    DATABASE_URL="<production_url>" npx prisma migrate resolve --applied "20260609170000_create_subject_commissions_and_sync_schema"
@@ -558,6 +610,7 @@ DATABASE_URL="<production_url>" npx prisma migrate deploy
    ```
 
 ### Conclusión
+
 **El módulo está listo para producción con estrategia de migración validada.** Ver documentación completa en `docs/EXAM_MODULE_MIGRATION_STRATEGY.md`.
 
 ---
@@ -565,9 +618,11 @@ DATABASE_URL="<production_url>" npx prisma migrate deploy
 ## 22. Resumen y Recomendaciones
 
 ### Estado General
+
 ✅ **APROBADO PARA PRODUCCIÓN**
 
 ### Aspectos Positivos
+
 1. ✅ 0 errores TypeScript
 2. ✅ Schema sincronizado con PostgreSQL
 3. ✅ 26 migraciones formales de Prisma implementadas
@@ -589,6 +644,7 @@ DATABASE_URL="<production_url>" npx prisma migrate deploy
 19. ✅ **No hay escritura directa a Prisma fuera del servicio**
 
 ### Aspectos Implementados
+
 1. ✅ **Migración Prisma formal completada** (26 migraciones)
 2. ✅ **Estrategia de migración validada** en bases temporales vacías
 3. ✅ **Procedimiento de despliegue controlado** documentado
@@ -596,6 +652,7 @@ DATABASE_URL="<production_url>" npx prisma migrate deploy
 5. ✅ **Auditoría real** con metadata estructurado
 
 ### Comandos de Validación
+
 ```bash
 # Pruebas funcionales
 npx tsx scripts/test-evaluation-module.ts

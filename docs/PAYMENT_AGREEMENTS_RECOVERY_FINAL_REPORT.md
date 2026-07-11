@@ -15,6 +15,7 @@
 **Confirmación:** ✅ Backup generado exitosamente con contenido válido (PostgreSQL dump)
 
 **Comando usado:**
+
 ```bash
 docker exec sistema-freire pg_dump -U freire -h /var/run/postgresql -d sistema-freire > backups/sistema_freire_before_payment_agreements_recovery_$(date +%Y%m%d_%H%M%S).sql
 ```
@@ -26,6 +27,7 @@ docker exec sistema-freire pg_dump -U freire -h /var/run/postgresql -d sistema-f
 ## 2. Resultado de migrate resolve --rolled-back
 
 **Primer intento (Etapa 3):**
+
 ```bash
 npx prisma migrate resolve --rolled-back 20260620164627_add_payment_agreements_phase1
 ```
@@ -33,11 +35,13 @@ npx prisma migrate resolve --rolled-back 20260620164627_add_payment_agreements_p
 **Resultado:** ✅ Exitoso
 
 **Salida:**
+
 ```
 Migration 20260620164627_add_payment_agreements_phase1 marked as rolled back.
 ```
 
 **Segundo intento (después del primer error de migrate deploy):**
+
 ```bash
 npx prisma migrate resolve --rolled-back 20260620164627_add_payment_agreements_phase1
 ```
@@ -45,11 +49,13 @@ npx prisma migrate resolve --rolled-back 20260620164627_add_payment_agreements_p
 **Resultado:** ✅ Exitoso
 
 **Salida:**
+
 ```
 Migration 20260620164627_add_payment_agreements_phase1 marked as rolled back.
 ```
 
-**Estado en _prisma_migrations:**
+**Estado en \_prisma_migrations:**
+
 - `migration_name`: 20260620164627_add_payment_agreements_phase1
 - `rolled_back_at`: Sun Jun 21 2026 19:23:10 GMT-0300 (Argentina Standard Time)
 - `applied_steps_count`: 0
@@ -59,6 +65,7 @@ Migration 20260620164627_add_payment_agreements_phase1 marked as rolled back.
 ## 3. Resultado del Cleanup de Enums
 
 **Primer intento (Etapa 4):**
+
 ```bash
 npx tsx scripts/cleanup-payment-agreement-orphan-enums.ts
 ```
@@ -66,12 +73,14 @@ npx tsx scripts/cleanup-payment-agreement-orphan-enums.ts
 **Resultado:** ✅ Exitoso
 
 **Enums eliminados:**
+
 - PaymentAgreementChargeRelationType
 - PaymentAgreementEventType
 - PaymentAgreementInstallmentStatus
 - PaymentAgreementStatus
 
 **Segundo intento (después del primer error de migrate deploy):**
+
 ```bash
 npx tsx scripts/cleanup-payment-agreement-orphan-enums.ts
 ```
@@ -79,6 +88,7 @@ npx tsx scripts/cleanup-payment-agreement-orphan-enums.ts
 **Resultado:** ✅ Exitoso
 
 **Enums eliminados:**
+
 - PaymentAgreementChargeRelationType (ya no existía)
 - PaymentAgreementEventType (ya no existía)
 - PaymentAgreementInstallmentStatus (ya no existía)
@@ -96,6 +106,7 @@ npx tsx scripts/cleanup-payment-agreement-orphan-enums.ts
 **Archivo modificado:** `prisma/migrations/20260620164627_add_payment_agreements_phase1/migration.sql`
 
 **Verificación de cambios académicos:**
+
 ```bash
 grep -Ei "^(ALTER|DROP|CREATE)" prisma/migrations/20260620164627_add_payment_agreements_phase1/migration.sql | grep -Ei "student_subject_status|subject_enrollments|grades|evaluations|AcademicStatus|CourseStatus|FinalExamStatus"
 ```
@@ -103,6 +114,7 @@ grep -Ei "^(ALTER|DROP|CREATE)" prisma/migrations/20260620164627_add_payment_agr
 **Resultado:** ✅ Vacío (no hay cambios académicos en el SQL)
 
 **Verificación de objetos de Convenios:**
+
 ```bash
 grep -Ei "payment_agreement|PaymentAgreement|FinancialBlockExceptionSource|AGREEMENT_INSTALLMENT|PAYMENT_AGREEMENT" prisma/migrations/20260620164627_add_payment_agreements_phase1/migration.sql
 ```
@@ -116,6 +128,7 @@ grep -Ei "payment_agreement|PaymentAgreement|FinancialBlockExceptionSource|AGREE
 ## 5. Resultado de migrate deploy
 
 **Primer intento:**
+
 ```bash
 npx prisma migrate deploy
 ```
@@ -123,6 +136,7 @@ npx prisma migrate deploy
 **Resultado:** ❌ Falló
 
 **Error:**
+
 ```
 Error: P3018
 ERROR: type "FinancialBlockExceptionSource" already exists
@@ -131,6 +145,7 @@ ERROR: type "FinancialBlockExceptionSource" already exists
 **Causa:** El enum `FinancialBlockExceptionSource` no estaba en la lista original de enums huérfanos
 
 **Segundo intento (después de eliminar FinancialBlockExceptionSource y marcar rolled-back nuevamente):**
+
 ```bash
 npx prisma migrate deploy
 ```
@@ -138,6 +153,7 @@ npx prisma migrate deploy
 **Resultado:** ✅ Exitoso
 
 **Salida:**
+
 ```
 Applying migration `20260620164627_add_payment_agreements_phase1`
 
@@ -146,7 +162,7 @@ The following migration(s) have been applied:
 migrations/
   └─ 20260620164627_add_payment_agreements_phase1/
     └─ migration.sql
-    
+
 All migrations have been successfully applied.
 ```
 
@@ -155,6 +171,7 @@ All migrations have been successfully applied.
 ## 6. Resultado de prisma generate
 
 **Comando:**
+
 ```bash
 npx prisma generate
 ```
@@ -162,6 +179,7 @@ npx prisma generate
 **Resultado:** ✅ Exitoso
 
 **Salida:**
+
 ```
 ✔ Generated Prisma Client (v6.19.2) to ./node_modules/@prisma/client in 313ms
 ```
@@ -171,6 +189,7 @@ npx prisma generate
 ## 7. Si se Ejecutó Seed de Permisos
 
 **Comando:**
+
 ```bash
 npx tsx prisma/seed-permissions.ts
 ```
@@ -178,6 +197,7 @@ npx tsx prisma/seed-permissions.ts
 **Resultado:** ✅ Ejecutado exitosamente
 
 **Salida:**
+
 ```
 🌱 Seeding permissions...
 ✅ Created/updated 51 permissions
@@ -191,6 +211,7 @@ npx tsx prisma/seed-permissions.ts
 ## 8. Resultado de npm run check
 
 **Comando:**
+
 ```bash
 npm run check
 ```
@@ -198,6 +219,7 @@ npm run check
 **Resultado:** ✅ Exitoso
 
 **Salida:**
+
 ```
 svelte-check found 0 errors and 96 warnings in 19 files
 ```
@@ -209,6 +231,7 @@ svelte-check found 0 errors and 96 warnings in 19 files
 ## 9. Resultado de Build
 
 **Comando:**
+
 ```bash
 npm run build
 ```
@@ -216,6 +239,7 @@ npm run build
 **Resultado:** ✅ Exitoso
 
 **Salida:**
+
 ```
 ✓ built in 5.87s
 Using @sveltejs/adapter-node
@@ -227,6 +251,7 @@ Using @sveltejs/adapter-node
 ## 10. Resultado del Script de Prueba
 
 **Comando:**
+
 ```bash
 npx tsx scripts/test-payment-agreements-schema.ts
 ```
@@ -234,6 +259,7 @@ npx tsx scripts/test-payment-agreements-schema.ts
 **Resultado:** ✅ Exitoso
 
 **Salida:**
+
 ```
 🧪 Iniciando pruebas de Convenios de Pago - Fase 1
 
@@ -303,6 +329,7 @@ Test 12: Verificar relaciones y consultas...
 ## 11. Estado Final de migrate status
 
 **Comando:**
+
 ```bash
 npx prisma migrate status
 ```
@@ -310,6 +337,7 @@ npx prisma migrate status
 **Resultado:** ✅ Exitoso
 
 **Salida:**
+
 ```
 28 migrations found in prisma/migrations
 
@@ -323,6 +351,7 @@ Database schema is up to date!
 ## 12. Confirmación de Que No se Usaron Comandos Prohibidos
 
 **Comandos prohibidos NO usados:**
+
 - ✅ NO se usó `db push`
 - ✅ NO se usó `migrate reset` en base real
 - ✅ NO se usó `migrate dev` contra base real
@@ -333,6 +362,7 @@ Database schema is up to date!
 - ✅ NO se hizo commit/push antes del informe final
 
 **Comandos usados (autorizados):**
+
 - ✅ `docker exec sistema-freire pg_dump` (backup)
 - ✅ `npx prisma migrate resolve --rolled-back` (autorizado)
 - ✅ `npx tsx scripts/cleanup-payment-agreement-orphan-enums.ts` (script controlado)
@@ -351,6 +381,7 @@ Database schema is up to date!
 ## 13. Archivos Modificados
 
 **Archivos modificados (git diff --name-status):**
+
 - M .gitignore (agregado `backups/`)
 - M doc/history.md
 - M docs/FINANCIAL_MODULE_TECHNICAL_DESIGN.md
@@ -407,6 +438,7 @@ Database schema is up to date!
 - M static/logo.png
 
 **Archivos nuevos (git status --short):**
+
 - ?? docs/ACADEMIC_DRIFT_CORRECTION_PLAN.md
 - ?? docs/ACADEMIC_DRIFT_DETAILED_DIAGNOSIS.md
 - ?? docs/ACADEMIC_DRIFT_DIAGNOSIS.md
@@ -437,6 +469,7 @@ Database schema is up to date!
 **Recomendación:** Proceder con commit de los cambios de recuperación
 
 **Commit sugerido:**
+
 ```
 feat: recover payment agreements migration from failed state
 
@@ -457,6 +490,7 @@ Related docs:
 ```
 
 **Archivos a incluir en commit:**
+
 - .gitignore
 - prisma/migrations/20260620164627_add_payment_agreements_phase1/migration.sql
 - docs/ (todos los informes de recuperación)
@@ -466,6 +500,7 @@ Related docs:
 - Otros archivos modificados (si los cambios son intencionales)
 
 **Archivos a excluir del commit:**
+
 - backups/ (ya está en .gitignore)
 - static/uploads/ (ya está en .gitignore si se agrega)
 
@@ -474,6 +509,7 @@ Related docs:
 ## 15. Resumen de la Recuperación
 
 **Etapas completadas:**
+
 1. ✅ Backup obligatorio de base real (221 KB)
 2. ✅ Verificación previa read-only (applied_steps_count = 0, 4 enums huérfanos sin dependencias)
 3. ✅ Marcar migración fallida como rolled-back (2 veces)
@@ -485,6 +521,7 @@ Related docs:
 9. ✅ Informe final de recuperación
 
 **Problemas encontrados y resueltos:**
+
 - **Problema 1:** El nombre de la base de datos es `sistema-freire` (con guion), no `sistema_freire` (con guion bajo)
   - **Solución:** Usar el nombre correcto en el comando de backup
 - **Problema 2:** El enum `FinancialBlockExceptionSource` no estaba en la lista original de enums huérfanos
@@ -493,6 +530,7 @@ Related docs:
   - **Solución:** Eliminar `FinancialBlockExceptionSource`, marcar rolled-back nuevamente, y reintentar `migrate deploy`
 
 **Estado final:**
+
 - ✅ Base de datos con backup antes de la recuperación
 - ✅ Migración limpia aplicada exitosamente
 - ✅ Todos los enums huérfanos eliminados
@@ -519,6 +557,7 @@ Related docs:
 **Estado de la aplicación:** ✅ Build exitoso, todas las validaciones pasadas
 
 **Próximos pasos:**
+
 1. Commit de los cambios de recuperación
 2. Push al repositorio
 3. (Opcional) Probar la aplicación en entorno de desarrollo

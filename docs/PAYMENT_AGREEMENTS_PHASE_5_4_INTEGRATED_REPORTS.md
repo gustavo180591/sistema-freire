@@ -41,13 +41,13 @@ This phase implements:
 
 ### Agreement Status Impact on Reports
 
-| Status | Original Debt Covered? | Agreement Debt Added? | Notes |
-|--------|----------------------|-----------------------|-------|
-| `DRAFT` | No | No | Original debt remains fully enforceable |
-| `ACTIVE` | Yes (covered amount) | Yes (pending installments) | Covered debt excluded, installments added |
-| `COMPLETED` | Yes | No | Covered debt excluded, no pending debt |
-| `DEFAULTED` | Yes | Yes (as defaulted) | Shown separately as defaulted debt |
-| `CANCELLED` | No | No | Original debt remains fully enforceable |
+| Status      | Original Debt Covered? | Agreement Debt Added?      | Notes                                     |
+| ----------- | ---------------------- | -------------------------- | ----------------------------------------- |
+| `DRAFT`     | No                     | No                         | Original debt remains fully enforceable   |
+| `ACTIVE`    | Yes (covered amount)   | Yes (pending installments) | Covered debt excluded, installments added |
+| `COMPLETED` | Yes                    | No                         | Covered debt excluded, no pending debt    |
+| `DEFAULTED` | Yes                    | Yes (as defaulted)         | Shown separately as defaulted debt        |
+| `CANCELLED` | No                     | No                         | Original debt remains fully enforceable   |
 
 ## Implemented Methods
 
@@ -58,6 +58,7 @@ This phase implements:
 **Purpose**: Generate integrated debt report for a single student
 
 **Parameters**:
+
 - `studentId`: ID of the student
 
 **Returns**: `StudentIntegratedDebtReport`
@@ -121,6 +122,7 @@ type StudentIntegratedDebtReport = {
 **Purpose**: Generate aggregated financial report for multiple students
 
 **Parameters**:
+
 - `studentIds`?: Optional array of student IDs. If not provided, automatically finds students with debt or agreements.
 
 **Returns**: `AggregatedFinancialReport`
@@ -214,6 +216,7 @@ type FinancialReportResult = {
 ```
 
 **Limitations of current report**:
+
 - Does not consider payment agreements
 - May double-count debt (original + agreement)
 - Shows raw `StudentCharge` data without context

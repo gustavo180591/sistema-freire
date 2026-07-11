@@ -9,17 +9,20 @@
 ## 1. Estado actual del sistema
 
 ### 1.1 Schema Prisma
+
 - **Total de modelos:** 40+ modelos
 - **Migrations:** 33 migrations activas
 - **Schema:** Estable, sin cambios pendientes
 - **Base de datos:** PostgreSQL en localhost:5437
 
 ### 1.2 Módulos ya cerrados
+
 - **Gestión Documental (Fase 1.5):** Completado con UI protegida
 - **Convenios de Pago (Fase 6):** Completado con integración financiera
 - **Módulo Financiero (Fase 6):** Reportes financieros básicos implementados
 
 ### 1.3 Arquitectura existente
+
 - **Framework:** SvelteKit con TypeScript
 - **ORM:** Prisma Client
 - **Autenticación:** Sesiones con TOTP opcional
@@ -33,28 +36,28 @@
 
 ### 2.1 Modelos principales
 
-| Modelo | Propósito | Campos clave para reportes |
-|--------|-----------|---------------------------|
-| **Student** | Alumnos | status, careerId, currentYear, isBecado, isRecursante |
-| **Career** | Carreras | name, trainingField, durationYears, active |
-| **Subject** | Materias | name, subjectType, trainingField, yearLevel, active |
-| **SubjectCommission** | Comisiones | code, maxCapacity, currentEnrolled, schedule, active |
-| **SubjectEnrollment** | Inscripciones | status, enrolledAt, confirmedAt, cancelledAt |
-| **Grade** | Calificaciones | value, status, createdAt, evaluationId |
-| **Evaluation** | Evaluaciones | title, maxScore, evaluationDate, type, isClosed |
-| **StudentSubjectStatus** | Estado por materia | attendancePercent, regularityStatus, approved, promoted, finalGrade |
-| **AcademicYearHistory** | Historial anual | year, status, observations |
-| **StudyPlan** | Planes de estudio | name, version, durationYears, active |
-| **PlanSubject** | Materias por plan | sortOrder |
-| **Teacher** | Docentes | status, hireDate, observations |
-| **SubjectTeacher** | Asignación docente-materia | subjectId, teacherId |
+| Modelo                   | Propósito                  | Campos clave para reportes                                          |
+| ------------------------ | -------------------------- | ------------------------------------------------------------------- |
+| **Student**              | Alumnos                    | status, careerId, currentYear, isBecado, isRecursante               |
+| **Career**               | Carreras                   | name, trainingField, durationYears, active                          |
+| **Subject**              | Materias                   | name, subjectType, trainingField, yearLevel, active                 |
+| **SubjectCommission**    | Comisiones                 | code, maxCapacity, currentEnrolled, schedule, active                |
+| **SubjectEnrollment**    | Inscripciones              | status, enrolledAt, confirmedAt, cancelledAt                        |
+| **Grade**                | Calificaciones             | value, status, createdAt, evaluationId                              |
+| **Evaluation**           | Evaluaciones               | title, maxScore, evaluationDate, type, isClosed                     |
+| **StudentSubjectStatus** | Estado por materia         | attendancePercent, regularityStatus, approved, promoted, finalGrade |
+| **AcademicYearHistory**  | Historial anual            | year, status, observations                                          |
+| **StudyPlan**            | Planes de estudio          | name, version, durationYears, active                                |
+| **PlanSubject**          | Materias por plan          | sortOrder                                                           |
+| **Teacher**              | Docentes                   | status, hireDate, observations                                      |
+| **SubjectTeacher**       | Asignación docente-materia | subjectId, teacherId                                                |
 
 ### 2.2 Modelos de asistencia
 
-| Modelo | Propósito | Campos clave |
-|--------|-----------|--------------|
-| **AttendanceRecord** | Registro de clase | subjectId, classDate, commissionId, createdByUserId |
-| **AttendanceEntry** | Asistencia por alumno | attendanceId, studentId, present, notes |
+| Modelo               | Propósito             | Campos clave                                        |
+| -------------------- | --------------------- | --------------------------------------------------- |
+| **AttendanceRecord** | Registro de clase     | subjectId, classDate, commissionId, createdByUserId |
+| **AttendanceEntry**  | Asistencia por alumno | attendanceId, studentId, present, notes             |
 
 ### 2.3 Reportes académicos posibles sin cambios de schema
 
@@ -89,30 +92,30 @@
 
 ### 3.1 Modelos principales
 
-| Modelo | Propósito | Campos clave para reportes |
-|--------|-----------|---------------------------|
-| **StudentCharge** | Cuotas/Cargos | amount, paidAmount, status, dueDate, periodLabel, isOverdue |
-| **Payment** | Pagos | amount, method, reference, paidAt, isCancelled, receiptId |
-| **PaymentAllocation** | Asignación pago-cuota | paymentId, chargeId, installmentId, amount |
-| **Receipt** | Recibos | receiptNumber, receiptYear, totalAmount, paymentMethod, status |
-| **ReceiptItem** | Ítems de recibo | concept, periodLabel, baseAmount, lateFeeAmount, discountAmount, finalAmount |
-| **FinancialMovement** | Historial unificado | movementType, entityType, entityId, amount, balanceBefore, balanceAfter |
-| **FinancialBlock** | Bloqueos | blockType, blockReason, debtAmount, isActive, exceptionGranted |
-| **Scholarship** | Becas | percentage, active, startDate, endDate, appliedAmount |
-| **Discount** | Descuentos | discountType, value, applicableTo, validFrom, validUntil |
-| **LateFee** | Recargos por mora | feeType, feeValue, calculatedAmount, isAutomatic |
-| **FinancialConfig** | Configuración | key, value, category |
-| **ChargeConcept** | Conceptos de cobro | code, name, description, active |
-| **AcademicTerm** | Períodos académicos | name, year, termType, startDate, endDate, active |
+| Modelo                | Propósito             | Campos clave para reportes                                                   |
+| --------------------- | --------------------- | ---------------------------------------------------------------------------- |
+| **StudentCharge**     | Cuotas/Cargos         | amount, paidAmount, status, dueDate, periodLabel, isOverdue                  |
+| **Payment**           | Pagos                 | amount, method, reference, paidAt, isCancelled, receiptId                    |
+| **PaymentAllocation** | Asignación pago-cuota | paymentId, chargeId, installmentId, amount                                   |
+| **Receipt**           | Recibos               | receiptNumber, receiptYear, totalAmount, paymentMethod, status               |
+| **ReceiptItem**       | Ítems de recibo       | concept, periodLabel, baseAmount, lateFeeAmount, discountAmount, finalAmount |
+| **FinancialMovement** | Historial unificado   | movementType, entityType, entityId, amount, balanceBefore, balanceAfter      |
+| **FinancialBlock**    | Bloqueos              | blockType, blockReason, debtAmount, isActive, exceptionGranted               |
+| **Scholarship**       | Becas                 | percentage, active, startDate, endDate, appliedAmount                        |
+| **Discount**          | Descuentos            | discountType, value, applicableTo, validFrom, validUntil                     |
+| **LateFee**           | Recargos por mora     | feeType, feeValue, calculatedAmount, isAutomatic                             |
+| **FinancialConfig**   | Configuración         | key, value, category                                                         |
+| **ChargeConcept**     | Conceptos de cobro    | code, name, description, active                                              |
+| **AcademicTerm**      | Períodos académicos   | name, year, termType, startDate, endDate, active                             |
 
 ### 3.2 Modelos de Convenios de Pago (módulo cerrado)
 
-| Modelo | Propósito | Campos clave |
-|--------|-----------|--------------|
-| **PaymentAgreement** | Convenios | agreementNumber, originalDebt, agreedAmount, paidAmount, status |
-| **PaymentAgreementInstallment** | Cuotas de convenio | installmentNumber, dueDate, amount, paidAmount, status |
-| **PaymentAgreementChargeRelation** | Relación cuota-convenio | relationType, amountIncluded, newStatus |
-| **PaymentAgreementEvent** | Eventos de convenio | eventType, previousStatus, newStatus, oldValue, newValue |
+| Modelo                             | Propósito               | Campos clave                                                    |
+| ---------------------------------- | ----------------------- | --------------------------------------------------------------- |
+| **PaymentAgreement**               | Convenios               | agreementNumber, originalDebt, agreedAmount, paidAmount, status |
+| **PaymentAgreementInstallment**    | Cuotas de convenio      | installmentNumber, dueDate, amount, paidAmount, status          |
+| **PaymentAgreementChargeRelation** | Relación cuota-convenio | relationType, amountIncluded, newStatus                         |
+| **PaymentAgreementEvent**          | Eventos de convenio     | eventType, previousStatus, newStatus, oldValue, newValue        |
 
 ### 3.3 Reportes financieros posibles sin cambios de schema
 
@@ -147,13 +150,13 @@
 
 ### 4.1 Modelos principales
 
-| Modelo | Propósito | Campos clave |
-|--------|-----------|-------------|
-| **AttendanceRecord** | Registro de clase | subjectId, classDate, commissionId, createdByUserId |
-| **AttendanceEntry** | Asistencia por alumno | attendanceId, studentId, present, notes |
-| **Subject** | Materias | name, active |
-| **SubjectCommission** | Comisiones | code, teacherId, schedule |
-| **Student** | Alumnos | status, careerId |
+| Modelo                | Propósito             | Campos clave                                        |
+| --------------------- | --------------------- | --------------------------------------------------- |
+| **AttendanceRecord**  | Registro de clase     | subjectId, classDate, commissionId, createdByUserId |
+| **AttendanceEntry**   | Asistencia por alumno | attendanceId, studentId, present, notes             |
+| **Subject**           | Materias              | name, active                                        |
+| **SubjectCommission** | Comisiones            | code, teacherId, schedule                           |
+| **Student**           | Alumnos               | status, careerId                                    |
 
 ### 4.2 Reportes de asistencia posibles sin cambios de schema
 
@@ -179,18 +182,18 @@
 
 ### 5.1 Modelos principales
 
-| Modelo | Propósito | Campos clave |
-|--------|-----------|-------------|
-| **User** | Usuarios | status, roles |
-| **Student** | Alumnos | status, careerId, currentYear |
-| **Teacher** | Docentes | status |
-| **Career** | Carreras | active, locations |
-| **Subject** | Materias | active |
-| **StudentCharge** | Deuda | amount, paidAmount, status |
-| **Payment** | Pagos | amount, paidAt |
-| **Document** | Documentos | category, status, visibility |
-| **AuditLog** | Auditoría | action, entityType, createdAt |
-| **Location** | Sedes | active |
+| Modelo            | Propósito  | Campos clave                  |
+| ----------------- | ---------- | ----------------------------- |
+| **User**          | Usuarios   | status, roles                 |
+| **Student**       | Alumnos    | status, careerId, currentYear |
+| **Teacher**       | Docentes   | status                        |
+| **Career**        | Carreras   | active, locations             |
+| **Subject**       | Materias   | active                        |
+| **StudentCharge** | Deuda      | amount, paidAmount, status    |
+| **Payment**       | Pagos      | amount, paidAt                |
+| **Document**      | Documentos | category, status, visibility  |
+| **AuditLog**      | Auditoría  | action, entityType, createdAt |
+| **Location**      | Sedes      | active                        |
 
 ### 5.2 KPIs institucionales posibles sin cambios de schema
 
@@ -200,8 +203,8 @@
 ✅ **Alumnos por carrera:** Student.groupBy({ by: ['careerId'] })
 ✅ **Alumnos por año:** Student.groupBy({ by: ['currentYear'] })
 ✅ **Evolución de matrícula:** AcademicYearHistory.year agrupado
-✅ **Deuda total:** StudentCharge.aggregate({ _sum: { amount: true } })
-✅ **Ingresos del mes:** Payment.where({ paidAt: este mes }).aggregate({ _sum: { amount: true } })
+✅ **Deuda total:** StudentCharge.aggregate({ \_sum: { amount: true } })
+✅ **Ingresos del mes:** Payment.where({ paidAt: este mes }).aggregate({ \_sum: { amount: true } })
 ✅ **Documentos cargados:** Document.count()
 ✅ **Docentes activos:** Teacher.count({ where: { status: 'ACTIVE' } })
 ✅ **Usuarios activos:** User.count({ where: { status: 'ACTIVE' } })
@@ -224,31 +227,31 @@
 
 ### 6.1 Rutas implementadas
 
-| Ruta | Propósito | Servicio usado | Estado |
-|------|-----------|----------------|--------|
-| `/reportes` | Dashboard general de reportes | Prisma directo | ✅ Activo |
-| `/reportes/academico` | Reporte académico general | academic-report.service.ts | ✅ Activo |
-| `/reportes/financiero` | Reporte financiero de morosidad | financial-report.service.ts | ✅ Activo |
-| `/reportes/oficiales` | Documentación oficial institucional | official-report.service.ts | ✅ Activo |
-| `/reportes/academico/export.pdf` | Exportación PDF académico | pdfkit + financial-report | ✅ Activo |
-| `/reportes/academico/export.xlsx` | Exportación Excel académico | xlsx + financial-report | ✅ Activo |
-| `/reportes/oficiales/export.pdf` | Exportación PDF oficial | pdfkit + official-report | ✅ Activo |
-| `/reportes/oficiales/export.xlsx` | Exportación Excel oficial | xlsx + official-report | ✅ Activo |
-| `/finanzas` | Dashboard financiero | financial-service.getFinancialDashboardMetrics() | ✅ Activo |
-| `/finanzas/reportes` | Reportes financieros avanzados | financial-service | ✅ Activo |
-| `/finanzas/alumnos/[id]` | Reporte individual por alumno | financial-service.getStudentFinancialReport() | ✅ Activo |
-| `/finanzas/movimientos` | Historial de movimientos | financial-service.getFinancialMovementsHistory() | ✅ Activo |
-| `/dashboard` | Dashboard institucional | Prisma directo | ✅ Activo |
-| `/finanzas/reportes` | Exportación CSV financiera | financial-service.exportPeriodReportToCSV() | ✅ Activo |
+| Ruta                              | Propósito                           | Servicio usado                                   | Estado    |
+| --------------------------------- | ----------------------------------- | ------------------------------------------------ | --------- |
+| `/reportes`                       | Dashboard general de reportes       | Prisma directo                                   | ✅ Activo |
+| `/reportes/academico`             | Reporte académico general           | academic-report.service.ts                       | ✅ Activo |
+| `/reportes/financiero`            | Reporte financiero de morosidad     | financial-report.service.ts                      | ✅ Activo |
+| `/reportes/oficiales`             | Documentación oficial institucional | official-report.service.ts                       | ✅ Activo |
+| `/reportes/academico/export.pdf`  | Exportación PDF académico           | pdfkit + financial-report                        | ✅ Activo |
+| `/reportes/academico/export.xlsx` | Exportación Excel académico         | xlsx + financial-report                          | ✅ Activo |
+| `/reportes/oficiales/export.pdf`  | Exportación PDF oficial             | pdfkit + official-report                         | ✅ Activo |
+| `/reportes/oficiales/export.xlsx` | Exportación Excel oficial           | xlsx + official-report                           | ✅ Activo |
+| `/finanzas`                       | Dashboard financiero                | financial-service.getFinancialDashboardMetrics() | ✅ Activo |
+| `/finanzas/reportes`              | Reportes financieros avanzados      | financial-service                                | ✅ Activo |
+| `/finanzas/alumnos/[id]`          | Reporte individual por alumno       | financial-service.getStudentFinancialReport()    | ✅ Activo |
+| `/finanzas/movimientos`           | Historial de movimientos            | financial-service.getFinancialMovementsHistory() | ✅ Activo |
+| `/dashboard`                      | Dashboard institucional             | Prisma directo                                   | ✅ Activo |
+| `/finanzas/reportes`              | Exportación CSV financiera          | financial-service.exportPeriodReportToCSV()      | ✅ Activo |
 
 ### 6.2 Servicios de reportes existentes
 
-| Servicio | Archivo | Funciones principales |
-|----------|---------|----------------------|
-| **AcademicReportService** | `src/lib/server/services/reports/academic-report.service.ts` | getAcademicReport() - alumnos, materias, riesgo académico |
-| **FinancialReportService** | `src/lib/server/services/reports/financial-report.service.ts` | getFinancialReport() - deuda, pagos, métricas |
-| **OfficialReportService** | `src/lib/server/services/reports/official-report.service.ts` | getOfficialReport() - actas, libro matriz, nóminas |
-| **FinancialService** | `src/lib/server/financial/financial-service.ts` | getFinancialDashboardMetrics(), getStudentFinancialReport(), getPeriodFinancialReport(), getFinancialMovementsHistory(), exportPeriodReportToCSV(), exportMovementsToCSV() |
+| Servicio                   | Archivo                                                       | Funciones principales                                                                                                                                                      |
+| -------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **AcademicReportService**  | `src/lib/server/services/reports/academic-report.service.ts`  | getAcademicReport() - alumnos, materias, riesgo académico                                                                                                                  |
+| **FinancialReportService** | `src/lib/server/services/reports/financial-report.service.ts` | getFinancialReport() - deuda, pagos, métricas                                                                                                                              |
+| **OfficialReportService**  | `src/lib/server/services/reports/official-report.service.ts`  | getOfficialReport() - actas, libro matriz, nóminas                                                                                                                         |
+| **FinancialService**       | `src/lib/server/financial/financial-service.ts`               | getFinancialDashboardMetrics(), getStudentFinancialReport(), getPeriodFinancialReport(), getFinancialMovementsHistory(), exportPeriodReportToCSV(), exportMovementsToCSV() |
 
 ### 6.3 Limitaciones de reportes existentes
 
@@ -267,27 +270,30 @@
 
 ### 7.1 Librerías instaladas
 
-| Librería | Propósito | Uso actual |
-|----------|-----------|------------|
-| **pdfkit** | Generación PDF | Exportación PDF de reportes académicos/oficiales |
-| **xlsx** | Generación Excel | Exportación Excel de reportes académicos/oficiales |
-| **Decimal** | Precisión financiera | Cálculos monetarios en financial-service |
+| Librería    | Propósito            | Uso actual                                         |
+| ----------- | -------------------- | -------------------------------------------------- |
+| **pdfkit**  | Generación PDF       | Exportación PDF de reportes académicos/oficiales   |
+| **xlsx**    | Generación Excel     | Exportación Excel de reportes académicos/oficiales |
+| **Decimal** | Precisión financiera | Cálculos monetarios en financial-service           |
 
 ### 7.2 Implementaciones de exportación
 
 **CSV (manual en financial-service.ts):**
+
 - `escapeCSV()` - Escape de comillas, comas, saltos de línea
 - `generateCSV()` - Generación de contenido CSV
 - `exportPeriodReportToCSV()` - Exportación con auditoría
 - `exportMovementsToCSV()` - Exportación con auditoría
 
 **PDF (pdfkit):**
+
 - Formato básico A4
 - Header institucional
 - Texto simple
 - Sin templates profesionales
 
 **Excel (xlsx):**
+
 - Hojas simples
 - JSON a sheet
 - Sin formato avanzado
@@ -305,30 +311,30 @@
 
 ### 8.1 Entidades de permisos
 
-| Entidad | Propósito | Estado |
-|---------|-----------|--------|
-| **FINANCIAL_REPORT** | Reportes financieros | ✅ Existe |
-| **USER** | Usuarios | ✅ Existe |
-| **STUDENT** | Alumnos | ✅ Existe |
-| **TEACHER** | Docentes | ✅ Existe |
-| **CAREER** | Carreras | ✅ Existe |
-| **SUBJECT** | Materias | ✅ Existe |
-| **ATTENDANCE** | Asistencia | ✅ Existe |
-| **GRADE** | Calificaciones | ✅ Existe |
-| **DOCUMENT** | Documentos | ✅ Existe |
-| **PAYMENT_AGREEMENT** | Convenios de pago | ✅ Existe |
+| Entidad               | Propósito            | Estado    |
+| --------------------- | -------------------- | --------- |
+| **FINANCIAL_REPORT**  | Reportes financieros | ✅ Existe |
+| **USER**              | Usuarios             | ✅ Existe |
+| **STUDENT**           | Alumnos              | ✅ Existe |
+| **TEACHER**           | Docentes             | ✅ Existe |
+| **CAREER**            | Carreras             | ✅ Existe |
+| **SUBJECT**           | Materias             | ✅ Existe |
+| **ATTENDANCE**        | Asistencia           | ✅ Existe |
+| **GRADE**             | Calificaciones       | ✅ Existe |
+| **DOCUMENT**          | Documentos           | ✅ Existe |
+| **PAYMENT_AGREEMENT** | Convenios de pago    | ✅ Existe |
 
 ### 8.2 Permisos por rol (por defecto)
 
-| Rol | FINANCIAL_REPORT | ATTENDANCE | GRADE | DOCUMENT |
-|-----|------------------|------------|-------|----------|
-| **SUPERADMIN** | CRUD | CRUD | CRUD | CRUD |
-| **DIRECTOR** | R | R | R | R |
-| **FINANZAS** | R | - | - | - |
-| **SECRETARIA** | - | - | - | - |
-| **DOCENTE** | - | CRUD | CRUD | R |
-| **PRECEPTOR** | - | - | - | - |
-| **ALUMNO** | - | - | - | - |
+| Rol            | FINANCIAL_REPORT | ATTENDANCE | GRADE | DOCUMENT |
+| -------------- | ---------------- | ---------- | ----- | -------- |
+| **SUPERADMIN** | CRUD             | CRUD       | CRUD  | CRUD     |
+| **DIRECTOR**   | R                | R          | R     | R        |
+| **FINANZAS**   | R                | -          | -     | -        |
+| **SECRETARIA** | -                | -          | -     | -        |
+| **DOCENTE**    | -                | CRUD       | CRUD  | R        |
+| **PRECEPTOR**  | -                | -          | -     | -        |
+| **ALUMNO**     | -                | -          | -     | -        |
 
 ### 8.3 Funciones de permisos
 
@@ -351,31 +357,31 @@
 
 ### 9.1 Riesgos de arquitectura
 
-| Riesgo | Severidad | Mitigación |
-|--------|-----------|------------|
-| **Duplicación de lógica de reportes** | Alta | Consolidar en servicios centralizados |
-| **Exportación sin templates profesionales** | Media | Implementar sistema de templates |
-| **Falta de filtros avanzados** | Media | Agregar filtros por carrera, período, locación |
-| **Performance en queries complejas** | Alta | Implementar índices y optimización |
-| **Sin caché de reportes pesados** | Media | Implementar caché para reportes frecuentes |
+| Riesgo                                      | Severidad | Mitigación                                     |
+| ------------------------------------------- | --------- | ---------------------------------------------- |
+| **Duplicación de lógica de reportes**       | Alta      | Consolidar en servicios centralizados          |
+| **Exportación sin templates profesionales** | Media     | Implementar sistema de templates               |
+| **Falta de filtros avanzados**              | Media     | Agregar filtros por carrera, período, locación |
+| **Performance en queries complejas**        | Alta      | Implementar índices y optimización             |
+| **Sin caché de reportes pesados**           | Media     | Implementar caché para reportes frecuentes     |
 
 ### 9.2 Riesgos de seguridad
 
-| Riesgo | Severidad | Mitigación |
-|--------|-----------|------------|
-| **Exportación sin validación de permisos** | Alta | Validar permisos en cada endpoint |
-| **Exposición de datos sensibles en CSV** | Alta | Sanitizar datos sensibles antes de exportar |
-| **Sin rate limiting en exportación** | Media | Implementar rate limiting |
-| **Auditoría incompleta** | Media | Asegurar auditoría en todas las exportaciones |
+| Riesgo                                     | Severidad | Mitigación                                    |
+| ------------------------------------------ | --------- | --------------------------------------------- |
+| **Exportación sin validación de permisos** | Alta      | Validar permisos en cada endpoint             |
+| **Exposición de datos sensibles en CSV**   | Alta      | Sanitizar datos sensibles antes de exportar   |
+| **Sin rate limiting en exportación**       | Media     | Implementar rate limiting                     |
+| **Auditoría incompleta**                   | Media     | Asegurar auditoría en todas las exportaciones |
 
 ### 9.3 Riesgos de datos
 
-| Riesgo | Severidad | Mitigación |
-|--------|-----------|------------|
-| **Inconsistencia en StudentSubjectStatus** | Alta | Validar datos antes de reportar |
-| **Datos financieros sin reconciliación** | Media | Implementar validaciones de integridad |
-| **Asistencia sin justificaciones tipificadas** | Baja | Documentar limitación |
-| **Historial incompleto de cambios** | Media | Usar AuditLog para tracking |
+| Riesgo                                         | Severidad | Mitigación                             |
+| ---------------------------------------------- | --------- | -------------------------------------- |
+| **Inconsistencia en StudentSubjectStatus**     | Alta      | Validar datos antes de reportar        |
+| **Datos financieros sin reconciliación**       | Media     | Implementar validaciones de integridad |
+| **Asistencia sin justificaciones tipificadas** | Baja      | Documentar limitación                  |
+| **Historial incompleto de cambios**            | Media     | Usar AuditLog para tracking            |
 
 ---
 
@@ -384,23 +390,23 @@
 ### 10.1 Nuevas entidades de permisos propuestas
 
 ```typescript
-'ACADEMIC_REPORT'      // Reportes académicos
-'ATTENDANCE_REPORT'    // Reportes de asistencia
-'INSTITUTIONAL_REPORT' // Reportes institucionales
-'REPORTS_EXPORT'       // Exportación de reportes
+'ACADEMIC_REPORT'; // Reportes académicos
+'ATTENDANCE_REPORT'; // Reportes de asistencia
+'INSTITUTIONAL_REPORT'; // Reportes institucionales
+'REPORTS_EXPORT'; // Exportación de reportes
 ```
 
 ### 10.2 Permisos recomendados por rol
 
-| Rol | ACADEMIC_REPORT | ATTENDANCE_REPORT | INSTITUTIONAL_REPORT | REPORTS_EXPORT |
-|-----|-----------------|------------------|---------------------|----------------|
-| **SUPERADMIN** | CRUD | CRUD | CRUD | CRUD |
-| **DIRECTOR** | R | R | R | R |
-| **SECRETARIA** | R | R | - | R |
-| **FINANZAS** | - | - | R | R |
-| **DOCENTE** | R (sus materias) | R (sus materias) | - | R (sus materias) |
-| **PRECEPTOR** | R (sus alumnos) | R (sus alumnos) | - | R (sus alumnos) |
-| **ALUMNO** | R (sus datos) | R (sus datos) | - | R (sus datos) |
+| Rol            | ACADEMIC_REPORT  | ATTENDANCE_REPORT | INSTITUTIONAL_REPORT | REPORTS_EXPORT   |
+| -------------- | ---------------- | ----------------- | -------------------- | ---------------- |
+| **SUPERADMIN** | CRUD             | CRUD              | CRUD                 | CRUD             |
+| **DIRECTOR**   | R                | R                 | R                    | R                |
+| **SECRETARIA** | R                | R                 | -                    | R                |
+| **FINANZAS**   | -                | -                 | R                    | R                |
+| **DOCENTE**    | R (sus materias) | R (sus materias)  | -                    | R (sus materias) |
+| **PRECEPTOR**  | R (sus alumnos)  | R (sus alumnos)   | -                    | R (sus alumnos)  |
+| **ALUMNO**     | R (sus datos)    | R (sus datos)     | -                    | R (sus datos)    |
 
 ### 10.3 Reglas de ownership
 
@@ -489,6 +495,7 @@ src/routes/(app)/reportes/
 **Objetivo:** Consolidar y expandir servicios de reportes existentes
 
 **Tareas:**
+
 - Expandir `academic-report.service.ts` con filtros (carrera, período, año)
 - Expandir `financial-report.service.ts` con filtros avanzados
 - Crear `attendance-report.service.ts` con reportes de asistencia
@@ -501,6 +508,7 @@ src/routes/(app)/reportes/
 - Sin cambios de schema
 
 **Entregables:**
+
 - Servicios expandidos y nuevos
 - Scripts de prueba
 - Documentación de APIs
@@ -510,6 +518,7 @@ src/routes/(app)/reportes/
 **Objetivo:** Crear endpoints para cada tipo de reporte con validación de permisos
 
 **Tareas:**
+
 - Crear endpoints para reportes académicos con filtros
 - Crear endpoints para reportes financieros con filtros
 - Crear endpoints para reportes de asistencia
@@ -521,6 +530,7 @@ src/routes/(app)/reportes/
 - Rate limiting para endpoints pesados
 
 **Entregables:**
+
 - Endpoints protegidos
 - Validación de permisos
 - Auditoría
@@ -531,6 +541,7 @@ src/routes/(app)/reportes/
 **Objetivo:** Crear interfaz unificada de reportes con filtros y visualizaciones
 
 **Tareas:**
+
 - Dashboard general de reportes (expandir `/reportes`)
 - UI para reportes académicos con filtros (carrera, período, año)
 - UI para reportes financieros con filtros (período, método, estado)
@@ -543,6 +554,7 @@ src/routes/(app)/reportes/
 - Responsive design
 
 **Entregables:**
+
 - UI de reportes
 - Componentes reutilizables
 - Documentación de UI
@@ -552,6 +564,7 @@ src/routes/(app)/reportes/
 **Objetivo:** Implementar exportación profesional con templates
 
 **Tareas:**
+
 - Consolidar exportación CSV en `csv-export.service.ts`
 - Crear `pdf-export.service.ts` con templates profesionales
 - Crear `excel-export.service.ts` con formato avanzado
@@ -562,6 +575,7 @@ src/routes/(app)/reportes/
 - Sanitización de datos sensibles
 
 **Entregables:**
+
 - Servicios de exportación consolidados
 - Templates profesionales
 - Validación de permisos
@@ -572,6 +586,7 @@ src/routes/(app)/reportes/
 **Objetivo:** Crear dashboard de KPIs institucionales con visualizaciones
 
 **Tareas:**
+
 - Dashboard principal con KPIs clave (alumnos, deuda, asistencia, documentos)
 - Gráficos de evolución temporal (matrícula, ingresos, asistencia)
 - Tarjetas de alertas (morosidad, baja asistencia, bloqueos)
@@ -581,6 +596,7 @@ src/routes/(app)/reportes/
 - Exportación de dashboard
 
 **Entregables:**
+
 - Dashboard institucional
 - Visualizaciones
 - Documentación
@@ -590,6 +606,7 @@ src/routes/(app)/reportes/
 **Objetivo:** Optimizar performance, validar seguridad, documentar
 
 **Tareas:**
+
 - Análisis de performance de queries pesadas
 - Agregar índices si es necesario
 - Optimizar agregaciones complejas
@@ -600,6 +617,7 @@ src/routes/(app)/reportes/
 - Guía de uso para administradores
 
 **Entregables:**
+
 - Optimizaciones de performance
 - Validación de seguridad
 - Documentación final
@@ -612,6 +630,7 @@ src/routes/(app)/reportes/
 ### 13.1 Estado actual
 
 **Fortalezas:**
+
 - ✅ Schema robusto con modelos completos para académico, financiero, asistencia
 - ✅ Servicios de reportes financieros ya implementados y funcionales
 - ✅ Sistema de permisos granulares robusto
@@ -620,6 +639,7 @@ src/routes/(app)/reportes/
 - ✅ Módulos financieros y de gestión documental cerrados
 
 **Debilidades:**
+
 - ❌ Reportes académicos limitados sin filtros
 - ❌ No existe servicio de reportes de asistencia
 - ❌ No existe dashboard de KPIs institucionales

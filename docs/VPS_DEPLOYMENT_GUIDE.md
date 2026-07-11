@@ -3,6 +3,7 @@
 ## Prerequisites
 
 **VPS Requirements:**
+
 - Ubuntu 20.04 LTS o superior (o Debian similar)
 - Mínimo 2GB RAM (recomendado 4GB)
 - Mínimo 20GB disco (recomendado 40GB)
@@ -11,6 +12,7 @@
 - Node.js 18 LTS o superior
 
 **Software requerido:**
+
 - Git
 - Node.js + npm
 - PostgreSQL
@@ -208,23 +210,25 @@ Editar `ecosystem.config.js`:
 
 ```javascript
 module.exports = {
-  apps: [{
-    name: 'sistema-freire',
-    script: 'node',
-    args: 'build/index.js',
-    cwd: '/home/sistema/sistema-freire',
-    env: {
-      NODE_ENV: 'production',
-      PORT: 3000
-    },
-    instances: 1,
-    autorestart: true,
-    watch: false,
-    max_memory_restart: '1G',
-    error_file: '/home/sistema/sistema-freire/logs/pm2-error.log',
-    out_file: '/home/sistema/sistema-freire/logs/pm2-out.log',
-    log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
-  }]
+	apps: [
+		{
+			name: 'sistema-freire',
+			script: 'node',
+			args: 'build/index.js',
+			cwd: '/home/sistema/sistema-freire',
+			env: {
+				NODE_ENV: 'production',
+				PORT: 3000
+			},
+			instances: 1,
+			autorestart: true,
+			watch: false,
+			max_memory_restart: '1G',
+			error_file: '/home/sistema/sistema-freire/logs/pm2-error.log',
+			out_file: '/home/sistema/sistema-freire/logs/pm2-out.log',
+			log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+		}
+	]
 };
 ```
 
@@ -531,6 +535,7 @@ sudo systemctl start fail2ban
 ## Contacto de Soporte
 
 Para problemas de despliegue, revisar:
+
 - Logs de PM2: `/home/sistema/sistema-freire/logs/`
 - Logs de Nginx: `/var/log/nginx/`
 - Logs de aplicación: Ver PM2 logs

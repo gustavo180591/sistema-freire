@@ -3,6 +3,7 @@
 ## Resumen
 
 El módulo de exámenes y calificaciones ha sido completamente refactorizado con:
+
 - Servicio de dominio `EvaluationService` centralizando toda la lógica de negocio
 - Actions de SvelteKit delegando completamente al servicio
 - Auditoría real implementada con metadata oldValue/newValue
@@ -23,6 +24,7 @@ Este documento describe la estrategia de migración para bases de datos nuevas y
 La migración `refactor_exam_and_grade_module` agrega:
 
 ### Enums
+
 - `EvaluationType`: PARCIAL, TRABAJO_PRACTICO, INTEGRADOR, RECUPERATORIO, MESA_EXAMEN
 - `GradeStatus`: PRESENT, ABSENT, EXCUSED
 - `CourseStatus`: IN_PROGRESS, APPROVED, FAILED, DROPPED
@@ -30,6 +32,7 @@ La migración `refactor_exam_and_grade_module` agrega:
 - `AcademicStatus`: EN_COURSE, APPROVED, FAILED, DROPPED
 
 ### Tabla `evaluations`
+
 - Columnas nuevas: `evaluationDate`, `minPassingScore`, `weight`, `parentEvaluationId`, `createdByUserId`, `isClosed`, `closedAt`, `closedByUserId`, `closedReason`, `reopenedAt`, `reopenedByUserId`, `reopenReason`, `commissionId`
 - Migración de datos: `date` → `evaluationDate`, `createdBy` → `createdByUserId`
 - Eliminación de columnas obsoletas: `date`, `createdBy`
@@ -37,6 +40,7 @@ La migración `refactor_exam_and_grade_module` agrega:
 - Foreign keys: `subjectId` → subjects, `createdByUserId` → users, `parentEvaluationId` → evaluations (self), `closedByUserId` → users, `reopenedByUserId` → users
 
 ### Tabla `grades`
+
 - Columnas nuevas: `evaluationId`, `status`, `observations`, `createdAt`, `updatedAt`
 - Migración de datos: `gradedAt` → `createdAt`
 - Eliminación de columnas obsoletas: `gradeType`, `gradedAt`
@@ -45,6 +49,7 @@ La migración `refactor_exam_and_grade_module` agrega:
 - Foreign keys: `evaluationId` → evaluations, `createdByUserId` → users
 
 ### Tabla `student_subject_status`
+
 - Columnas nuevas: `courseAverage`, `courseStatus`, `finalExamScore`, `finalExamStatus`, `academicStatus`
 - Índices: `studentId, courseStatus`, `studentId, academicStatus`
 
@@ -60,6 +65,7 @@ npx prisma migrate deploy
 Esto aplicará las 26 migraciones secuencialmente y creará el schema completo del módulo de exámenes y calificaciones.
 
 **Verificación:**
+
 ```bash
 # Verificar estado de migraciones
 npx prisma migrate status
@@ -118,11 +124,13 @@ diff prisma/schema.prisma prisma/schema.prisma
 **RESUELTO:** La foreign key `evaluations.commissionId → subject_commissions.id` fue creada en la migración `20260609170000_create_subject_commissions_and_sync_schema`.
 
 **Confirmación:**
+
 - Constraint: `evaluations_commissionId_fkey`
 - Referencia: `subject_commissions.id`
 - ON DELETE: `RESTRICT` (coincide con schema.prisma)
 
 La segunda migración incremental también agrega:
+
 - Tabla `subject_commissions` completa con todas sus foreign keys
 - Tabla `subject_enrollments` con todas sus foreign keys
 - Nuevas variantes de enums (REGULAR, LIBRE, APROBADO, PROMOCIONADO, etc.)
@@ -132,9 +140,11 @@ La segunda migración incremental también agrega:
 ## Arquitectura del Módulo
 
 ### Servicio de Dominio EvaluationService
+
 **Archivo:** `src/lib/server/academic/evaluation-service.ts`
 
 **Responsabilidades:**
+
 - Centralizar toda la lógica de negocio del módulo de evaluaciones
 - Validar permisos y reglas de negocio
 - Gestionar transacciones atómicas
@@ -142,6 +152,7 @@ La segunda migración incremental también agrega:
 - Recalcular situación académica de alumnos
 
 **Métodos operativos:**
+
 - `createEvaluation()` - Creación con validaciones de materia, comisión, docente y recuperatorios
 - `loadGradesBatch()` - Carga masiva con transacción y recálculo
 - `editGrade()` - Edición con validaciones y auditoría
@@ -150,6 +161,7 @@ La segunda migración incremental también agrega:
 - `reopenEvaluation()` - Reapertura con validaciones y auditoría
 
 **Métodos de validación:**
+
 - `canCloseEvaluation()` - Valida permisos de cierre
 - `canReopenEvaluation()` - Valida permisos de reapertura
 - `canLoadGrades()` - Valida permisos de carga
@@ -157,11 +169,14 @@ La segunda migración incremental también agrega:
 - `canDeleteGrade()` - Valida permisos de eliminación
 
 ### Actions de SvelteKit
+
 **Archivos:**
+
 - `src/routes/(app)/docente/evaluaciones/+page.server.ts`
 - `src/routes/(app)/docente/calificaciones/+page.server.ts`
 
 **Responsabilidades:**
+
 - Lectura de `FormData`
 - Validación de formato básico
 - Obtención de `locals.user`

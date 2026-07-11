@@ -6,7 +6,7 @@
 
 ## 1. Estado Actual
 
-### 1.1 Estado de _prisma_migrations
+### 1.1 Estado de \_prisma_migrations
 
 ```
 ID: 82e94d83-8f3f-418d-bb08-db0d303e4ab8
@@ -23,6 +23,7 @@ Logs: Error completo de migración fallida
 ### 1.2 Enums Huérfanos Detectados
 
 **Enums creados parcialmente en la base real:**
+
 - `PaymentAgreementChargeRelationType`: [REFINANCED, BLOCKED, ASSOCIATED]
 - `PaymentAgreementEventType`: [CREATED, ACTIVATED, MODIFIED, CANCELLED, REFINANCED, INSTALLMENT_PAID, INSTALLMENT_OVERDUE, DEFAULTED, STATUS_CHANGED, BLOCK_EXCEPTION, BLOCK_REACTIVATED]
 - `PaymentAgreementInstallmentStatus`: [PENDING, PARTIAL, PAID, OVERDUE, CANCELLED, WAIVED]
@@ -46,6 +47,7 @@ DROP INDEX "student_subject_status_studentId_promoted_idx";
 ```
 
 **Error:**
+
 ```
 ERROR: index "student_subject_status_studentId_promoted_idx" does not exist
 Database error code: 42704
@@ -54,6 +56,7 @@ Database error code: 42704
 ### 2.2 Cambios Académicos que NO Deberían Estar en la Migración de Convenios
 
 **Líneas 39-70: ALTER TYPE AcademicStatus**
+
 ```sql
 -- AlterEnum
 BEGIN;
@@ -68,6 +71,7 @@ COMMIT;
 ```
 
 **Líneas 50-59: ALTER TYPE CourseStatus**
+
 ```sql
 -- AlterEnum
 BEGIN;
@@ -82,6 +86,7 @@ COMMIT;
 ```
 
 **Líneas 61-70: ALTER TYPE FinalExamStatus**
+
 ```sql
 -- AlterEnum
 BEGIN;
@@ -96,12 +101,14 @@ COMMIT;
 ```
 
 **Línea 99: DROP INDEX académico**
+
 ```sql
 -- DropIndex
 DROP INDEX "student_subject_status_studentId_promoted_idx";
 ```
 
 **Líneas 84-87: DROP CONSTRAINTs en evaluations**
+
 ```sql
 -- DropForeignKey
 ALTER TABLE "evaluations" DROP CONSTRAINT "evaluations_parentEvaluationId_fkey";
@@ -111,24 +118,28 @@ ALTER TABLE "evaluations" DROP CONSTRAINT "evaluations_subjectId_fkey";
 ```
 
 **Líneas 90: DROP CONSTRAINT en grades**
+
 ```sql
 -- DropForeignKey
 ALTER TABLE "grades" DROP CONSTRAINT "grades_evaluationId_fkey";
 ```
 
 **Líneas 93: DROP CONSTRAINT en student_charges**
+
 ```sql
 -- DropForeignKey
 ALTER TABLE "student_charges" DROP CONSTRAINT "student_charges_academicTermId_fkey";
 ```
 
 **Líneas 96: DROP CONSTRAINT en subject_enrollments**
+
 ```sql
 -- DropForeignKey
 ALTER TABLE "subject_enrollments" DROP CONSTRAINT "subject_enrollments_careerId_fkey";
 ```
 
 **Líneas 106-110: ALTER TABLE evaluations**
+
 ```sql
 -- AlterTable
 ALTER TABLE "evaluations" DROP COLUMN "type",
@@ -139,12 +150,14 @@ ALTER COLUMN "weight" SET DATA TYPE DECIMAL(6,2);
 ```
 
 **Líneas 124: DROP COLUMN en grades**
+
 ```sql
 -- AlterTable
 ALTER TABLE "grades" DROP COLUMN "subjectId";
 ```
 
 **Líneas 143-144: ALTER TABLE student_subject_status**
+
 ```sql
 -- AlterTable
 ALTER TABLE "student_subject_status" ALTER COLUMN "courseAverage" SET DATA TYPE DECIMAL(5,2),
@@ -152,6 +165,7 @@ ALTER COLUMN "finalExamScore" SET DATA TYPE DECIMAL(5,2);
 ```
 
 **Líneas 147-158: ALTER TABLE subject_enrollments**
+
 ```sql
 -- AlterTable
 ALTER TABLE "subject_enrollments" ADD COLUMN     "cancellationReason" TEXT,
@@ -169,6 +183,7 @@ ADD COLUMN     "status" "EnrollmentStatus" NOT NULL DEFAULT 'PENDING';
 ```
 
 **Líneas 332-338: CREATE INDEX en subject_enrollments**
+
 ```sql
 -- CreateIndex
 CREATE INDEX "subject_enrollments_studentId_status_idx" ON "subject_enrollments"("studentId", "status");
@@ -181,6 +196,7 @@ CREATE INDEX "subject_enrollments_academicTermId_status_idx" ON "subject_enrollm
 ```
 
 **Líneas 341, 344, 356, 359, 362: ADD CONSTRAINTs académicas**
+
 ```sql
 -- AddForeignKey
 ALTER TABLE "grades" ADD CONSTRAINT "grades_evaluationId_fkey" FOREIGN KEY ("evaluationId") REFERENCES "evaluations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -201,6 +217,7 @@ ALTER TABLE "subject_enrollments" ADD CONSTRAINT "subject_enrollments_careerId_f
 ### 2.3 SQL que Corresponde Realmente a Convenios de Pago
 
 **Líneas 24-37: CREATE ENUMs de Convenios**
+
 ```sql
 -- CreateEnum
 CREATE TYPE "PaymentAgreementStatus" AS ENUM ('DRAFT', 'ACTIVE', 'COMPLETED', 'OVERDUE', 'DEFAULTED', 'CANCELLED', 'REFINANCED');
@@ -219,12 +236,14 @@ CREATE TYPE "FinancialBlockExceptionSource" AS ENUM ('MANUAL', 'PAYMENT_AGREEMEN
 ```
 
 **Líneas 80-81: ALTER TYPE FinancialMovementType**
+
 ```sql
 ALTER TYPE "FinancialMovementType" ADD VALUE 'PAYMENT_AGREEMENT';
 ALTER TYPE "FinancialMovementType" ADD VALUE 'AGREEMENT_INSTALLMENT';
 ```
 
 **Líneas 102-103: ALTER TABLE discounts**
+
 ```sql
 -- AlterTable
 ALTER TABLE "discounts" DROP COLUMN "discountType",
@@ -232,6 +251,7 @@ ADD COLUMN     "discountType" "DiscountType" NOT NULL;
 ```
 
 **Líneas 113-116: ALTER TABLE financial_blocks**
+
 ```sql
 -- AlterTable
 ALTER TABLE "financial_blocks" ADD COLUMN     "exceptionAgreementId" TEXT,
@@ -241,6 +261,7 @@ ADD COLUMN     "blockType" "FinancialBlockType" NOT NULL;
 ```
 
 **Líneas 119-121: ALTER TABLE financial_movements**
+
 ```sql
 -- AlterTable
 ALTER TABLE "financial_movements" DROP COLUMN "movementType",
@@ -249,6 +270,7 @@ ALTER COLUMN "entityId" SET NOT NULL;
 ```
 
 **Líneas 127-128: ALTER TABLE late_fees**
+
 ```sql
 -- AlterTable
 ALTER TABLE "late_fees" DROP COLUMN "feeType",
@@ -256,12 +278,14 @@ ADD COLUMN     "feeType" "LateFeeType" NOT NULL;
 ```
 
 **Líneas 131: ALTER TABLE payment_allocations**
+
 ```sql
 -- AlterTable
 ALTER TABLE "payment_allocations" ADD COLUMN     "installmentId" TEXT;
 ```
 
 **Líneas 134-140: ALTER TABLE receipts**
+
 ```sql
 -- AlterTable
 ALTER TABLE "receipts" ADD COLUMN     "agreementId" TEXT,
@@ -274,6 +298,7 @@ ADD COLUMN     "status" "ReceiptStatus" NOT NULL DEFAULT 'ISSUED';
 ```
 
 **Líneas 160-251: CREATE TABLEs de Convenios**
+
 ```sql
 -- CreateTable
 CREATE TABLE "payment_agreements" (...);
@@ -292,11 +317,13 @@ CREATE TABLE "payment_agreement_numbers" (...);
 ```
 
 **Líneas 253-330: CREATE INDEXs de Convenios**
+
 ```sql
 -- CreateIndex (varios índices de payment_agreements, payment_agreement_installments, payment_agreement_charge_relations, payment_agreement_events, financial_blocks, financial_movements, payment_allocations, receipts)
 ```
 
 **Líneas 347, 350, 353, 365-374: ADD CONSTRAINTs de Convenios**
+
 ```sql
 -- AddForeignKey
 ALTER TABLE "payment_allocations" ADD CONSTRAINT "payment_allocations_installmentId_fkey" FOREIGN KEY ("installmentId") REFERENCES "payment_agreement_installments"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -319,6 +346,7 @@ ALTER TABLE "financial_blocks" ADD CONSTRAINT "financial_blocks_exceptionAgreeme
 **Crear una nueva migración limpia de Convenios de Pago que contenga solo cambios de Convenios.**
 
 **Razón:**
+
 - La migración existente está contaminada con cambios académicos
 - Editar una migración ya commiteada es riesgoso y puede causar problemas en otras bases
 - Es más seguro crear una nueva migración limpia y eliminar la contaminada
@@ -385,7 +413,7 @@ npx prisma migrate resolve --rolled-back 20260620164627_add_payment_agreements_p
 
 ### 4.3 Confirmación de applied_steps_count = 0
 
-**Confirmado:** `applied_steps_count = 0` según diagnóstico de _prisma_migrations.
+**Confirmado:** `applied_steps_count = 0` según diagnóstico de \_prisma_migrations.
 
 ### 4.4 Confirmación de Que No Hubo Tablas de Convenios Creadas
 
@@ -394,6 +422,7 @@ npx prisma migrate resolve --rolled-back 20260620164627_add_payment_agreements_p
 ### 4.5 Confirmación de Qué Objetos Parciales Sí Quedaron
 
 **Confirmado:** Los 4 enums de Convenios quedaron huérfanos en la base real:
+
 - PaymentAgreementChargeRelationType
 - PaymentAgreementEventType
 - PaymentAgreementInstallmentStatus
@@ -446,32 +475,38 @@ DROP TYPE IF EXISTS "PaymentAgreementStatus";
 **Pasos:**
 
 1. Limpiar base temporal `sistema_freire_migration_test`:
+
    ```bash
    # No se puede hacer DROP DATABASE sin psql, pero se puede usar migrate reset si está autorizado
    # Por ahora, asumimos que la base temporal ya está en estado limpio
    ```
 
 2. Aplicar todas las migraciones previas:
+
    ```bash
    DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire_migration_test" npx prisma migrate deploy
    ```
 
 3. Crear migración limpia de Convenios:
+
    ```bash
    DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire_migration_test" npx prisma migrate dev --name add_payment_agreements_phase1_clean
    ```
 
 4. Validar que la migración limpia no contenga cambios académicos:
+
    ```bash
    cat prisma/migrations/20260620XXXXXX_add_payment_agreements_phase1_clean/migration.sql
    ```
 
 5. Aplicar migración limpia:
+
    ```bash
    DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire_migration_test" npx prisma migrate deploy
    ```
 
 6. Ejecutar script de prueba de Convenios:
+
    ```bash
    DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire_migration_test" npx tsx scripts/test-payment-agreements-schema.ts
    ```
@@ -581,6 +616,7 @@ git diff --stat
 ### 10.2 Por Qué
 
 **Razones:**
+
 1. La migración existente está contaminada con cambios académicos
 2. No se puede aplicar directamente sin resolver el drift académico
 3. Editar una migración ya commiteada es riesgoso
@@ -604,12 +640,14 @@ git diff --stat
 ### 10.4 Validaciones que Deben Pasar Antes y Después
 
 **Validaciones antes:**
+
 - ✅ npx prisma validate
 - ✅ npx prisma migrate status (confirmar solo migración fallida pendiente)
 - ✅ Verificar dependencias de enums huérfanos
 - ✅ Validar migración limpia en base temporal
 
 **Validaciones después:**
+
 - ✅ npx prisma format
 - ✅ npx prisma validate
 - ✅ npx prisma generate
@@ -627,6 +665,7 @@ git diff --stat
 **Contenido completo:** 381 líneas de SQL
 
 **Resumen:**
+
 - Líneas 1-23: Warnings de Prisma
 - Líneas 24-37: CREATE ENUMs de Convenios (✅ correcto)
 - Líneas 39-70: ALTER TYPE AcademicStatus (❌ académico, NO debería estar)
@@ -647,6 +686,7 @@ git diff --stat
 **Contenido propuesto:** Solo SQL de Convenios de Pago (líneas 24-37, 80-81, 102-103, 113-116, 119-121, 127-128, 131, 134-140, 160-251, 253-330, 347, 350, 353, 365-374 de la migración contaminada)
 
 **Cambios financieros incluidos:**
+
 - ALTER TABLE discounts (discountType)
 - ALTER TABLE financial_blocks (exceptionAgreementId, exceptionSource, blockType)
 - ALTER TABLE financial_movements (movementType, entityId)
@@ -654,6 +694,7 @@ git diff --stat
 - ALTER TABLE receipts (paymentMethod, status)
 
 **Cambios académicos excluidos:**
+
 - Todos los cambios en AcademicStatus, CourseStatus, FinalExamStatus
 - Todos los cambios en evaluations, grades, student_subject_status, subject_enrollments
 - Todos los DROP CONSTRAINTs y DROP INDEXs académicos

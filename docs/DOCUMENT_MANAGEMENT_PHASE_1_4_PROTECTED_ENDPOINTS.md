@@ -18,6 +18,7 @@ Esta fase implementa los siguientes endpoints server-side:
 ## Archivos Creados
 
 ### 1. Helper de Permisos
+
 **Archivo:** `src/lib/server/document-management/document-permissions.ts`
 
 Funciones de validación de permisos específicas para documentos:
@@ -30,6 +31,7 @@ Funciones de validación de permisos específicas para documentos:
 - `canListDocuments()` / `requireListDocumentsPermission()` - Verificar permiso de listado
 
 **Reglas de acceso:**
+
 - `SUPERADMIN`: acceso total a todas las operaciones
 - Otros roles: requieren permiso granular `DOCUMENT` + verificación de ownership según visibilidad
 - `PUBLIC`: cualquier usuario con permiso de lectura puede acceder
@@ -37,6 +39,7 @@ Funciones de validación de permisos específicas para documentos:
 - `INTERNAL`: tratado como privado por ahora
 
 ### 2. API Helpers
+
 **Archivo:** `src/lib/server/document-management/document-api-helpers.ts`
 
 Funciones que encapsulan la lógica de los endpoints para facilitar testing:
@@ -49,14 +52,17 @@ Funciones que encapsulan la lógica de los endpoints para facilitar testing:
 - `downloadDocumentApi()` - Descargar archivo
 
 **Mapper de respuesta segura:**
+
 - `toSafeDocument()` - Convierte `Document` a `SafeDocumentResponse` excluyendo rutas absolutas
 
 ### 3. Endpoints
 
 #### POST /api/documents
+
 **Archivo:** `src/routes/api/documents/+server.ts`
 
 **Request:**
+
 - Method: `POST`
 - Content-Type: `multipart/form-data`
 - Body:
@@ -69,6 +75,7 @@ Funciones que encapsulan la lógica de los endpoints para facilitar testing:
   - `metadata`: string JSON (opcional)
 
 **Response:**
+
 ```json
 {
   "id": "string",
@@ -93,15 +100,18 @@ Funciones que encapsulan la lógica de los endpoints para facilitar testing:
 ```
 
 **Comportamiento:**
+
 - Requiere autenticación (401 si no hay sesión)
 - Requiere permiso `DOCUMENT:create` (403 si no tiene permiso)
 - Usa `DocumentManagementService.createDocument()` que registra `UPLOAD` automáticamente
 - No expone rutas absolutas del filesystem
 
 #### GET /api/documents
+
 **Archivo:** `src/routes/api/documents/+server.ts`
 
 **Request:**
+
 - Method: `GET`
 - Query params (todos opcionales):
   - `ownerType`: DocumentOwnerType
@@ -116,6 +126,7 @@ Funciones que encapsulan la lógica de los endpoints para facilitar testing:
   - `offset`: number
 
 **Response:**
+
 ```json
 [
   {
@@ -144,6 +155,7 @@ Funciones que encapsulan la lógica de los endpoints para facilitar testing:
 ```
 
 **Comportamiento:**
+
 - Requiere autenticación (401 si no hay sesión)
 - Requiere permiso `DOCUMENT:read` (403 si no tiene permiso)
 - Por defecto excluye documentos eliminados
@@ -151,13 +163,16 @@ Funciones que encapsulan la lógica de los endpoints para facilitar testing:
 - No expone rutas absolutas
 
 #### GET /api/documents/[id]
+
 **Archivo:** `src/routes/api/documents/[id]/+server.ts`
 
 **Request:**
+
 - Method: `GET`
 - Params: `id` (string)
 
 **Response:**
+
 ```json
 {
   "id": "string",
@@ -184,19 +199,23 @@ Funciones que encapsulan la lógica de los endpoints para facilitar testing:
 ```
 
 **Comportamiento:**
+
 - Requiere autenticación (401 si no hay sesión)
 - Requiere permiso de lectura según ownership y visibilidad (403 si no tiene permiso)
 - Registra acción `VIEW` en `DocumentAccessLog`
 - No expone rutas absolutas
 
 #### DELETE /api/documents/[id]
+
 **Archivo:** `src/routes/api/documents/[id]/+server.ts`
 
 **Request:**
+
 - Method: `DELETE`
 - Params: `id` (string)
 
 **Response:**
+
 ```json
 {
   "id": "string",
@@ -223,6 +242,7 @@ Funciones que encapsulan la lógica de los endpoints para facilitar testing:
 ```
 
 **Comportamiento:**
+
 - Requiere autenticación (401 si no hay sesión)
 - Requiere permiso de eliminación según ownership (403 si no tiene permiso)
 - Usa `DocumentManagementService.softDeleteDocument()` que:
@@ -234,13 +254,16 @@ Funciones que encapsulan la lógica de los endpoints para facilitar testing:
 - No expone rutas absolutas
 
 #### POST /api/documents/[id]/restore
+
 **Archivo:** `src/routes/api/documents/[id]/restore/+server.ts`
 
 **Request:**
+
 - Method: `POST`
 - Params: `id` (string)
 
 **Response:**
+
 ```json
 {
   "id": "string",
@@ -267,6 +290,7 @@ Funciones que encapsulan la lógica de los endpoints para facilitar testing:
 ```
 
 **Comportamiento:**
+
 - Requiere autenticación (401 si no hay sesión)
 - Requiere permiso de restauración según ownership (403 si no tiene permiso)
 - Usa `DocumentManagementService.restoreDocument()` que:
@@ -276,13 +300,16 @@ Funciones que encapsulan la lógica de los endpoints para facilitar testing:
 - No expone rutas absolutas
 
 #### GET /api/documents/[id]/download
+
 **Archivo:** `src/routes/api/documents/[id]/download/+server.ts`
 
 **Request:**
+
 - Method: `GET`
 - Params: `id` (string)
 
 **Response:**
+
 - Content-Type: MIME type del documento
 - Content-Length: tamaño en bytes
 - Content-Disposition: `attachment; filename="..."` (filename codificado)
@@ -291,6 +318,7 @@ Funciones que encapsulan la lógica de los endpoints para facilitar testing:
 - Body: contenido binario del archivo
 
 **Comportamiento:**
+
 - Requiere autenticación (401 si no hay sesión)
 - Requiere permiso de lectura según ownership y visibilidad (403 si no tiene permiso)
 - Verifica que el documento no esté eliminado (410 si está eliminado)
@@ -304,17 +332,23 @@ Funciones que encapsulan la lógica de los endpoints para facilitar testing:
 ## Seguridad
 
 ### Validación de Sesión
+
 Todos los endpoints verifican `locals.user`:
+
 - Si no hay usuario: retorna `401 No autenticado`
 
 ### Validación de Permisos
+
 Usa el sistema de permisos granular existente:
+
 - `permissions-granular.ts` define permisos por entidad y acción
 - `document-permissions.ts` agrega lógica específica de ownership y visibilidad
 - Si no hay permiso: retorna `403 No tienes permiso...`
 
 ### Respuestas Seguras
+
 **NO se expone:**
+
 - `absolutePath`
 - `filePath`
 - `resolvedPath`
@@ -322,6 +356,7 @@ Usa el sistema de permisos granular existente:
 - Cualquier ruta absoluta del filesystem
 
 **SÍ se expone:**
+
 - `id`, `originalName`, `storedName`
 - `mimeType`, `extension`, `sizeBytes`, `sha256Hash`
 - `ownerType`, `ownerId`, `category`, `subType`
@@ -331,6 +366,7 @@ Usa el sistema de permisos granular existente:
 - `storageKey` (solo si es necesario para administración interna, nunca como URL pública)
 
 ### Descarga Controlada
+
 - El endpoint de descarga sirve el archivo directamente
 - No usa URLs públicas ni redirects
 - Headers seguros para evitar MIME sniffing
@@ -340,6 +376,7 @@ Usa el sistema de permisos granular existente:
 ## Auditoría
 
 ### Acciones Registradas
+
 - `UPLOAD`: registrado automáticamente al crear documento
 - `VIEW`: registrado al consultar detalle
 - `DOWNLOAD`: registrado al descargar archivo
@@ -347,6 +384,7 @@ Usa el sistema de permisos granular existente:
 - `RESTORE`: registrado al restaurar
 
 ### Metadata de Log
+
 - `documentId`: ID del documento
 - `userId`: ID del usuario que realizó la acción
 - `action`: acción realizada
@@ -357,9 +395,11 @@ Usa el sistema de permisos granular existente:
 ## Tests
 
 ### Script de Prueba
+
 **Archivo:** `scripts/test-document-management-endpoints.ts`
 
 **Tests implementados:**
+
 1. Usuario no autenticado recibe 401
 2. Usuario sin permiso recibe 403
 3. Usuario con permiso puede subir documento
@@ -382,6 +422,7 @@ Usa el sistema de permisos granular existente:
 20. No escritura en `static/uploads`
 
 **Resultado:**
+
 ```
 🎉 Document Management Endpoints Test Suite: PASSED
 ```
@@ -389,21 +430,25 @@ Usa el sistema de permisos granular existente:
 ## Validaciones
 
 ### Validaciones de Schema
+
 - `npx prisma format` - Formateo de schema
 - `npx prisma validate` - Validación de schema
 - `npx prisma generate` - Generación de cliente Prisma
 - `npx prisma migrate status` - Estado de migraciones
 
 ### Validaciones de Código
+
 - `npm run check` - Chequeo de TypeScript
 - `npm run build` - Build del proyecto
 
 ### Validaciones de Tests
+
 - `npx tsx scripts/test-document-management-storage.ts` - Test de storage (18 tests)
 - `npx tsx scripts/test-document-management-service.ts` - Test de servicio (19 tests)
 - `npx tsx scripts/test-document-management-endpoints.ts` - Test de endpoints (19 tests)
 
 ### Validaciones de Calidad
+
 - `git status --short` - Estado de working tree
 - `git diff --name-status` - Archivos modificados
 - `git diff --stat` - Estadísticas de cambios
@@ -414,6 +459,7 @@ Usa el sistema de permisos granular existente:
 ## Restricciones
 
 ### NO hacer
+
 - No usar `$queryRaw` o `$executeRaw`
 - No usar `any`, `as any`, `@ts-ignore`, `@ts-expect-error`
 - No usar `db push`
@@ -429,6 +475,7 @@ Usa el sistema de permisos granular existente:
 - No migrar archivos existentes
 
 ### SÍ hacer
+
 - Usar `DocumentManagementService` para operaciones
 - Usar `DocumentStorageService` para archivos físicos
 - Usar sistema de permisos granular existente

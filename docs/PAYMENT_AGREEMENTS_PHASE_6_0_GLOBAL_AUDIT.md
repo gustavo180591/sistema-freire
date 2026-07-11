@@ -55,6 +55,7 @@ scripts/
 ### Models Reviewed
 
 #### PaymentAgreement
+
 - ✅ **Proper Decimal usage** for all financial fields (12,2 precision)
 - ✅ **Comprehensive audit fields** (createdBy, activatedBy, cancelledBy with names)
 - ✅ **Status enum** (DRAFT, ACTIVE, COMPLETED, DEFAULTED, CANCELLED)
@@ -64,6 +65,7 @@ scripts/
 - ✅ **Metadata field** for extensibility
 
 #### PaymentAgreementInstallment
+
 - ✅ **Decimal precision** for amounts
 - ✅ **Status enum** (PENDING, PAID, OVERDUE, CANCELLED, WAIVED)
 - ✅ **Unique constraint** on (agreementId, installmentNumber)
@@ -72,6 +74,7 @@ scripts/
 - ✅ **overdueSince field** for tracking when installment became overdue
 
 #### PaymentAgreementChargeRelation
+
 - ✅ **Snapshot pattern** - stores original charge state (non-destructive)
 - ✅ **Amount tracking** (originalChargeAmount, originalChargePaidAmount, amountIncluded)
 - ✅ **Status tracking** (originalChargeStatus, newStatus)
@@ -80,6 +83,7 @@ scripts/
 - ✅ **Unique constraint** on (agreementId, chargeId)
 
 #### PaymentAgreementEvent
+
 - ✅ **Comprehensive audit** (eventType, previousStatus, newStatus, oldValue, newValue)
 - ✅ **User tracking** (userId, userName, createdAt)
 - ✅ **Reason field** for change justification
@@ -87,6 +91,7 @@ scripts/
 - ✅ **Proper indexes** (agreementId, eventType, createdAt, agreementId+createdAt)
 
 #### PaymentAgreementNumber
+
 - ✅ **Sequence management** for agreement numbering
 - ✅ **Unique constraint** on year
 - ✅ **Auto-updated timestamp**
@@ -120,6 +125,7 @@ scripts/
 #### Transaction Management
 
 **4 transactions found:**
+
 1. `createDraftAgreement` - Creates agreement, installments, charge relations atomically
 2. `activateAgreement` - Updates status, creates event, updates charge relations atomically
 3. `registerInstallmentPayment` - Creates payment, allocation, updates installment atomically
@@ -130,6 +136,7 @@ scripts/
 #### Audit Logging
 
 **7 audit log calls:**
+
 1. CREATE PaymentAgreement (on draft creation)
 2. UPDATE PaymentAgreement (on activation)
 3. UPDATE PaymentAgreementInstallment (on payment)
@@ -143,6 +150,7 @@ scripts/
 #### Event Logging
 
 **4 event types:**
+
 - ACTIVATED
 - STATUS_CHANGED
 - INSTALLMENT_OVERDUE
@@ -192,10 +200,12 @@ PaymentAgreementService ↛ FinancialService (no import)
 ### /finanzas/convenios
 
 **Files:**
+
 - `+page.server.ts` (60 lines)
 - `+page.svelte` (110 lines)
 
 **Functionality:**
+
 - List view for agreements
 - Student-specific filtering (ALUMNO role)
 - Admin placeholder (returns empty list)
@@ -206,10 +216,12 @@ PaymentAgreementService ↛ FinancialService (no import)
 ### /finanzas/deuda
 
 **Files:**
+
 - `+page.server.ts` (245 lines)
 - `+page.svelte` (121 lines)
 
 **Functionality:**
+
 - Original debt summary (existing)
 - Phase 5.5: Agreement debt summary (on-demand loading)
 - Block evaluation actions (existing)
@@ -218,6 +230,7 @@ PaymentAgreementService ↛ FinancialService (no import)
 **Assessment:** ✅ **Functional UI** - Minimal but functional for debt viewing.
 
 **Forbidden patterns in debt/+page.server.ts:**
+
 - ⚠️ 14 occurrences of `: any` (pre-existing, not introduced by payment agreements)
 - ⚠️ 2 occurrences of `as any` (pre-existing, not introduced by payment agreements)
 
@@ -242,6 +255,7 @@ PaymentAgreementService ↛ FinancialService (no import)
 ### Cleanup Functions
 
 **All scripts have proper cleanup:**
+
 - Delete in correct order (respecting foreign keys)
 - Clean up payments, allocations, installments, charge relations, agreements
 - Clean up audit logs
@@ -252,6 +266,7 @@ PaymentAgreementService ↛ FinancialService (no import)
 ### Forbidden Patterns in Tests
 
 **No forbidden patterns found** in payment agreement test scripts:
+
 - No `$queryRaw`
 - No `$executeRaw`
 - No `@ts-ignore`
@@ -290,24 +305,28 @@ PaymentAgreementService ↛ FinancialService (no import)
 ### Identified Issues
 
 #### 1. PaymentAgreementService Size (Medium Priority)
+
 - **Issue:** 2,242 lines in single file
 - **Impact:** Maintainability concern
 - **Recommendation:** Consider splitting into smaller modules (e.g., agreement-lifecycle.ts, debt-calculation.ts, block-management.ts)
 - **Priority:** Medium - Not blocking automation
 
 #### 2. Pre-existing `: any` in debt/+page.server.ts (Low Priority)
+
 - **Issue:** 14 occurrences of `: any` in pre-existing code
 - **Impact:** Type safety
 - **Recommendation:** Refactor to proper types in separate cleanup phase
 - **Priority:** Low - Not introduced by payment agreements
 
 #### 3. Period Filtering Limitation (Low Priority)
+
 - **Issue:** `getPeriodFinancialReportWithAgreements` does not filter agreement debt by period
 - **Impact:** Period reports may show global agreement debt instead of period-specific
 - **Recommendation:** Add period filtering to `getAggregatedFinancialReport` if needed
 - **Priority:** Low - Documented limitation, acceptable for current use case
 
 #### 4. Minimal UI (Medium Priority)
+
 - **Issue:** `/finanzas/convenios` has only list view, no detail/management
 - **Impact:** UX - Users cannot manage agreements through UI
 - **Recommendation:** Add detail view and management actions in future phase
@@ -323,15 +342,15 @@ PaymentAgreementService ↛ FinancialService (no import)
 
 ### Production Risks
 
-| Risk | Severity | Mitigation | Status |
-|------|----------|------------|--------|
-| Debt duplication | Low | Snapshot pattern in charge relations | ✅ Mitigated |
-| StudentCharge modification | Low | Non-destructive design, newStatus field only | ✅ Mitigated |
-| Block creation errors | Low | Proper transaction management | ✅ Mitigated |
-| Receipt duplication | Low | Uses existing receipt service | ✅ Mitigated |
-| Transaction rollback | Low | Proper error handling in transactions | ✅ Mitigated |
-| Decimal precision errors | Low | Consistent Decimal(12,2) usage | ✅ Mitigated |
-| Circular dependency | None | Unidirectional dependency | ✅ Not applicable |
+| Risk                       | Severity | Mitigation                                   | Status            |
+| -------------------------- | -------- | -------------------------------------------- | ----------------- |
+| Debt duplication           | Low      | Snapshot pattern in charge relations         | ✅ Mitigated      |
+| StudentCharge modification | Low      | Non-destructive design, newStatus field only | ✅ Mitigated      |
+| Block creation errors      | Low      | Proper transaction management                | ✅ Mitigated      |
+| Receipt duplication        | Low      | Uses existing receipt service                | ✅ Mitigated      |
+| Transaction rollback       | Low      | Proper error handling in transactions        | ✅ Mitigated      |
+| Decimal precision errors   | Low      | Consistent Decimal(12,2) usage               | ✅ Mitigated      |
+| Circular dependency        | None     | Unidirectional dependency                    | ✅ Not applicable |
 
 **Overall Risk Level:** ✅ **LOW**
 
@@ -377,11 +396,13 @@ PaymentAgreementService ↛ FinancialService (no import)
 ### Report Compatibility
 
 **Original methods untouched:**
+
 - ✅ `getStudentFinancialStatus` - unchanged
 - ✅ `getFinancialDashboardMetrics` - unchanged
 - ✅ `getPeriodFinancialReport` - unchanged
 
 **New methods added:**
+
 - ✅ `getStudentFinancialStatusWithAgreements` - extends original
 - ✅ `getFinancialDashboardMetricsWithAgreements` - extends original
 - ✅ `getPeriodFinancialReportWithAgreements` - extends original
@@ -459,6 +480,7 @@ PaymentAgreementService ↛ FinancialService (no import)
 ### Forbidden Patterns Check
 
 **Payment Agreement Module:**
+
 - ✅ No `$queryRaw`
 - ✅ No `$executeRaw`
 - ✅ No `@ts-ignore`
@@ -467,6 +489,7 @@ PaymentAgreementService ↛ FinancialService (no import)
 - ✅ No `as any` (in payment agreement code)
 
 **Pre-existing in debt/+page.server.ts:**
+
 - ⚠️ 14 `: any` (pre-existing, not introduced by payment agreements)
 - ⚠️ 2 `as any` (pre-existing, not introduced by payment agreements)
 

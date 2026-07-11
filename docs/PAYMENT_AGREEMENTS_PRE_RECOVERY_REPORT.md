@@ -7,17 +7,20 @@
 ## 1. Comando de Backup Propuesto
 
 **Comando:**
+
 ```bash
 docker exec sistema-freire pg_dump -U freire -h localhost -p 5432 -d sistema_freire > backups/sistema_freire_before_payment_agreements_recovery_$(date +%Y%m%d_%H%M%S).sql
 ```
 
 **Verificación:**
+
 - ✅ Contenedor Docker `sistema-freire` está activo
 - ✅ `pg_dump` está disponible en `/usr/local/bin/pg_dump` dentro del contenedor
 - ✅ Base de datos `sistema_freire` existe en el contenedor
 - ✅ Directorio `backups/` creado en el proyecto
 
 **Comando de verificación:**
+
 ```bash
 ls -lh backups/
 ```
@@ -29,6 +32,7 @@ ls -lh backups/
 **Estado:** ✅ Confirmado
 
 **Contenido actual de .gitignore:**
+
 ```
 # Database backups (contain sensitive data)
 prisma/backup/
@@ -44,6 +48,7 @@ backups/
 **Estrategia:** Reemplazar el contenido de `migration.sql` contaminado por la versión limpia, manteniendo el mismo nombre de migración.
 
 **Razón:**
+
 - La migración contaminada ya fue commiteada y pusheada
 - Mantener el mismo nombre de migración permite que Prisma la reconozca como la misma migración
 - `migrate resolve --rolled-back` permite reintentar una migración fallida con SQL corregido
@@ -62,12 +67,14 @@ El contenido de `docs/PROPOSED_CLEAN_MIGRATION_PAYMENT_AGREEMENTS.sql` (238 lín
 ### 4.1 Comportamiento de Prisma con `migrate resolve --rolled-back`
 
 **Explicación:**
+
 - `migrate resolve --rolled-back` marca la migración como rolled-back en `_prisma_migrations`
 - Esto indica a Prisma que la migración no se aplicó exitosamente
 - `migrate deploy` volverá a intentar la migración la próxima vez
 - Si el SQL de la migración se editó después de marcarla como rolled-back, Prisma usará el nuevo SQL
 
-**Estado de _prisma_migrations después de `resolve --rolled-back`:**
+**Estado de \_prisma_migrations después de `resolve --rolled-back`:**
+
 - `finished_at`: timestamp actual
 - `rolled_back_at`: timestamp actual
 - `applied_steps_count`: 0 (sin cambios)
@@ -76,12 +83,14 @@ El contenido de `docs/PROPOSED_CLEAN_MIGRATION_PAYMENT_AGREEMENTS.sql` (238 lín
 ### 4.2 Impacto en Checksum
 
 **Comportamiento:**
+
 - Prisma calcula el checksum del archivo `migration.sql` cuando se aplica la migración
 - Si se edita el SQL después de marcar como rolled-back, Prisma usará el nuevo checksum cuando se vuelva a aplicar
 - El checksum anterior no se valida después de `resolve --rolled-back`
 - El nuevo checksum se registrará cuando la migración se aplique exitosamente
 
 **Riesgo:** BAJO
+
 - No hay otros entornos en producción
 - Solo la base real `sistema_freire` tiene la migración fallida
 - La base temporal tiene la migración aplicada exitosamente, pero eso es un entorno de prueba
@@ -89,12 +98,14 @@ El contenido de `docs/PROPOSED_CLEAN_MIGRATION_PAYMENT_AGREEMENTS.sql` (238 lín
 ### 4.3 Impacto en Historial
 
 **Comportamiento:**
+
 - El historial de migraciones en Git se mantiene intacto
 - El archivo `migration.sql` se edita, pero el nombre de la migración sigue siendo el mismo
 - Para otros entornos que ya aplicaron la migración (ninguno en este caso), el cambio de SQL no afecta
 - Para entornos que no aplicaron la migración, usarán el nuevo SQL
 
 **Riesgo:** NULO
+
 - No hay otros entornos en producción
 - La base temporal tiene la migración aplicada exitosamente, pero eso es un entorno de prueba
 - No hay riesgo de inconsistencia entre entornos
@@ -108,6 +119,7 @@ El contenido de `docs/PROPOSED_CLEAN_MIGRATION_PAYMENT_AGREEMENTS.sql` (238 lín
 **Resumen:** 238 líneas de SQL (reducido de 381 líneas de la migración contaminada)
 
 **Cambios incluidos:**
+
 - ✅ CREATE TYPE PaymentAgreementStatus
 - ✅ CREATE TYPE PaymentAgreementInstallmentStatus
 - ✅ CREATE TYPE PaymentAgreementChargeRelationType
@@ -130,6 +142,7 @@ El contenido de `docs/PROPOSED_CLEAN_MIGRATION_PAYMENT_AGREEMENTS.sql` (238 lín
 - ✅ RENAME INDEXs
 
 **Cambios académicos EXCLUIDOS:**
+
 - ❌ ALTER TYPE AcademicStatus
 - ❌ ALTER TYPE CourseStatus
 - ❌ ALTER TYPE FinalExamStatus
@@ -146,6 +159,7 @@ El contenido de `docs/PROPOSED_CLEAN_MIGRATION_PAYMENT_AGREEMENTS.sql` (238 lín
 **Archivo:** `scripts/cleanup-payment-agreement-orphan-enums.ts`
 
 **Funcionalidad:**
+
 - Verifica dependencias de tablas/columnas con `pg_depend`
 - Aborta si encuentra dependencias de tablas/columnas
 - Ejecuta `DROP TYPE IF EXISTS` solo si es seguro
@@ -155,12 +169,14 @@ El contenido de `docs/PROPOSED_CLEAN_MIGRATION_PAYMENT_AGREEMENTS.sql` (238 lín
 - No toca `_prisma_migrations`
 
 **Enums a eliminar:**
+
 - PaymentAgreementChargeRelationType
 - PaymentAgreementEventType
 - PaymentAgreementInstallmentStatus
 - PaymentAgreementStatus
 
 **SQL ejecutado:**
+
 ```sql
 DROP TYPE IF EXISTS "PaymentAgreementChargeRelationType";
 DROP TYPE IF EXISTS "PaymentAgreementEventType";
@@ -173,6 +189,7 @@ DROP TYPE IF EXISTS "PaymentAgreementStatus";
 ## 7. Consulta de Dependencias Usada
 
 **Consulta:**
+
 ```sql
 SELECT
   d.classid::regclass::text AS dependent_object,
@@ -188,6 +205,7 @@ ORDER BY d.deptype, dependent_object
 ```
 
 **Resultado:**
+
 - Solo dependencias internas de pg_type (sistema), tipo 'n' (normal)
 - No hay dependencias de tablas/columnas (tipos 'a' o 'i')
 - Los enums pueden eliminarse safely
@@ -197,57 +215,68 @@ ORDER BY d.deptype, dependent_object
 ## 8. Comandos Exactos que Ejecutaría en Orden
 
 **Paso 1: Backup de la base real**
+
 ```bash
 docker exec sistema-freire pg_dump -U freire -h localhost -p 5432 -d sistema_freire > backups/sistema_freire_before_payment_agreements_recovery_$(date +%Y%m%d_%H%M%S).sql
 ```
 
 **Paso 2: Verificar backup**
+
 ```bash
 ls -lh backups/
 ```
 
 **Paso 3: Confirmar estado de migración fallida**
+
 ```bash
 npx prisma migrate status
 ```
 
 **Paso 4: Marcar migración fallida como rolled-back**
+
 ```bash
 npx prisma migrate resolve --rolled-back 20260620164627_add_payment_agreements_phase1
 ```
 
 **Paso 5: Eliminar enums huérfanos**
+
 ```bash
 npx tsx scripts/cleanup-payment-agreement-orphan-enums.ts
 ```
 
 **Paso 6: Reemplazar contenido de migration.sql**
+
 ```bash
 cp docs/PROPOSED_CLEAN_MIGRATION_PAYMENT_AGREEMENTS.sql \
    prisma/migrations/20260620164627_add_payment_agreements_phase1/migration.sql
 ```
 
 **Paso 7: Validar migración limpia**
+
 ```bash
 cat prisma/migrations/20260620164627_add_payment_agreements_phase1/migration.sql
 ```
 
 **Paso 8: Aplicar migración limpia en base real**
+
 ```bash
 npx prisma migrate deploy
 ```
 
 **Paso 9: Generar Prisma Client**
+
 ```bash
 npx prisma generate
 ```
 
 **Paso 10: Ejecutar seed de permisos (si es idempotente)**
+
 ```bash
 npx tsx prisma/seed-permissions.ts
 ```
 
 **Paso 11: Validaciones post-recuperación**
+
 ```bash
 npx prisma format
 npx prisma validate
@@ -266,27 +295,32 @@ git diff --stat
 ## 9. Plan de Rollback si Algo Falla
 
 **Si falla el backup:**
+
 - Abortar recuperación
 - No tocar la base real
 - Investigar causa del fallo de backup
 
 **Si falla `migrate resolve --rolled-back`:**
+
 - Verificar el error
 - Si es un error de Prisma, investigar documentación
 - Si es un error de base de datos, verificar estado de `_prisma_migrations`
 - No proceder hasta resolver
 
 **Si falla la eliminación de enums:**
+
 - Verificar el error
 - Si hay dependencias inesperadas, investigar manualmente
 - No proceder hasta resolver
 
 **Si falla el reemplazo de migration.sql:**
+
 - Verificar que el archivo se copió correctamente
 - Verificar que el contenido es el esperado
 - No proceder hasta resolver
 
 **Si falla `migrate deploy`:**
+
 - Verificar el error
 - Si es un error de SQL, revisar el migration.sql
 - Si es un error de base de datos, verificar estado de la base
@@ -296,6 +330,7 @@ git diff --stat
   ```
 
 **Si fallan las validaciones post-recuperación:**
+
 - Verificar cada error individualmente
 - Si es un error de schema, verificar que la migración se aplicó correctamente
 - Si es un error de build, verificar que el código es compatible
@@ -308,16 +343,19 @@ git diff --stat
 **Confirmación:** ✅ Confirmado
 
 **Comando que NO se usará:**
+
 ```bash
 npx prisma migrate dev --name add_payment_agreements_phase1_clean
 ```
 
 **Comando que SÍ se usará:**
+
 ```bash
 npx prisma migrate deploy
 ```
 
 **Explicación:**
+
 - `migrate dev` se usa para crear y aplicar migraciones en desarrollo
 - `migrate deploy` se usa para aplicar migraciones en producción
 - La migración limpia se prepara manualmente (copiando el archivo)
@@ -332,6 +370,7 @@ npx prisma migrate deploy
 **Nivel:** MEDIO
 **Descripción:** No se pudo simular la recuperación completa en una base temporal separada debido a limitaciones del entorno.
 **Mitigación:**
+
 - Diagnóstico exhaustivo de la base real con consultas read-only
 - Verificación de dependencias de enums huérfanos
 - Validación de que la migración limpia no contiene cambios académicos
@@ -344,6 +383,7 @@ npx prisma migrate deploy
 **Nivel:** BAJO
 **Descripción:** La migración contaminada ya fue commiteada. Reemplazar el SQL puede causar problemas en otros entornos.
 **Mitigación:**
+
 - Confirmar que solo la base real `sistema_freire` tiene la migración fallida
 - No hay otros entornos en producción
 - La base temporal tiene la migración aplicada exitosamente, pero eso es un entorno de prueba
@@ -354,6 +394,7 @@ npx prisma migrate deploy
 **Nivel:** BAJO
 **Descripción:** El comportamiento de Prisma con `migrate resolve --rolled-back` y reintentar migración con SQL corregido no está completamente validado.
 **Mitigación:**
+
 - Investigación de documentación de Prisma
 - Confirmación de que `applied_steps_count = 0`
 - Confirmación de que no hay tablas de Convenios creadas
@@ -371,6 +412,7 @@ npx prisma migrate deploy
 ### 12.2 Por Qué
 
 **Razones:**
+
 1. La migración contaminada no se puede aplicar en la base real debido al drift académico
 2. La única forma de corregir el problema es reemplazar el SQL de la migración
 3. Los riesgos son mitigables y controlables
@@ -399,6 +441,7 @@ npx prisma migrate deploy
 ### 12.4 Validaciones que Deben Pasar Antes y Después
 
 **Validaciones antes:**
+
 - ✅ Backup exitoso
 - ⏳ npx prisma validate
 - ⏳ npx prisma migrate status (confirmar solo migración fallida pendiente)
@@ -406,6 +449,7 @@ npx prisma migrate deploy
 - ⏳ Validar migración limpia (revisión manual del SQL)
 
 **Validaciones después:**
+
 - ⏳ npx prisma format
 - ⏳ npx prisma validate
 - ⏳ npx prisma generate

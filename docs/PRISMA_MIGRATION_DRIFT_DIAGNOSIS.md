@@ -50,11 +50,11 @@ Date:   Sun Jun 21 21:19:30 2026 -0300
 
 ## 3. Diferencias entre migración original y recuperada
 
-| Versión | Líneas | SHA256 |
-|---------|--------|--------|
-| Original (5b5ba199) | 380 | - |
-| Recuperada (b78ce301) | 262 | - |
-| Actual en disco | 262 | e1b6d03b... |
+| Versión               | Líneas | SHA256      |
+| --------------------- | ------ | ----------- |
+| Original (5b5ba199)   | 380    | -           |
+| Recuperada (b78ce301) | 262    | -           |
+| Actual en disco       | 262    | e1b6d03b... |
 
 **Confirmación:** El archivo actual coincide con la versión recuperada (diff vacío).
 
@@ -70,6 +70,7 @@ diff -u /tmp/payment_agreements_phase1_recovered.sql prisma/migrations/202606201
 ### Enums en schema.prisma actual
 
 #### AcademicStatus
+
 ```prisma
 enum AcademicStatus {
   EN_COURSE
@@ -79,9 +80,11 @@ enum AcademicStatus {
   PROMOCIONADO
 }
 ```
+
 **Valores faltantes según drift:** APPROVED, FAILED, DROPPED
 
 #### CourseStatus
+
 ```prisma
 enum CourseStatus {
   IN_PROGRESS
@@ -90,9 +93,11 @@ enum CourseStatus {
   PROMOTED
 }
 ```
+
 **Valores faltantes según drift:** APPROVED, FAILED, DROPPED
 
 #### FinalExamStatus
+
 ```prisma
 enum FinalExamStatus {
   PENDING
@@ -101,11 +106,13 @@ enum FinalExamStatus {
   FAILED
 }
 ```
+
 **Valores faltantes según drift:** APPROVED, EXEMPT
 
 ### Modelos académicos en schema.prisma actual
 
 #### SubjectEnrollment
+
 ```prisma
 model SubjectEnrollment {
   id                 String             @id @default(cuid())
@@ -138,9 +145,11 @@ model SubjectEnrollment {
   @@map("subject_enrollments")
 }
 ```
+
 **Campos workflow de inscripción presentes:** confirmedAt, cancelledAt, rejectedAt, rejectionReason, cancellationReason, observations, enrolledBy, confirmedBy, cancelledBy, rejectedBy
 
 #### Evaluation
+
 ```prisma
 model Evaluation {
   id                  String             @id @default(cuid())
@@ -175,9 +184,11 @@ model Evaluation {
   @@map("evaluations")
 }
 ```
+
 **Tipos de campos:** maxScore, minPassingScore, weight como Decimal(6, 2)
 
 #### Grade
+
 ```prisma
 model Grade {
   id              String      @id @default(cuid())
@@ -197,9 +208,11 @@ model Grade {
   @@map("grades")
 }
 ```
+
 **Sin campo subjectId** (eliminado según drift)
 
 #### StudentSubjectStatus
+
 ```prisma
 model StudentSubjectStatus {
   id                String           @id @default(cuid())
@@ -226,6 +239,7 @@ model StudentSubjectStatus {
   @@map("student_subject_status")
 }
 ```
+
 **Índice faltante según drift:** (studentId, promoted)
 
 ---
@@ -233,6 +247,7 @@ model StudentSubjectStatus {
 ## 5. Diferencias entre DB real y schema.prisma actual
 
 ### Comando ejecutado
+
 ```bash
 npx prisma migrate diff \
   --from-url "postgresql://freire:Freire123@localhost:5437/sistema-freire" \
@@ -241,6 +256,7 @@ npx prisma migrate diff \
 ```
 
 ### Resultado (6 líneas)
+
 ```sql
 -- DropForeignKey
 ALTER TABLE "student_charges" DROP CONSTRAINT "student_charges_academicTermId_fkey";
@@ -256,6 +272,7 @@ ALTER TABLE "student_charges" ADD CONSTRAINT "student_charges_academicTermId_fke
 ## 6. Drift reportado por migrate dev
 
 ### Comando ejecutado
+
 ```bash
 npx prisma migrate dev --create-only --name add_document_management_base
 ```
@@ -263,11 +280,13 @@ npx prisma migrate dev --create-only --name add_document_management_base
 ### Drift detectado
 
 **Enums:**
+
 - `AcademicStatus`: Removed APPROVED, FAILED, DROPPED
 - `CourseStatus`: Removed APPROVED, FAILED, DROPPED
 - `FinalExamStatus`: Removed APPROVED, EXEMPT
 
 **Tablas:**
+
 - `evaluations`: FK changes, type changes (maxScore, minPassingScore, weight)
 - `grades`: FK changes, removed subjectId column
 - `student_subject_status`: Index removed, type changes (courseAverage, finalExamScore)
@@ -329,11 +348,13 @@ Riesgos identificados:
 **Descripción:** Crear una base local limpia desde las migraciones actuales y continuar ahí.
 
 **Pros:**
+
 - Limpia el estado local
 - Permite continuar con desarrollo
 - No toca el historial
 
 **Contras:**
+
 - Pierde datos de desarrollo local
 - No resuelve el problema de reproducibilidad del historial
 - Puede ocultar el problema en lugar de resolverlo
@@ -348,12 +369,14 @@ Riesgos identificados:
 **Descripción:** Crear una nueva migración que documente los cambios académicos que ya existen en la base, sincronizando el historial con el estado real.
 
 **Pros:**
+
 - Documenta los cambios académicos legítimos
 - Hace el historial reproducible
 - No toca la migración histórica
 - Resuelve el problema de raíz
 
 **Contras:**
+
 - Requiere entender exactamente qué cambios académicos se hicieron
 - Puede ser complejo si hay dependencias
 - Requiere testing cuidadoso
@@ -367,10 +390,12 @@ Riesgos identificados:
 **Descripción:** Usar `migrate resolve --applied` para ignorar el drift.
 
 **Pros:**
+
 - Rápido
 - Permite continuar inmediatamente
 
 **Contras:**
+
 - Oculta el problema
 - Puede causar problemas futuros
 - No resuelve la reproducibilidad
@@ -385,9 +410,11 @@ Riesgos identificados:
 **Descripción:** Restaurar la migración a su estado original (380 líneas, commit 5b5ba199).
 
 **Pros:**
+
 - Alinearía el archivo con lo que Prisma espera
 
 **Contras:**
+
 - Reintroduce contaminación académica
 - Rompe el estado actual de la base
 - Ya se limpió esta contaminación en b78ce301
@@ -444,6 +471,7 @@ npx prisma migrate status
 ```
 postgresql://freire:Freire123@localhost:5437/sistema-freire
 ```
+
 - Base correcta: `sistema-freire` (con guion)
 - Puerto: `5437`
 - No apunta a base vieja o de pruebas
@@ -469,6 +497,7 @@ postgresql://freire:Freire123@localhost:5437/sistema-freire
 **Diff base temporal vs schema actual:** 103 líneas de drift académico completo
 
 **Cambios detectados en diff:**
+
 - **Enums:** AcademicStatus, CourseStatus, FinalExamStatus (removiendo valores APPROVED, FAILED, DROPPED, EXEMPT)
 - **Tablas:** evaluations, grades, student_subject_status, subject_enrollments
 - **Índices:** student_subject_status_studentId_promoted_idx eliminado
@@ -481,12 +510,14 @@ postgresql://freire:Freire123@localhost:5437/sistema-freire
 **CRÍTICO:** La base temporal creada desde las migraciones actuales **TIENE drift académico completo** (103 líneas de diff).
 
 **Esto confirma:**
+
 - El historial actual del repo **NO es reproducible desde cero**
 - Las migraciones actuales crean un estado académico diferente al que espera el `schema.prisma` actual
 - El problema NO es solo la base local actual / metadata histórica
 - El problema está en el historial de migraciones del repo
 
 **Comparación con base principal:**
+
 - Base principal vs schema actual: solo 6 líneas de diferencia (FK en student_charges)
 - Base temporal vs schema actual: 103 líneas de drift académico completo
 
@@ -518,6 +549,7 @@ postgresql://freire:Freire123@localhost:5437/sistema-freire
 6. Decidir estrategia para la base principal después de revisión
 
 **Restricciones:**
+
 - No tocar `prisma/schema.prisma`
 - No tocar `prisma/migrations/20260620164627_add_payment_agreements_phase1/migration.sql`
 - No aplicar migración candidata en base principal hasta aprobación
@@ -603,6 +635,7 @@ Database schema is up to date!
 **EXITOSO:** La base principal quedó alineada con `schema.prisma` y la migración candidata fue marcada como aplicada.
 
 **Confirmaciones:**
+
 - Solo se aplicó el delta real pendiente (FK en student_charges)
 - No se usó `migrate reset` ni `db push`
 - No se editó `_prisma_migrations` manualmente
@@ -617,19 +650,23 @@ Database schema is up to date!
 ### Fases completadas
 
 **Fase 0.1:** Diagnóstico inicial del drift
+
 - Identificada migración histórica modificada
 - Detectada diferencia entre DB real y schema.prisma
 
 **Fase 0.2:** Prueba de reproducibilidad en base temporal limpia
+
 - Confirmado que el historial actual NO es reproducible desde cero
 - Base temporal termina con drift académico de 103 líneas
 
 **Fase 0.3:** Reconciliación formal del historial Prisma
+
 - Creada migración candidata `20260627_reconcile_academic_schema_history`
 - Validada en base temporal limpia
 - Diff final vacío después de aplicar migración candidata
 
 **Fase 0.4:** Reconciliación segura de la base principal
+
 - Aplicado solo delta real pendiente (FK en student_charges)
 - Marcada migración candidata como aplicada con `migrate resolve --applied`
 - Base principal alineada con schema.prisma

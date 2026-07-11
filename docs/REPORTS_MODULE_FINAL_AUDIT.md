@@ -7,6 +7,7 @@ El módulo REPORTES fue implementado en 6 fases completas, proporcionando visual
 **Estado:** Completado y listo para producción.
 
 **Fases implementadas:**
+
 - Fase 0: Diagnóstico
 - Fase 1: Servicios server-side
 - Fase 2: Endpoints protegidos
@@ -22,6 +23,7 @@ El módulo REPORTES fue implementado en 6 fases completas, proporcionando visual
 **Ubicación:** `src/lib/server/reports/`
 
 **Archivos:**
+
 - `reports.types.ts` - Tipos TypeScript para métricas y filtros
 - `reports.service.ts` - Exportador principal de servicios
 - `institutional-reports.service.ts` - Métricas institucionales
@@ -34,6 +36,7 @@ El módulo REPORTES fue implementado en 6 fases completas, proporcionando visual
 - `report-export.service.ts` - Servicio de exportación CSV
 
 **Características:**
+
 - Todos los servicios son funciones async tipadas
 - Usan Prisma ORM con consultas tipo-safe
 - No usan SQL raw (`$queryRaw`, `$executeRaw`)
@@ -46,12 +49,14 @@ El módulo REPORTES fue implementado en 6 fases completas, proporcionando visual
 **Ubicación:** `src/routes/api/reports/`
 
 **Endpoints:**
+
 - `GET /api/reports/institutional` - Métricas institucionales
 - `GET /api/reports/financial` - Métricas financieras
 - `GET /api/reports/academic` - Métricas académicas
 - `GET /api/reports/attendance` - Métricas de asistencia
 
 **Características:**
+
 - Validan sesión (401 si no autenticado)
 - Validan permisos explícitos (403 si no autorizado)
 - Validan filtros (400 si inválido)
@@ -64,12 +69,14 @@ El módulo REPORTES fue implementado en 6 fases completas, proporcionando visual
 **Ubicación:** `src/routes/api/reports/{type}/export/`
 
 **Endpoints:**
+
 - `GET /api/reports/institutional/export` - Exportar institucional como CSV
 - `GET /api/reports/financial/export` - Exportar financiero como CSV
 - `GET /api/reports/academic/export` - Exportar académico como CSV
 - `GET /api/reports/attendance/export` - Exportar asistencia como CSV
 
 **Características:**
+
 - `Content-Type: text/csv; charset=utf-8`
 - `Content-Disposition: attachment; filename="safe-filename.csv"`
 - Filename seguro con timestamp
@@ -84,6 +91,7 @@ El módulo REPORTES fue implementado en 6 fases completas, proporcionando visual
 **Ubicación:** `src/routes/(app)/reportes/` y `src/lib/components/reports/`
 
 **Archivos:**
+
 - `dashboard/+page.server.ts` - Protección server-side
 - `dashboard/+page.svelte` - Dashboard principal con tabs
 - `InstitutionalReportsPanel.svelte` - Panel institucional
@@ -100,6 +108,7 @@ El módulo REPORTES fue implementado en 6 fases completas, proporcionando visual
 - `charts/SimpleDistributionList.svelte` - Lista de distribución
 
 **Características:**
+
 - Dashboard en `/reportes/dashboard`
 - Página protegida server-side (redirect a /login si no autenticado)
 - Tabs de secciones (institucional, financiero, académico, asistencia)
@@ -116,12 +125,14 @@ El módulo REPORTES fue implementado en 6 fases completas, proporcionando visual
 ### Visualizaciones
 
 **Componentes de gráficos:**
+
 - `SimpleBarChart` - Barras horizontales simples
 - `SimpleProgressBar` - Barra de progreso circular
 - `SimpleMetricComparison` - Comparación de métricas en tarjetas
 - `SimpleDistributionList` - Lista de distribución con barras
 
 **Características:**
+
 - Svelte puro con HTML/CSS/Tailwind
 - Sin dependencias externas (Chart.js, D3, etc.)
 - Estados vacíos cuando no hay datos
@@ -133,27 +144,30 @@ El módulo REPORTES fue implementado en 6 fases completas, proporcionando visual
 
 ### Matriz de Permisos
 
-| Área          | Permiso                 | Endpoint JSON           | Endpoint CSV           |
-| ------------- | ----------------------- | ----------------------- | ----------------------- |
+| Área          | Permiso                 | Endpoint JSON                | Endpoint CSV                        |
+| ------------- | ----------------------- | ---------------------------- | ----------------------------------- |
 | Institucional | `SUPERADMIN`            | `/api/reports/institutional` | `/api/reports/institutional/export` |
-| Financiero    | `FINANCIAL_REPORT:read` | `/api/reports/financial` | `/api/reports/financial/export` |
-| Académico     | `GRADE:read`            | `/api/reports/academic` | `/api/reports/academic/export` |
-| Asistencia    | `ATTENDANCE:read`       | `/api/reports/attendance` | `/api/reports/attendance/export` |
+| Financiero    | `FINANCIAL_REPORT:read` | `/api/reports/financial`     | `/api/reports/financial/export`     |
+| Académico     | `GRADE:read`            | `/api/reports/academic`      | `/api/reports/academic/export`      |
+| Asistencia    | `ATTENDANCE:read`       | `/api/reports/attendance`    | `/api/reports/attendance/export`    |
 
 ### Características de Seguridad
 
 **Permisos explícitos:**
+
 - `checkExplicitPermission()` - No tiene default read permisivo
 - `hasExplicitPermission()` - Retorna false si no existe registro de permiso
 - `isSuperAdmin()` - Verifica si usuario tiene rol SUPERADMIN
 - SUPERADMIN siempre tiene todos los permisos
 
 **Validación de sesión:**
+
 - Usuario sin sesión recibe 401
 - Usuario sin permiso recibe 403
 - No se depende del default read permisivo global
 
 **No se usaron patrones prohibidos:**
+
 - Consultas raw de Prisma
 - Ejecuciones raw de Prisma
 - Tipo any
@@ -178,11 +192,13 @@ El módulo REPORTES fue implementado en 6 fases completas, proporcionando visual
 El módulo usa un criterio provisional para clasificar ausencias:
 
 **Ausencias con observación:**
+
 - Criterio: `present: false` AND `notes IS NOT NULL`
 - Etiqueta UI: "Con Observación"
 - No es justificación formal
 
 **Ausencias sin observación:**
+
 - Criterio: `present: false` AND `notes IS NULL`
 - Etiqueta UI: "Sin Observación"
 - No es injustificación formal
@@ -192,6 +208,7 @@ El módulo usa un criterio provisional para clasificar ausencias:
 **Este NO es un sistema de justificaciones formales.**
 
 El campo `notes` en `AttendanceEntry` es un campo de texto libre para observaciones generales. No representa:
+
 - Tipos de justificación (médica, familiar, etc.)
 - Estados de aprobación de justificación
 - Documentos adjuntos de justificación
@@ -200,6 +217,7 @@ El campo `notes` en `AttendanceEntry` es un campo de texto libre para observacio
 ### Requisito Futuro
 
 Para un sistema de justificaciones formales se requiere:
+
 - Nuevo modelo `JustificationType` (médica, familiar, administrativa, etc.)
 - Nuevo modelo `Justification` con estado (pending, approved, rejected)
 - Relación con `AttendanceEntry`
@@ -211,16 +229,19 @@ Para un sistema de justificaciones formales se requiere:
 ### Consultas Potencialmente Pesadas
 
 **Reporte financiero:**
+
 - `getStudentsWithDebt()` - Busca todos los cargos pendientes y calcula deuda por estudiante
 - Riesgo: Si hay muchos estudiantes con muchos cargos, puede ser lento
 - Recomendación futura: Considerar índice en `StudentCharge(studentId, status, dueDate)`
 
 **Reporte académico:**
+
 - `getStudentsByCareer()` - Agrupa por careerId y luego busca nombres de carreras
 - Riesgo: Consulta adicional para resolver nombres
 - Recomendación futura: Considerar include en groupBy si Prisma lo soporta
 
 **Reporte de asistencia:**
+
 - `getAverageBySubject()` - Itera sobre todos los registros y luego busca entradas por registro
 - `getAverageByCommission()` - Itera sobre todos los registros y luego busca entradas por registro
 - Riesgo: N+1 queries si hay muchos registros de asistencia
@@ -229,29 +250,35 @@ Para un sistema de justificaciones formales se requiere:
 ### Riesgos de Escalabilidad
 
 **Crecimiento de alumnos:**
+
 - Reportes institucionales y académicos pueden volverse más lentos
 - Recomendación futura: Considerar paginación o cache
 
 **Crecimiento de pagos:**
+
 - Reporte financiero puede volverse más lento
 - Recomendación futura: Considerar agregaciones pre-calculadas
 
 **Crecimiento de asistencias:**
+
 - Reporte de asistencia puede volverse muy lento
 - Recomendación futura: Considerar tabla de agregaciones pre-calculadas
 
 ### Recomendaciones Futuras
 
 **Índices de base de datos (no implementados en esta fase):**
+
 - `StudentCharge(studentId, status, dueDate)` - Para reportes financieros
 - `AttendanceEntry(studentId, present)` - Para reportes de asistencia
 - `StudentSubjectStatus(attendancePercent)` - Para riesgo académico
 
 **Cache:**
+
 - Considerar cache de reportes por 5-10 minutos
 - Invalidar cache cuando cambian datos relevantes
 
 **Paginación:**
+
 - Considerar paginación para reportes con muchos registros
 - Actualmente todos los reportes devuelven agregados, no datos crudos
 
@@ -260,11 +287,13 @@ Para un sistema de justificaciones formales se requiere:
 ### Exportación Avanzada
 
 **Exportación PDF profesional:**
+
 - Requiere librería de PDF (ej. jsPDF, PDFKit)
 - Requiere diseño de plantillas
 - No aprobado en esta fase
 
 **Exportación Excel/XLSX:**
+
 - Requiere librería de Excel (ej. xlsx, exceljs)
 - Requiere manejo de hojas múltiples
 - No aprobado en esta fase
@@ -272,6 +301,7 @@ Para un sistema de justificaciones formales se requiere:
 ### Gráficos Avanzados
 
 **Librería de gráficos especializada:**
+
 - Requiere aprobación de dependencia (Chart.js, D3, Recharts)
 - Requiere diseño de componentes interactivos
 - No aprobado en esta fase
@@ -279,11 +309,13 @@ Para un sistema de justificaciones formales se requiere:
 ### Performance
 
 **Cache de reportes pesados:**
+
 - Requiere implementación de cache (Redis, in-memory)
 - Requiere estrategia de invalidación
 - No implementado en esta fase
 
 **Reportes programados:**
+
 - Requiere jobs/cron
 - Requiere sistema de colas
 - No implementado en esta fase
@@ -291,6 +323,7 @@ Para un sistema de justificaciones formales se requiere:
 ### Auditoría
 
 **Auditoría de descarga/exportación:**
+
 - Requiere tabla de logs de exportación
 - Requiere tracking de usuario, fecha, filtros
 - No implementado en esta fase
@@ -298,6 +331,7 @@ Para un sistema de justificaciones formales se requiere:
 ### Permisos
 
 **Permisos específicos nuevos:**
+
 - `ACADEMIC_REPORT:read` - Más específico que GRADE:read
 - `ATTENDANCE_REPORT:read` - Más específico que ATTENDANCE:read
 - `INSTITUTIONAL_REPORT:read` - Más específico que SUPERADMIN
@@ -307,6 +341,7 @@ Para un sistema de justificaciones formales se requiere:
 ### Justificaciones Formales
 
 **Modelo de justificaciones de asistencia:**
+
 - Requiere nuevo modelo de justificaciones
 - Requiere flujo de aprobación
 - No implementado en esta fase (criterio provisional basado en notes)
@@ -318,6 +353,7 @@ Para un sistema de justificaciones formales se requiere:
 **Ubicación:** `scripts/test-reports-*.ts`
 
 **Archivos:**
+
 - `test-reports-services.ts` - Prueba de servicios server-side (10 tests)
 - `test-reports-endpoints.ts` - Prueba de endpoints y permisos (22 tests)
 - `test-reports-ui.ts` - Prueba de UI y seguridad (20 tests)
@@ -326,6 +362,7 @@ Para un sistema de justificaciones formales se requiere:
 - `test-reports-module-final-audit.ts` - Auditoría integral final (25 tests)
 
 **Resultados:**
+
 - Todos los tests pasan (104/104)
 - 0 fallos
 - 0 errores
@@ -333,14 +370,17 @@ Para un sistema de justificaciones formales se requiere:
 ### Validaciones Manuales
 
 **npm run check:**
+
 - 0 errores
 - 104 warnings preexistentes (no relacionados con reportes)
 
 **npm run build:**
+
 - Build exitoso
 - Sin errores de compilación
 
 **Prisma:**
+
 - 33 migraciones
 - Schema up to date
 - No se usó db push, migrate reset, migrate resolve
@@ -359,6 +399,7 @@ eb7b866 docs(reports): add module diagnosis
 ## Criterios de Aceptación Cumplidos
 
 **Funcionales:**
+
 - [x] Servicios server-side tipados
 - [x] Endpoints protegidos
 - [x] Permisos explícitos
@@ -367,6 +408,7 @@ eb7b866 docs(reports): add module diagnosis
 - [x] Visualizaciones simples
 
 **Seguridad:**
+
 - [x] Sin Prisma en UI
 - [x] Sin SQL raw
 - [x] Sin patrones prohibidos
@@ -377,6 +419,7 @@ eb7b866 docs(reports): add module diagnosis
 - [x] Sin rutas públicas inseguras
 
 **Operativos:**
+
 - [x] Todos los tests pasan
 - [x] npm run check pasa
 - [x] npm run build pasa
@@ -384,6 +427,7 @@ eb7b866 docs(reports): add module diagnosis
 - [x] Documentación completa
 
 **Documentación:**
+
 - [x] Fase 0: Diagnóstico
 - [x] Fase 1: Servicios
 - [x] Fase 2: Endpoints

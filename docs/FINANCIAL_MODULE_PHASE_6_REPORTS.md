@@ -75,6 +75,7 @@ Retorna el historial de movimientos financieros con filtros:
 - **total**: Cantidad total de movimientos
 
 **Filtros disponibles**:
+
 - `studentId`: Filtrar por alumno específico
 - `movementType`: Filtrar por tipo (CHARGE, PAYMENT, ALLOCATION, RECEIPT, CANCELLATION, etc.)
 - `startDate`: Fecha desde
@@ -91,6 +92,7 @@ Genera CSV del reporte por período con auditoría:
 - **recordCount**: Cantidad de registros exportados
 
 **Auditoría**: Registra en `AuditLog` con:
+
 - action: `EXPORT`
 - entityType: `FINANCIAL_REPORT`
 - description: "Exportación CSV de reporte por período"
@@ -106,6 +108,7 @@ Genera CSV del historial de movimientos con auditoría:
 - **recordCount**: Cantidad de registros exportados
 
 **Auditoría**: Registra en `AuditLog` con:
+
 - action: `EXPORT`
 - entityType: `FINANCIAL_REPORT`
 - description: "Exportación CSV de historial de movimientos"
@@ -113,6 +116,7 @@ Genera CSV del historial de movimientos con auditoría:
 - userId, ip, userAgent
 
 **Formato CSV**:
+
 - Headers separados por comas
 - Escape de comillas dobles (duplicación)
 - Escape de comas y saltos de línea (entre comillas)
@@ -127,6 +131,7 @@ Genera CSV del historial de movimientos con auditoría:
 **Permisos**: `FINANCIAL_REPORT:read`
 
 **Funcionalidad**:
+
 - Muestra métricas del dashboard financiero
 - Valida permisos antes de cargar datos
 - Usa `FinancialService.getFinancialDashboardMetrics()`
@@ -135,18 +140,21 @@ Genera CSV del historial de movimientos con auditoría:
 #### `/finanzas/reportes`
 
 **Archivos**:
+
 - `src/routes/(app)/finanzas/reportes/+page.server.ts`
 - `src/routes/(app)/finanzas/reportes/+page.svelte`
 
 **Permisos**: `FINANCIAL_REPORT:read`
 
 **Server Actions**:
+
 - `getPeriodReport`: Genera reporte por período con filtros de fecha
 - `getMovementsHistory`: Consulta historial de movimientos con filtros
 - `exportPeriodReportCSV`: Exporta reporte por período a CSV con auditoría
 - `exportMovementsCSV`: Exporta movimientos a CSV con auditoría
 
 **Funcionalidad**:
+
 - Formularios para filtrar por período
 - Formularios para consultar historial de movimientos
 - Botones de exportación CSV con descarga en navegador
@@ -156,12 +164,14 @@ Genera CSV del historial de movimientos con auditoría:
 #### `/finanzas/alumnos/[id]`
 
 **Archivos**:
+
 - `src/routes/(app)/finanzas/alumnos/[id]/+page.server.ts`
 - `src/routes/(app)/finanzas/alumnos/[id]/+page.svelte`
 
 **Permisos**: `FINANCIAL_REPORT:read` o ownership (alumno viendo sus propios datos)
 
 **Funcionalidad**:
+
 - Muestra estado financiero completo del alumno
 - Ownership validation: alumnos solo pueden ver sus propios datos
 - Métricas: total cuotas, pagado, pendiente, vencido
@@ -170,15 +180,18 @@ Genera CSV del historial de movimientos con auditoría:
 #### `/finanzas/movimientos`
 
 **Archivos**:
+
 - `src/routes/(app)/finanzas/movimientos/+page.server.ts`
 - `src/routes/(app)/finanzas/movimientos/+page.svelte`
 
 **Permisos**: `FINANCIAL_REPORT:read`
 
 **Server Actions**:
+
 - `filterMovements`: Aplica filtros y redirige con query params
 
 **Funcionalidad**:
+
 - Filtros: alumno, tipo de movimiento, fechas
 - Tabla con historial de movimientos
 - Paginación por URL params
@@ -190,10 +203,11 @@ Genera CSV del historial de movimientos con auditoría:
 Agregada al sistema de permisos granulares en `src/lib/server/auth/permissions-granular.ts`:
 
 ```typescript
-'FINANCIAL_REPORT'
+'FINANCIAL_REPORT';
 ```
 
 **Permisos por rol** (por defecto):
+
 - **SUPERADMIN**: Todos los permisos
 - **DIRECTOR**: Lectura (read) de reportes financieros
 - **FINANZAS**: Lectura (read) de reportes financieros
@@ -201,6 +215,7 @@ Agregada al sistema de permisos granulares en `src/lib/server/auth/permissions-g
 - **ALUMNO**: Solo sus propios datos (validado en route con ownership)
 
 **Seed de permisos**:
+
 - Agregados permisos `FINANCIAL_REPORT:read` para DIRECTOR y FINANZAS en `seedDefaultPermissions()`
 
 ### 4. Pruebas Funcionales
@@ -223,11 +238,13 @@ Agregada al sistema de permisos granulares en `src/lib/server/auth/permissions-g
 12. **testExportAudit**: Verifica auditoría de exportaciones en AuditLog
 
 **Cleanup en finally**:
+
 - Limpia auditLog, financialMovement, paymentAllocation, payment, studentCharge, student, user
 - Orden inverso de dependencias
 - Ejecuta siempre, incluso si fallan tests
 
 **Ejecución**:
+
 ```bash
 npx tsx scripts/test-financial-reports.ts
 ```
@@ -239,6 +256,7 @@ npx tsx scripts/test-financial-reports.ts
 ### Filtros por Carrera/Comisión/Locación
 
 No se implementaron filtros por carrera, comisión o locación en esta fase debido a:
+
 - Limitaciones en las relaciones del schema actual
 - No se inventaron relaciones que no existen
 - Se documentó la limitación para futuras mejoras
@@ -338,6 +356,7 @@ npx tsx scripts/test-financial-reports.ts # ✅ Pruebas pasan
 ## Conclusión
 
 La Fase 6 del Módulo Financiero ha sido implementada exitosamente con:
+
 - ✅ Dashboard financiero con métricas clave (incluyendo recibos emitidos/anulados)
 - ✅ Reportes individuales por alumno
 - ✅ Reportes por período
@@ -351,6 +370,7 @@ La Fase 6 del Módulo Financiero ha sido implementada exitosamente con:
 - ✅ Documentación completa
 
 La implementación sigue las mejores prácticas de:
+
 - Separación de responsabilidades (Service vs Routes)
 - Validación de permisos en backend
 - Tests funcionales completos

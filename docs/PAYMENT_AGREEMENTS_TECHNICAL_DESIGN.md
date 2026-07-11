@@ -18,6 +18,7 @@ El Módulo Financiero actual (Fases 1-6) implementa:
 ### 1.2 Gaps Identificados
 
 **Falta capacidad para:**
+
 - Negociar planes de pago personalizados
 - Refinanciar deuda existente
 - Establecer cuotas irregulares
@@ -26,6 +27,7 @@ El Módulo Financiero actual (Fases 1-6) implementa:
 - Auditoría de cambios en planes de pago
 
 **Limitaciones actuales:**
+
 - Las cuotas son individuales y no están agrupadas en planes
 - No hay concepto de "convenio" que agrupe múltiples cuotas
 - Los bloqueos no consideran excepciones por convenios activos
@@ -34,6 +36,7 @@ El Módulo Financiero actual (Fases 1-6) implementa:
 ### 1.3 Oportunidades de Integración
 
 **Reutilizable:**
+
 - `Payment` y `PaymentAllocation` - pueden asignarse a cuotas de convenio
 - `Receipt` - pueden emitirse para pagos de convenio
 - `FinancialBlock` - pueden tener excepciones por convenio
@@ -42,6 +45,7 @@ El Módulo Financiero actual (Fases 1-6) implementa:
 - `hasPermission` - puede validar permisos granulares
 
 **Necesario crear:**
+
 - Entidad `PaymentAgreement` para el convenio
 - Entidad `PaymentAgreementInstallment` para las cuotas del convenio
 - Enum `PaymentAgreementStatus` para estados del convenio
@@ -61,24 +65,24 @@ model PaymentAgreement {
   studentId         String
   studentName       String
   studentDni        String?
-  
+
   // Montos y deuda
   originalDebt      Decimal                       @db.Decimal(12, 2)
   agreedAmount      Decimal                       @db.Decimal(12, 2)
   paidAmount        Decimal                       @default(0) @db.Decimal(12, 2)
   pendingAmount     Decimal                       @db.Decimal(12, 2)
-  
+
   // Fechas
   createdAt         DateTime                      @default(now())
   activatedAt       DateTime?
   completedAt       DateTime?
   cancelledAt       DateTime?
-  
+
   // Estado y motivo
   status            PaymentAgreementStatus        @default(DRAFT)
   reason            String
   observations      String?
-  
+
   // Usuario responsable
   createdBy         String
   createdByName     String
@@ -87,15 +91,15 @@ model PaymentAgreement {
   cancelledBy       String?
   cancelledByName   String?
   cancelledReason   String?
-  
+
   // Relación con deuda original
   relatedCharges    PaymentAgreementChargeRelation[]
   installments      PaymentAgreementInstallment[]
   events            PaymentAgreementEvent[]
-  
+
   // Metadatos
   metadata          Json?
-  
+
   @@unique([agreementNumber, agreementYear])
   @@index([studentId])
   @@index([status])
@@ -116,20 +120,20 @@ model PaymentAgreementInstallment {
   paidAmount        Decimal                       @default(0) @db.Decimal(12, 2)
   pendingAmount     Decimal                       @db.Decimal(12, 2)
   status            InstallmentStatus             @default(PENDING)
-  
+
   // Fechas
   paidAt            DateTime?
   overdueSince      DateTime?
-  
+
   // Relación con pagos
   allocations       PaymentAllocation[]
-  
+
   // Metadatos
   notes             String?
   metadata          Json?
-  
+
   agreement         PaymentAgreement             @relation(fields: [agreementId], references: [id], onDelete: Cascade)
-  
+
   @@unique([agreementId, installmentNumber])
   @@index([agreementId])
   @@index([dueDate])
@@ -147,17 +151,17 @@ model PaymentAgreementChargeRelation {
   chargeId          String
   originalAmount    Decimal                       @db.Decimal(12, 2)
   includedAmount    Decimal                       @db.Decimal(12, 2)
-  
+
   // Estado de la cuota original
   originalStatus    ChargeStatus
   newStatus         ChargeStatus?
-  
+
   // Tipo de relación
   relationType      ChargeRelationType           @default(REFINANCED)
-  
+
   agreement         PaymentAgreement             @relation(fields: [agreementId], references: [id], onDelete: Cascade)
   charge            StudentCharge                @relation(fields: [chargeId], references: [id], onDelete: Restrict)
-  
+
   @@unique([agreementId, chargeId])
   @@index([agreementId])
   @@index([chargeId])
@@ -176,14 +180,14 @@ model PaymentAgreementEvent {
   previousStatus    PaymentAgreementStatus?
   newStatus         PaymentAgreementStatus?
   metadata          Json?
-  
+
   // Usuario y contexto
   userId            String
   userName          String
   createdAt         DateTime                      @default(now())
-  
+
   agreement         PaymentAgreement             @relation(fields: [agreementId], references: [id], onDelete: Cascade)
-  
+
   @@index([agreementId])
   @@index([eventType])
   @@index([createdAt])
@@ -199,7 +203,7 @@ model PaymentAgreementNumber {
   year       Int      @unique
   lastNumber Int      @default(0)
   updatedAt  DateTime @updatedAt
-  
+
   @@map("payment_agreement_numbers")
 }
 ```
@@ -273,6 +277,7 @@ enum AgreementEventType {
 **Propósito:** Vincular el convenio con las cuotas originales que refinancia.
 
 **Flujo:**
+
 1. Al crear el convenio, se seleccionan las cuotas a incluir
 2. Se crea una relación por cada cuota
 3. Según el tipo de relación:
@@ -281,6 +286,7 @@ enum AgreementEventType {
    - `ASSOCIATED`: La cuota original permanece activa y se paga normalmente
 
 **Impacto en deuda:**
+
 - Si `REFINANCED`: La deuda original se considera "resuelta" por el convenio
 - Si `BLOCKED`: La deuda original no cuenta para bloqueos pero sigue existiendo
 - Si `ASSOCIATED`: La deuda original se paga normalmente, el convenio es solo informativo
@@ -299,11 +305,11 @@ model PaymentAllocation {
   chargeId  String
   installmentId String?  // NUEVO: opcional, referencia a cuota de convenio
   amount    Decimal       @db.Decimal(12, 2)
-  
+
   charge    StudentCharge @relation(fields: [chargeId], references: [id], onDelete: Restrict)
   payment   Payment       @relation(fields: [paymentId], references: [id], onDelete: Restrict)
   installment PaymentAgreementInstallment? @relation(fields: [installmentId], references: [id], onDelete: Restrict) // NUEVO
-  
+
   @@id([paymentId, chargeId])
   @@unique([paymentId, installmentId]) // NUEVO: índice único para pagos a convenio
   @@map("payment_allocations")
@@ -325,9 +331,9 @@ model Receipt {
   // ... campos existentes ...
   agreementId String?  // NUEVO: opcional, referencia al convenio
   agreementNumber Int?  // NUEVO: número de convenio para mostrar en recibo
-  
+
   agreement PaymentAgreement? @relation(fields: [agreementId], references: [id], onDelete: SetNull) // NUEVO
-  
+
   @@index([agreementId]) // NUEVO
 }
 ```
@@ -339,6 +345,7 @@ model Receipt {
 **Reutilización:** Se usa `FinancialBlock` existente.
 
 **Integración:**
+
 - Un convenio activo y al día puede generar excepción automática
 - Un convenio vencido/incumplido puede reactivar bloqueos
 
@@ -349,13 +356,14 @@ model FinancialBlock {
   // ... campos existentes ...
   exceptionSource String?  // NUEVO: 'MANUAL', 'PAYMENT_AGREEMENT'
   exceptionAgreementId String?  // NUEVO: referencia al convenio que genera la excepción
-  
+
   @@index([exceptionSource]) // NUEVO
   @@index([exceptionAgreementId]) // NUEVO
 }
 ```
 
 **Flujo:**
+
 1. Al activar un convenio, se crea excepción automática si corresponde
 2. Al vencer cuotas, se evalúa si debe reactivar bloqueos
 3. Al cancelar el convenio, se revocan excepciones automáticas
@@ -385,6 +393,7 @@ enum FinancialMovementType {
 **Propósito:** Auditar todas las operaciones de convenio.
 
 **Eventos a auditar:**
+
 - CREATE: Creación de convenio
 - ACTIVATE: Activación de convenio
 - UPDATE: Modificación de convenio
@@ -400,6 +409,7 @@ enum FinancialMovementType {
 ### 5.1 Reglas de Creación
 
 **Requisitos:**
+
 - El alumno debe tener deuda vencida o pendiente
 - El monto acordado debe ser mayor o igual a la deuda seleccionada
 - El plan de cuotas debe sumar exactamente el monto acordado
@@ -407,6 +417,7 @@ enum FinancialMovementType {
 - Debe haber al menos 2 cuotas (si no, es un pago normal)
 
 **Validaciones:**
+
 - No se puede crear convenio para deuda ya refinanciada
 - No se puede crear convenio para deuda cancelada
 - El usuario debe tener permiso `PAYMENT_AGREEMENT:create`
@@ -418,11 +429,13 @@ enum FinancialMovementType {
 **Transición:** DRAFT → ACTIVE
 
 **Requisitos:**
+
 - El convenio debe tener al menos 2 cuotas
 - La suma de cuotas debe coincidir con el monto acordado
 - La deuda original debe estar bloqueada o refinanciada
 
 **Acciones al activar:**
+
 - Cambiar estado de cuotas originales según tipo de relación
 - Crear excepción de bloqueo si corresponde
 - Registrar evento de activación
@@ -433,33 +446,39 @@ enum FinancialMovementType {
 ### 5.3 Reglas de Pagos
 
 **Aplicación de pagos:**
+
 - Los pagos se asignan a cuotas de convenio vía PaymentAllocation
 - Se priorizan cuotas vencidas sobre cuotas futuras
 - Si el pago excede la cuota, el excedente va a la siguiente cuota
 
 **Estado de cuotas:**
+
 - Pago parcial: PARTIAL
 - Pago completo: PAID
 - Sin pago y fecha pasada: OVERDUE
 
 **Actualización del convenio:**
+
 - `paidAmount` se incrementa con cada pago
 - `pendingAmount` se decrementa
 - Si todas las cuotas están PAID: ACTIVE → COMPLETED
 
 **Emisión de recibos:**
+
 - Los pagos de convenio generan recibos normales
 - El recibo indica el número de convenio y cuota
 
 ### 5.4 Reglas de Incumplimiento
 
 **Definición de incumplimiento:**
+
 - Más de N cuotas vencidas (configurable)
 - O más de X días desde la primera cuota vencida (configurable)
 
 **Transición:** ACTIVE → DEFAULTED
 
 **Acciones al incumplir:**
+
 - Cambiar estado del convenio
 - Reactivar bloqueos financieros
 - Registrar evento de incumplimiento
@@ -467,6 +486,7 @@ enum FinancialMovementType {
 - Notificar al usuario
 
 **Recuperación:**
+
 - Si se ponen al día las cuotas vencidas: DEFAULTED → ACTIVE
 - Si se refinancia: DEFAULTED → REFINANCED
 
@@ -475,10 +495,12 @@ enum FinancialMovementType {
 **Transición:** Cualquier → CANCELLED
 
 **Requisitos:**
+
 - Solo se puede cancelar si no hay pagos asociados
 - O si se autoriza explícitamente (requiere permiso elevado)
 
 **Acciones al cancelar:**
+
 - Reactivar cuotas originales si estaban refinanciadas
 - Reactivar bloqueos si había excepciones
 - Registrar evento de cancelación
@@ -491,10 +513,12 @@ enum FinancialMovementType {
 **Transición:** Cualquier → REFINANCED
 
 **Requisitos:**
+
 - Debe existir un nuevo convenio que reemplace este
 - El nuevo convenio debe referenciar al anterior
 
 **Acciones al refinanciar:**
+
 - Marcar convenio anterior como REFINANCED
 - Vincular nuevo convenio con anterior
 - Transferir excepciones de bloqueo
@@ -511,12 +535,14 @@ enum FinancialMovementType {
 **Usuario:** FINANZAS o DIRECTOR
 
 **Acción:**
+
 1. Buscar alumno
 2. Ver deuda actual (cuotas vencidas y pendientes)
 3. Seleccionar cuotas a incluir en el convenio
 4. Ver monto total de deuda seleccionada
 
 **Validación:**
+
 - Alumno debe tener deuda seleccionable
 - Cuotas no pueden estar ya refinanciadas
 
@@ -525,12 +551,14 @@ enum FinancialMovementType {
 **Usuario:** FINANZAS o DIRECTOR
 
 **Acción:**
+
 1. Ingresar motivo del convenio
 2. Ingresar observaciones (opcional)
 3. Definir monto acordado (puede incluir descuentos/condonaciones)
 4. Seleccionar tipo de relación con deuda original
 
 **Validación:**
+
 - Monto acordado >= deuda seleccionada (si no hay condonación)
 - Monto acordado puede ser < deuda seleccionada si hay condonación (requiere autorización)
 
@@ -539,12 +567,14 @@ enum FinancialMovementType {
 **Usuario:** FINANZAS o DIRECTOR
 
 **Acción:**
+
 1. Definir cantidad de cuotas
 2. Definir fechas de vencimiento (pueden ser irregulares)
 3. Definir montos por cuota (pueden ser irregulares)
 4. Validar que la suma coincida con el monto acordado
 
 **Validación:**
+
 - Suma de cuotas == monto acordado
 - Fechas de vencimiento futuras
 - Al menos 2 cuotas
@@ -554,10 +584,12 @@ enum FinancialMovementType {
 **Usuario:** FINANZAS o DIRECTOR
 
 **Acción:**
+
 1. Revisar resumen del convenio
 2. Confirmar creación
 
 **Resultado:**
+
 - Convenio creado en estado DRAFT
 - Cuotas creadas pero no activas
 - Relaciones con deuda original creadas
@@ -572,11 +604,13 @@ enum FinancialMovementType {
 **Usuario:** FINANZAS o DIRECTOR
 
 **Acción:**
+
 1. Registrar pago normalmente
 2. Seleccionar cuota de convenio como destino
 3. Sistema asigna pago a cuota
 
 **Resultado:**
+
 - Payment creado
 - PaymentAllocation vinculado a cuota de convenio
 - Cuota actualizada (PARTIAL o PAID)
@@ -589,6 +623,7 @@ enum FinancialMovementType {
 **Usuario:** Sistema (no implementado en Fase 1)
 
 **Acción:**
+
 - Si hay débito automático configurado
 - Sistema procesa pago en fecha de vencimiento
 
@@ -599,9 +634,11 @@ enum FinancialMovementType {
 **Usuario:** FINANZAS o DIRECTOR
 
 **Acción:**
+
 - Registrar pago menor al monto de la cuota
 
 **Resultado:**
+
 - Cuota en estado PARTIAL
 - Restante sigue pendiente
 - Siguiente pago se aplica al restante
@@ -615,6 +652,7 @@ enum FinancialMovementType {
 **Usuario:** Sistema (job nocturno)
 
 **Acción:**
+
 1. Revisar convenios activos
 2. Identificar cuotas vencidas
 3. Evaluar criterios de incumplimiento:
@@ -622,6 +660,7 @@ enum FinancialMovementType {
    - O más de X días desde primera vencida
 
 **Resultado:**
+
 - Si cumple criterios: ACTIVE → DEFAULTED
 - Reactivar bloqueos financieros
 - Notificar usuario
@@ -631,10 +670,12 @@ enum FinancialMovementType {
 **Usuario:** FINANZAS o DIRECTOR
 
 **Acción:**
+
 - Pagar cuotas vencidas
 - O refinanciar deuda
 
 **Resultado:**
+
 - Si se ponen al día: DEFAULTED → ACTIVE
 - Si se refinancia: DEFAULTED → REFINANCED
 
@@ -645,11 +686,13 @@ enum FinancialMovementType {
 ### 9.1 Impacto en Deuda
 
 **Cálculo de deuda:**
+
 - Si cuota está `REFINANCED`: No cuenta como deuda pendiente
 - Si cuota está `BLOCKED`: Cuenta como deuda pero no genera bloqueos
 - Si cuota está `ASSOCIATED`: Cuenta como deuda normal
 
 **Deuda del convenio:**
+
 - Se calcula como suma de cuotas pendientes
 - Se muestra separada de deuda original
 - Se incluye en reportes financieros
@@ -657,15 +700,18 @@ enum FinancialMovementType {
 ### 9.2 Impacto en Bloqueos
 
 **Excepción automática:**
+
 - Al activar convenio: Crear excepción para `FinancialBlock`
 - Tipo de excepción: `PAYMENT_AGREEMENT`
 - Referencia al convenio
 
 **Reactivación:**
+
 - Al incumplir: Revocar excepción, reactivar bloqueos
 - Al cancelar: Revocar excepción, reactivar bloqueos
 
 **Validación:**
+
 - No mezclar excepciones manuales con automáticas
 - Distingir origen en `exceptionSource`
 
@@ -676,30 +722,35 @@ enum FinancialMovementType {
 ### 10.1 Entidad: PAYMENT_AGREEMENT
 
 **SUPERADMIN:**
+
 - canCreate: true
 - canRead: true
 - canUpdate: true
 - canDelete: true
 
 **DIRECTOR:**
+
 - canCreate: true
 - canRead: true
 - canUpdate: true
 - canDelete: true
 
 **FINANZAS:**
+
 - canCreate: true
 - canRead: true
 - canUpdate: true
 - canDelete: false
 
 **SECRETARIA:**
+
 - canCreate: false
 - canRead: true
 - canUpdate: false
 - canDelete: false
 
 **ALUMNO:**
+
 - canCreate: false
 - canRead: true (solo propios)
 - canUpdate: false
@@ -708,10 +759,12 @@ enum FinancialMovementType {
 ### 10.2 Validación de Ownership
 
 **Para ALUMNO:**
+
 - Solo puede ver sus propios convenios
 - Se valida en el server: `studentId === locals.user.studentId`
 
 **Para otros roles:**
+
 - Pueden ver todos los convenios
 - No hay restricción de ownership
 
@@ -726,6 +779,7 @@ enum FinancialMovementType {
 **Permisos:** `PAYMENT_AGREEMENT:read`
 
 **Funcionalidad:**
+
 - Listar todos los convenios
 - Filtros: estado, alumno, fecha
 - Acciones: ver detalle, crear nuevo
@@ -737,6 +791,7 @@ enum FinancialMovementType {
 **Permisos:** `PAYMENT_AGREEMENT:read` + ownership si es alumno
 
 **Funcionalidad:**
+
 - Ver datos del convenio
 - Ver cuotas y estados
 - Ver pagos realizados
@@ -750,6 +805,7 @@ enum FinancialMovementType {
 **Permisos:** `PAYMENT_AGREEMENT:create`
 
 **Funcionalidad:**
+
 - Seleccionar alumno
 - Seleccionar deuda
 - Definir convenio
@@ -763,6 +819,7 @@ enum FinancialMovementType {
 **Permisos:** Solo para alumnos
 
 **Funcionalidad:**
+
 - Ver solo sus propios convenios
 - Ver estado y cuotas
 - Ver próximos vencimientos
@@ -876,12 +933,14 @@ async getRelatedCharges(agreementId: string): Promise<StudentCharge[]>
 **Objetivo:** Implementar modelos y servicio básico
 
 **Tareas:**
+
 - Crear migración con nuevos modelos
 - Crear PaymentAgreementService con métodos CRUD
 - Implementar validaciones básicas
 - Registrar auditoría
 
 **Criterios de cierre:**
+
 - Schema actualizado
 - Servicio funcional
 - Auditoría funcionando
@@ -892,6 +951,7 @@ async getRelatedCharges(agreementId: string): Promise<StudentCharge[]>
 **Objetivo:** Implementar flujo completo de creación
 
 **Tareas:**
+
 - UI para crear convenios
 - Selección de deuda
 - Definición de plan de cuotas
@@ -900,6 +960,7 @@ async getRelatedCharges(agreementId: string): Promise<StudentCharge[]>
 - Relación con deuda original
 
 **Criterios de cierre:**
+
 - UI funcional
 - Creación y activación funcionando
 - Relación con deuda establecida
@@ -910,6 +971,7 @@ async getRelatedCharges(agreementId: string): Promise<StudentCharge[]>
 **Objetivo:** Integrar pagos con convenios
 
 **Tareas:**
+
 - Modificar PaymentAllocation para aceptar cuotas de convenio
 - Integrar pagos con cuotas de convenio
 - Implementar cálculo de progreso
@@ -917,6 +979,7 @@ async getRelatedCharges(agreementId: string): Promise<StudentCharge[]>
 - Emisión de recibos con referencia a convenio
 
 **Criterios de cierre:**
+
 - Pagos aplicándose a convenios
 - Seguimiento funcionando
 - Recibos emitidos correctamente
@@ -927,6 +990,7 @@ async getRelatedCharges(agreementId: string): Promise<StudentCharge[]>
 **Objetivo:** Implementar detección de incumplimiento e integración con bloqueos
 
 **Tareas:**
+
 - Implementar evaluación de incumplimiento
 - Integrar con FinancialBlock
 - Crear excepciones automáticas
@@ -934,6 +998,7 @@ async getRelatedCharges(agreementId: string): Promise<StudentCharge[]>
 - UI de gestión de incumplimiento
 
 **Criterios de cierre:**
+
 - Incumplimiento detectado
 - Bloqueos integrados
 - Excepciones funcionando
@@ -944,6 +1009,7 @@ async getRelatedCharges(agreementId: string): Promise<StudentCharge[]>
 **Objetivo:** Implementar refinanciación y cancelación
 
 **Tareas:**
+
 - Implementar flujo de refinanciación
 - Implementar cancelación de convenios
 - Reactivar deuda original
@@ -951,6 +1017,7 @@ async getRelatedCharges(agreementId: string): Promise<StudentCharge[]>
 - UI de refinanciación y cancelación
 
 **Criterios de cierre:**
+
 - Refinanciación funcionando
 - Cancelación funcionando
 - Deuda original reactivada
@@ -961,6 +1028,7 @@ async getRelatedCharges(agreementId: string): Promise<StudentCharge[]>
 **Objetivo:** Implementar reportes específicos de convenios
 
 **Tareas:**
+
 - Reporte de convenios activos
 - Reporte de convenios vencidos
 - Reporte de cumplimiento
@@ -969,6 +1037,7 @@ async getRelatedCharges(agreementId: string): Promise<StudentCharge[]>
 - Documentación
 
 **Criterios de cierre:**
+
 - Reportes funcionando
 - Auditoría completa
 - Documentación actualizada
@@ -983,6 +1052,7 @@ async getRelatedCharges(agreementId: string): Promise<StudentCharge[]>
 **Descripción:** Riesgo de que la deuda original y el convenio se cuenten doble.
 
 **Mitigación:**
+
 - Usar `PaymentAgreementChargeRelation` para vincular explícitamente
 - Cambiar estado de cuotas originales según tipo de relación
 - Validar en cálculo de deuda que no se duplique
@@ -992,6 +1062,7 @@ async getRelatedCharges(agreementId: string): Promise<StudentCharge[]>
 **Descripción:** Riesgo de que un pago se asigne a cuota original y a cuota de convenio.
 
 **Mitigación:**
+
 - Agregar índice único en PaymentAllocation
 - Validar que un pago no tenga chargeId y installmentId simultáneamente
 - Implementar validación en FinancialService
@@ -1001,6 +1072,7 @@ async getRelatedCharges(agreementId: string): Promise<StudentCharge[]>
 **Descripción:** Riesgo de que las excepciones de bloqueo por convenio se mezclen con manuales.
 
 **Mitigación:**
+
 - Agregar campo `exceptionSource` en FinancialBlock
 - Distinguir origen en todas las operaciones
 - Implementar lógica separada para cada tipo
@@ -1010,6 +1082,7 @@ async getRelatedCharges(agreementId: string): Promise<StudentCharge[]>
 **Descripción:** Riesgo de que la refinanciación de convenios sea compleja y propensa a errores.
 
 **Mitigación:**
+
 - Implementar refinanciación como fase separada
 - Validar que el nuevo convenio reemplace completamente al anterior
 - Mantener trazabilidad entre convenios
@@ -1019,6 +1092,7 @@ async getRelatedCharges(agreementId: string): Promise<StudentCharge[]>
 **Descripción:** Riesgo de que las consultas de convenios sean lentas con muchos datos.
 
 **Mitigación:**
+
 - Agregar índices apropiados
 - Implementar paginación en listados
 - Optimizar consultas con Prisma

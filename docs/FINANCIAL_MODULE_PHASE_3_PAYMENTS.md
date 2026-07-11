@@ -24,25 +24,30 @@ Esta fase incluye exclusivamente:
 ### 1. Validaciones Previas
 
 **Validaciones de alumno:**
+
 - Alumno debe existir
 - Alumno debe estar activo (`status = 'ACTIVE'`)
 
 **Validaciones de permisos:**
+
 - Usuario debe tener permiso `PAYMENT.create`
 - Se valida usando `hasPermission(roleCode, 'PAYMENT', 'create')`
 
 **Validaciones de monto:**
+
 - Monto no puede ser negativo
 - Monto no puede ser cero
 - Monto no puede superar la deuda seleccionada (si se especifican cuotas)
 - Monto no puede superar la deuda total del alumno (si no se especifican cuotas)
 
 **Validaciones de cuotas:**
+
 - Si se especifican cuotas, deben existir
 - Si se especifican cuotas, deben estar en estado `PENDING` o `PARTIAL`
 - No se permiten pagos sobre cuotas anuladas o ya pagadas
 
 **Validaciones de referencia:**
+
 - Si se proporciona referencia, no puede estar duplicada
 - La unicidad se valida por combinación `method + reference`
 - Solo se valida contra pagos no anulados (`isCancelled = false`)
@@ -50,6 +55,7 @@ Esta fase incluye exclusivamente:
 ### 2. Registro del Pago
 
 **Transacción atómica:**
+
 ```typescript
 await prisma.$transaction(async (tx) => {
   // 1. Crear pago
@@ -66,6 +72,7 @@ await prisma.$transaction(async (tx) => {
 ```
 
 **Campos del pago:**
+
 - `studentId` - ID del alumno
 - `amount` - Monto del pago (Decimal)
 - `method` - Método de pago (CASH, BANK_TRANSFER, DEBIT_CARD, CREDIT_CARD, QR, SCHOLARSHIP)
@@ -78,6 +85,7 @@ await prisma.$transaction(async (tx) => {
 ### 3. Auditoría
 
 **Solo se registra si la transacción fue exitosa:**
+
 - Acción: `CREATE`
 - Entidad: `Payment`
 - Descripción: "Registró pago de [nombre alumno] - $[monto]"
@@ -96,52 +104,56 @@ await prisma.$transaction(async (tx) => {
 ### Estrategia FIFO (First-In-First-Out)
 
 **Ordenamiento:**
+
 - Las cuotas se ordenan por `dueDate` ascendente
 - Si una cuota no tiene `dueDate`, se pone al final
 
 **Algoritmo de asignación:**
+
 ```typescript
 for (const charge of sortedCharges) {
-  if (remainingAmount <= 0) break;
+	if (remainingAmount <= 0) break;
 
-  const chargeBalance = charge.finalAmount - charge.paidAmount;
-  if (chargeBalance <= 0) continue;
+	const chargeBalance = charge.finalAmount - charge.paidAmount;
+	if (chargeBalance <= 0) continue;
 
-  const allocationAmount = min(remainingAmount, chargeBalance);
+	const allocationAmount = min(remainingAmount, chargeBalance);
 
-  // Crear allocation
-  await tx.paymentAllocation.create({
-    paymentId,
-    chargeId: charge.id,
-    amount: allocationAmount
-  });
+	// Crear allocation
+	await tx.paymentAllocation.create({
+		paymentId,
+		chargeId: charge.id,
+		amount: allocationAmount
+	});
 
-  // Actualizar cuota
-  const newPaidAmount = charge.paidAmount + allocationAmount;
-  let newStatus = charge.status;
+	// Actualizar cuota
+	const newPaidAmount = charge.paidAmount + allocationAmount;
+	let newStatus = charge.status;
 
-  if (newPaidAmount === charge.finalAmount) {
-    newStatus = 'PAID';
-  } else if (newPaidAmount > 0) {
-    newStatus = 'PARTIAL';
-  }
+	if (newPaidAmount === charge.finalAmount) {
+		newStatus = 'PAID';
+	} else if (newPaidAmount > 0) {
+		newStatus = 'PARTIAL';
+	}
 
-  await tx.studentCharge.update({
-    where: { id: charge.id },
-    data: { paidAmount: newPaidAmount, status: newStatus }
-  });
+	await tx.studentCharge.update({
+		where: { id: charge.id },
+		data: { paidAmount: newPaidAmount, status: newStatus }
+	});
 
-  remainingAmount -= allocationAmount;
+	remainingAmount -= allocationAmount;
 }
 ```
 
 **Estados de cuota:**
+
 - `PENDING` - Sin pagos (`paidAmount = 0`)
 - `PARTIAL` - Pago parcial (`0 < paidAmount < finalAmount`)
 - `PAID` - Pagado completamente (`paidAmount = finalAmount`)
 - `CANCELLED` - Anulada
 
 **Asignación manual:**
+
 - Si se especifican `chargeIds` en el input, solo se asigna a esas cuotas
 - Si no se especifican, se asigna automáticamente a todas las cuotas pendientes (FIFO)
 
@@ -150,69 +162,73 @@ for (const charge of sortedCharges) {
 ### 1. Validaciones Previas
 
 **Validaciones de pago:**
+
 - Pago debe existir
 - Pago no debe estar ya anulado (`isCancelled = false`)
 
 **Validaciones de permisos:**
+
 - Usuario debe tener permiso `PAYMENT.delete`
 - Se valida usando `hasPermission(roleCode, 'PAYMENT', 'delete')`
 
 ### 2. Anulación
 
 **Transacción atómica:**
+
 ```typescript
 await prisma.$transaction(async (tx) => {
-  // 1. Revertir allocations
-  for (const allocation of payment.allocations) {
-    const newPaidAmount = charge.paidAmount - allocation.amount;
-    let newStatus = charge.status;
+	// 1. Revertir allocations
+	for (const allocation of payment.allocations) {
+		const newPaidAmount = charge.paidAmount - allocation.amount;
+		let newStatus = charge.status;
 
-    if (newPaidAmount === 0) {
-      newStatus = 'PENDING';
-    } else if (newPaidAmount > 0) {
-      newStatus = 'PARTIAL';
-    }
+		if (newPaidAmount === 0) {
+			newStatus = 'PENDING';
+		} else if (newPaidAmount > 0) {
+			newStatus = 'PARTIAL';
+		}
 
-    await tx.studentCharge.update({
-      where: { id: charge.id },
-      data: { paidAmount: newPaidAmount, status: newStatus }
-    });
+		await tx.studentCharge.update({
+			where: { id: charge.id },
+			data: { paidAmount: newPaidAmount, status: newStatus }
+		});
 
-    // Eliminar allocation
-    await tx.paymentAllocation.delete({
-      where: { paymentId_chargeId: { paymentId, chargeId } }
-    });
-  }
+		// Eliminar allocation
+		await tx.paymentAllocation.delete({
+			where: { paymentId_chargeId: { paymentId, chargeId } }
+		});
+	}
 
-  // 2. Marcar pago como anulado
-  await tx.payment.update({
-    where: { id: paymentId },
-    data: {
-      isCancelled: true,
-      cancelledAt: new Date(),
-      cancelledBy: userId,
-      cancelledReason: reason
-    }
-  });
+	// 2. Marcar pago como anulado
+	await tx.payment.update({
+		where: { id: paymentId },
+		data: {
+			isCancelled: true,
+			cancelledAt: new Date(),
+			cancelledBy: userId,
+			cancelledReason: reason
+		}
+	});
 
-  // 3. Crear movimiento financiero de cancelación
-  await tx.financialMovement.create({
-    data: {
-      studentId: payment.studentId,
-      movementType: 'CANCELLATION',
-      amount: payment.amount,
-      entityType: 'Payment',
-      entityId: paymentId,
-      description: `Anulación de pago de [nombre alumno] - $[monto]`,
-      balanceBefore: 0,
-      balanceAfter: 0,
-      userId
-    }
-  });
+	// 3. Crear movimiento financiero de cancelación
+	await tx.financialMovement.create({
+		data: {
+			studentId: payment.studentId,
+			movementType: 'CANCELLATION',
+			amount: payment.amount,
+			entityType: 'Payment',
+			entityId: paymentId,
+			description: `Anulación de pago de [nombre alumno] - $[monto]`,
+			balanceBefore: 0,
+			balanceAfter: 0,
+			userId
+		}
+	});
 });
 ```
 
 **No se borra el pago físicamente:**
+
 - Se marca como `isCancelled = true`
 - Se registran `cancelledAt`, `cancelledBy`, `cancelledReason`
 - El pago permanece en la base de datos para auditoría
@@ -220,6 +236,7 @@ await prisma.$transaction(async (tx) => {
 ### 3. Auditoría
 
 **Solo se registra si la transacción fue exitosa:**
+
 - Acción: `DELETE`
 - Entidad: `Payment`
 - Descripción: "Anuló pago de [nombre alumno] - $[monto]"
@@ -236,6 +253,7 @@ await prisma.$transaction(async (tx) => {
 ### Tipo de Movimiento
 
 **Pago:**
+
 - `movementType`: `'PAYMENT'`
 - `entityType`: `'Payment'`
 - `entityId`: ID del pago
@@ -243,6 +261,7 @@ await prisma.$transaction(async (tx) => {
 - `description`: "Pago de [nombre alumno] - [método]"
 
 **Cancelación de pago:**
+
 - `movementType`: `'CANCELLATION'`
 - `entityType`: `'Payment'`
 - `entityId`: ID del pago
@@ -250,6 +269,7 @@ await prisma.$transaction(async (tx) => {
 - `description`: "Anulación de pago de [nombre alumno] - $[monto]"
 
 **Campos obligatorios:**
+
 - `studentId` - ID del alumno
 - `balanceBefore` - Balance antes (por ahora 0, se implementará en fase posterior)
 - `balanceAfter` - Balance después (por ahora 0, se implementará en fase posterior)
@@ -260,6 +280,7 @@ await prisma.$transaction(async (tx) => {
 ### Monto
 
 **No permitido:**
+
 - Monto negativo: "El monto no puede ser negativo"
 - Monto cero: "El monto no puede ser cero"
 - Monto mayor a la deuda seleccionada: "El monto del pago no puede superar la deuda seleccionada"
@@ -270,6 +291,7 @@ await prisma.$transaction(async (tx) => {
 ### Cuotas
 
 **No permitido:**
+
 - Pagar cuotas anuladas: "Algunas cuotas no existen o no están pendientes"
 - Pagar cuotas ya pagadas: "Algunas cuotas no existen o no están pendientes"
 - Pagar cuotas de otro alumno: Validado por `studentId`
@@ -277,6 +299,7 @@ await prisma.$transaction(async (tx) => {
 ### Permisos
 
 **No permitido:**
+
 - Registrar pagos sin permiso: "No tiene permisos para registrar pagos"
 - Anular pagos sin permiso: "No tiene permisos para anular pagos"
 - Alumnos registrando pagos: Validado por permisos (los alumnos no tienen permiso `PAYMENT.create`)
@@ -284,6 +307,7 @@ await prisma.$transaction(async (tx) => {
 ### Referencia
 
 **No permitido:**
+
 - Referencia duplicada: "Ya existe un pago con esta referencia"
 - La unicidad se valida por combinación `method + reference`
 - Solo se valida contra pagos no anulados
@@ -293,6 +317,7 @@ await prisma.$transaction(async (tx) => {
 ### Pago Total de una Cuota
 
 **Input:**
+
 ```typescript
 {
   studentId: 'student-123',
@@ -304,6 +329,7 @@ await prisma.$transaction(async (tx) => {
 ```
 
 **Resultado:**
+
 - Pago creado: $10,000
 - Allocation: charge-789 = $10,000
 - Estado cuota: PENDING → PAID
@@ -312,6 +338,7 @@ await prisma.$transaction(async (tx) => {
 ### Pago Parcial
 
 **Input:**
+
 ```typescript
 {
   studentId: 'student-123',
@@ -324,6 +351,7 @@ await prisma.$transaction(async (tx) => {
 ```
 
 **Resultado:**
+
 - Pago creado: $5,000
 - Allocation: charge-789 = $5,000
 - Estado cuota: PENDING → PARTIAL
@@ -332,6 +360,7 @@ await prisma.$transaction(async (tx) => {
 ### Pago Distribuido (FIFO)
 
 **Input:**
+
 ```typescript
 {
   studentId: 'student-123',
@@ -343,11 +372,13 @@ await prisma.$transaction(async (tx) => {
 ```
 
 **Cuotas pendientes:**
+
 - charge-1: $5,000 (vence 2026-09-15)
 - charge-2: $5,000 (vence 2026-10-15)
 - charge-3: $5,000 (vence 2026-11-15)
 
 **Resultado:**
+
 - Pago creado: $12,000
 - Allocations:
   - charge-1: $5,000 (completo)
@@ -362,6 +393,7 @@ await prisma.$transaction(async (tx) => {
 ### Anulación de Pago
 
 **Input:**
+
 ```typescript
 {
   paymentId: 'payment-123',
@@ -371,6 +403,7 @@ await prisma.$transaction(async (tx) => {
 ```
 
 **Resultado:**
+
 - Pago marcado como anulado: `isCancelled = true`
 - Allocations eliminadas
 - Cuotas revertidas a estado anterior
@@ -393,18 +426,21 @@ await prisma.$transaction(async (tx) => {
 ### FinancialService
 
 **registerPayment(input: PaymentInput): Promise<PaymentResult>**
+
 - Registra un pago y lo asigna a cuotas
 - Valida alumno, permisos, monto, cuotas, referencia
 - Ejecuta transacción atómica
 - Registra auditoría
 
 **allocatePaymentInternal(paymentId, paymentAmount, charges, tx): Promise<PaymentAllocation[]>**
+
 - Helper interno para asignar pago a cuotas
 - Implementa estrategia FIFO
 - Actualiza estados de cuotas
 - Solo se usa dentro de transacciones
 
 **cancelPayment(paymentId, reason, userId): Promise<void>**
+
 - Anula un pago existente
 - Revierte allocations
 - Actualiza estados de cuotas
@@ -413,6 +449,7 @@ await prisma.$transaction(async (tx) => {
 - Registra auditoría
 
 **getStudentPayments(studentId): Promise<Payment[]>**
+
 - Obtiene todos los pagos de un alumno
 - Incluye allocations y cuotas
 - Filtra pagos no anulados
@@ -422,16 +459,19 @@ await prisma.$transaction(async (tx) => {
 ### `/finanzas/pagos`
 
 **GET - Cargar página:**
+
 - Obtiene alumnos activos
 - Obtiene conceptos de cuota activos
 - Obtiene ciclos lectivos activos
 
 **POST - registerPayment:**
+
 - Registra un pago
 - Valida y delega en `financialService.registerPayment()`
 - Retorna resultado o error
 
 **POST - cancelPayment:**
+
 - Anula un pago
 - Valida y delega en `financialService.cancelPayment()`
 - Retorna resultado o error
@@ -439,6 +479,7 @@ await prisma.$transaction(async (tx) => {
 ## UI Básica
 
 **Componentes:**
+
 - Selector de alumno
 - Input de monto
 - Selector de método de pago
@@ -450,6 +491,7 @@ await prisma.$transaction(async (tx) => {
 - Botón de registrar pago
 
 **Comportamiento:**
+
 - Si no se seleccionan cuotas, se asigna automáticamente (FIFO)
 - Si se seleccionan cuotas, se asigna solo a esas
 - Muestra errores de validación
@@ -460,6 +502,7 @@ await prisma.$transaction(async (tx) => {
 ### Test Suite: `scripts/test-financial-payments.ts`
 
 **Pruebas implementadas:**
+
 1. ✅ Pago total de una cuota
 2. ✅ Pago parcial
 3. ✅ Pago distribuido en varias cuotas (FIFO)
@@ -475,6 +518,7 @@ await prisma.$transaction(async (tx) => {
 13. ✅ Rollback si falla una operación
 
 **Ejecución:**
+
 ```bash
 npx tsx scripts/test-financial-payments.ts
 ```

@@ -17,6 +17,7 @@ This document provides a comprehensive analysis of the current system and propos
 The system already has several document-related models:
 
 #### StudentDocument
+
 **Location:** `prisma/schema.prisma` (lines 818-838)
 
 ```prisma
@@ -49,6 +50,7 @@ model StudentDocument {
 **Features:** Verification workflow, audit logging
 
 #### Payslip
+
 **Location:** `prisma/schema.prisma` (lines 700-716)
 
 ```prisma
@@ -77,6 +79,7 @@ model Payslip {
 **Features:** Private storage, soft delete, audit logging
 
 #### ClassMaterial
+
 **Location:** `prisma/schema.prisma` (lines 865-882)
 
 ```prisma
@@ -105,6 +108,7 @@ model ClassMaterial {
 **Features:** Public access, teacher-specific
 
 #### Receipt
+
 **Location:** `prisma/schema.prisma` (lines 526-565)
 
 ```prisma
@@ -155,23 +159,29 @@ enum DocumentType {
 The system uses **two different storage strategies**:
 
 #### Public Storage
+
 **Location:** `static/uploads/`
 **Used by:**
+
 - `StudentDocument` - `static/uploads/{studentId}/`
 - `ClassMaterial` - `static/uploads/materials/`
 
 **Characteristics:**
+
 - Files are publicly accessible via URL
 - No access control at file level
 - Relies on application-level permissions
 - Risk: Direct URL access possible
 
 #### Private Storage
+
 **Location:** `storage/private/payslips/`
 **Used by:**
+
 - `Payslip` - `storage/private/payslips/{year}/{month}/{teacherId}/{uuid}.pdf`
 
 **Characteristics:**
+
 - Files are outside `static/` directory
 - Not publicly accessible via URL
 - Requires protected endpoint for access
@@ -182,6 +192,7 @@ The system uses **two different storage strategies**:
 **Location:** `src/lib/server/services/storage/file-storage.service.ts`
 
 **Features:**
+
 - File validation (size, MIME type, extension)
 - PDF magic bytes validation
 - Secure file naming with UUID
@@ -190,6 +201,7 @@ The system uses **two different storage strategies**:
 - Read/write/delete operations
 
 **Configuration:**
+
 - Max file size: 10MB
 - Allowed MIME types: `application/pdf` only
 - Storage base: `storage/private/payslips/`
@@ -201,6 +213,7 @@ The system uses **two different storage strategies**:
 **Location:** `src/lib/server/auth/permissions-granular.ts`
 
 **Entities:**
+
 - STUDENT
 - TEACHER
 - CAREER
@@ -214,12 +227,14 @@ The system uses **two different storage strategies**:
 - PAYMENT_AGREEMENT
 
 **Permissions:**
+
 - create
 - read
 - update
 - delete
 
 **Functions:**
+
 - `checkPermission(user, entity, permission)` - Check if user has permission
 - `requirePermission(user, entity, permission)` - Throw error if no permission
 - `hasPermission(roleCode, entity, permission)` - Check role-specific permission
@@ -232,6 +247,7 @@ The system uses **two different storage strategies**:
 
 **Model:** `AuditLog` in schema
 **Features:**
+
 - Action tracking (CREATE, UPDATE, DELETE, EXPORT, etc.)
 - Entity type and ID tracking
 - User tracking
@@ -245,6 +261,7 @@ The system uses **two different storage strategies**:
 **Example:** `/recibos/[id]/download/+server.ts`
 
 **Pattern:**
+
 1. Protected endpoint (not static file)
 2. Permission validation before access
 3. File read from private storage
@@ -252,6 +269,7 @@ The system uses **two different storage strategies**:
 5. Response with appropriate headers (Content-Type, Content-Disposition)
 
 **Benefits:**
+
 - No direct URL access
 - Permission check on every download
 - Audit trail
@@ -264,6 +282,7 @@ The system uses **two different storage strategies**:
 ### Q1: ¿Ya existe algún modelo para archivos/documentos?
 
 **Answer:** SÍ, existen varios modelos:
+
 - `StudentDocument` - Documentos de alumnos
 - `Payslip` - Recibos de sueldo de docentes
 - `ClassMaterial` - Materiales de clase
@@ -274,6 +293,7 @@ The system uses **two different storage strategies**:
 ### Q2: ¿Dónde se guardan actualmente los archivos subidos?
 
 **Answer:** En dos lugares:
+
 - **Público:** `static/uploads/` (StudentDocument, ClassMaterial)
 - **Privado:** `storage/private/payslips/` (Payslip)
 
@@ -282,6 +302,7 @@ The system uses **two different storage strategies**:
 ### Q3: ¿Existe una estrategia de storage?
 
 **Answer:** SÍ, pero no unificada:
+
 - Storage público para archivos menos sensibles
 - Storage privado para archivos sensibles
 - Servicio `FileStorageService` para payslips
@@ -292,6 +313,7 @@ The system uses **two different storage strategies**:
 ### Q4: ¿Los archivos se guardan en `static/uploads`, en carpeta privada o en otro lugar?
 
 **Answer:** Ambos:
+
 - `static/uploads/` - archivos públicos
 - `storage/private/` - archivos privados
 
@@ -300,6 +322,7 @@ The system uses **two different storage strategies**:
 ### Q5: ¿Cómo se validan tipos MIME y extensiones?
 
 **Answer:** En `FileStorageService`:
+
 - Validación de MIME type contra lista blanca
 - Validación de extensión de archivo
 - Validación de magic bytes para PDF
@@ -309,6 +332,7 @@ The system uses **two different storage strategies**:
 ### Q6: ¿Cómo se limita el tamaño máximo?
 
 **Answer:** En `FileStorageService`:
+
 - Límite de 10MB configurado
 - Validación antes de guardar
 
@@ -317,6 +341,7 @@ The system uses **two different storage strategies**:
 ### Q7: ¿Qué entidades pueden tener documentos?
 
 **Answer:** Actualmente:
+
 - Student (StudentDocument)
 - Teacher (Payslip)
 - Subject (ClassMaterial)
@@ -327,6 +352,7 @@ The system uses **two different storage strategies**:
 ### Q8: ¿Los documentos pertenecen a docentes, alumnos, usuarios, instituciones o al sistema?
 
 **Answer:** Actualmente:
+
 - Alumnos (StudentDocument)
 - Docentes (Payslip)
 - Materias (ClassMaterial)
@@ -337,6 +363,7 @@ The system uses **two different storage strategies**:
 ### Q9: ¿Qué tipos de documento iniciales conviene crear?
 
 **Answer:** Basado en el enum `DocumentType` existente:
+
 - DNI
 - CERTIFICATE
 - CONSTANCY
@@ -346,6 +373,7 @@ The system uses **two different storage strategies**:
 - OTHER
 
 **Propuesta adicional:**
+
 - CONTRACT (contratos)
 - LEGAL (documentos legales)
 - ADMINISTRATIVE (documentos administrativos)
@@ -357,6 +385,7 @@ The system uses **two different storage strategies**:
 ### Q10: ¿Cómo se organiza por tipo?
 
 **Answer:** Actualmente:
+
 - Por modelo (StudentDocument, Payslip, etc.)
 - Por enum DocumentType (solo para StudentDocument)
 
@@ -365,6 +394,7 @@ The system uses **two different storage strategies**:
 ### Q11: ¿Quién puede subir documentos?
 
 **Answer:** Actualmente:
+
 - StudentDocument: Roles con permiso STUDENT update
 - Payslip: Roles FINANZAS, LIQUIDADOR
 - ClassMaterial: Docentes (propietarios de materia)
@@ -375,6 +405,7 @@ The system uses **two different storage strategies**:
 ### Q12: ¿Quién puede ver documentos?
 
 **Answer:** Actualmente:
+
 - StudentDocument: Roles con permiso STUDENT read
 - Payslip: DIRECTOR, FINANZAS, LIQUIDADOR, docente propietario
 - ClassMaterial: Público (a través de URL estática)
@@ -385,6 +416,7 @@ The system uses **two different storage strategies**:
 ### Q13: ¿Quién puede descargar documentos?
 
 **Answer:** Actualmente:
+
 - StudentDocument: Misma lógica que ver (URL pública)
 - Payslip: Mismos permisos que ver (endpoint protegido)
 - ClassMaterial: Público (URL estática)
@@ -395,6 +427,7 @@ The system uses **two different storage strategies**:
 ### Q14: ¿Quién puede eliminar o desactivar documentos?
 
 **Answer:** Actualmente:
+
 - StudentDocument: Roles con permiso STUDENT delete
 - Payslip: Soft delete por roles autorizados
 - ClassMaterial: No claro (probablemente solo uploader)
@@ -405,6 +438,7 @@ The system uses **two different storage strategies**:
 ### Q15: ¿Debe existir auditoría de subida, descarga, visualización y eliminación?
 
 **Answer:** Actualmente:
+
 - Subida: SÍ (auditLog en StudentDocument, Payslip, ClassMaterial)
 - Descarga: SÍ (auditLog en Payslip download endpoint)
 - Visualización: NO
@@ -415,6 +449,7 @@ The system uses **two different storage strategies**:
 ### Q16: ¿La descarga debe ser por URL pública o endpoint protegido?
 
 **Answer:** Actualmente mixto:
+
 - StudentDocument: URL pública
 - Payslip: Endpoint protegido
 - ClassMaterial: URL pública
@@ -425,6 +460,7 @@ The system uses **two different storage strategies**:
 ### Q17: ¿Cómo se evita que alguien acceda a un archivo pegando la URL?
 
 **Answer:** Actualmente:
+
 - Payslip: Archivo en storage privado, no accesible por URL
 - StudentDocument/ClassMaterial: Archivo en static/uploads, accesible por URL
 
@@ -443,6 +479,7 @@ The system uses **two different storage strategies**:
 ### Q20: ¿Se requiere estado: activo, vencido, eliminado, reemplazado?
 
 **Answer:** Actualmente:
+
 - StudentDocument: verified (boolean)
 - Payslip: status (enum), deletedAt (soft delete)
 - ClassMaterial: Sin estado específico
@@ -453,6 +490,7 @@ The system uses **two different storage strategies**:
 ### Q21: ¿Qué UI mínima se necesita?
 
 **Answer:** Actualmente:
+
 - StudentDocument: UI en `/alumnos/[id]/documentos`
 - Payslip: UI en finanzas
 - ClassMaterial: UI en `/docente/materiales`
@@ -463,6 +501,7 @@ The system uses **two different storage strategies**:
 ### Q22: ¿Qué migraciones serían necesarias?
 
 **Answer:** Depende del diseño:
+
 - Si se crea modelo genérico: Nueva migración
 - Si se extiende StudentDocument: Migración para agregar campos
 - Si se crea nuevo enum: Migración para enum
@@ -473,6 +512,7 @@ The system uses **two different storage strategies**:
 ### Q23: ¿Qué riesgos de seguridad existen?
 
 **Answer:** Actualmente:
+
 - Acceso directo a archivos en static/uploads
 - Inconsistencia en validación de permisos
 - Falta de validación unificada de tipos MIME
@@ -483,6 +523,7 @@ The system uses **two different storage strategies**:
 ### Q24: ¿Qué queda fuera del MVP?
 
 **Answer:** Propuesta:
+
 - Versionado de documentos
 - Vencimiento automático
 - OCR / indexación de contenido
@@ -499,6 +540,7 @@ The system uses **two different storage strategies**:
 ### 3.1 Design Philosophy
 
 **Principles:**
+
 1. **Security First:** All documents in private storage, protected endpoints
 2. **Consistency:** Unified document model, unified permissions
 3. **Extensibility:** Generic model that can handle multiple entity types
@@ -532,16 +574,16 @@ enum DocumentCategory {
   ACADEMIC           // Títulos, certificados académicos
   MEDICAL            // Certificados médicos
   LEGAL              // Contratos, documentos legales
-  
+
   // Documentos institucionales
   ADMINISTRATIVE     // Documentos administrativos
   FINANCIAL          // Documentos financieros
   ACADEMIC_INST      // Documentos académicos institucionales
-  
+
   // Documentos de sistema
   SYSTEM             // Documentos del sistema
   TEMPLATE           // Plantillas
-  
+
   // Otros
   OTHER
 }
@@ -552,38 +594,38 @@ enum DocumentSubType {
   DNI
   PASSPORT
   PHOTO_ID
-  
+
   // Académicos
   SECONDARY_TITLE
   UNIVERSITY_TITLE
   CERTIFICATE
   CONSTANCY
   TRANSCRIPT
-  
+
   // Médicos
   MEDICAL_CERTIFICATE
   VACCINATION_RECORD
-  
+
   // Legales
   CONTRACT
   AGREEMENT
   LIABILITY_WAIVER
-  
+
   // Administrativos
   ENROLLMENT_FORM
   REGISTRATION
   OFFICIAL_NOTICE
-  
+
   // Financieros
   RECEIPT
   INVOICE
   PAYMENT_PROOF
-  
+
   // Sistema
   LOGO
   LETTERHEAD
   FORM_TEMPLATE
-  
+
   OTHER
 }
 
@@ -606,7 +648,7 @@ enum DocumentVisibility {
 // Modelo principal de documento
 model Document {
   id                String              @id @default(cuid())
-  
+
   // Metadatos del archivo
   originalFileName  String
   internalFileName  String              // Nombre seguro con UUID
@@ -615,50 +657,50 @@ model Document {
   fileSize          Int
   mimeType          String
   fileHash          String?             // SHA-256 para integridad
-  
+
   // Categorización
   category          DocumentCategory
   subType           DocumentSubType
   customType        String?             // Tipo personalizado si subType = OTHER
-  
+
   // Propietario y entidad
   ownerType         DocumentOwnerType
   ownerId           String              // ID de la entidad dueña
-  
+
   // Estado y visibilidad
   status            DocumentStatus      @default(ACTIVE)
   visibility        DocumentVisibility  @default(PRIVATE)
-  
+
   // Metadatos adicionales
   title             String
   description       String?             @db.Text
   tags              String[]            // Array de tags para búsqueda
   metadata          Json?               // Metadatos flexibles
-  
+
   // Fechas
   uploadedAt        DateTime            @default(now())
   expiresAt         DateTime?           // Vencimiento opcional
   accessedAt        DateTime?           // Último acceso
   deletedAt         DateTime?           // Soft delete
-  
+
   // Usuario y contexto
   uploadedBy        String
   uploadedByName    String
   lastModifiedBy    String?
   lastModifiedByName String?
-  
+
   // Versionado (opcional para MVP)
   version           Int                 @default(1)
   parentDocumentId  String?             // Si es versión de otro documento
   isLatestVersion   Boolean             @default(true)
-  
+
   // Relaciones
   uploader          User                @relation("DocumentUploader", fields: [uploadedBy], references: [id])
   lastModifier      User?               @relation("DocumentLastModifier", fields: [lastModifiedBy], references: [id])
   parentDocument    Document?           @relation("DocumentVersions", fields: [parentDocumentId], references: [id])
   versions          Document[]          @relation("DocumentVersions")
   accessLogs        DocumentAccessLog[]
-  
+
   @@index([ownerType, ownerId])
   @@index([category, subType])
   @@index([status])
@@ -681,9 +723,9 @@ model DocumentAccessLog {
   success     Boolean  @default(true)
   error       String?
   accessedAt  DateTime @default(now())
-  
+
   document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  
+
   @@index([documentId])
   @@index([userId])
   @@index([accessedAt])
@@ -692,6 +734,7 @@ model DocumentAccessLog {
 ```
 
 **Advantages:**
+
 - Unified model for all document types
 - Flexible categorization
 - Support for multiple entity types
@@ -701,6 +744,7 @@ model DocumentAccessLog {
 - Extensible metadata
 
 **Disadvantages:**
+
 - Requires migration
 - May need data migration from existing models
 - More complex than simple extension
@@ -710,11 +754,13 @@ model DocumentAccessLog {
 Extend `StudentDocument` to be more generic and create similar models for other entities.
 
 **Advantages:**
+
 - Less migration work
 - Preserves existing functionality
 - Simpler transition
 
 **Disadvantages:**
+
 - Code duplication across models
 - Inconsistent behavior
 - Harder to maintain
@@ -727,6 +773,7 @@ Extend `StudentDocument` to be more generic and create similar models for other 
 **Base Strategy:** Private storage for all documents
 
 **Storage Structure:**
+
 ```
 storage/private/documents/
   ├── {ownerType}/
@@ -738,6 +785,7 @@ storage/private/documents/
 ```
 
 **Example:**
+
 ```
 storage/private/documents/
   ├── STUDENT/
@@ -755,11 +803,13 @@ storage/private/documents/
 ```
 
 **File Key Format:**
+
 ```
 {ownerType}/{ownerId}/{category}/{year}/{month}/{uuid}.{ext}
 ```
 
 **Benefits:**
+
 - Organized by entity type
 - Organized by time (useful for cleanup)
 - Not publicly accessible
@@ -769,11 +819,12 @@ storage/private/documents/
 ### 3.4 Proposed Permission System
 
 **Add to existing entities:**
+
 ```typescript
 // In permissions-granular.ts
 const ENTITIES = [
-  // ... existing entities
-  'DOCUMENT'
+	// ... existing entities
+	'DOCUMENT'
 ] as const;
 
 export type Entity = (typeof ENTITIES)[number];
@@ -781,17 +832,18 @@ export type Entity = (typeof ENTITIES)[number];
 
 **Permission Matrix:**
 
-| Role | create | read | update | delete |
-|------|--------|------|--------|--------|
-| SUPERADMIN | ✅ | ✅ | ✅ | ✅ |
-| DIRECTOR | ✅ | ✅ | ✅ | ✅ |
-| SECRETARIA | ✅ | ✅ | ✅ | ✅ |
-| FINANZAS | ✅ | ✅ | ✅ | ✅ |
-| DOCENTE | ✅ (own) | ✅ (own) | ✅ (own) | ✅ (own) |
-| PRECEPTOR | ❌ | ✅ (students) | ❌ | ❌ |
-| ALUMNO | ❌ | ✅ (own) | ❌ | ❌ |
+| Role       | create   | read          | update   | delete   |
+| ---------- | -------- | ------------- | -------- | -------- |
+| SUPERADMIN | ✅       | ✅            | ✅       | ✅       |
+| DIRECTOR   | ✅       | ✅            | ✅       | ✅       |
+| SECRETARIA | ✅       | ✅            | ✅       | ✅       |
+| FINANZAS   | ✅       | ✅            | ✅       | ✅       |
+| DOCENTE    | ✅ (own) | ✅ (own)      | ✅ (own) | ✅ (own) |
+| PRECEPTOR  | ❌       | ✅ (students) | ❌       | ❌       |
+| ALUMNO     | ❌       | ✅ (own)      | ❌       | ❌       |
 
 **Additional Rules:**
+
 - Users can always read their own documents
 - Users can always upload documents for entities they own
 - ADMIN roles can manage all documents
@@ -800,6 +852,7 @@ export type Entity = (typeof ENTITIES)[number];
 ### 3.5 Proposed Validation Rules
 
 **File Validation:**
+
 - Max size: 10MB (configurable by category)
 - Allowed MIME types by category:
   - IDENTITY: application/pdf, image/jpeg, image/png
@@ -812,12 +865,14 @@ export type Entity = (typeof ENTITIES)[number];
 - Extension validation matches MIME type
 
 **Filename Sanitization:**
+
 - Original filename preserved in DB
 - Internal filename: `{uuid}.{ext}`
 - No special characters in internal filename
 - No path traversal possible
 
 **Integrity Check:**
+
 - SHA-256 hash calculated on upload
 - Hash stored in database
 - Optional: Re-validate on download
@@ -825,6 +880,7 @@ export type Entity = (typeof ENTITIES)[number];
 ### 3.6 Proposed Audit Strategy
 
 **Audit Actions:**
+
 - CREATE: Document uploaded
 - UPDATE: Document metadata updated
 - DELETE: Document deleted (soft)
@@ -835,6 +891,7 @@ export type Entity = (typeof ENTITIES)[number];
 - REVOKE: Document revoked
 
 **Audit Fields:**
+
 - userId, userName
 - action
 - entityType: 'Document'
@@ -845,6 +902,7 @@ export type Entity = (typeof ENTITIES)[number];
 - userAgent
 
 **Access Log:**
+
 - Separate table for detailed access tracking
 - Every view/download logged
 - Includes success/failure
@@ -855,6 +913,7 @@ export type Entity = (typeof ENTITIES)[number];
 **Endpoint:** `/api/documents/[id]/download`
 
 **Flow:**
+
 1. User requests download
 2. Check authentication
 3. Check permission (read + ownership or role)
@@ -867,6 +926,7 @@ export type Entity = (typeof ENTITIES)[number];
 10. Update accessedAt timestamp
 
 **Headers:**
+
 ```
 Content-Type: {mimeType}
 Content-Disposition: attachment; filename="{originalFileName}"
@@ -874,6 +934,7 @@ Cache-Control: no-cache, no-store, must-revalidate
 ```
 
 **Security:**
+
 - No direct URL access
 - Permission check on every download
 - Audit trail
@@ -884,6 +945,7 @@ Cache-Control: no-cache, no-store, must-revalidate
 **Route:** `/documentos` (main document management)
 
 **Features:**
+
 - List all documents (filtered by permissions)
 - Filter by category, subType, ownerType, status
 - Search by title, description, tags
@@ -894,11 +956,13 @@ Cache-Control: no-cache, no-store, must-revalidate
 - View access logs
 
 **Entity-Specific Routes:**
+
 - `/alumnos/[id]/documentos` - Student documents (existing, redirect to new)
 - `/docente/[id]/documentos` - Teacher documents
 - `/institucion/documentos` - Institutional documents
 
 **UI Components:**
+
 - Document list with filters
 - Document detail view
 - Upload form with validation
@@ -912,41 +976,49 @@ Cache-Control: no-cache, no-store, must-revalidate
 ### 4.1 Identified Risks
 
 **Risk 1: Direct URL Access to Public Files**
+
 - **Current:** StudentDocument and ClassMaterial in static/uploads
 - **Impact:** Unauthorized access by guessing URLs
 - **Mitigation:** Migrate all documents to private storage
 
 **Risk 2: Inconsistent Permission Validation**
+
 - **Current:** Different permission patterns per model
 - **Impact:** Potential authorization bypass
 - **Mitigation:** Unified permission system for all documents
 
 **Risk 3: Insufficient File Validation**
+
 - **Current:** Only PDF validation in FileStorageService
 - **Impact:** Malicious file upload
 - **Mitigation:** Comprehensive validation by category
 
 **Risk 4: Missing Audit Trail**
+
 - **Current:** No view access logging
 - **Impact:** Unable to detect unauthorized access
 - **Mitigation:** Complete access logging
 
 **Risk 5: File Deletion Without Trace**
+
 - **Current:** Hard delete in some models
 - **Impact:** Data loss, no recovery
 - **Mitigation:** Soft delete for all documents
 
 **Risk 6: Filename Exposure**
+
 - **Current:** Original filenames in URLs
 - **Impact:** Information disclosure
 - **Mitigation:** UUID-based internal filenames
 
 **Risk 7: No File Integrity Verification**
+
 - **Current:** No hash verification
 - **Impact:** File tampering undetected
 - **Mitigation:** SHA-256 hash storage and verification
 
 **Risk 8: No Expiration Management**
+
 - **Current:** No expiration for sensitive documents
 - **Impact:** Sensitive documents accessible indefinitely
 - **Mitigation:** Expiration date and automatic status update
@@ -954,17 +1026,20 @@ Cache-Control: no-cache, no-store, must-revalidate
 ### 4.2 Mitigation Strategies
 
 **Storage Security:**
+
 - All documents in private storage
 - Protected endpoints for all access
 - No direct URL access
 
 **Access Control:**
+
 - Unified permission system
 - Role-based access control
 - Ownership-based access control
 - Visibility levels (PRIVATE/INTERNAL/PUBLIC)
 
 **File Validation:**
+
 - Category-specific MIME type validation
 - Magic bytes validation
 - Extension validation
@@ -972,12 +1047,14 @@ Cache-Control: no-cache, no-store, must-revalidate
 - Filename sanitization
 
 **Audit and Monitoring:**
+
 - Complete audit trail
 - Access logging
 - Failed access attempt logging
 - Regular audit review
 
 **Data Integrity:**
+
 - SHA-256 hash storage
 - Optional hash verification on download
 - Soft delete with retention period
@@ -988,9 +1065,11 @@ Cache-Control: no-cache, no-store, must-revalidate
 ## 5. MVP Phases
 
 ### Phase 1.1: Schema and Database
+
 **Objective:** Create database structure
 
 **Tasks:**
+
 - Create Document model
 - Create DocumentAccessLog model
 - Create enums (DocumentOwnerType, DocumentCategory, DocumentSubType, DocumentStatus, DocumentVisibility)
@@ -999,14 +1078,17 @@ Cache-Control: no-cache, no-store, must-revalidate
 - Test migration
 
 **Deliverables:**
+
 - Updated schema.prisma
 - Migration file
 - Migration applied successfully
 
 ### Phase 1.2: Storage Service
+
 **Objective:** Generic file storage service
 
 **Tasks:**
+
 - Refactor FileStorageService to be generic
 - Add category-specific validation
 - Add support for multiple MIME types
@@ -1016,14 +1098,17 @@ Cache-Control: no-cache, no-store, must-revalidate
 - Add file deletion with soft delete support
 
 **Deliverables:**
+
 - Generic FileStorageService
 - Unit tests for storage service
 - Documentation
 
 ### Phase 1.3: Document Service
+
 **Objective:** Business logic for document management
 
 **Tasks:**
+
 - Create DocumentService
 - Implement upload method
 - Implement download method
@@ -1035,14 +1120,17 @@ Cache-Control: no-cache, no-store, must-revalidate
 - Implement access logging
 
 **Deliverables:**
+
 - DocumentService
 - Unit tests
 - Integration tests
 
 ### Phase 1.4: API Endpoints
+
 **Objective:** REST API for document operations
 
 **Tasks:**
+
 - Create `/api/documents/upload` endpoint
 - Create `/api/documents/[id]/download` endpoint
 - Create `/api/documents/[id]` endpoint (GET, PATCH, DELETE)
@@ -1053,14 +1141,17 @@ Cache-Control: no-cache, no-store, must-revalidate
 - Implement error handling
 
 **Deliverables:**
+
 - API endpoints
 - API tests
 - API documentation
 
 ### Phase 1.5: Basic UI
+
 **Objective:** Minimal UI for document management
 
 **Tasks:**
+
 - Create `/documentos` route
 - Create document list view
 - Create document upload form
@@ -1070,14 +1161,17 @@ Cache-Control: no-cache, no-store, must-revalidate
 - Implement permission-based UI
 
 **Deliverables:**
+
 - UI components
 - UI tests
 - User documentation
 
 ### Phase 1.6: Data Migration (Optional)
+
 **Objective:** Migrate existing documents
 
 **Tasks:**
+
 - Create migration script for StudentDocument
 - Create migration script for ClassMaterial
 - Migrate files from static to private storage
@@ -1086,14 +1180,17 @@ Cache-Control: no-cache, no-store, must-revalidate
 - Rollback plan
 
 **Deliverables:**
+
 - Migration script
 - Migration verification
 - Rollback script
 
 ### Phase 1.7: Testing and Validation
+
 **Objective:** Comprehensive testing
 
 **Tasks:**
+
 - Unit tests for all services
 - Integration tests for API
 - E2E tests for UI
@@ -1102,14 +1199,17 @@ Cache-Control: no-cache, no-store, must-revalidate
 - Load tests
 
 **Deliverables:**
+
 - Test suite
 - Test results
 - Performance benchmarks
 
 ### Phase 1.8: Documentation and Closure
+
 **Objective:** Complete documentation
 
 **Tasks:**
+
 - API documentation
 - User documentation
 - Admin documentation
@@ -1118,6 +1218,7 @@ Cache-Control: no-cache, no-store, must-revalidate
 - Closure checklist
 
 **Deliverables:**
+
 - Complete documentation
 - Closure document
 - Production readiness checklist
@@ -1127,6 +1228,7 @@ Cache-Control: no-cache, no-store, must-revalidate
 ## 6. Out of Scope for MVP
 
 **Features NOT included in MVP:**
+
 - Document versioning (infrastructure exists, UI not implemented)
 - Document expiration automation (infrastructure exists, cron not implemented)
 - OCR / content indexing
@@ -1149,29 +1251,36 @@ Cache-Control: no-cache, no-store, must-revalidate
 ## 7. Files to Modify
 
 **Schema:**
+
 - `prisma/schema.prisma` - Add new models and enums
 
 **Services:**
+
 - `src/lib/server/services/storage/file-storage.service.ts` - Refactor to generic
 - `src/lib/server/services/document/document.service.ts` - Create new
 
 **Permissions:**
+
 - `src/lib/server/auth/permissions-granular.ts` - Add DOCUMENT entity
 
 **API:**
+
 - `src/routes/api/documents/+server.ts` - Create new
 - `src/routes/api/documents/[id]/+server.ts` - Create new
 - `src/routes/api/documents/[id]/download/+server.ts` - Create new
 
 **UI:**
+
 - `src/routes/(app)/documentos/+page.svelte` - Create new
 - `src/routes/(app)/documentos/+page.server.ts` - Create new
 
 **Tests:**
+
 - `scripts/test-document-service.ts` - Create new
 - `scripts/test-document-api.ts` - Create new
 
 **Migration:**
+
 - `prisma/migrations/{timestamp}_add_document_management/` - Create new
 
 ---
@@ -1179,6 +1288,7 @@ Cache-Control: no-cache, no-store, must-revalidate
 ## 8. Migration Requirements
 
 **Required Migration:**
+
 - Add Document model
 - Add DocumentAccessLog model
 - Add DocumentOwnerType enum
@@ -1190,12 +1300,14 @@ Cache-Control: no-cache, no-store, must-revalidate
 - Update User relations for Document
 
 **Optional Migration (Data Migration):**
+
 - Migrate StudentDocument to Document
 - Migrate ClassMaterial to Document
 - Migrate files from static/uploads to storage/private/documents
 - Update file URLs and keys
 
 **Migration Strategy:**
+
 1. Create schema migration
 2. Apply schema migration
 3. Create data migration script
@@ -1211,6 +1323,7 @@ Cache-Control: no-cache, no-store, must-revalidate
 ### 9.1 Current State Summary
 
 **Strengths:**
+
 - Existing document models (StudentDocument, Payslip, ClassMaterial)
 - Existing permission system (granular)
 - Existing audit system
@@ -1218,6 +1331,7 @@ Cache-Control: no-cache, no-store, must-revalidate
 - Existing FileStorageService foundation
 
 **Weaknesses:**
+
 - Inconsistent storage strategy (public vs private)
 - Inconsistent permission validation
 - Incomplete audit trail (no view logging)
@@ -1228,6 +1342,7 @@ Cache-Control: no-cache, no-store, must-revalidate
 ### 9.2 Design Recommendations
 
 **Primary Recommendation:**
+
 - Implement generic Document model (Option A)
 - Migrate all documents to private storage
 - Implement unified permission system
@@ -1235,6 +1350,7 @@ Cache-Control: no-cache, no-store, must-revalidate
 - Refactor FileStorageService to generic
 
 **Secondary Recommendations:**
+
 - Start with MVP phases
 - Implement data migration after MVP is stable
 - Consider cloud storage for future scalability
@@ -1243,32 +1359,32 @@ Cache-Control: no-cache, no-store, must-revalidate
 ### 9.3 Implementation Priority
 
 **High Priority:**
+
 1. Schema and database (Phase 1.1)
 2. Storage service refactoring (Phase 1.2)
 3. Document service (Phase 1.3)
 4. API endpoints (Phase 1.4)
 
-**Medium Priority:**
-5. Basic UI (Phase 1.5)
-6. Testing and validation (Phase 1.7)
+**Medium Priority:** 5. Basic UI (Phase 1.5) 6. Testing and validation (Phase 1.7)
 
-**Low Priority:**
-7. Data migration (Phase 1.6) - can be done later
-8. Advanced features (out of scope)
+**Low Priority:** 7. Data migration (Phase 1.6) - can be done later 8. Advanced features (out of scope)
 
 ### 9.4 Security Recommendations
 
 **Immediate:**
+
 - Migrate all documents to private storage
 - Implement protected download endpoints
 - Implement complete access logging
 
 **Short-term:**
+
 - Implement file integrity verification
 - Implement document expiration
 - Implement soft delete for all documents
 
 **Long-term:**
+
 - Implement document versioning
 - Implement advanced security features
 - Regular security audits
@@ -1276,6 +1392,7 @@ Cache-Control: no-cache, no-store, must-revalidate
 ### 9.5 Go/No-Go Criteria
 
 **Go Criteria:**
+
 - Schema design approved
 - Storage strategy approved
 - Permission model approved
@@ -1283,6 +1400,7 @@ Cache-Control: no-cache, no-store, must-revalidate
 - MVP phases defined
 
 **No-Go Criteria:**
+
 - Schema design not approved
 - Security risks not addressed
 - Insufficient resources for migration
@@ -1293,6 +1411,7 @@ Cache-Control: no-cache, no-store, must-revalidate
 ## 10. Next Steps
 
 **Immediate:**
+
 1. Review and approve this design document
 2. Approve or modify proposed models
 3. Approve or modify storage strategy
@@ -1300,6 +1419,7 @@ Cache-Control: no-cache, no-store, must-revalidate
 5. Approve MVP phases
 
 **After Approval:**
+
 1. Begin Phase 1.1 (Schema and Database)
 2. Create migration
 3. Test migration
@@ -1310,6 +1430,7 @@ Cache-Control: no-cache, no-store, must-revalidate
 ## Appendix A: Reusable Components
 
 **Existing Components to Reuse:**
+
 - `FileStorageService` - Refactor to generic
 - `checkPermission` / `requirePermission` - Add DOCUMENT entity
 - `auditLog` - Use for all document operations
@@ -1317,6 +1438,7 @@ Cache-Control: no-cache, no-store, must-revalidate
 - Private storage pattern - From Payslip
 
 **Components to Create:**
+
 - `DocumentService` - New business logic
 - Generic `FileStorageService` - Refactored
 - Document API endpoints - New
@@ -1327,16 +1449,19 @@ Cache-Control: no-cache, no-store, must-revalidate
 ## Appendix B: Alternative Approaches Considered
 
 **Alternative 1: Cloud Storage (S3, GCS, Azure)**
+
 - **Pros:** Scalable, reliable, CDN integration
 - **Cons:** Additional cost, complexity, dependency
 - **Decision:** Start with local storage, migrate to cloud later
 
 **Alternative 2: Multiple Document Models**
+
 - **Pros:** Simpler migration, preserves existing structure
 - **Cons:** Code duplication, inconsistency, maintenance burden
 - **Decision:** Unified generic model preferred
 
 **Alternative 3: Hybrid Storage (Public + Private)**
+
 - **Pros:** Flexibility, performance for public docs
 - **Cons:** Complexity, security risks
 - **Decision:** Private storage only for security

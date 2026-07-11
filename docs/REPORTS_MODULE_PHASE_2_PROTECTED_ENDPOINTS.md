@@ -27,12 +27,12 @@ scripts/
 
 ### 1.2 Endpoints implementados
 
-| Endpoint | Método | Permisos | Filtros |
-|----------|--------|----------|---------|
-| `/api/reports/institutional` | GET | SUPERADMIN only | Ninguno |
-| `/api/reports/financial` | GET | FINANCIAL_REPORT:read | studentId, startDate, endDate |
-| `/api/reports/academic` | GET | GRADE:read | careerId, subjectId, studentId |
-| `/api/reports/attendance` | GET | ATTENDANCE:read | studentId, subjectId, commissionId, startDate, endDate |
+| Endpoint                     | Método | Permisos              | Filtros                                                |
+| ---------------------------- | ------ | --------------------- | ------------------------------------------------------ |
+| `/api/reports/institutional` | GET    | SUPERADMIN only       | Ninguno                                                |
+| `/api/reports/financial`     | GET    | FINANCIAL_REPORT:read | studentId, startDate, endDate                          |
+| `/api/reports/academic`      | GET    | GRADE:read            | careerId, subjectId, studentId                         |
+| `/api/reports/attendance`    | GET    | ATTENDANCE:read       | studentId, subjectId, commissionId, startDate, endDate |
 
 ---
 
@@ -54,12 +54,12 @@ scripts/
 ```typescript
 // Global permissions-granular.ts (permisivo)
 if (!permissionRecord) {
-  return permission === 'read'; // Default read permitido
+	return permission === 'read'; // Default read permitido
 }
 
 // report-permissions.ts (estricto)
 if (!permissionRecord) {
-  return false; // No default read - denegar
+	return false; // No default read - denegar
 }
 ```
 
@@ -111,16 +111,20 @@ if (!permissionRecord) {
 ### 4.1 `GET /api/reports/institutional`
 
 **Permisos:**
+
 - SUPERADMIN only (no se usa entidad de permiso)
 
 **Validación:**
+
 - Sesión requerida: 401 si no autenticado
 - SUPERADMIN requerido: 403 si no es SUPERADMIN
 
 **Filtros:**
+
 - Ninguno soportado
 
 **Respuesta:**
+
 ```typescript
 {
   success: true,
@@ -131,13 +135,14 @@ if (!permissionRecord) {
 ```
 
 **Código:**
+
 ```typescript
 if (!locals.user) {
-  return json(formatApiError('Unauthorized'), { status: 401 });
+	return json(formatApiError('Unauthorized'), { status: 401 });
 }
 
 if (!isSuperAdmin(locals.user)) {
-  return json(formatApiError('Forbidden: SUPERADMIN only'), { status: 403 });
+	return json(formatApiError('Forbidden: SUPERADMIN only'), { status: 403 });
 }
 
 const result = await getInstitutionalMetrics();
@@ -151,23 +156,28 @@ return json(formatApiResponse(result.data));
 ### 5.1 `GET /api/reports/financial`
 
 **Permisos:**
+
 - FINANCIAL_REPORT:read (permiso explícito requerido)
 - SUPERADMIN tiene acceso automático
 
 **Validación:**
+
 - Sesión requerida: 401 si no autenticado
 - FINANCIAL_REPORT:read requerido: 403 si no tiene permiso explícito
 
 **Filtros soportados:**
+
 - `studentId` - Filtrar por alumno
 - `startDate` - Fecha desde (formato ISO 8601)
 - `endDate` - Fecha hasta (formato ISO 8601)
 
 **Validaciones de filtros:**
+
 - Fechas inválidas: 400
 - `startDate > endDate`: 400
 
 **Respuesta:**
+
 ```typescript
 {
   success: true,
@@ -178,14 +188,15 @@ return json(formatApiResponse(result.data));
 ```
 
 **Código:**
+
 ```typescript
 if (!locals.user) {
-  return json(formatApiError('Unauthorized'), { status: 401 });
+	return json(formatApiError('Unauthorized'), { status: 401 });
 }
 
 const hasPermission = await checkExplicitPermission(locals.user, 'FINANCIAL_REPORT', 'read');
 if (!hasPermission) {
-  return json(formatApiError('Forbidden: FINANCIAL_REPORT:read required'), { status: 403 });
+	return json(formatApiError('Forbidden: FINANCIAL_REPORT:read required'), { status: 403 });
 }
 
 const filters = parseFilters(url);
@@ -194,6 +205,7 @@ return json(formatApiResponse(result.data, filters));
 ```
 
 **Confirmación de no alteración de Convenios de Pago:**
+
 - Solo consulta estados existentes de PaymentAgreement
 - No modifica ningún estado
 - No ejecuta batches
@@ -206,25 +218,30 @@ return json(formatApiResponse(result.data, filters));
 ### 6.1 `GET /api/reports/academic`
 
 **Permisos:**
+
 - GRADE:read (permiso explícito requerido para reportes académicos)
 - SUPERADMIN tiene acceso automático
 
 **Validación:**
+
 - Sesión requerida: 401 si no autenticado
 - GRADE:read requerido: 403 si no tiene permiso explícito
 
 **Filtros soportados:**
+
 - `careerId` - Filtrar por carrera
 - `subjectId` - Filtrar por materia
 - `studentId` - Filtrar por alumno
 
 **Limitaciones documentadas:**
+
 - Filtro `careerId` en Subject no aplicado por estructura de schema (Subject se relaciona con Career vía CareerSubject)
 - Certificados emitidos: no existe modelo
 - Correlatividades cumplidas: no existe tracking
 - Evolución de matrícula: requiere agregación temporal
 
 **Respuesta:**
+
 ```typescript
 {
   success: true,
@@ -235,14 +252,15 @@ return json(formatApiResponse(result.data, filters));
 ```
 
 **Código:**
+
 ```typescript
 if (!locals.user) {
-  return json(formatApiError('Unauthorized'), { status: 401 });
+	return json(formatApiError('Unauthorized'), { status: 401 });
 }
 
 const hasPermission = await checkExplicitPermission(locals.user, 'GRADE', 'read');
 if (!hasPermission) {
-  return json(formatApiError('Forbidden: GRADE:read required'), { status: 403 });
+	return json(formatApiError('Forbidden: GRADE:read required'), { status: 403 });
 }
 
 const filters = parseFilters(url);
@@ -257,14 +275,17 @@ return json(formatApiResponse(result.data, filters));
 ### 7.1 `GET /api/reports/attendance`
 
 **Permisos:**
+
 - ATTENDANCE:read (permiso explícito requerido)
 - SUPERADMIN tiene acceso automático
 
 **Validación:**
+
 - Sesión requerida: 401 si no autenticado
 - ATTENDANCE:read requerido: 403 si no tiene permiso explícito
 
 **Filtros soportados:**
+
 - `studentId` - Filtrar por alumno
 - `subjectId` - Filtrar por materia
 - `commissionId` - Filtrar por comisión
@@ -272,16 +293,19 @@ return json(formatApiResponse(result.data, filters));
 - `endDate` - Fecha hasta (formato ISO 8601)
 
 **Validaciones de filtros:**
+
 - Fechas inválidas: 400
 - `startDate > endDate`: 400
 
 **Limitaciones documentadas:**
+
 - "Justificadas" es criterio provisional basado en presencia de campo `notes`, no sistema de justificación formal
 - Justificaciones por tipo: no existe modelo de tipos de justificación
 - Historial de cambios: no existe tracking de modificaciones
 - Performance en promedios por entidad: queries individuales por registro
 
 **Respuesta:**
+
 ```typescript
 {
   success: true,
@@ -292,14 +316,15 @@ return json(formatApiResponse(result.data, filters));
 ```
 
 **Código:**
+
 ```typescript
 if (!locals.user) {
-  return json(formatApiError('Unauthorized'), { status: 401 });
+	return json(formatApiError('Unauthorized'), { status: 401 });
 }
 
 const hasPermission = await checkExplicitPermission(locals.user, 'ATTENDANCE', 'read');
 if (!hasPermission) {
-  return json(formatApiError('Forbidden: ATTENDANCE:read required'), { status: 403 });
+	return json(formatApiError('Forbidden: ATTENDANCE:read required'), { status: 403 });
 }
 
 const filters = parseFilters(url);
@@ -315,27 +340,27 @@ return json(formatApiResponse(result.data, filters));
 
 **Tests implementados:**
 
-| Test | Descripción |
-|------|-------------|
-| **SUPERADMIN permissions** | Verifica que SUPERADMIN tiene permisos explícitos |
-| **isSuperAdmin** | Verifica función de detección de SUPERADMIN |
-| **checkExplicitPermission** | Verifica validación de permisos explícitos |
-| **No default read** | Verifica que usuario sin registro no tiene acceso |
-| **parseFilters empty** | Verifica parseo de URL vacía |
-| **parseFilters studentId** | Verifica parseo de studentId |
-| **parseFilters careerId** | Verifica parseo de careerId |
-| **parseFilters subjectId** | Verifica parseo de subjectId |
-| **parseFilters commissionId** | Verifica parseo de commissionId |
-| **parseFilters startDate** | Verifica parseo de startDate |
-| **parseFilters endDate** | Verifica parseo de endDate |
-| **Invalid date format** | Verifica error en fecha inválida |
-| **startDate > endDate** | Verifica error en rango inválido |
-| **Valid date range** | Verifica aceptación de rango válido |
-| **formatApiResponse** | Verifica estructura de respuesta exitosa |
-| **formatApiError** | Verifica estructura de respuesta de error |
-| **No data mutation** | Verifica que no se mutan datos al consultar |
+| Test                            | Descripción                                            |
+| ------------------------------- | ------------------------------------------------------ |
+| **SUPERADMIN permissions**      | Verifica que SUPERADMIN tiene permisos explícitos      |
+| **isSuperAdmin**                | Verifica función de detección de SUPERADMIN            |
+| **checkExplicitPermission**     | Verifica validación de permisos explícitos             |
+| **No default read**             | Verifica que usuario sin registro no tiene acceso      |
+| **parseFilters empty**          | Verifica parseo de URL vacía                           |
+| **parseFilters studentId**      | Verifica parseo de studentId                           |
+| **parseFilters careerId**       | Verifica parseo de careerId                            |
+| **parseFilters subjectId**      | Verifica parseo de subjectId                           |
+| **parseFilters commissionId**   | Verifica parseo de commissionId                        |
+| **parseFilters startDate**      | Verifica parseo de startDate                           |
+| **parseFilters endDate**        | Verifica parseo de endDate                             |
+| **Invalid date format**         | Verifica error en fecha inválida                       |
+| **startDate > endDate**         | Verifica error en rango inválido                       |
+| **Valid date range**            | Verifica aceptación de rango válido                    |
+| **formatApiResponse**           | Verifica estructura de respuesta exitosa               |
+| **formatApiError**              | Verifica estructura de respuesta de error              |
+| **No data mutation**            | Verifica que no se mutan datos al consultar            |
 | **No PaymentAgreement changes** | Verifica que no se alteran estados de PaymentAgreement |
-| **No forbidden patterns** | Verifica ausencia de patrones prohibidos en código |
+| **No forbidden patterns**       | Verifica ausencia de patrones prohibidos en código     |
 
 **Ejecución:**
 
@@ -520,10 +545,10 @@ docs/REPORTS_MODULE_PHASE_2_PROTECTED_ENDPOINTS.md
 ### 14.3 Permisos a agregar
 
 ```typescript
-'ACADEMIC_REPORT'      // Reportes académicos (dedicado)
-'ATTENDANCE_REPORT'    // Reportes de asistencia (dedicado)
-'INSTITUTIONAL_REPORT' // Reportes institucionales (dedicado)
-'REPORTS_EXPORT'       // Exportación de reportes
+'ACADEMIC_REPORT'; // Reportes académicos (dedicado)
+'ATTENDANCE_REPORT'; // Reportes de asistencia (dedicado)
+'INSTITUTIONAL_REPORT'; // Reportes institucionales (dedicado)
+'REPORTS_EXPORT'; // Exportación de reportes
 ```
 
 ---
@@ -549,6 +574,7 @@ La Fase 2 del Módulo de Reportes ha sido implementada exitosamente con:
 - ✅ Confirmación de no alteración de Convenios de Pago
 
 La implementación sigue las mejores prácticas de:
+
 - Validación estricta de permisos
 - Evitación de default read permisivo
 - Validación de entrada

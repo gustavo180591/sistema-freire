@@ -161,6 +161,7 @@ La implementación incluye protección contra CSV injection:
 ### Headers seguros
 
 Los nombres de archivo generados por `generateSafeFilename()`:
+
 - Reemplazan caracteres no alfanuméricos con guiones
 - Usan timestamp ISO 8606 (sin `:` y `.`) para unicidad
 - Siempre terminan en `.csv`
@@ -168,6 +169,7 @@ Los nombres de archivo generados por `generateSafeFilename()`:
 ### No exposición de datos sensibles
 
 Los archivos CSV:
+
 - No incluyen rutas internas del filesystem
 - No incluyen datos técnicos sensibles
 - No incluyen stack traces
@@ -177,12 +179,12 @@ Los archivos CSV:
 
 Los permisos siguen la misma lógica estricta de Fase 2:
 
-| Reporte | Permiso requerido | Justificación |
-|---------|------------------|---------------|
-| Institucional | `SUPERADMIN` | Datos sensibles de toda la institución |
-| Financiero | `FINANCIAL_REPORT:read` | Datos financieros confidenciales |
-| Académico | `GRADE:read` | Datos académicos de calificaciones |
-| Asistencia | `ATTENDANCE:read` | Datos de asistencia de alumnos |
+| Reporte       | Permiso requerido       | Justificación                          |
+| ------------- | ----------------------- | -------------------------------------- |
+| Institucional | `SUPERADMIN`            | Datos sensibles de toda la institución |
+| Financiero    | `FINANCIAL_REPORT:read` | Datos financieros confidenciales       |
+| Académico     | `GRADE:read`            | Datos académicos de calificaciones     |
+| Asistencia    | `ATTENDANCE:read`       | Datos de asistencia de alumnos         |
 
 No se depende del permiso read global permisivo. Se usa `checkExplicitPermission()` que retorna `false` si no existe un registro de permiso explícito.
 
@@ -191,6 +193,7 @@ No se depende del permiso read global permisivo. Se usa `checkExplicitPermission
 ### Estructura
 
 Cada CSV generado tiene:
+
 - Primera línea: headers en español
 - Segunda línea: datos del reporte (una sola fila de KPIs)
 
@@ -204,6 +207,7 @@ Total Alumnos,Alumnos Activos,Total Docentes,Docentes Activos,Total Usuarios,Usu
 ### Campos por reporte
 
 **Institucional (17 campos)**:
+
 - Alumnos: total, activos
 - Docentes: total, activos
 - Usuarios: total, activos
@@ -214,6 +218,7 @@ Total Alumnos,Alumnos Activos,Total Docentes,Docentes Activos,Total Usuarios,Usu
 - Asistencia: promedio, baja asistencia
 
 **Financiero (12 campos)**:
+
 - Cargos: total, pagado, pendiente, vencido
 - Alumnos: con deuda
 - Pagos: cantidad, total cobrado
@@ -221,6 +226,7 @@ Total Alumnos,Alumnos Activos,Total Docentes,Docentes Activos,Total Usuarios,Usu
 - Convenios: activos, vencidos, en mora
 
 **Académico (14 campos)**:
+
 - Alumnos: total, activos
 - Materias: total, activas
 - Docentes: total, activos
@@ -230,6 +236,7 @@ Total Alumnos,Alumnos Activos,Total Docentes,Docentes Activos,Total Usuarios,Usu
 - Estado: regulares, libres, en riesgo
 
 **Asistencia (7 campos)**:
+
 - Registros: total, entradas
 - Estado: presentes, ausentes, con observación, sin observación
 - Promedio: asistencia promedio
@@ -252,6 +259,7 @@ Total Alumnos,Alumnos Activos,Total Docentes,Docentes Activos,Total Usuarios,Usu
 ### Uso de filtros
 
 Los filtros aplicados en la UI se respetan en la exportación:
+
 - Financiero: `studentId`, `startDate`, `endDate`
 - Académico: `careerId`, `subjectId`, `studentId`
 - Asistencia: `studentId`, `subjectId`, `commissionId`, `startDate`, `endDate`
@@ -320,6 +328,7 @@ Ambos comandos deben devolver vacío.
 ## Próximos pasos (Fase 5)
 
 Fase 5 implementará:
+
 - Visualizaciones/gráficos simples
 - Gráficos de barras, líneas, torta
 - Librería de gráficos ligera (sin dependencias pesadas)
@@ -329,6 +338,7 @@ Fase 5 implementará:
 ## Próximos pasos (Fase 6)
 
 Fase 6 implementará:
+
 - Auditoría integral del módulo
 - Performance optimization
 - Prueba manual completa

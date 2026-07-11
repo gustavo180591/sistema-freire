@@ -88,20 +88,22 @@ The service integrates with Prisma models from Phase 1.1:
 Creates a new document with file storage and audit logging.
 
 **Parameters:**
+
 ```typescript
 interface CreateDocumentParams {
-  file: File;
-  ownerType: DocumentOwnerType;
-  ownerId: string;
-  category: DocumentCategory;
-  subType: DocumentSubType;
-  visibility: DocumentVisibility;
-  uploadedById: string;
-  metadata?: Record<string, unknown>;
+	file: File;
+	ownerType: DocumentOwnerType;
+	ownerId: string;
+	category: DocumentCategory;
+	subType: DocumentSubType;
+	visibility: DocumentVisibility;
+	uploadedById: string;
+	metadata?: Record<string, unknown>;
 }
 ```
 
 **Flow:**
+
 1. Validate file using `document-file-validation`
 2. Generate secure storage key using `DocumentStorageService`
 3. Save file to `storage/private/documents`
@@ -121,6 +123,7 @@ If the database transaction fails after the physical file is saved, the service 
 Retrieves a document by ID with uploader information.
 
 **Parameters:**
+
 - `id`: Document ID
 
 **Returns:** `Document | null` with `uploadedBy` relation included
@@ -130,22 +133,24 @@ Retrieves a document by ID with uploader information.
 Lists documents with optional filters.
 
 **Parameters:**
+
 ```typescript
 interface ListDocumentsParams {
-  ownerType?: DocumentOwnerType;
-  ownerId?: string;
-  category?: DocumentCategory;
-  subType?: DocumentSubType;
-  status?: DocumentStatus;
-  visibility?: DocumentVisibility;
-  uploadedById?: string;
-  includeDeleted?: boolean;
-  limit?: number;
-  offset?: number;
+	ownerType?: DocumentOwnerType;
+	ownerId?: string;
+	category?: DocumentCategory;
+	subType?: DocumentSubType;
+	status?: DocumentStatus;
+	visibility?: DocumentVisibility;
+	uploadedById?: string;
+	includeDeleted?: boolean;
+	limit?: number;
+	offset?: number;
 }
 ```
 
 **Default Behavior:**
+
 - Excludes deleted documents unless `includeDeleted: true`
 - Orders by `createdAt` descending
 - Includes `uploadedBy` relation
@@ -157,18 +162,20 @@ interface ListDocumentsParams {
 Logs a document access action.
 
 **Parameters:**
+
 ```typescript
 interface LogDocumentAccessParams {
-  documentId: string;
-  userId: string;
-  action: DocumentAccessAction;
-  ipAddress?: string;
-  userAgent?: string;
-  metadata?: Record<string, unknown>;
+	documentId: string;
+	userId: string;
+	action: DocumentAccessAction;
+	ipAddress?: string;
+	userAgent?: string;
+	metadata?: Record<string, unknown>;
 }
 ```
 
 **Supported Actions:**
+
 - `UPLOAD` - Document upload
 - `VIEW` - Document view
 - `DOWNLOAD` - Document download
@@ -183,10 +190,12 @@ interface LogDocumentAccessParams {
 Soft deletes a document without removing the physical file.
 
 **Parameters:**
+
 - `id`: Document ID
 - `userId`: User performing the deletion
 
 **Behavior:**
+
 - Sets `status = DELETED`
 - Sets `deletedAt = now()`
 - Creates `DocumentAccessLog` with `DELETE` action
@@ -200,10 +209,12 @@ Soft deletes a document without removing the physical file.
 Restores a soft-deleted document.
 
 **Parameters:**
+
 - `id`: Document ID
 - `userId`: User performing the restoration
 
 **Behavior:**
+
 - Sets `status = ACTIVE`
 - Sets `deletedAt = null`
 - Creates `DocumentAccessLog` with `RESTORE` action
@@ -215,6 +226,7 @@ Restores a soft-deleted document.
 Retrieves a document with all its access logs.
 
 **Parameters:**
+
 - `id`: Document ID
 
 **Returns:** `{ document: Document; accessLogs: DocumentAccessLog[] } | null`
@@ -224,9 +236,11 @@ Retrieves a document with all its access logs.
 Deletes document record and physical file (for tests only).
 
 **Parameters:**
+
 - `documentId`: Document ID
 
 **Behavior:**
+
 - Deletes all `DocumentAccessLog` records
 - Deletes `Document` record
 - Deletes physical file from storage
@@ -418,20 +432,24 @@ Separation of concerns:
 ## Validation Results
 
 ### Prisma Validation
+
 - `npx prisma format` ✓
 - `npx prisma validate` ✓
 - `npx prisma generate` ✓
 - `npx prisma migrate status` ✓ (33 migrations, up to date)
 
 ### Build Validation
+
 - `npm run check` ✓ (0 errors, 104 warnings)
 - `npm run build` ✓
 
 ### Test Validation
+
 - `npx tsx scripts/test-document-management-storage.ts` ✓ (18 tests)
 - `npx tsx scripts/test-document-management-service.ts` ✓ (17 tests)
 
 ### Code Quality Validation
+
 - No `$queryRaw` or `$executeRaw` used ✓
 - No `@ts-ignore` or `@ts-expect-error` used ✓
 - No `any` or `as any` used ✓

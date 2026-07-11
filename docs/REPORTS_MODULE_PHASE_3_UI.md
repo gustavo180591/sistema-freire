@@ -31,8 +31,8 @@ scripts/
 
 ### 1.2 Rutas implementadas
 
-| Ruta | Propósito |
-|------|-----------|
+| Ruta                  | Propósito                      |
+| --------------------- | ------------------------------ |
 | `/reportes/dashboard` | Dashboard de reportes con tabs |
 
 **Nota sobre la ruta:** Se implementó en `/reportes/dashboard` en lugar de `/reportes` porque la ruta `/reportes` ya existe con una página de navegación a reportes existentes (académico, financiero, oficiales, recibos). El dashboard de Fase 3 complementa esa navegación existente con una vista unificada de métricas en tiempo real.
@@ -63,6 +63,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 ```
 
 **Validaciones:**
+
 - ✅ Verifica `locals.user`
 - ✅ Redirige a `/login` si no autenticado
 - ✅ No consulta reportes desde server load
@@ -77,6 +78,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 **Propósito:** Orquestar tabs y paneles de reportes
 
 **Características:**
+
 - Tabs para Institucional, Financiero, Académico, Asistencia
 - Estado de carga global
 - Estado de error global
@@ -101,11 +103,13 @@ let error = $state<string | null>(null);
 **Propósito:** Mostrar una tarjeta de KPI con label, valor y descripción opcional
 
 **Props:**
+
 - `label: string` - Etiqueta del KPI
 - `value: string | number` - Valor del KPI
 - `description?: string` - Descripción opcional
 
 **Uso:**
+
 ```svelte
 <ReportKpiCard label="Alumnos Totales" value={metrics.totalStudents} />
 <ReportKpiCard label="Deuda Total" value={formatCurrency(metrics.totalDebt)} />
@@ -116,10 +120,12 @@ let error = $state<string | null>(null);
 **Propósito:** Navegación entre secciones de reportes
 
 **Props:**
+
 - `activeTab: Tab` - Tab activo
 - `onTabChange: (tab: Tab) => void` - Callback al cambiar tab
 
 **Tabs:**
+
 - Institucional
 - Financiero
 - Académico
@@ -130,6 +136,7 @@ let error = $state<string | null>(null);
 **Propósito:** Mostrar estado de error con icono y mensaje
 
 **Props:**
+
 - `message?: string` - Mensaje de error (default: "Error al cargar el reporte")
 
 ### 4.4 `ReportLoadingState.svelte`
@@ -137,6 +144,7 @@ let error = $state<string | null>(null);
 **Propósito:** Mostrar estado de carga con spinner
 
 **Props:**
+
 - `message?: string` - Mensaje de carga (default: "Cargando reporte...")
 
 ---
@@ -148,10 +156,12 @@ let error = $state<string | null>(null);
 **Propósito:** Consumir endpoint `/api/reports/institutional` y mostrar KPIs
 
 **Props:**
+
 - `onError: (message: string) => void` - Callback de error
 - `onLoading: (isLoading: boolean) => void` - Callback de carga
 
 **KPIs mostrados:**
+
 - Alumnos Totales
 - Alumnos Activos
 - Docentes
@@ -164,6 +174,7 @@ let error = $state<string | null>(null);
 - Baja Asistencia
 
 **Manejo de errores:**
+
 - 401: Redirige a `/login`
 - 403: Muestra error "No tienes permiso para ver reportes institucionales (requiere SUPERADMIN)"
 - Otros: Muestra error genérico
@@ -175,15 +186,18 @@ let error = $state<string | null>(null);
 **Propósito:** Consumir endpoint `/api/reports/financial` con filtros
 
 **Props:**
+
 - `onError: (message: string) => void` - Callback de error
 - `onLoading: (isLoading: boolean) => void` - Callback de carga
 
 **Filtros:**
+
 - `studentId` - ID del alumno
 - `startDate` - Fecha desde
 - `endDate` - Fecha hasta
 
 **KPIs mostrados:**
+
 - Cargos Totales
 - Pagado
 - Pendiente
@@ -194,6 +208,7 @@ let error = $state<string | null>(null);
 - Convenios Activos
 
 **Manejo de errores:**
+
 - 401: Redirige a `/login`
 - 403: Muestra error "No tienes permiso para ver reportes financieros (requiere FINANCIAL_REPORT:read)"
 - 400: Muestra error de filtros inválidos
@@ -206,15 +221,18 @@ let error = $state<string | null>(null);
 **Propósito:** Consumir endpoint `/api/reports/academic` con filtros
 
 **Props:**
+
 - `onError: (message: string) => void` - Callback de error
 - `onLoading: (isLoading: boolean) => void` - Callback de carga
 
 **Filtros:**
+
 - `careerId` - ID de la carrera
 - `subjectId` - ID de la materia
 - `studentId` - ID del alumno
 
 **KPIs mostrados:**
+
 - Alumnos Totales
 - Alumnos Activos
 - Materias
@@ -228,6 +246,7 @@ let error = $state<string | null>(null);
 - Alumnos en Riesgo
 
 **Manejo de errores:**
+
 - 401: Redirige a `/login`
 - 403: Muestra error "No tienes permiso para ver reportes académicos (requiere GRADE:read)"
 - 400: Muestra error de filtros inválidos
@@ -240,10 +259,12 @@ let error = $state<string | null>(null);
 **Propósito:** Consumir endpoint `/api/reports/attendance` con filtros
 
 **Props:**
+
 - `onError: (message: string) => void` - Callback de error
 - `onLoading: (isLoading: boolean) => void` - Callback de carga
 
 **Filtros:**
+
 - `studentId` - ID del alumno
 - `subjectId` - ID de la materia
 - `commissionId` - ID de la comisión
@@ -251,6 +272,7 @@ let error = $state<string | null>(null);
 - `endDate` - Fecha hasta
 
 **KPIs mostrados:**
+
 - Total Registros
 - Total Entradas
 - Presentes
@@ -260,6 +282,7 @@ let error = $state<string | null>(null);
 - Asistencia Promedio
 
 **Manejo de errores:**
+
 - 401: Redirige a `/login`
 - 403: Muestra error "No tienes permiso para ver reportes de asistencia (requiere ATTENDANCE:read)"
 - 400: Muestra error de filtros inválidos
@@ -360,28 +383,28 @@ const url = `/api/reports/financial${queryString ? `?${queryString}` : ''}`;
 
 **Tests implementados:**
 
-| Test | Descripción |
-|------|-------------|
-| **Dashboard page server exists** | Verifica existencia de `+page.server.ts` |
-| **Dashboard page svelte exists** | Verifica existencia de `+page.svelte` |
-| **Validates locals.user** | Verifica validación de sesión |
-| **Uses redirect** | Verifica uso de redirect |
-| **Report components exist** | Verifica existencia de 8 componentes |
+| Test                                | Descripción                                      |
+| ----------------------------------- | ------------------------------------------------ |
+| **Dashboard page server exists**    | Verifica existencia de `+page.server.ts`         |
+| **Dashboard page svelte exists**    | Verifica existencia de `+page.svelte`            |
+| **Validates locals.user**           | Verifica validación de sesión                    |
+| **Uses redirect**                   | Verifica uso de redirect                         |
+| **Report components exist**         | Verifica existencia de 8 componentes             |
 | **Consumes institutional endpoint** | Verifica consumo de `/api/reports/institutional` |
-| **Consumes financial endpoint** | Verifica consumo de `/api/reports/financial` |
-| **Consumes academic endpoint** | Verifica consumo de `/api/reports/academic` |
-| **Consumes attendance endpoint** | Verifica consumo de `/api/reports/attendance` |
-| **Uses fetch** | Verifica uso de fetch en paneles |
-| **Handles 401** | Verifica manejo de 401 |
-| **Handles 403** | Verifica manejo de 403 |
-| **Handles financial filters** | Verifica filtros financieros |
-| **Handles academic filters** | Verifica filtros académicos |
-| **Handles attendance filters** | Verifica filtros de asistencia |
-| **No Prisma in UI** | Verifica ausencia de Prisma en UI |
-| **No storage/private in UI** | Verifica ausencia de storage/private |
-| **No static/uploads in UI** | Verifica ausencia de static/uploads |
-| **No forbidden patterns** | Verifica ausencia de patrones prohibidos |
-| **No new API routes** | Verifica que no se crearon rutas API nuevas |
+| **Consumes financial endpoint**     | Verifica consumo de `/api/reports/financial`     |
+| **Consumes academic endpoint**      | Verifica consumo de `/api/reports/academic`      |
+| **Consumes attendance endpoint**    | Verifica consumo de `/api/reports/attendance`    |
+| **Uses fetch**                      | Verifica uso de fetch en paneles                 |
+| **Handles 401**                     | Verifica manejo de 401                           |
+| **Handles 403**                     | Verifica manejo de 403                           |
+| **Handles financial filters**       | Verifica filtros financieros                     |
+| **Handles academic filters**        | Verifica filtros académicos                      |
+| **Handles attendance filters**      | Verifica filtros de asistencia                   |
+| **No Prisma in UI**                 | Verifica ausencia de Prisma en UI                |
+| **No storage/private in UI**        | Verifica ausencia de storage/private             |
+| **No static/uploads in UI**         | Verifica ausencia de static/uploads              |
+| **No forbidden patterns**           | Verifica ausencia de patrones prohibidos         |
+| **No new API routes**               | Verifica que no se crearon rutas API nuevas      |
 
 **Ejecución:**
 
@@ -593,6 +616,7 @@ La Fase 3 del Módulo de Reportes ha sido implementada exitosamente con:
 - ✅ Sin dependencias nuevas
 
 La implementación sigue las mejores prácticas de:
+
 - Validación estricta de sesión
 - Consumo de endpoints protegidos
 - Manejo de errores

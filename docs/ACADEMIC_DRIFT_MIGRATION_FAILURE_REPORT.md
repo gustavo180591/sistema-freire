@@ -13,7 +13,7 @@
 
 ---
 
-## 1. Estado de _prisma_migrations
+## 1. Estado de \_prisma_migrations
 
 ```
 ID: 82e94d83-8f3f-418d-bb08-db0d303e4ab8
@@ -36,6 +36,7 @@ DROP INDEX "student_subject_status_studentId_promoted_idx";
 ```
 
 **Error:**
+
 ```
 ERROR: index "student_subject_status_studentId_promoted_idx" does not exist
 Database error code: 42704
@@ -48,6 +49,7 @@ Database error code: 42704
 ## 3. Índices Actuales de student_subject_status
 
 **Índices presentes en base real:**
+
 1. `student_subject_status_pkey` - PRIMARY KEY
 2. `student_subject_status_studentId_academicStatus_idx` - INDEX
 3. `student_subject_status_studentId_courseStatus_idx` - INDEX
@@ -154,12 +156,14 @@ Database error code: 42704
 ### Enums de Convenios:
 
 **Resultado:** ⚠️ Se encontraron enums de Convenios en la base real:
+
 - `PaymentAgreementChargeRelationType`: [REFINANCED, BLOCKED, ASSOCIATED]
 - `PaymentAgreementEventType`: [CREATED, ACTIVATED, MODIFIED, CANCELLED, REFINANCED, INSTALLMENT_PAID, INSTALLMENT_OVERDUE, DEFAULTED, STATUS_CHANGED, BLOCK_EXCEPTION, BLOCK_REACTIVATED]
 - `PaymentAgreementInstallmentStatus`: [PENDING, PARTIAL, PAID, OVERDUE, CANCELLED, WAIVED]
 - `PaymentAgreementStatus`: [DRAFT, ACTIVE, COMPLETED, OVERDUE, DEFAULTED, CANCELLED, REFINANCED]
 
 **Análisis:** Los enums de Convenios ya existen en la base real, pero las tablas de Convenios no. Esto sugiere que:
+
 - Los enums se crearon antes del error (posiblemente en un step anterior)
 - La migración falló antes de crear las tablas
 - Los enums quedaron "huérfanos" en la base real
@@ -201,19 +205,23 @@ Database error code: 42704
 **Pasos:**
 
 1. **Marcar la migración fallida como rolled-back:**
+
    ```bash
    npx prisma migrate resolve --rolled-back 20260620164627_add_payment_agreements_phase1
    ```
+
    - Esto limpiará el registro de migración fallida
    - Permitirá aplicar nuevas migraciones
 
 2. **Eliminar los enums de Convenios huérfanos de la base real:**
+
    ```sql
    DROP TYPE "PaymentAgreementChargeRelationType";
    DROP TYPE "PaymentAgreementEventType";
    DROP TYPE "PaymentAgreementInstallmentStatus";
    DROP TYPE "PaymentAgreementStatus";
    ```
+
    - Estos enums se crearon parcialmente y deben eliminarse
    - Se recrearán con la migración limpia
 
@@ -223,28 +231,35 @@ Database error code: 42704
    - Mantener solo cambios de Convenios de Pago y cambios financieros
 
 4. **Eliminar la migración contaminada:**
+
    ```bash
    rm -rf prisma/migrations/20260620164627_add_payment_agreements_phase1
    ```
 
 5. **Crear una nueva migración limpia de Convenios de Pago:**
+
    ```bash
    npx prisma migrate dev --name add_payment_agreements_phase1_clean
    ```
+
    - Esta migración debe contener solo cambios de Convenios de Pago
    - No debe contener cambios académicos
 
 6. **Validar la nueva migración en base temporal:**
+
    ```bash
    DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire_migration_test" npx prisma migrate deploy
    ```
+
    - Verificar que la migración se aplique sin errores
    - Verificar que solo se creen tablas y enums de Convenios
 
 7. **Aplicar la nueva migración en base real:**
+
    ```bash
    npx prisma migrate deploy
    ```
+
    - Verificar que se aplique sin errores
    - Verificar que se creen las tablas de Convenios
 
@@ -260,12 +275,15 @@ Database error code: 42704
 ### Riesgos y Mitigaciones
 
 **Riesgo 1:** Eliminar los enums de Convenios huérfanos puede causar errores si hay código que los referencia.
+
 - **Mitigación:** Verificar que no hay código usando estos enums antes de eliminarlos.
 
 **Riesgo 2:** Corregir el schema.prisma puede introducir nuevos errores de drift.
+
 - **Mitigación:** Validar exhaustivamente en base temporal antes de aplicar en base real.
 
 **Riesgo 3:** La nueva migración puede contener cambios no deseados.
+
 - **Mitigación:** Revisar manualmente el SQL de la nueva migración antes de aplicar.
 
 ---

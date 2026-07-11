@@ -14,9 +14,11 @@ Phase 6.3 adds visual tools and safe manual actions for operating the payment ag
 ## Screens Modified
 
 ### 1. Agreement Detail View
+
 **Path:** `src/routes/(app)/finanzas/convenios/[id]/+page.svelte`
 
 **Changes:**
+
 - Added status card with color-coded status badge
 - Added block exception status card (when active)
 - Added manual actions section with evaluation buttons
@@ -25,9 +27,11 @@ Phase 6.3 adds visual tools and safe manual actions for operating the payment ag
 - Improved visual hierarchy and information display
 
 ### 2. Agreement Detail Server Actions
+
 **Path:** `src/routes/(app)/finanzas/convenios/[id]/+page.server.ts`
 
 **Changes:**
+
 - Added `evaluateStatus` action for manual status evaluation
 - Added `evaluateBlockException` action for manual block exception evaluation
 - Enhanced load function to include active exception data
@@ -37,38 +41,45 @@ Phase 6.3 adds visual tools and safe manual actions for operating the payment ag
 ## Manual Actions Added
 
 ### 1. Evaluate Status
+
 **Button:** "Evaluar Estado"
 **Action:** `?/evaluateStatus`
 **Server Method:** `paymentAgreementService.evaluateAgreementFinancialStatus()`
 
 **What it does:**
+
 - Marks overdue installments
 - Evaluates if agreement should change status (ACTIVE → DEFAULTED, ACTIVE → COMPLETED)
 - Records status change events
 - Updates agreement status in database
 
 **What it modifies:**
+
 - PaymentAgreementInstallment.status (marks OVERDUE)
 - PaymentAgreement.status (if conditions met)
 - PaymentAgreementEvent (creates status change events)
 
 **What it does NOT modify:**
+
 - StudentCharge
 - FinancialBlock
 - Block exceptions
 
 **Permissions required:**
+
 - SUPERADMIN
 - DIRECTOR
 - FINANZAS
 - SECRETARIA
 
 ### 2. Evaluate Block Exception
+
 **Button:** "Evaluar Excepción de Bloqueo"
 **Action:** `?/evaluateBlockException`
 **Server Method:** `paymentAgreementService.evaluateAgreementBlockStatus()`
 
 **What it does:**
+
 - Evaluates if agreement should have a block exception
 - Applies exception if agreement is ACTIVE and up-to-date
 - Revokes exception if agreement is ACTIVE with OVERDUE installments
@@ -77,6 +88,7 @@ Phase 6.3 adds visual tools and safe manual actions for operating the payment ag
 - Creates audit logs for exception changes
 
 **What it modifies:**
+
 - FinancialBlock.exceptionGranted
 - FinancialBlock.exceptionAgreementId
 - FinancialBlock.exceptionReason
@@ -87,11 +99,13 @@ Phase 6.3 adds visual tools and safe manual actions for operating the payment ag
 - AuditLog (creates exception change logs)
 
 **What it does NOT modify:**
+
 - StudentCharge
 - New FinancialBlock entries
 - Agreement status
 
 **Permissions required:**
+
 - SUPERADMIN
 - DIRECTOR
 - FINANZAS
@@ -100,7 +114,9 @@ Phase 6.3 adds visual tools and safe manual actions for operating the payment ag
 ## UI Components Added
 
 ### Status Card
+
 Shows agreement status with color-coded badge:
+
 - **ACTIVE:** Green badge
 - **COMPLETED:** Blue badge
 - **DEFAULTED:** Red badge
@@ -108,6 +124,7 @@ Shows agreement status with color-coded badge:
 - **CANCELLED:** Orange badge
 
 Displays:
+
 - Creation date
 - Original debt amount
 - Agreed amount
@@ -117,14 +134,18 @@ Displays:
 - Observations (if any)
 
 ### Block Exception Status Card
+
 Shows when an active block exception exists for the agreement:
+
 - Exception granted by
 - Exception date
 - Exception reason
 - Exception source
 
 ### Installments Table
+
 Shows all installments with color-coded status badges:
+
 - **PAID:** Green badge
 - **OVERDUE:** Red badge
 - **PENDING:** Yellow badge
@@ -132,6 +153,7 @@ Shows all installments with color-coded status badges:
 - **CANCELLED:** Gray badge
 
 Each installment shows:
+
 - Installment number
 - Due date
 - Amount
@@ -141,7 +163,9 @@ Each installment shows:
 - Payment form (for ACTIVE agreements with unpaid installments)
 
 ### Events Section
+
 Shows recent agreement events (last 20):
+
 - Event type
 - Description
 - Status changes (previous → new)
@@ -152,6 +176,7 @@ Shows recent agreement events (last 20):
 ## Data Loaded
 
 The detail view now loads:
+
 1. **Agreement data:** Full agreement details with installments
 2. **Summary:** Installment counts and debt summary
 3. **Payments with receipts:** Payment history linked to installments
@@ -161,18 +186,23 @@ The detail view now loads:
 ## How to Interpret Results
 
 ### Status Evaluation Result
+
 When you click "Evaluar Estado", the page will reload and show:
+
 - Updated agreement status (if changed)
 - Updated installment statuses (overdue marked)
 - New events in the events section
 
 ### Block Exception Evaluation Result
+
 When you click "Evaluar Excepción de Bloqueo", the page will reload and show:
+
 - Updated block exception status card (if changed)
 - New BLOCK_EXCEPTION events in the events section
 - Updated audit logs
 
 **Scenarios:**
+
 - **ACTIVE + up-to-date:** Exception applied (green card appears)
 - **ACTIVE + OVERDUE:** Exception revoked (card disappears)
 - **COMPLETED:** Exception revoked (card disappears)
@@ -211,9 +241,11 @@ When you click "Evaluar Excepción de Bloqueo", the page will reload and show:
 ## Testing
 
 ### Test Script
+
 **Path:** `scripts/test-payment-agreement-manual-operations.ts`
 
 **Test Coverage:**
+
 1. Manual status evaluation
 2. Manual block exception evaluation
 3. ACTIVE up-to-date applies exception
@@ -225,6 +257,7 @@ When you click "Evaluar Excepción de Bloqueo", the page will reload and show:
 9. Permissions validation
 
 **Run tests:**
+
 ```bash
 DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire" npx tsx scripts/test-payment-agreement-manual-operations.ts
 ```
@@ -244,6 +277,7 @@ DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire" npx t
 ## Next Steps
 
 After Phase 6.3, the next phase should focus on:
+
 1. Creating the production cron job
 2. Adding dry-run capability to the UI
 3. Adding confirmation dialogs

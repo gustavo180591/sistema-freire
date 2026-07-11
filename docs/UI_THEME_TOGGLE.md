@@ -24,6 +24,7 @@ Se implementó un botón de alternancia de tema (modo claro/oscuro) en el sistem
 ### Estrategia de Tema
 
 El sistema usa la estrategia de **clase CSS** de TailwindCSS:
+
 - Cuando el tema es oscuro: `<html class="dark">`
 - Cuando el tema es claro: `<html>` (sin clase `dark`)
 
@@ -38,6 +39,7 @@ El sistema usa la estrategia de **clase CSS** de TailwindCSS:
 ### Componente ThemeToggle
 
 El componente `ThemeToggle.svelte` muestra:
+
 - 🌙 "Oscuro" cuando está en modo oscuro
 - ☀️ "Claro" cuando está en modo claro
 
@@ -46,6 +48,7 @@ El botón es responsive: muestra solo el emoji en mobile y emoji + texto en desk
 ### Persistencia
 
 La preferencia del tema se guarda en `localStorage` con la clave `theme`. Los valores posibles son:
+
 - `"light"` - Modo claro
 - `"dark"` - Modo oscuro
 

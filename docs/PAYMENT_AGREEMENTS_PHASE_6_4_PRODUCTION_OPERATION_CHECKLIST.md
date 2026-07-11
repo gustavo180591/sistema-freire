@@ -11,6 +11,7 @@ Phase 6.4 documents the operational procedures for running payment agreement bat
 ## 1. Current Module Status
 
 ### Completed Features
+
 - ✅ Agreement creation (draft and activation)
 - ✅ Payment registration against installments
 - ✅ Manual status evaluation (mark overdue, evaluate completion/default)
@@ -25,11 +26,13 @@ Phase 6.4 documents the operational procedures for running payment agreement bat
 - ✅ Global audit log
 
 ### Database Schema
+
 - 29 migrations applied
 - Schema up to date
 - No pending migrations
 
 ### Available Scripts
+
 - `scripts/test-payment-agreement-batch-status.ts` - Batch status evaluation
 - `scripts/test-payment-agreement-block-exception-batch.ts` - Batch block exception evaluation
 - `scripts/test-payment-agreement-manual-operations.ts` - Manual operations test
@@ -43,17 +46,20 @@ Phase 6.4 documents the operational procedures for running payment agreement bat
 **Script:** `scripts/test-payment-agreement-batch-status.ts`
 
 **Purpose:** Evaluate all active payment agreements and update their status based on:
+
 - Overdue installments (mark as OVERDUE)
 - Completion (all installments PAID → COMPLETED)
 - Default (2+ consecutive overdue or >50% overdue → DEFAULTED)
 
 **Execution:**
+
 ```bash
 DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire" \
 npx tsx scripts/test-payment-agreement-batch-status.ts
 ```
 
 **What it does:**
+
 - Iterates through all ACTIVE agreements
 - Marks overdue installments
 - Evaluates status changes
@@ -61,11 +67,13 @@ npx tsx scripts/test-payment-agreement-batch-status.ts
 - Updates agreement status in database
 
 **What it modifies:**
+
 - `PaymentAgreementInstallment.status` (marks OVERDUE)
 - `PaymentAgreement.status` (if conditions met)
 - `PaymentAgreementEvent` (creates status change events)
 
 **What it does NOT modify:**
+
 - `StudentCharge`
 - `FinancialBlock`
 - Block exceptions
@@ -75,18 +83,21 @@ npx tsx scripts/test-payment-agreement-batch-status.ts
 **Script:** `scripts/test-payment-agreement-block-exception-batch.ts`
 
 **Purpose:** Evaluate all payment agreements and apply/revoke block exceptions based on:
+
 - ACTIVE + up-to-date → apply exception
 - ACTIVE + OVERDUE → revoke exception
 - COMPLETED → revoke exception
 - DRAFT/CANCELLED/DEFAULTED → no action
 
 **Execution:**
+
 ```bash
 DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire" \
 npx tsx scripts/test-payment-agreement-block-exception-batch.ts
 ```
 
 **What it does:**
+
 - Iterates through all agreements
 - Evaluates if exception should exist
 - Applies exception if conditions met
@@ -95,6 +106,7 @@ npx tsx scripts/test-payment-agreement-block-exception-batch.ts
 - Creates audit logs for exception changes
 
 **What it modifies:**
+
 - `FinancialBlock.exceptionGranted`
 - `FinancialBlock.exceptionAgreementId`
 - `FinancialBlock.exceptionReason`
@@ -105,6 +117,7 @@ npx tsx scripts/test-payment-agreement-block-exception-batch.ts
 - `AuditLog` (creates exception change logs)
 
 **What it does NOT modify:**
+
 - `StudentCharge`
 - New `FinancialBlock` entries
 - Agreement status
@@ -114,10 +127,12 @@ npx tsx scripts/test-payment-agreement-block-exception-batch.ts
 **UI Path:** `/finanzas/convenios/[id]`
 
 **Available Actions:**
+
 - "Evaluar Estado" - Evaluate single agreement status
 - "Evaluar Excepción de Bloqueo" - Evaluate single agreement block exception
 
 **What they do:**
+
 - Same logic as batch scripts but for single agreement
 - Permission checks (SUPERADMIN, DIRECTOR, FINANZAS, SECRETARIA)
 - Return success/error messages to UI
@@ -129,18 +144,21 @@ npx tsx scripts/test-payment-agreement-block-exception-batch.ts
 ### 3.1 Status Evaluation Dry-Run
 
 **Command:**
+
 ```bash
 DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire" \
 npx tsx scripts/test-payment-agreement-batch-status.ts --dry-run
 ```
 
 **What it does:**
+
 - Simulates evaluation without modifying database
 - Reports what would change
 - Shows agreements that would change status
 - Shows installments that would be marked overdue
 
 **What it does NOT do:**
+
 - Modify any database records
 - Create events
 - Create audit logs
@@ -148,18 +166,21 @@ npx tsx scripts/test-payment-agreement-batch-status.ts --dry-run
 ### 3.2 Block Exception Evaluation Dry-Run
 
 **Command:**
+
 ```bash
 DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire" \
 npx tsx scripts/test-payment-agreement-block-exception-batch.ts --dry-run
 ```
 
 **What it does:**
+
 - Simulates exception evaluation without modifying database
 - Reports which agreements would get exceptions
 - Reports which exceptions would be revoked
 - Shows before/after state
 
 **What it does NOT do:**
+
 - Modify any database records
 - Create events
 - Create audit logs
@@ -242,18 +263,21 @@ npx tsx scripts/test-payment-agreement-block-exception-batch.ts --dry-run
 ### 6.1 Status Evaluation Risks
 
 **Risk 1: Incorrect Status Changes**
+
 - **Description:** Agreements may change status unexpectedly
 - **Mitigation:** Run dry-run first, review results before execution
 - **Impact:** Students may see incorrect agreement status in UI
 - **Recovery:** Manual status correction via UI or database
 
 **Risk 2: Overdue Marking During Payment Processing**
+
 - **Description:** Installment marked overdue while payment is being processed
 - **Mitigation:** Run during low-traffic periods, check for active payments
 - **Impact:** Student may see overdue status despite payment
 - **Recovery:** Payment processing will update installment status
 
 **Risk 3: False Default Detection**
+
 - **Description:** Agreement marked DEFAULTED incorrectly due to calculation error
 - **Mitigation:** Review default logic, test with sample data
 - **Impact:** Student may be blocked incorrectly
@@ -262,18 +286,21 @@ npx tsx scripts/test-payment-agreement-block-exception-batch.ts --dry-run
 ### 6.2 Block Exception Evaluation Risks
 
 **Risk 1: Incorrect Exception Grants**
+
 - **Description:** Exception granted to agreement that shouldn't have it
 - **Mitigation:** Run dry-run first, review affected agreements
 - **Impact:** Student with debt may be able to enroll
 - **Recovery:** Revoke exception manually
 
 **Risk 2: Incorrect Exception Revokes**
+
 - **Description:** Exception revoked from agreement that should keep it
 - **Mitigation:** Run dry-run first, review affected agreements
 - **Impact:** Student may be blocked unexpectedly
 - **Recovery:** Grant exception manually
 
 **Risk 3: Race Conditions with Manual Operations**
+
 - **Description:** Manual UI operation conflicts with batch evaluation
 - **Mitigation:** Run during low-traffic periods, check for active UI sessions
 - **Impact:** Unexpected state, duplicate events
@@ -282,18 +309,21 @@ npx tsx scripts/test-payment-agreement-block-exception-batch.ts --dry-run
 ### 6.3 General Risks
 
 **Risk 1: Database Connection Issues**
+
 - **Description:** Script fails mid-execution due to database issues
 - **Mitigation:** Verify database connectivity, check recent logs
 - **Impact:** Partial updates, inconsistent state
 - **Recovery:** Re-run script, review affected records
 
 **Risk 2: Large Dataset Performance**
+
 - **Description:** Script takes too long with many agreements
 - **Mitigation:** Monitor execution time, consider batching
 - **Impact:** Extended maintenance window
 - **Recovery:** Optimize script, run during longer window
 
 **Risk 3: Permission Issues**
+
 - **Description:** Script runs with insufficient database permissions
 - **Mitigation:** Verify database user permissions before execution
 - **Impact:** Script fails, no updates applied
@@ -306,8 +336,9 @@ npx tsx scripts/test-payment-agreement-block-exception-batch.ts --dry-run
 ### 7.1 Review Agreement Status Changes
 
 **Query to check recent status changes:**
+
 ```sql
-SELECT 
+SELECT
     id,
     agreementNumber,
     agreementYear,
@@ -321,8 +352,9 @@ ORDER BY "updatedAt" DESC;
 ```
 
 **Query to check status distribution:**
+
 ```sql
-SELECT 
+SELECT
     status,
     COUNT(*) as count
 FROM "PaymentAgreement"
@@ -333,8 +365,9 @@ ORDER BY count DESC;
 ### 7.2 Review Installment Status Changes
 
 **Query to check overdue installments:**
+
 ```sql
-SELECT 
+SELECT
     pai.id,
     pai."agreementId",
     pai."installmentNumber",
@@ -350,8 +383,9 @@ ORDER BY pai."dueDate" DESC;
 ### 7.3 Review Block Exception Changes
 
 **Query to check active exceptions:**
+
 ```sql
-SELECT 
+SELECT
     fb.id,
     fb."studentId",
     fb."exceptionGranted",
@@ -365,8 +399,9 @@ ORDER BY fb."exceptionAt" DESC;
 ```
 
 **Query to check recent exception changes:**
+
 ```sql
-SELECT 
+SELECT
     fb.id,
     fb."studentId",
     fb."exceptionGranted",
@@ -381,8 +416,9 @@ ORDER BY fb."exceptionAt" DESC;
 ### 7.4 Review Event Logs
 
 **Query to check recent status events:**
+
 ```sql
-SELECT 
+SELECT
     id,
     "agreementId",
     "eventType",
@@ -398,8 +434,9 @@ ORDER BY "createdAt" DESC;
 ```
 
 **Query to check recent block exception events:**
+
 ```sql
-SELECT 
+SELECT
     id,
     "agreementId",
     "eventType",
@@ -422,12 +459,14 @@ ORDER BY "createdAt" DESC;
 **Location:** Application logs (typically in `/var/log/` or cloud logging service)
 
 **What to check:**
+
 - Errors during script execution
 - Database connection issues
 - Permission errors
 - Unexpected exceptions
 
 **Key log patterns to monitor:**
+
 - `Error evaluating agreement status`
 - `Error evaluating block exception`
 - `Database connection failed`
@@ -438,12 +477,14 @@ ORDER BY "createdAt" DESC;
 **Location:** Database table `PaymentAgreementEvent`
 
 **What to check:**
+
 - Status change events (eventType: 'STATUS_CHANGE')
 - Block exception events (eventType: 'BLOCK_EXCEPTION')
 - Payment events (eventType: 'PAYMENT_REGISTERED')
 - Creation events (eventType: 'AGREEMENT_CREATED')
 
 **Key fields to review:**
+
 - `eventType` - Type of event
 - `previousStatus` / `newStatus` - Status changes
 - `description` - Event description
@@ -456,11 +497,13 @@ ORDER BY "createdAt" DESC;
 **Location:** Database table `AuditLog`
 
 **What to check:**
+
 - Block exception changes (action: 'GRANT_BLOCK_EXCEPTION', 'REVOKE_BLOCK_EXCEPTION')
 - Agreement status changes (action: 'UPDATE_AGREEMENT_STATUS')
 - Payment registrations (action: 'REGISTER_PAYMENT')
 
 **Key fields to review:**
+
 - `action` - Action performed
 - `entityType` - Type of entity affected
 - `entityId` - ID of affected entity
@@ -475,12 +518,14 @@ ORDER BY "createdAt" DESC;
 ### 9.1 Manual UI Operations
 
 **Authorized roles for manual evaluation:**
+
 - SUPERADMIN
 - DIRECTOR
 - FINANZAS
 - SECRETARIA
 
 **Unauthorized roles:**
+
 - ALUMNO
 - DOCENTE
 - PRECEPTOR
@@ -489,17 +534,20 @@ ORDER BY "createdAt" DESC;
 **Permission check location:** `src/lib/server/payment-agreements/payment-agreement-permissions.ts`
 
 **Functions:**
+
 - `canEvaluateAgreementStatus(user)`
 - `canEvaluateAgreementBlockException(user)`
 
 ### 9.2 Batch Script Execution
 
 **Authorization model:**
+
 - Scripts run with database credentials
 - No role-based authorization at script level
 - Authorization is operational (who can run the script)
 
 **Recommended operational authorization:**
+
 - Only DevOps/SysAdmin should execute scripts
 - Scripts should be run from production server
 - Execution should be logged
@@ -508,6 +556,7 @@ ORDER BY "createdAt" DESC;
 ### 9.3 Dry-Run Access
 
 **Authorization:**
+
 - Dry-run can be run by any authorized personnel
 - Recommended for pre-production validation
 - No database modifications, lower risk
@@ -521,6 +570,7 @@ ORDER BY "createdAt" DESC;
 **Duration:** 2-4 weeks of manual operation before cron automation
 
 **Objectives:**
+
 - Validate batch scripts work correctly in production
 - Identify any edge cases or issues
 - Establish baseline metrics
@@ -530,12 +580,14 @@ ORDER BY "createdAt" DESC;
 ### 10.2 Recommended Schedule
 
 **Week 1-2: Daily Manual Execution**
+
 - Run status evaluation daily at 10:00 PM
 - Run block exception evaluation daily at 10:30 PM
 - Review results each morning
 - Document any issues
 
 **Week 3-4: Weekly Manual Execution**
+
 - Run status evaluation weekly on Sunday at 10:00 PM
 - Run block exception evaluation weekly on Sunday at 10:30 PM
 - Review results Monday morning
@@ -544,6 +596,7 @@ ORDER BY "createdAt" DESC;
 ### 10.3 Metrics to Track
 
 **Status Evaluation Metrics:**
+
 - Number of agreements evaluated
 - Number of status changes (ACTIVE → COMPLETED, ACTIVE → DEFAULTED)
 - Number of overdue installments marked
@@ -551,6 +604,7 @@ ORDER BY "createdAt" DESC;
 - Any errors encountered
 
 **Block Exception Metrics:**
+
 - Number of agreements evaluated
 - Number of exceptions granted
 - Number of exceptions revoked
@@ -558,6 +612,7 @@ ORDER BY "createdAt" DESC;
 - Any errors encountered
 
 **Quality Metrics:**
+
 - Number of manual corrections needed
 - Number of false positives/negatives
 - User feedback on accuracy
@@ -566,6 +621,7 @@ ORDER BY "createdAt" DESC;
 ### 10.4 Decision Criteria for Cron
 
 **Proceed to cron if:**
+
 - 2+ weeks of successful manual execution
 - No critical issues encountered
 - Metrics are stable and predictable
@@ -573,6 +629,7 @@ ORDER BY "createdAt" DESC;
 - Checklists are refined
 
 **Delay cron if:**
+
 - Critical issues encountered
 - High rate of manual corrections needed
 - Unpredictable execution times
@@ -585,6 +642,7 @@ ORDER BY "createdAt" DESC;
 ### 11.1 Proposed Schedule
 
 **Status Evaluation Cron:**
+
 - **Frequency:** Daily
 - **Time:** 10:00 PM (low-traffic period)
 - **Script:** Custom cron job calling batch evaluation script
@@ -592,6 +650,7 @@ ORDER BY "createdAt" DESC;
 - **Alerting:** Alert on failure
 
 **Block Exception Evaluation Cron:**
+
 - **Frequency:** Daily
 - **Time:** 10:30 PM (after status evaluation)
 - **Script:** Custom cron job calling batch evaluation script
@@ -601,6 +660,7 @@ ORDER BY "createdAt" DESC;
 ### 11.2 Proposed Implementation
 
 **Option A: System Cron**
+
 ```bash
 # Status evaluation
 0 22 * * * cd /path/to/sistema-freire && DATABASE_URL="postgresql://..." npx tsx scripts/test-payment-agreement-batch-status.ts >> /var/log/payment-agreements-status.log 2>&1
@@ -610,12 +670,14 @@ ORDER BY "createdAt" DESC;
 ```
 
 **Option B: Node.js Cron Scheduler**
+
 - Create dedicated cron service
 - Run within application process
 - Better logging and error handling
 - Easier to monitor
 
 **Option C: Cloud Scheduler (AWS/GCP/Azure)**
+
 - Use cloud-native scheduler
 - Better integration with cloud monitoring
 - Easier to manage in cloud environment
@@ -623,18 +685,21 @@ ORDER BY "createdAt" DESC;
 ### 11.3 Proposed Monitoring
 
 **Health Checks:**
+
 - Script execution success/failure
 - Execution time
 - Number of agreements processed
 - Number of changes made
 
 **Alerting:**
+
 - Script failure
 - Execution time > threshold
 - Unusual number of changes
 - Database errors
 
 **Dashboard:**
+
 - Last execution time
 - Last execution status
 - Number of agreements processed
@@ -644,11 +709,13 @@ ORDER BY "createdAt" DESC;
 ### 11.4 Proposed Rollback
 
 **Manual Rollback:**
+
 - Disable cron temporarily
 - Run manual corrections
 - Re-enable cron after fix
 
 **Automated Rollback:**
+
 - Not recommended initially
 - Consider after proven stability
 - Requires complex logic
@@ -662,12 +729,14 @@ ORDER BY "createdAt" DESC;
 **Status Evaluation Rollback**
 
 **Scenario 1: Incorrect Status Changes**
+
 1. Identify affected agreements from event logs
 2. Manually correct status via UI
 3. Re-run status evaluation with corrected logic
 4. Verify no further issues
 
 **Scenario 2: Incorrect Overdue Marking**
+
 1. Identify affected installments from event logs
 2. Manually correct installment status via UI
 3. Re-run status evaluation with corrected logic
@@ -676,12 +745,14 @@ ORDER BY "createdAt" DESC;
 **Block Exception Rollback**
 
 **Scenario 1: Incorrect Exception Grants**
+
 1. Identify incorrectly granted exceptions from audit logs
 2. Manually revoke exceptions via UI or script
 3. Re-run block exception evaluation with corrected logic
 4. Verify no further issues
 
 **Scenario 2: Incorrect Exception Revokes**
+
 1. Identify incorrectly revoked exceptions from audit logs
 2. Manually grant exceptions via UI or script
 3. Re-run block exception evaluation with corrected logic
@@ -690,32 +761,38 @@ ORDER BY "createdAt" DESC;
 ### 12.2 Diagnostic Procedures
 
 **Step 1: Review Script Output**
+
 - Check for error messages
 - Review summary statistics
 - Identify any anomalies
 
 **Step 2: Review Event Logs**
+
 - Query recent events
 - Identify unexpected events
 - Correlate with script output
 
 **Step 3: Review Audit Logs**
+
 - Query recent audit entries
 - Identify unexpected changes
 - Correlate with script output
 
 **Step 4: Review Application Logs**
+
 - Check for errors
 - Identify database issues
 - Identify permission issues
 
 **Step 5: Review Database State**
+
 - Query agreement status distribution
 - Query installment status distribution
 - Query block exception state
 - Compare with expected state
 
 **Step 6: Test Manual Operations**
+
 - Test UI operations on sample agreement
 - Verify manual operations work correctly
 - Identify if issue is batch-specific
@@ -723,21 +800,27 @@ ORDER BY "createdAt" DESC;
 ### 12.3 Common Issues and Solutions
 
 **Issue: Script fails with database connection error**
+
 - **Solution:** Verify DATABASE_URL, check database connectivity, restart script
 
 **Issue: Script fails with permission error**
+
 - **Solution:** Verify database user permissions, grant necessary permissions
 
 **Issue: Script takes too long**
+
 - **Solution:** Review number of agreements, consider batching, optimize queries
 
 **Issue: Unexpected status changes**
+
 - **Solution:** Review event logs, identify root cause, correct manually, fix logic
 
 **Issue: Unexpected exception changes**
+
 - **Solution:** Review audit logs, identify root cause, correct manually, fix logic
 
 **Issue: Duplicate events created**
+
 - **Solution:** Review event logs, identify duplicates, clean up, fix idempotency
 
 ---
@@ -784,24 +867,28 @@ ORDER BY "createdAt" DESC;
 ### 14.1 Commands
 
 **Status Evaluation (Dry-Run):**
+
 ```bash
 DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire" \
 npx tsx scripts/test-payment-agreement-batch-status.ts --dry-run
 ```
 
 **Status Evaluation (Live):**
+
 ```bash
 DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire" \
 npx tsx scripts/test-payment-agreement-batch-status.ts
 ```
 
 **Block Exception Evaluation (Dry-Run):**
+
 ```bash
 DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire" \
 npx tsx scripts/test-payment-agreement-block-exception-batch.ts --dry-run
 ```
 
 **Block Exception Evaluation (Live):**
+
 ```bash
 DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire" \
 npx tsx scripts/test-payment-agreement-block-exception-batch.ts
@@ -835,6 +922,7 @@ npx tsx scripts/test-payment-agreement-block-exception-batch.ts
 ## Appendix A: Test Script Execution
 
 **Manual Operations Test:**
+
 ```bash
 DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire" \
 npx tsx scripts/test-payment-agreement-manual-operations.ts
@@ -847,6 +935,7 @@ npx tsx scripts/test-payment-agreement-manual-operations.ts
 ## Appendix B: Schema Validation
 
 **Prisma validation:**
+
 ```bash
 npx prisma validate
 ```
@@ -854,6 +943,7 @@ npx prisma validate
 **Expected result:** Schema is valid
 
 **Migration status:**
+
 ```bash
 npx prisma migrate status
 ```
@@ -865,6 +955,7 @@ npx prisma migrate status
 ## Appendix C: Build Validation
 
 **TypeScript check:**
+
 ```bash
 npm run check
 ```
@@ -872,6 +963,7 @@ npm run check
 **Expected result:** 0 errors
 
 **Build:**
+
 ```bash
 npm run build
 ```

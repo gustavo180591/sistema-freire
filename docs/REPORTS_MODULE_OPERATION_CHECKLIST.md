@@ -5,10 +5,12 @@
 ### Reportes Institucionales
 
 **Prerequisites:**
+
 - [ ] Usuario con rol SUPERADMIN autenticado
 - [ ] Base de datos con datos de prueba (alumnos, docentes, carreras, etc.)
 
 **Pasos de prueba:**
+
 1. [ ] Navegar a `/reportes/dashboard`
 2. [ ] Verificar que el tab "Institucional" está activo por defecto
 3. [ ] Verificar que se muestran KPIs (Total Alumnos, Alumnos Activos, Total Docentes, etc.)
@@ -17,6 +19,7 @@
 6. [ ] Verificar que los datos son consistentes con la base de datos
 
 **Prueba de permisos:**
+
 1. [ ] Cerrar sesión
 2. [ ] Intentar navegar a `/reportes/dashboard`
 3. [ ] Verificar redirección a `/login`
@@ -25,6 +28,7 @@
 6. [ ] Verificar que la UI carga pero el tab institucional muestra error 403
 
 **Prueba de exportación CSV:**
+
 1. [ ] Navegar a `/reportes/dashboard` como SUPERADMIN
 2. [ ] Hacer clic en "Exportar CSV" en tab institucional
 3. [ ] Verificar que se descarga archivo CSV
@@ -36,10 +40,12 @@
 ### Reportes Financieros
 
 **Prerequisites:**
+
 - [ ] Usuario con permiso `FINANCIAL_REPORT:read` autenticado
 - [ ] Base de datos con datos financieros (cargos, pagos, recibos, convenios)
 
 **Pasos de prueba:**
+
 1. [ ] Navegar a `/reportes/dashboard`
 2. [ ] Hacer clic en tab "Financiero"
 3. [ ] Verificar que se muestran KPIs financieros (Cargos Totales, Pagado Total, Pendiente Total, etc.)
@@ -51,6 +57,7 @@
 9. [ ] Verificar que no hay errores en consola
 
 **Prueba de permisos:**
+
 1. [ ] Iniciar sesión con usuario sin permiso `FINANCIAL_REPORT:read`
 2. [ ] Navegar a `/reportes/dashboard`
 3. [ ] Hacer clic en tab "Financiero"
@@ -58,6 +65,7 @@
 5. [ ] Verificar que el mensaje de error es claro
 
 **Prueba de exportación CSV:**
+
 1. [ ] Navegar a `/reportes/dashboard` con permiso `FINANCIAL_REPORT:read`
 2. [ ] Hacer clic en tab "Financiero"
 3. [ ] Aplicar filtros si es necesario
@@ -69,10 +77,12 @@
 ### Reportes Académicos
 
 **Prerequisites:**
+
 - [ ] Usuario con permiso `GRADE:read` autenticado
 - [ ] Base de datos con datos académicos (alumnos, materias, comisiones, calificaciones)
 
 **Pasos de prueba:**
+
 1. [ ] Navegar a `/reportes/dashboard`
 2. [ ] Hacer clic en tab "Académico"
 3. [ ] Verificar que se muestran KPIs académicos (Total Alumnos, Alumnos Activos, Total Materias, etc.)
@@ -84,12 +94,14 @@
 9. [ ] Verificar que no hay errores en consola
 
 **Prueba de permisos:**
+
 1. [ ] Iniciar sesión con usuario sin permiso `GRADE:read`
 2. [ ] Navegar a `/reportes/dashboard`
 3. [ ] Hacer clic en tab "Académico"
 4. [ ] Verificar que se muestra error 403
 
 **Prueba de exportación CSV:**
+
 1. [ ] Navegar a `/reportes/dashboard` con permiso `GRADE:read`
 2. [ ] Hacer clic en tab "Académico"
 3. [ ] Hacer clic en "Exportar CSV"
@@ -99,10 +111,12 @@
 ### Reportes de Asistencia
 
 **Prerequisites:**
+
 - [ ] Usuario con permiso `ATTENDANCE:read` autenticado
 - [ ] Base de datos con datos de asistencia (registros, entradas)
 
 **Pasos de prueba:**
+
 1. [ ] Navegar a `/reportes/dashboard`
 2. [ ] Hacer clic en tab "Asistencia"
 3. [ ] Verificar que se muestran KPIs de asistencia (Presentes, Ausentes, Justificados, Injustificados)
@@ -117,12 +131,14 @@
 12. [ ] Verificar que no hay errores en consola
 
 **Prueba de permisos:**
+
 1. [ ] Iniciar sesión con usuario sin permiso `ATTENDANCE:read`
 2. [ ] Navegar a `/reportes/dashboard`
 3. [ ] Hacer clic en tab "Asistencia"
 4. [ ] Verificar que se muestra error 403
 
 **Prueba de exportación CSV:**
+
 1. [ ] Navegar a `/reportes/dashboard` con permiso `ATTENDANCE:read`
 2. [ ] Hacer clic en tab "Asistencia"
 3. [ ] Hacer clic en "Exportar CSV"
@@ -134,6 +150,7 @@
 ### Prueba de SUPERADMIN
 
 **Pasos:**
+
 1. [ ] Crear usuario con rol SUPERADMIN
 2. [ ] Iniciar sesión como SUPERADMIN
 3. [ ] Navegar a `/reportes/dashboard`
@@ -144,6 +161,7 @@
 ### Prueba de Permisos Específicos
 
 **FINANCIAL_REPORT:read:**
+
 1. [ ] Crear usuario con rol FINANZAS
 2. [ ] Asignar permiso `FINANCIAL_REPORT:read` al rol FINANZAS
 3. [ ] Iniciar sesión como usuario con rol FINANZAS
@@ -152,6 +170,7 @@
 6. [ ] Verificar que tabs "Institucional", "Académico", "Asistencia" muestran error 403
 
 **GRADE:read:**
+
 1. [ ] Crear usuario con rol DOCENTE
 2. [ ] Asignar permiso `GRADE:read` al rol DOCENTE
 3. [ ] Iniciar sesión como usuario con rol DOCENTE
@@ -160,6 +179,7 @@
 6. [ ] Verificar que otros tabs muestran error 403
 
 **ATTENDANCE:read:**
+
 1. [ ] Crear usuario con rol PRECEPTOR
 2. [ ] Asignar permiso `ATTENDANCE:read` al rol PRECEPTOR
 3. [ ] Iniciar sesión como usuario con rol PRECEPTOR
@@ -172,6 +192,7 @@
 ### Error 401 Unauthorized
 
 **Pasos de prueba:**
+
 1. [ ] Cerrar sesión
 2. [ ] Intentar acceder a `/reportes/dashboard` directamente
 3. [ ] Verificar redirección a `/login`
@@ -183,6 +204,7 @@
 ### Error 403 Forbidden
 
 **Pasos de prueba:**
+
 1. [ ] Iniciar sesión con usuario sin permisos de reportes
 2. [ ] Navegar a `/reportes/dashboard`
 3. [ ] Verificar que cada tab muestra error 403 con mensaje claro
@@ -194,6 +216,7 @@
 ### Error 400 Bad Request
 
 **Pasos de prueba:**
+
 1. [ ] Navegar a `/reportes/dashboard` con permisos
 2. [ ] En tab financiero, aplicar filtro con fecha inválida (ej. "invalid-date")
 3. [ ] Verificar que se muestra error 400 con mensaje "Invalid startDate format"
@@ -205,6 +228,7 @@
 ### Error 500 Internal Server Error
 
 **Pasos de prueba:**
+
 1. [ ] Simular error en servicio (comentar temporalmente una línea)
 2. [ ] Navegar a `/reportes/dashboard`
 3. [ ] Verificar que se muestra error genérico "Internal server error"
@@ -268,11 +292,13 @@
 ### Problema: Reportes no cargan datos
 
 **Posibles causas:**
+
 - Usuario no tiene permisos
 - Base de datos no tiene datos
 - Error en servicio
 
 **Pasos de resolución:**
+
 1. Verificar consola del navegador para errores
 2. Verificar consola del servidor para errores
 3. Verificar que el usuario tiene permisos correctos
@@ -282,11 +308,13 @@
 ### Problema: Exportación CSV no funciona
 
 **Posibles causas:**
+
 - Usuario no tiene permisos
 - Error en generación de CSV
 - Bloqueador de descargas
 
 **Pasos de resolución:**
+
 1. Verificar consola del navegador para errores
 2. Verificar que el usuario tiene permisos correctos
 3. Verificar que el endpoint CSV responde correctamente
@@ -296,11 +324,13 @@
 ### Problema: Visualizaciones no se muestran
 
 **Posibles causas:**
+
 - Datos vacíos
 - Error en componente de gráfico
 - CSS no cargado
 
 **Pasos de resolución:**
+
 1. Verificar que hay datos en el reporte
 2. Verificar consola del navegador para errores
 3. Verificar que los componentes de gráficos existen
@@ -309,11 +339,13 @@
 ### Problema: Error 403 inesperado
 
 **Posibles causas:**
+
 - Permisos no configurados correctamente
 - Rol no asignado al usuario
 - Cache de permisos obsoleto
 
 **Pasos de resolución:**
+
 1. Verificar que el permiso existe en la base de datos
 2. Verificar que el rol del usuario tiene el permiso
 3. Cerrar sesión y volver a iniciar sesión

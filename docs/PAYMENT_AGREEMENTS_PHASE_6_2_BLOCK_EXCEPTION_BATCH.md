@@ -88,11 +88,13 @@ scripts/evaluate-payment-agreement-block-exceptions.ts
 ### Usage
 
 **Normal execution (with changes):**
+
 ```bash
 DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire" npx tsx scripts/evaluate-payment-agreement-block-exceptions.ts
 ```
 
 **Dry run (no changes):**
+
 ```bash
 DATABASE_URL="postgresql://freire:Freire123@localhost:5437/sistema_freire" npx tsx scripts/evaluate-payment-agreement-block-exceptions.ts --dry-run
 ```
@@ -125,27 +127,32 @@ Execution time: 1.87s
 ### Agreements Included in Evaluation
 
 **ACTIVE Agreements**
+
 - Evaluated for exception application or revocation
 - Apply exception if up-to-date (no overdue installments)
 - Revoke exception if overdue installments exist
 
 **DEFAULTED Agreements**
+
 - Evaluated for exception revocation only
 - Revoke exception if exists (defaulted agreements should not have exceptions)
 
 **COMPLETED Agreements**
+
 - Evaluated for exception revocation only
 - Revoke exception if exists (completed agreements don't need exceptions)
 
 ### Agreements Excluded from Evaluation
 
 **DRAFT Agreements**
+
 - Not evaluated (not yet activated)
 - Exception application is not relevant
 - **Rule:** DRAFT agreements never apply exceptions
 - **Orphan Exception Handling:** If a DRAFT agreement has an active exception, it is NOT revoked in this phase. This is reserved for future phases (Phase 6.3: Orphan Exception Cleanup).
 
 **CANCELLED Agreements**
+
 - Not evaluated (manually cancelled)
 - Exception application is not relevant
 - **Rule:** CANCELLED agreements never apply exceptions
@@ -209,25 +216,30 @@ An exception is revoked when:
 ## What This Phase Does NOT Do
 
 ### No New Financial Blocks
+
 - Does not create new financial blocks
 - Only updates existing blocks when applying/revoking exceptions
 - Block creation is reserved for other processes
 
 ### No StudentCharge Modifications
+
 - Original charges are not modified
 - Charge relations are snapshots, not destructive
 - `newStatus` field in charge relations is NOT updated
 
 ### No Global Report Changes
+
 - Financial reports are not modified
 - Dashboard metrics are not recalculated
 - This is reserved for future phases
 
 ### No Orphan Exception Cleanup
+
 - Does not clean up exceptions for DRAFT or CANCELLED agreements
 - This is reserved for future phases
 
 ### No Cron Job Creation
+
 - No cron job is created in this phase
 - The script is prepared for cron but not deployed
 - This requires understanding the production environment

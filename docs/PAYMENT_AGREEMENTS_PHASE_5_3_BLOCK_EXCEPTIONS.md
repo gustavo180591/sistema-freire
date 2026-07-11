@@ -43,14 +43,14 @@ This phase implements:
 
 ### Agreement Status Handling
 
-| Status | Can Apply Exception? | Should Revoke Exception? | Notes |
-|--------|----------------------|---------------------------|-------|
-| `DRAFT` | No | N/A | Cannot generate exceptions |
-| `ACTIVE` (no overdue) | Yes | No | Can generate exception |
-| `ACTIVE` (with overdue) | No | Yes | Should revoke exception |
-| `COMPLETED` | No | No | Does not need active exception |
-| `DEFAULTED` | No | Yes | Must revoke exception |
-| `CANCELLED` | No | N/A | Cannot generate exceptions |
+| Status                  | Can Apply Exception? | Should Revoke Exception? | Notes                          |
+| ----------------------- | -------------------- | ------------------------ | ------------------------------ |
+| `DRAFT`                 | No                   | N/A                      | Cannot generate exceptions     |
+| `ACTIVE` (no overdue)   | Yes                  | No                       | Can generate exception         |
+| `ACTIVE` (with overdue) | No                   | Yes                      | Should revoke exception        |
+| `COMPLETED`             | No                   | No                       | Does not need active exception |
+| `DEFAULTED`             | No                   | Yes                      | Must revoke exception          |
+| `CANCELLED`             | No                   | N/A                      | Cannot generate exceptions     |
 
 ## Implemented Methods
 
@@ -61,6 +61,7 @@ This phase implements:
 **Purpose**: Apply block exception for an active and up-to-date agreement
 
 **Parameters**:
+
 - `agreementId`: ID of the payment agreement
 - `userId`: ID of the user applying the exception
 - `userName`: Name of the user applying the exception
@@ -118,6 +119,7 @@ type AgreementBlockExceptionResult = {
 **Purpose**: Revoke block exception for an agreement
 
 **Parameters**:
+
 - `agreementId`: ID of the payment agreement
 - `userId`: ID of the user revoking the exception
 - `userName`: Name of the user revoking the exception
@@ -150,6 +152,7 @@ type AgreementBlockExceptionResult = {
 **Purpose**: Query active block exception for a student
 
 **Parameters**:
+
 - `studentId`: ID of the student
 
 **Returns**: `ActiveAgreementBlockException | null`
@@ -192,6 +195,7 @@ type ActiveAgreementBlockException = {
 **Purpose**: Evaluate if an agreement should have a block exception
 
 **Parameters**:
+
 - `agreementId`: ID of the payment agreement
 
 **Returns**: `{ shouldHaveException: boolean; reason: string; }`
@@ -222,6 +226,7 @@ type ActiveAgreementBlockException = {
 **Purpose**: Coordinator method to apply/revoke exceptions based on agreement status
 
 **Parameters**:
+
 - `agreementId`: ID of the payment agreement
 - `userId`: ID of the user performing the evaluation
 - `userName`: Name of the user performing the evaluation
@@ -261,12 +266,12 @@ model FinancialBlock {
   exceptionBy String?
   exceptionAt DateTime?
   exceptionReason String?
-  
+
   // Fields for payment agreement exception source
   exceptionSource FinancialBlockExceptionSource?
   exceptionAgreementId String?
   exceptionAgreement PaymentAgreement? @relation(fields: [exceptionAgreementId], references: [id], onDelete: SetNull)
-  
+
   // ... other fields ...
 }
 ```
@@ -371,13 +376,7 @@ console.log(`Action taken: ${result.reason}`);
 Both application and revocation of exceptions register a `BLOCK_EXCEPTION` event:
 
 ```typescript
-await this.recordAgreementEvent(
-	agreementId,
-	'BLOCK_EXCEPTION',
-	description,
-	userId,
-	userName
-);
+await this.recordAgreementEvent(agreementId, 'BLOCK_EXCEPTION', description, userId, userName);
 ```
 
 **Application**: "Excepción de bloqueo aplicada por convenio activo y al día"
@@ -388,17 +387,11 @@ await this.recordAgreementEvent(
 All exception operations create audit logs:
 
 ```typescript
-await this.createAuditLog(
-	userId,
-	'UPDATE',
-	'FinancialBlock',
-	blockId,
-	description,
-	metadata
-);
+await this.createAuditLog(userId, 'UPDATE', 'FinancialBlock', blockId, description, metadata);
 ```
 
 **Metadata includes**:
+
 - `agreementId`
 - `agreementNumber`
 - `agreementYear`

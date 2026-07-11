@@ -57,6 +57,7 @@
 ### 4.1 Verificación de datos
 
 **Resultado de verificación de enums faltantes:**
+
 - ✅ AcademicStatus: No hay datos usando APPROVED, FAILED, DROPPED
 - ✅ CourseStatus: No hay datos usando APPROVED, FAILED, DROPPED
 - ✅ FinalExamStatus: No hay datos usando APPROVED, EXEMPT
@@ -66,6 +67,7 @@
 ### 4.2 Coincidencia de schema
 
 **Schema.prisma vs Base real:**
+
 - ✅ AcademicStatus: Coincide (EN_COURSE, REGULAR, LIBRE, APROBADO, PROMOCIONADO)
 - ✅ CourseStatus: Coincide (IN_PROGRESS, PASSED_COURSE, FAILED_COURSE, PROMOTED)
 - ✅ EvaluationType: Coincide (PARCIAL, RECUPERATORIO, TRABAJO_PRACTICO, INTEGRADOR, EXAMEN_FINAL, MESA_EXAMEN, OTRO)
@@ -77,6 +79,7 @@
 ### 4.3 Validaciones ejecutadas
 
 **Validaciones obligatorias:**
+
 - ✅ `npx prisma format` - Schema formateado correctamente
 - ✅ `npx prisma validate` - Schema válido
 - ✅ `npx prisma generate` - Prisma Client generado exitosamente
@@ -93,6 +96,7 @@
 **Base temporal utilizada:** `sistema_freire_migration_test`
 
 **Resultado:**
+
 - ✅ `npx prisma migrate deploy` - Todas las migraciones aplicadas exitosamente
 - ✅ No hay migraciones pendientes en base temporal
 - ✅ Schema resultante coincide con Prisma
@@ -107,7 +111,8 @@
 
 **Razón:** Herramientas de línea de comandos de PostgreSQL (createdb, pg_dump, psql) no disponibles en el entorno.
 
-**Mitigación:** 
+**Mitigación:**
+
 - Se ejecutó diagnóstico read-only completo en base real
 - Se verificó que no hay datos usando valores faltantes
 - Se validó que schema.prisma coincide con base real
@@ -136,6 +141,7 @@
 ✅ **NO se modificó la base real** - Solo se ejecutaron consultas SELECT (read-only) durante el diagnóstico.
 
 **Consultas ejecutadas:**
+
 - `SELECT * FROM _prisma_migrations` - Verificación de historial de migraciones
 - `SELECT table_name FROM information_schema.tables` - Listado de tablas
 - `SELECT t.typname, e.enumlabel FROM pg_type t JOIN pg_enum e` - Listado de enums
@@ -188,6 +194,7 @@
 **Pasos:**
 
 1. Intentar aplicar migración de Convenios de Pago:
+
    ```bash
    npx prisma migrate dev --name add_payment_agreements_phase1
    ```
@@ -204,11 +211,13 @@
    - Ejecutar script de prueba de Convenios de Pago en base real
 
 **Ventajas:**
+
 - Más simple, no requiere migración correctiva adicional
 - El schema ya coincide con la base real
 - No hay datos en riesgo
 
 **Riesgos:**
+
 - Prisma puede fallar si detecta las migraciones con 0 steps
 - Puede requerir intervención manual (`migrate resolve`)
 
@@ -217,12 +226,14 @@
 **Pasos:**
 
 1. Usar `migrate resolve --applied` para las migraciones con 0 steps:
+
    ```bash
    npx prisma migrate resolve --applied 20260609163939_refactor_exam_and_grade_module
    npx prisma migrate resolve --applied 20260609170000_create_subject_commissions_and_sync_schema
    ```
 
 2. Aplicar migración de Convenios de Pago:
+
    ```bash
    npx prisma migrate dev --name add_payment_agreements_phase1
    ```
@@ -236,10 +247,12 @@
    ```
 
 **Ventajas:**
+
 - Sincroniza el historial de migraciones con el estado real
 - Permite aplicar migraciones futuras normalmente
 
 **Riesgos:**
+
 - El usuario prohibió usar `migrate resolve` sin aprobación explícita
 - Puede ocultar diferencias reales entre schema y base real
 

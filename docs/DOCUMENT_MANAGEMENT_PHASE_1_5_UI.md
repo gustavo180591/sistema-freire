@@ -38,6 +38,7 @@ Esta fase implementa la interfaz de usuario para:
 **Endpoint:** `GET /api/documents`
 
 **Parámetros de query:**
+
 - `ownerType` (opcional): Tipo de propietario (USER, STUDENT, TEACHER, CAREER, SUBJECT)
 - `ownerId` (opcional): ID del propietario
 - `category` (opcional): Categoría del documento
@@ -46,6 +47,7 @@ Esta fase implementa la interfaz de usuario para:
 - `status` (opcional): Estado del documento (ACTIVE, DELETED, EXPIRED)
 
 **Implementación:**
+
 ```typescript
 const queryParams = new URLSearchParams();
 if (filters.ownerType) queryParams.append('ownerType', filters.ownerType);
@@ -58,6 +60,7 @@ const response = await fetch(`/api/documents?${queryParams.toString()}`);
 **Endpoint:** `POST /api/documents`
 
 **Body:** `multipart/form-data`
+
 - `file`: Archivo a subir
 - `ownerType`: Tipo de propietario
 - `ownerId`: ID del propietario
@@ -67,6 +70,7 @@ const response = await fetch(`/api/documents?${queryParams.toString()}`);
 - `metadata` (opcional): JSON string con metadata adicional
 
 **Implementación:**
+
 ```typescript
 const formData = new FormData();
 formData.append('file', selectedFile);
@@ -80,6 +84,7 @@ const response = await fetch('/api/documents', { method: 'POST', body: formData 
 **Endpoint:** `GET /api/documents/[id]/download`
 
 **Implementación:**
+
 ```typescript
 const response = await fetch(`/api/documents/${document.id}/download`);
 const blob = await response.blob();
@@ -98,6 +103,7 @@ window.document.body.removeChild(a);
 **Endpoint:** `DELETE /api/documents/[id]`
 
 **Implementación:**
+
 ```typescript
 const response = await fetch(`/api/documents/${document.id}`, { method: 'DELETE' });
 ```
@@ -107,6 +113,7 @@ const response = await fetch(`/api/documents/${document.id}`, { method: 'DELETE'
 **Endpoint:** `POST /api/documents/[id]/restore`
 
 **Implementación:**
+
 ```typescript
 const response = await fetch(`/api/documents/${document.id}/restore`, { method: 'POST' });
 ```
@@ -187,10 +194,12 @@ const response = await fetch(`/api/documents/${document.id}/restore`, { method: 
 ### 401 Unauthorized
 
 **Comportamiento:**
+
 - Redirección a `/login`
 - Mensaje: "Sesión expirada o no autenticado"
 
 **Implementación:**
+
 ```typescript
 if (response.status === 401) {
 	goto('/login');
@@ -201,10 +210,12 @@ if (response.status === 401) {
 ### 403 Forbidden
 
 **Comportamiento:**
+
 - Muestra mensaje de error en banner rojo
 - Mensaje: "No tienes permiso para [acción]"
 
 **Implementación:**
+
 ```typescript
 if (response.status === 403) {
 	uploadError = 'No tienes permiso para [acción]';
@@ -215,6 +226,7 @@ if (response.status === 403) {
 ### Errores de Validación
 
 **Comportamiento:**
+
 - Muestra mensaje específico de validación
 - Ejemplos:
   - "El archivo excede el tamaño máximo de 10MB"
@@ -224,6 +236,7 @@ if (response.status === 403) {
 ### Errores de Backend
 
 **Comportamiento:**
+
 - Muestra mensaje genérico de error
 - Ejemplos:
   - "Error al cargar documentos"

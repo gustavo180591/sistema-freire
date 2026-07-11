@@ -9,11 +9,13 @@ La Fase 5 implementa el control automático de deuda y bloqueos financieros para
 ### Cálculo de Deuda Vencida
 
 La deuda vencida se calcula sumando todas las cuotas (`StudentCharge`) que cumplen:
+
 - `status` es `PENDING` o `PARTIAL`
 - `dueDate` es menor a la fecha actual
 - `paidAmount` es menor a `finalAmount`
 
 El cálculo usa `Decimal.js` para precisión monetaria:
+
 ```typescript
 const chargeBalance = DecimalHelpers.subtract(charge.finalAmount, charge.paidAmount);
 ```
@@ -22,16 +24,17 @@ const chargeBalance = DecimalHelpers.subtract(charge.finalAmount, charge.paidAmo
 
 Las reglas de bloqueo se configuran en `FinancialConfig` con categoría `BLOCK_RULES`:
 
-| Key | Tipo | Default | Descripción |
-|-----|------|---------|-------------|
-| `blockOnOverdue` | boolean | true | Si se debe bloquear por deuda vencida |
-| `blockOverdueAmount` | number | 5000 | Monto mínimo de deuda vencida para bloqueo total |
-| `blockOverdueCharges` | number | 2 | Cantidad mínima de cuotas vencidas para bloqueo total |
-| `graceDays` | number | 5 | Días de gracia antes de aplicar bloqueo |
+| Key                   | Tipo    | Default | Descripción                                           |
+| --------------------- | ------- | ------- | ----------------------------------------------------- |
+| `blockOnOverdue`      | boolean | true    | Si se debe bloquear por deuda vencida                 |
+| `blockOverdueAmount`  | number  | 5000    | Monto mínimo de deuda vencida para bloqueo total      |
+| `blockOverdueCharges` | number  | 2       | Cantidad mínima de cuotas vencidas para bloqueo total |
+| `graceDays`           | number  | 5       | Días de gracia antes de aplicar bloqueo               |
 
 ### Resolución de Bloqueos
 
 Los bloqueos se resuelven automáticamente cuando:
+
 - La deuda vencida es 0
 - La deuda total es 0
 - No hay cuotas vencidas según las reglas configuradas
@@ -39,6 +42,7 @@ Los bloqueos se resuelven automáticamente cuando:
 ### Excepciones
 
 Las excepciones manuales permiten otorgar acceso temporal a alumnos bloqueados:
+
 - Requieren permiso `FINANCIAL_BLOCK.update`
 - Deben incluir un motivo
 - Pueden tener fecha de expiración opcional
@@ -47,12 +51,14 @@ Las excepciones manuales permiten otorgar acceso temporal a alumnos bloqueados:
 ### Auditoría
 
 Todas las operaciones de bloqueos registran auditoría en `AuditLog`:
+
 - **Creación de bloqueo**: `action: 'CREATE'`, `entityType: 'FinancialBlock'`
 - **Desactivación de bloqueo**: `action: 'UPDATE'`, `entityType: 'FinancialBlock'`
 - **Excepción manual**: `action: 'UPDATE'`, `entityType: 'FinancialBlock'`
 - **Revocación de excepción**: `action: 'UPDATE'`, `entityType: 'FinancialBlock'`
 
 Metadatos registrados:
+
 - `studentId`: ID del alumno
 - `blockType`: Tipo de bloqueo (ALL, ENROLLMENT, EXAM, etc.)
 - `blockReason`: Motivo del bloqueo
@@ -121,12 +127,14 @@ async getStudentFinancialStatus(studentId: string): Promise<{
 Evalúa si un alumno debe ser bloqueado según reglas configurables en `FinancialConfig`:
 
 **Reglas configurables** (categoría `BLOCK_RULES`):
+
 - `blockOnOverdue`: Si se debe bloquear por deuda vencida (default: true)
 - `blockOverdueAmount`: Monto mínimo de deuda vencida para bloqueo total
 - `blockOverdueCharges`: Cantidad mínima de cuotas vencidas para bloqueo total
 - `graceDays`: Días de gracia antes de aplicar bloqueo
 
 **Tipos de bloqueo**:
+
 - `ALL`: Bloqueo total (todas las operaciones)
 - `ENROLLMENT`: Bloqueo de matriculación
 - `EXAM`: Bloqueo de exámenes
@@ -135,6 +143,7 @@ Evalúa si un alumno debe ser bloqueado según reglas configurables en `Financia
 - `REPORT`: Bloqueo de reportes
 
 **Comportamiento**:
+
 - Crea bloqueo si la deuda cumple las reglas
 - Actualiza bloqueo existente si ya existe
 - Desactiva bloqueos si la deuda se resuelve
@@ -152,6 +161,7 @@ async evaluateFinancialBlocks(
 ```
 
 **Nota de transaccionalidad**:
+
 - Cuando se llama desde `registerPayment` o `cancelPayment`, se ejecuta dentro de la misma transacción
 - Esto garantiza que el pago/allocation/cuota/bloqueo sean atómicos
 - Si falla el recálculo de bloqueos, se hace rollback completo de la transacción
@@ -228,6 +238,7 @@ Los métodos de registro y anulación de pagos recalculan automáticamente la de
 - `cancelPayment`: Dentro de la transacción, anula el pago, revierte allocations, actualiza cuotas, crea movimiento de cancelación y recalcula bloqueos
 
 **Transaccionalidad**:
+
 - Todas las operaciones (pago, allocations, cuotas, movimientos, bloqueos) son atómicas
 - Si falla cualquier parte de la transacción, se hace rollback completo
 - No puede quedar un pago registrado sin el bloqueo actualizado
@@ -246,6 +257,7 @@ Se agregó la entidad `FINANCIAL_BLOCK` al sistema de permisos granulares:
   - `ADMINISTRATIVO`: read, update (para excepciones)
 
 **Ownership para alumnos**:
+
 - Los alumnos solo pueden consultar su propia deuda
 - Los alumnos no pueden evaluar bloqueos
 - Los alumnos no pueden crear excepciones
@@ -260,6 +272,7 @@ Se creó la ruta `/finanzas/deuda` con server actions:
 **Ubicación**: `src/routes/(app)/finanzas/deuda/+page.server.ts`
 
 **Acciones disponibles**:
+
 - `getDebtSummary`: Calcular resumen de deuda
 - `evaluateBlocks`: Evaluar bloqueos financieros
 - `createException`: Crear excepción de bloqueo
@@ -276,6 +289,7 @@ Todas las operaciones de bloqueos y excepciones registran auditoría completa:
 - Revocación de excepciones
 
 **Metadatos registrados**:
+
 - ID del alumno
 - Tipo de bloqueo
 - Motivo del bloqueo
@@ -338,6 +352,7 @@ model FinancialConfig {
 **Ubicación**: `scripts/test-financial-debt-blocks.ts`
 
 **Casos de prueba cubiertos**:
+
 1. Cálculo de resumen de deuda
 2. Alumno sin deuda
 3. Evaluación de bloqueos financieros
@@ -353,6 +368,7 @@ model FinancialConfig {
 13. **Ownership**: Verifica que alumnos solo puedan ver su propia deuda y no tengan permisos para gestionar bloqueos
 
 **Ejecución**:
+
 ```bash
 npx tsx scripts/test-financial-debt-blocks.ts
 ```
@@ -365,32 +381,32 @@ Configurar las reglas de bloqueo en `FinancialConfig`:
 
 ```typescript
 await prisma.financialConfig.createMany({
-  data: [
-    {
-      key: 'blockOnOverdue',
-      value: true,
-      category: 'BLOCK_RULES',
-      description: 'Bloquear por deuda vencida'
-    },
-    {
-      key: 'blockOverdueAmount',
-      value: 5000,
-      category: 'BLOCK_RULES',
-      description: 'Monto mínimo para bloqueo total'
-    },
-    {
-      key: 'blockOverdueCharges',
-      value: 2,
-      category: 'BLOCK_RULES',
-      description: 'Cuotas vencidas para bloqueo total'
-    },
-    {
-      key: 'graceDays',
-      value: 5,
-      category: 'BLOCK_RULES',
-      description: 'Días de gracia antes de bloquear'
-    }
-  ]
+	data: [
+		{
+			key: 'blockOnOverdue',
+			value: true,
+			category: 'BLOCK_RULES',
+			description: 'Bloquear por deuda vencida'
+		},
+		{
+			key: 'blockOverdueAmount',
+			value: 5000,
+			category: 'BLOCK_RULES',
+			description: 'Monto mínimo para bloqueo total'
+		},
+		{
+			key: 'blockOverdueCharges',
+			value: 2,
+			category: 'BLOCK_RULES',
+			description: 'Cuotas vencidas para bloqueo total'
+		},
+		{
+			key: 'graceDays',
+			value: 5,
+			category: 'BLOCK_RULES',
+			description: 'Días de gracia antes de bloquear'
+		}
+	]
 });
 ```
 
@@ -400,11 +416,11 @@ Los pagos registrados automáticamente recalculan la deuda y los bloqueos:
 
 ```typescript
 await financialService.registerPayment({
-  studentId: 'student-id',
-  amount: new Decimal(1000),
-  method: 'CASH',
-  chargeIds: ['charge-id'],
-  userId: 'user-id'
+	studentId: 'student-id',
+	amount: new Decimal(1000),
+	method: 'CASH',
+	chargeIds: ['charge-id'],
+	userId: 'user-id'
 });
 // Bloqueos se recalculan automáticamente
 ```
@@ -424,7 +440,7 @@ Verificar si un alumno tiene bloqueos:
 ```typescript
 const status = await financialService.checkFinancialBlock('student-id');
 if (status.blocked) {
-  console.log('Alumno bloqueado:', status.reason);
+	console.log('Alumno bloqueado:', status.reason);
 }
 ```
 
@@ -434,11 +450,11 @@ Otorgar una excepción temporal:
 
 ```typescript
 await financialService.createFinancialBlockException({
-  studentId: 'student-id',
-  blockType: 'ALL',
-  reason: 'Pago acordado con dirección',
-  userId: 'user-id',
-  expiresAt: new Date('2026-02-01')
+	studentId: 'student-id',
+	blockType: 'ALL',
+	reason: 'Pago acordado con dirección',
+	userId: 'user-id',
+	expiresAt: new Date('2026-02-01')
 });
 ```
 
@@ -446,9 +462,9 @@ Revocar una excepción:
 
 ```typescript
 await financialService.revokeFinancialBlockException({
-  studentId: 'student-id',
-  blockType: 'ALL',
-  userId: 'user-id'
+	studentId: 'student-id',
+	blockType: 'ALL',
+	userId: 'user-id'
 });
 ```
 
@@ -469,7 +485,7 @@ El módulo de inscripciones debe verificar bloqueos antes de permitir matriculac
 ```typescript
 const blockStatus = await financialService.checkFinancialBlock(studentId, 'ENROLLMENT');
 if (blockStatus.blocked && !blockStatus.hasException) {
-  throw new Error('Alumno bloqueado para matriculación: ' + blockStatus.reason);
+	throw new Error('Alumno bloqueado para matriculación: ' + blockStatus.reason);
 }
 ```
 
@@ -480,7 +496,7 @@ El módulo de exámenes debe verificar bloqueos antes de permitir inscripción a
 ```typescript
 const blockStatus = await financialService.checkFinancialBlock(studentId, 'EXAM');
 if (blockStatus.blocked && !blockStatus.hasException) {
-  throw new Error('Alumno bloqueado para exámenes: ' + blockStatus.reason);
+	throw new Error('Alumno bloqueado para exámenes: ' + blockStatus.reason);
 }
 ```
 
@@ -491,7 +507,7 @@ El módulo de cursadas debe verificar bloqueos antes de permitir inscripción a 
 ```typescript
 const blockStatus = await financialService.checkFinancialBlock(studentId, 'COURSE');
 if (blockStatus.blocked && !blockStatus.hasException) {
-  throw new Error('Alumno bloqueado para cursado: ' + blockStatus.reason);
+	throw new Error('Alumno bloqueado para cursado: ' + blockStatus.reason);
 }
 ```
 
@@ -502,7 +518,7 @@ El módulo de constancias debe verificar bloqueos antes de emitir certificados:
 ```typescript
 const blockStatus = await financialService.checkFinancialBlock(studentId, 'CERTIFICATE');
 if (blockStatus.blocked && !blockStatus.hasException) {
-  throw new Error('Alumno bloqueado para certificados: ' + blockStatus.reason);
+	throw new Error('Alumno bloqueado para certificados: ' + blockStatus.reason);
 }
 ```
 
@@ -513,7 +529,7 @@ El módulo de reportes debe verificar bloqueos antes de generar reportes:
 ```typescript
 const blockStatus = await financialService.checkFinancialBlock(studentId, 'REPORT');
 if (blockStatus.blocked && !blockStatus.hasException) {
-  throw new Error('Alumno bloqueado para reportes: ' + blockStatus.reason);
+	throw new Error('Alumno bloqueado para reportes: ' + blockStatus.reason);
 }
 ```
 
@@ -538,12 +554,14 @@ if (blockStatus.blocked && !blockStatus.hasException) {
 ## Archivos Modificados/Creados
 
 ### Modificados
+
 - `src/lib/server/financial/financial-service.ts` (transaccionalidad de bloqueos)
 - `src/lib/server/auth/permissions-granular.ts` (entidad FINANCIAL_BLOCK)
 - `src/routes/(app)/finanzas/deuda/+page.server.ts` (validación de ownership y permisos)
 - `src/routes/+page.svelte` (icono de docente)
 
 ### Creados
+
 - `src/routes/(app)/finanzas/deuda/+page.svelte`
 - `scripts/test-financial-debt-blocks.ts`
 - `docs/FINANCIAL_MODULE_PHASE_5_DEBT_BLOCKS.md`

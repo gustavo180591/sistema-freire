@@ -5,6 +5,7 @@
 Esta guía proporciona capacitación básica para el personal del Instituto ISFD "Paulo Freire" 1117 en el uso del Sistema de Gestión Institucional.
 
 **Público objetivo:**
+
 - Personal administrativo
 - Personal docente
 - Preceptores
@@ -17,6 +18,7 @@ Esta guía proporciona capacitación básica para el personal del Instituto ISFD
 **URL:** [A completar en deployment]
 
 **Requisitos:**
+
 - Navegador web moderno (Chrome, Firefox, Edge, Safari)
 - Conexión a internet
 - Credenciales de usuario asignadas
@@ -32,12 +34,14 @@ Esta guía proporciona capacitación básica para el personal del Instituto ISFD
 ### Recuperación de Contraseña
 
 Si olvidó la contraseña:
+
 1. Hacer clic en "¿Olvidaste tu contraseña?"
 2. Ingresar email registrado
 3. Seguir instrucciones enviadas por email
 4. Crear nueva contraseña segura
 
 **Consejos de seguridad:**
+
 - Usar contraseña única para el sistema
 - No compartir credenciales
 - Cerrar sesión al terminar
@@ -72,6 +76,7 @@ Si olvidó la contraseña:
 ### Asignar Roles
 
 **Roles disponibles:**
+
 - **SUPERADMIN:** Acceso total al sistema
 - **DIRECTOR:** Gestión académica y administrativa
 - **SECRETARIO:** Gestión administrativa
@@ -137,6 +142,7 @@ Si olvidó la contraseña:
 ### Cambiar Estado de Alumno
 
 **Estados disponibles:**
+
 - **ACTIVO:** Alumno regular
 - **INACTIVO:** Alumno no activo temporalmente
 - **EGRESADO:** Alumno egresado
@@ -154,6 +160,7 @@ Si olvidó la contraseña:
 **Rol requerido:** SUPERADMIN, DIRECTOR
 
 **Crear carrera:**
+
 1. Navegar a "Carreras"
 2. Hacer clic en "Nueva Carrera"
 3. Completar:
@@ -170,6 +177,7 @@ Si olvidó la contraseña:
 **Rol requerido:** SUPERADMIN, DIRECTOR
 
 **Crear materia:**
+
 1. Navegar a "Materias"
 2. Hacer clic en "Nueva Materia"
 3. Completar:
@@ -192,6 +200,7 @@ Si olvidó la contraseña:
 **Rol requerido:** SUPERADMIN, DIRECTOR
 
 **Crear comisión:**
+
 1. Navegar a "Comisiones"
 2. Hacer clic en "Nueva Comisión"
 3. Completar:
@@ -207,6 +216,7 @@ Si olvidó la contraseña:
 **Rol requerido:** SUPERADMIN, DIRECTOR, SECRETARIO
 
 **Inscribir alumno en materia:**
+
 1. Navegar a "Inscripciones"
 2. Seleccionar alumno
 3. Seleccionar materia/comisión
@@ -219,6 +229,7 @@ Si olvidó la contraseña:
 **Rol requerido:** SUPERADMIN, FINANZAS
 
 **Crear cargo:**
+
 1. Navegar a "Finanzas"
 2. Hacer clic en "Nuevo Cargo"
 3. Completar:
@@ -250,6 +261,7 @@ Si olvidó la contraseña:
 **Rol requerido:** SUPERADMIN, FINANZAS
 
 **Crear convenio:**
+
 1. Navegar a "Finanzas" → "Convenios"
 2. Hacer clic en "Nuevo Convenio"
 3. Completar:
@@ -262,6 +274,7 @@ Si olvidó la contraseña:
 5. Guardar
 
 **Registrar pago de cuota:**
+
 1. Buscar convenio
 2. Seleccionar cuota
 3. Registrar pago
@@ -272,12 +285,14 @@ Si olvidó la contraseña:
 **Rol requerido:** SUPERADMIN, FINANZAS
 
 **Generar recibo:**
+
 1. Al registrar pago, el sistema genera recibo automáticamente
 2. Navegar a "Recibos"
 3. Buscar recibo por número o alumno
 4. Hacer clic en "Imprimir" o "Descargar PDF"
 
 **Anular recibo:**
+
 1. Buscar recibo
 2. Hacer clic en "Anular"
 3. Ingresar motivo
@@ -371,6 +386,7 @@ Si olvidó la contraseña:
 ### Ver Métricas
 
 Cada reporte muestra:
+
 - KPIs principales
 - Visualizaciones
 - Filtros disponibles
@@ -418,6 +434,7 @@ Cada reporte muestra:
 ### No puedo ingresar
 
 **Soluciones:**
+
 - Verificar email y contraseña
 - Verificar conexión a internet
 - Solicitar recuperación de contraseña
@@ -426,6 +443,7 @@ Cada reporte muestra:
 ### No veo datos esperados
 
 **Soluciones:**
+
 - Verificar que tienes el rol correcto
 - Verificar que tienes acceso a la sede
 - Verificar filtros aplicados
@@ -434,6 +452,7 @@ Cada reporte muestra:
 ### Error al guardar
 
 **Soluciones:**
+
 - Verificar que todos los campos requeridos están completos
 - Verificar que los datos son válidos
 - Reintentar después de unos segundos
@@ -442,6 +461,7 @@ Cada reporte muestra:
 ### Documento no sube
 
 **Soluciones:**
+
 - Verificar tamaño del archivo (máximo 10MB)
 - Verificar formato del archivo (PDF)
 - Verificar conexión a internet
@@ -474,6 +494,7 @@ Cada reporte muestra:
 Después de la capacitación, el personal debería poder:
 
 **Usuarios administrativos:**
+
 - [ ] Crear y gestionar usuarios
 - [ ] Registrar y gestionar alumnos
 - [ ] Gestionar carreras y materias
@@ -481,6 +502,7 @@ Después de la capacitación, el personal debería poder:
 - [ ] Generar reportes institucionales
 
 **Personal de finanzas:**
+
 - [ ] Crear cargos
 - [ ] Registrar pagos
 - [ ] Generar recibos
@@ -488,12 +510,14 @@ Después de la capacitación, el personal debería poder:
 - [ ] Generar reportes financieros
 
 **Preceptores:**
+
 - [ ] Registrar asistencia
 - [ ] Ver reportes de asistencia
 - [ ] Gestionar seguimientos
 - [ ] Ver historial de alumnos
 
 **Docentes:**
+
 - [ ] Registrar calificaciones
 - [ ] Subir materiales de clase
 - [ ] Ver reportes académicos
@@ -508,10 +532,10 @@ El personal debe firmar este documento confirmando que:
 - [ ] Tiene acceso a documentación
 - [ ] Sabe cómo solicitar soporte
 
-**Nombre:** _______________
+**Nombre:** **\*\***\_\_\_**\*\***
 
-**Cargo:** _______________
+**Cargo:** **\*\***\_\_\_**\*\***
 
-**Fecha:** _______________
+**Fecha:** **\*\***\_\_\_**\*\***
 
-**Firma:** _______________
+**Firma:** **\*\***\_\_\_**\*\***

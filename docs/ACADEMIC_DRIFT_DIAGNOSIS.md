@@ -21,6 +21,7 @@ Durante la implementación de la Fase 1 de Convenios de Pago, se detectó que la
 **Fecha:** 9 de Junio de 2026
 
 **Cambios realizados:**
+
 - Creación de nuevos enums:
   - `EvaluationType`: PARCIAL, TRABAJO_PRACTICO, INTEGRADOR, RECUPERATORIO, MESA_EXAMEN
   - `GradeStatus`: PRESENT, ABSENT, EXCUSED
@@ -49,6 +50,7 @@ Durante la implementación de la Fase 1 de Convenios de Pago, se detectó que la
 **Fecha:** 9 de Junio de 2026
 
 **Cambios realizados:**
+
 - Creación de tabla `subject_commissions`:
   - Campos: id, code, subjectId, academicTermId, careerId, studyPlanId, teacherId, locationId, maxCapacity, currentEnrolled, schedule, scheduleJson, active, observations, createdAt, updatedAt
   - Índices y foreign keys
@@ -85,21 +87,25 @@ Durante la implementación de la Fase 1 de Convenios de Pago, se detectó que la
 ## Estrategia de Resolución
 
 **Opción 1: Migrate Resolve (NO RECOMENDADA)**
+
 - Usar `prisma migrate resolve --applied` para marcar las migraciones como aplicadas
 - **Riesgo:** Puede ocultar diferencias reales entre el schema y la base real
 - **No aprobado por el usuario**
 
 **Opción 2: Migrate Reset (NO RECOMENDADA)**
+
 - Usar `prisma migrate reset --force` para recrear la base desde cero
 - **Riesgo:** Perder todos los datos de la base real
 - **No aprobado por el usuario**
 
 **Opción 3: SQL Manual (NO RECOMENDADA)**
+
 - Crear scripts SQL manuales para sincronizar la base real
 - **Riesgo:** Propenso a errores, difícil de mantener
 - **No aprobado por el usuario**
 
 **Opción 4: Db Push (NO RECOMENDADA)**
+
 - Usar `prisma db push` para sincronizar el schema directamente
 - **Riesgo:** No crea migraciones, no es idempotente, puede causar problemas futuros
 - **No aprobado por el usuario**

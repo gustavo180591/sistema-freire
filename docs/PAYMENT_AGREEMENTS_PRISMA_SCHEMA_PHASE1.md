@@ -57,6 +57,7 @@ enum FinancialBlockExceptionSource {
 **Propósito:** Entidad principal que representa el convenio de pago.
 
 **Características:**
+
 - Numeración secuencial por año (similar a Receipt)
 - Montos en Decimal (sin Float)
 - Estados bien definidos
@@ -73,24 +74,24 @@ model PaymentAgreement {
   studentId         String
   studentName       String
   studentDni        String?
-  
+
   // Montos - todos Decimal para precisión financiera
   originalDebt      Decimal                       @db.Decimal(12, 2)
   agreedAmount      Decimal                       @db.Decimal(12, 2)
   paidAmount        Decimal                       @default(0) @db.Decimal(12, 2)
   pendingAmount     Decimal                       @db.Decimal(12, 2)
-  
+
   // Fechas
   createdAt         DateTime                      @default(now())
   activatedAt       DateTime?
   completedAt       DateTime?
   cancelledAt       DateTime?
-  
+
   // Estado y motivo
   status            PaymentAgreementStatus        @default(DRAFT)
   reason            String                        @db.Text
   observations      String?                       @db.Text
-  
+
   // Usuario responsable
   createdBy         String
   createdByName     String
@@ -99,16 +100,16 @@ model PaymentAgreement {
   cancelledBy       String?
   cancelledByName   String?
   cancelledReason   String?                       @db.Text
-  
+
   // Relaciones
   relatedCharges    PaymentAgreementChargeRelation[]
   installments      PaymentAgreementInstallment[]
   events            PaymentAgreementEvent[]
   receipts          Receipt[]
-  
+
   // Metadatos para configuración adicional
   metadata          Json?
-  
+
   // Constraints
   @@unique([agreementNumber, agreementYear])
   @@index([studentId])
@@ -120,6 +121,7 @@ model PaymentAgreement {
 ```
 
 **Explicación:**
+
 - `agreementNumber` + `agreementYear`: Numeración secuencial por año, no reutilizable
 - `originalDebt`: Monto total de la deuda original seleccionada
 - `agreedAmount`: Monto acordado (puede incluir condonaciones)
@@ -139,6 +141,7 @@ model PaymentAgreement {
 **Propósito:** Cuotas personalizadas del convenio.
 
 **Características:**
+
 - Entidad real (no solo metadatos)
 - Montos en Decimal
 - Estados individuales por cuota
@@ -155,21 +158,21 @@ model PaymentAgreementInstallment {
   paidAmount        Decimal                           @default(0) @db.Decimal(12, 2)
   pendingAmount     Decimal                           @db.Decimal(12, 2)
   status            PaymentAgreementInstallmentStatus  @default(PENDING)
-  
+
   // Fechas
   paidAt            DateTime?
   overdueSince      DateTime?
-  
+
   // Relación con pagos
   allocations       PaymentAllocation[]
-  
+
   // Metadatos
   notes             String?                           @db.Text
   metadata          Json?
-  
+
   // Relación con convenio
   agreement         PaymentAgreement                   @relation(fields: [agreementId], references: [id], onDelete: Restrict)
-  
+
   // Constraints
   @@unique([agreementId, installmentNumber])
   @@index([agreementId])
@@ -181,6 +184,7 @@ model PaymentAgreementInstallment {
 ```
 
 **Explicación:**
+
 - `installmentNumber`: Número de cuota dentro del convenio (1, 2, 3...)
 - `dueDate`: Fecha de vencimiento de la cuota
 - `amount`: Monto de la cuota
@@ -199,6 +203,7 @@ model PaymentAgreementInstallment {
 **Propósito:** Vincular el convenio con las cuotas originales (trazabilidad).
 
 **Características:**
+
 - No duplica deuda, solo referencia
 - Guarda estado original y nuevo
 - Tipo de relación define impacto en deuda
@@ -209,23 +214,23 @@ model PaymentAgreementChargeRelation {
   id                String                            @id @default(cuid())
   agreementId       String
   chargeId          String
-  
+
   // Snapshot de la cuota original (no modifica destructivamente)
   originalChargeAmount      Decimal                   @db.Decimal(12, 2)
   originalChargePaidAmount  Decimal                   @db.Decimal(12, 2)
   originalChargeStatus      String                    // Guardado como string para snapshot
   amountIncluded            Decimal                   @db.Decimal(12, 2)
-  
+
   // Estado de la cuota original después del convenio
   newStatus         ChargeStatus?
-  
+
   // Tipo de relación
   relationType      PaymentAgreementChargeRelationType @default(REFINANCED)
-  
+
   // Relaciones
   agreement         PaymentAgreement                   @relation(fields: [agreementId], references: [id], onDelete: Cascade)
   charge            StudentCharge                      @relation(fields: [chargeId], references: [id], onDelete: Restrict)
-  
+
   // Constraints
   @@unique([agreementId, chargeId])
   @@index([agreementId])
@@ -235,6 +240,7 @@ model PaymentAgreementChargeRelation {
 ```
 
 **Explicación:**
+
 - `originalChargeAmount`: Monto original de la cuota (snapshot)
 - `originalChargePaidAmount`: Monto pagado originalmente (snapshot)
 - `originalChargeStatus`: Estado original de la cuota (snapshot como string)
@@ -245,11 +251,13 @@ model PaymentAgreementChargeRelation {
 - `onDelete: Cascade` en `agreement`: Si se elimina convenio, se eliminan relaciones (seguro)
 
 **Impacto en deuda según relationType:**
+
 - `REFINANCED`: La cuota original se marca como PAID (refinanciada), no cuenta como deuda
 - `BLOCKED`: La cuota original se mantiene pero no genera bloqueos
 - `ASSOCIATED`: La cuota original permanece activa, el convenio es solo informativo
 
 **Validación de servicio:**
+
 - No permite asociar dos convenios activos a la misma deuda por el mismo monto sin validación
 - Verifica que `amountIncluded` no exceda `originalChargeAmount - originalChargePaidAmount`
 
@@ -260,6 +268,7 @@ model PaymentAgreementChargeRelation {
 **Propósito:** Historial de eventos del convenio (auditoría).
 
 **Características:**
+
 - Registro de todos los eventos importantes
 - Guarda estados antes/después
 - Metadatos flexibles
@@ -278,15 +287,15 @@ model PaymentAgreementEvent {
   newValue          Json?                         // Valor nuevo para auditoría
   metadata          Json?                         // Metadatos adicionales
   reason            String?                       @db.Text // Motivo del cambio
-  
+
   // Usuario y contexto
   userId            String
   userName          String
   createdAt         DateTime                      @default(now())
-  
+
   // Relación con convenio
   agreement         PaymentAgreement             @relation(fields: [agreementId], references: [id], onDelete: Cascade)
-  
+
   // Constraints
   @@index([agreementId])
   @@index([eventType])
@@ -297,6 +306,7 @@ model PaymentAgreementEvent {
 ```
 
 **Explicación:**
+
 - `eventType`: Tipo de evento según enum
 - `description`: Descripción del evento
 - `previousStatus`/`newStatus`: Para cambios de estado
@@ -313,6 +323,7 @@ model PaymentAgreementEvent {
 **Propósito:** Numeración secuencial por año (similar a ReceiptNumber).
 
 **Características:**
+
 - Un registro por año
 - lastNumber se incrementa transaccionalmente
 - Garantiza no reutilización de números
@@ -323,27 +334,29 @@ model PaymentAgreementNumber {
   year       Int      @unique
   lastNumber Int      @default(0)
   updatedAt  DateTime @updatedAt
-  
+
   @@map("payment_agreement_numbers")
 }
 ```
 
 **Explicación:**
+
 - `year`: Año del convenio
 - `lastNumber`: Último número usado
 - `unique(year)`: Garantiza un registro por año
 
 **Numeración transaccional:**
+
 - El siguiente número se obtiene dentro de una transacción:
   ```typescript
   await prisma.$transaction(async (tx) => {
-    const numberRecord = await tx.paymentAgreementNumber.upsert({
-      where: { year },
-      create: { year, lastNumber: 0 },
-      update: { lastNumber: { increment: 1 } }
-    });
-    const nextNumber = numberRecord.lastNumber;
-    // Usar nextNumber para crear el convenio
+  	const numberRecord = await tx.paymentAgreementNumber.upsert({
+  		where: { year },
+  		create: { year, lastNumber: 0 },
+  		update: { lastNumber: { increment: 1 } }
+  	});
+  	const nextNumber = numberRecord.lastNumber;
+  	// Usar nextNumber para crear el convenio
   });
   ```
 - **No reutilización:** Si se cancela un convenio, el número no se reutiliza
@@ -368,11 +381,11 @@ model PaymentAllocation {
   chargeId      String
   installmentId String?                       // NUEVO: opcional, referencia a cuota de convenio
   amount        Decimal                       @db.Decimal(12, 2)
-  
+
   charge        StudentCharge                 @relation(fields: [chargeId], references: [id], onDelete: Restrict)
   payment       Payment                       @relation(fields: [paymentId], references: [id], onDelete: Restrict)
   installment   PaymentAgreementInstallment?  @relation("PaymentAllocationInstallment", fields: [installmentId], references: [id], onDelete: Restrict) // NUEVO
-  
+
   @@id([paymentId, chargeId])
   @@index([installmentId])                  // NUEVO: índice para queries eficientes
   @@map("payment_allocations")
@@ -380,6 +393,7 @@ model PaymentAllocation {
 ```
 
 **Explicación:**
+
 - `installmentId`: Campo opcional para referencia a cuota de convenio
 - `onDelete: Restrict`: No permite eliminar cuota si tiene pagos asignados (preserva historial)
 - `@@index([installmentId])`: Índice para queries eficientes (no único para permitir pagos parciales múltiples)
@@ -415,16 +429,16 @@ model Receipt {
   cancelledReason  String?
   printCount       Int           @default(0)
   originalCopy     Boolean       @default(true)
-  
+
   // NUEVOS: campos para convenio
   agreementId      String?       // NUEVO: opcional, referencia al convenio
   agreementNumber  Int?          // NUEVO: número de convenio para mostrar en recibo
   installmentNumber Int?         // NUEVO: número de cuota para mostrar en recibo
-  
+
   items            ReceiptItem[]
   payments         Payment[]
   agreement        PaymentAgreement? @relation(fields: [agreementId], references: [id], onDelete: SetNull) // NUEVO
-  
+
   @@unique([receiptNumber, receiptYear])
   @@index([studentId])
   @@index([receiptNumber, receiptYear])
@@ -435,6 +449,7 @@ model Receipt {
 ```
 
 **Explicación:**
+
 - `agreementId`: Referencia opcional al convenio
 - `agreementNumber`: Número de convenio para mostrar en el recibo (no es FK, es copia para historial)
 - `installmentNumber`: Número de cuota para mostrar en el recibo
@@ -443,6 +458,7 @@ model Receipt {
 
 **Nota sobre ReceiptItem:**
 El detalle del recibo normalmente vive en los ítems. Se evalúo agregar `agreementInstallmentId` a `ReceiptItem`, pero se concluye que con `Receipt.agreementId` es suficiente porque:
+
 - El recibo ya tiene la relación con el convenio
 - Los ítems del recibo pueden referenciar las cuotas originales (`chargeId`)
 - Si es necesario mostrar cuota de convenio en el ítem, se puede derivar de `Receipt.agreementId` y el contexto
@@ -473,16 +489,16 @@ model FinancialBlock {
   exceptionReason  String?
   unblockedAt      DateTime?
   unblockedBy      String?
-  
+
   // NUEVOS: campos para origen de excepción
   exceptionSource  FinancialBlockExceptionSource? // NUEVO: enum para distinguir origen
   exceptionAgreementId String?                    // NUEVO: referencia al convenio que genera la excepción
   exceptionAgreement PaymentAgreement?           @relation(fields: [exceptionAgreementId], references: [id], onDelete: SetNull) // NUEVO
-  
+
   isActive         Boolean                        @default(true)
   createdAt        DateTime                      @default(now())
   updatedAt        DateTime                      @updatedAt
-  
+
   @@index([studentId, isActive])
   @@index([blockType])
   @@index([isActive])
@@ -493,6 +509,7 @@ model FinancialBlock {
 ```
 
 **Explicación:**
+
 - `exceptionSource`: Origen de la excepción según enum (MANUAL o PAYMENT_AGREEMENT)
 - `exceptionAgreementId`: Referencia al convenio que genera la excepción
 - `exceptionAgreement`: Relación con el convenio
@@ -501,6 +518,7 @@ model FinancialBlock {
 - `@@index([exceptionAgreementId])`: Para queries eficientes por convenio
 
 **Impacto en bloqueos:**
+
 - Si `exceptionSource = MANUAL`: Excepción otorgada manualmente por administrador
 - Si `exceptionSource = PAYMENT_AGREEMENT`: Excepción automática por convenio activo
 - Al cancelar/incumplir convenio: se revocan excepciones con `exceptionSource = PAYMENT_AGREEMENT`
@@ -530,6 +548,7 @@ enum FinancialMovementType {
 ```
 
 **Explicación:**
+
 - `PAYMENT_AGREEMENT`: Para eventos de creación, activación, modificación de convenio
 - `AGREEMENT_INSTALLMENT`: Para pagos de cuotas de convenio
 
@@ -538,26 +557,31 @@ enum FinancialMovementType {
 ### Relación entre Convenio, Pago y Cuota
 
 **Regla de asignación:**
+
 - Una `PaymentAllocation` puede apuntar a `chargeId` (cuota original) O a `installmentId` (cuota de convenio)
 - No debe apuntar a ambos simultáneamente
 
 **Validación en PaymentAgreementService:**
+
 ```typescript
 // Al asignar pago a cuota de convenio
 if (allocation.chargeId && allocation.installmentId) {
-  throw new Error('Un pago no puede asignarse simultáneamente a cuota original y cuota de convenio');
+	throw new Error(
+		'Un pago no puede asignarse simultáneamente a cuota original y cuota de convenio'
+	);
 }
 
 // Validar que el monto no exceda el saldo pendiente
 const installment = await prisma.paymentAgreementInstallment.findUnique({
-  where: { id: allocation.installmentId }
+	where: { id: allocation.installmentId }
 });
 if (Decimal.gt(allocation.amount, installment.pendingAmount)) {
-  throw new Error('El pago excede el saldo pendiente de la cuota');
+	throw new Error('El pago excede el saldo pendiente de la cuota');
 }
 ```
 
 **Evitar doble imputación:**
+
 - La doble imputación se evita validando montos/saldos en el servicio
 - No se usa constraint de base de datos porque una cuota puede recibir pagos parciales múltiples
 - El servicio debe asegurarse de que la suma de allocations no exceda el monto de la cuota
@@ -713,22 +737,22 @@ if (Decimal.gt(allocation.amount, installment.pendingAmount)) {
 
 ## Resumen de Modelos
 
-| Modelo | Propósito | Relaciones | onDelete |
-|--------|-----------|------------|----------|
-| PaymentAgreement | Convenio principal | ChargeRelation, Installment, Event, Receipt | - |
-| PaymentAgreementInstallment | Cuotas del convenio | PaymentAllocation | Restrict (servicio valida) |
-| PaymentAgreementChargeRelation | Trazabilidad con deuda original | PaymentAgreement, StudentCharge | Cascade (agreement), Restrict (charge) |
-| PaymentAgreementEvent | Historial de eventos | PaymentAgreement | Cascade (seguro) |
-| PaymentAgreementNumber | Numeración secuencial | - | - |
+| Modelo                         | Propósito                       | Relaciones                                  | onDelete                               |
+| ------------------------------ | ------------------------------- | ------------------------------------------- | -------------------------------------- |
+| PaymentAgreement               | Convenio principal              | ChargeRelation, Installment, Event, Receipt | -                                      |
+| PaymentAgreementInstallment    | Cuotas del convenio             | PaymentAllocation                           | Restrict (servicio valida)             |
+| PaymentAgreementChargeRelation | Trazabilidad con deuda original | PaymentAgreement, StudentCharge             | Cascade (agreement), Restrict (charge) |
+| PaymentAgreementEvent          | Historial de eventos            | PaymentAgreement                            | Cascade (seguro)                       |
+| PaymentAgreementNumber         | Numeración secuencial           | -                                           | -                                      |
 
 ## Resumen de Modificaciones
 
-| Modelo | Modificación | Propósito |
-|--------|--------------|-----------|
-| PaymentAllocation | Agregar installmentId (opcional, indexado, no único) | Vincular pagos a cuotas de convenio |
-| Receipt | Agregar agreementId, agreementNumber, installmentNumber | Identificar convenio en recibo |
-| FinancialBlock | Agregar exceptionSource (enum), exceptionAgreementId, relación exceptionAgreement | Distinguir origen de excepción |
-| FinancialMovementType | Agregar PAYMENT_AGREEMENT, AGREEMENT_INSTALLMENT | Registrar movimientos de convenio |
+| Modelo                | Modificación                                                                      | Propósito                           |
+| --------------------- | --------------------------------------------------------------------------------- | ----------------------------------- |
+| PaymentAllocation     | Agregar installmentId (opcional, indexado, no único)                              | Vincular pagos a cuotas de convenio |
+| Receipt               | Agregar agreementId, agreementNumber, installmentNumber                           | Identificar convenio en recibo      |
+| FinancialBlock        | Agregar exceptionSource (enum), exceptionAgreementId, relación exceptionAgreement | Distinguir origen de excepción      |
+| FinancialMovementType | Agregar PAYMENT_AGREEMENT, AGREEMENT_INSTALLMENT                                  | Registrar movimientos de convenio   |
 
 ---
 

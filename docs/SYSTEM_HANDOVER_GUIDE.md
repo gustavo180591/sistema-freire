@@ -9,6 +9,7 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 **Versión del sistema:** 1.0.0
 
 **Sedes:**
+
 - Sede Leandro N. Alem
 - Sede Capiovi
 
@@ -17,6 +18,7 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 ### Módulos Implementados
 
 **1. Gestión de Usuarios**
+
 - Creación y gestión de usuarios
 - Roles: SUPERADMIN, DIRECTOR, SECRETARIO, PRECEPTOR, DOCENTE, FINANZAS, ALUMNO
 - Permisos granulares por entidad
@@ -25,6 +27,7 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 - Bloqueo de cuenta por intentos fallidos
 
 **2. Gestión de Alumnos**
+
 - Registro de alumnos
 - Información personal y académica
 - Historial anual
@@ -33,6 +36,7 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 - Estado: ACTIVO, INACTIVO, EGRESADO, BAJA
 
 **3. Gestión Académica**
+
 - Carreras y planes de estudio
 - Materias y correlatividades
 - Comisiones
@@ -43,6 +47,7 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 - Estado de cursada
 
 **4. Gestión Financiera**
+
 - Cargos a alumnos
 - Pagos
 - Recibos
@@ -55,6 +60,7 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 - Reportes financieros
 
 **5. Asistencia**
+
 - Registro de asistencia
 - Entradas de asistencia
 - Ausencias con/sin observación
@@ -62,6 +68,7 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 - Promedios por materia y comisión
 
 **6. Gestión Documental**
+
 - Subida de documentos
 - Documentos privados (storage/private)
 - Documentos públicos (static/uploads)
@@ -70,6 +77,7 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 - Logs de acceso
 
 **7. Reportes**
+
 - Reportes institucionales (SUPERADMIN)
 - Reportes financieros (FINANZAS)
 - Reportes académicos (DOCENTE)
@@ -78,6 +86,7 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 - Visualizaciones simples
 
 **8. Gestión de Sedes**
+
 - Soporte multi-sede
 - Sede Leandro N. Alem
 - Sede Capiovi
@@ -87,17 +96,20 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 ### Características Técnicas
 
 **Framework:**
+
 - SvelteKit (Svelte 5)
 - TypeScript
 - TailwindCSS
 
 **Base de datos:**
+
 - PostgreSQL
 - Prisma ORM
 - 33 migraciones aplicadas
 - Schema validado
 
 **Seguridad:**
+
 - Autenticación basada en sesiones
 - Permisos explícitos por rol
 - Permisos por sede
@@ -107,6 +119,7 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 - Sin exposición de rutas privadas
 
 **Infraestructura:**
+
 - Build optimizado para producción
 - Adaptador Node.js
 - Compatible con VPS
@@ -117,6 +130,7 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 ### Datos Iniciales Requeridos
 
 **1. Usuarios Administrativos**
+
 - Al menos 1 usuario SUPERADMIN
 - Usuarios por rol según necesidad:
   - DIRECTOR
@@ -125,29 +139,35 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
   - FINANZAS
 
 **2. Sedes**
+
 - Sede Leandro N. Alem (creada en seed)
 - Sede Capiovi (creada en seed)
 
 **3. Carreras**
+
 - Definir carreras ofrecidas
 - Asignar carreras a sedes
 
 **4. Materias**
+
 - Definir materias por carrera
 - Configurar correlatividades
 - Asignar docentes
 
 **5. Comisiones**
+
 - Crear comisiones por materia
 - Asignar a sedes
 - Asignar a periodos académicos
 
 **6. Alumnos**
+
 - Importar o registrar alumnos
 - Asignar a carreras
 - Asignar a sedes
 
 **7. Configuración Financiera**
+
 - Definir conceptos de cobro
 - Configurar periodos académicos
 - Configurar políticas de recargos
@@ -155,12 +175,14 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 ### Datos de Configuración
 
 **Variables de entorno:**
+
 - `DATABASE_URL` - Conexión a base de datos
 - `SESSION_SECRET` - Secret de sesiones
 - `TOTP_SECRET` - Secret para 2FA
 - `NODE_ENV` - production
 
 **Configuración opcional:**
+
 - SMTP para envío de emails
 - Configuración de backups
 - Configuración de monitoreo
@@ -172,6 +194,7 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 **URL:** [A completar en deployment]
 
 **Credenciales iniciales:**
+
 - Usuario SUPERADMIN: [A completar]
 - Contraseña: [A completar]
 - Se recomienda cambiar inmediatamente
@@ -207,6 +230,7 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 ### Responsabilidades del Desarrollador
 
 **Entregado:**
+
 - Código fuente completo
 - Documentación técnica
 - Guía de deployment
@@ -216,12 +240,14 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 - Script de auditoría final
 
 **Soporte inicial:**
+
 - 30 días de soporte post-deployment
 - Resolución de bugs críticos
 - Asistencia en configuración inicial
 - Asistencia en migración de datos (si aplica)
 
 **No incluido:**
+
 - Desarrollo de nuevas features
 - Rediseño de UI
 - Optimización de performance (más allá de lo documentado)
@@ -231,6 +257,7 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 ### Responsabilidades del Cliente
 
 **Operación:**
+
 - Administración del sistema
 - Gestión de usuarios
 - Gestión de backups
@@ -239,12 +266,14 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 - Pago de hosting/VPS
 
 **Capacitación:**
+
 - Capacitar al personal administrativo
 - Capacitar al personal docente
 - Documentar procesos internos
 - Establecer políticas de uso
 
 **Seguridad:**
+
 - Mantener actualizaciones de seguridad
 - Rotar credenciales periódicamente
 - Monitorear accesos
@@ -255,16 +284,19 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 ### Mantenimiento Rutinario
 
 **Diario:**
+
 - Verificar que backups se ejecutaron
 - Verificar logs de errores
 - Verificar espacio en disco
 
 **Semanal:**
+
 - Revisar logs de aplicación
 - Verificar performance
 - Revisar accesos sospechosos
 
 **Mensual:**
+
 - Actualizar dependencias (con cuidado)
 - Revisar certificados SSL
 - Limpiar logs antiguos
@@ -273,11 +305,13 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 ### Actualizaciones del Sistema
 
 **Actualizaciones menores:**
+
 - Seguir guía de actualización en VPS_DEPLOYMENT_GUIDE.md
 - Hacer backup antes de actualizar
 - Probar en staging si es posible
 
 **Actualizaciones mayores:**
+
 - Contactar al desarrollador
 - Planificar ventana de mantenimiento
 - Comunicar a usuarios
@@ -285,16 +319,19 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 ### Backups
 
 **Backups automáticos:**
+
 - Base de datos: diario (configurado en cron)
 - Storage: semanal (configurado en rsync)
 - Retención: 7 días
 
 **Backups manuales:**
+
 - Antes de actualizaciones
 - Antes de cambios importantes
 - Exportar datos críticos periódicamente
 
 **Restore:**
+
 - Documentado en VPS_DEPLOYMENT_GUIDE.md
 - Probar restore periódicamente
 
@@ -307,6 +344,7 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 **Horario:** Lunes a Viernes, 9:00-18:00 (UTC-3)
 
 **Tiempo de respuesta:**
+
 - Crítico: 4 horas
 - Alto: 24 horas
 - Medio: 48 horas
@@ -315,12 +353,14 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 ### Alcance del Soporte
 
 **Incluido:**
+
 - Bugs que impiden funcionamiento
 - Errores de configuración
 - Problemas de deployment
 - Dudas sobre documentación
 
 **No incluido:**
+
 - Nuevas funcionalidades
 - Cambios en diseño
 - Optimización de performance
@@ -340,12 +380,14 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 ### Seguridad
 
 **Inmediato:**
+
 - Cambiar contraseñas por defecto
 - Configurar 2FA para usuarios críticos
 - Revisar permisos de usuarios
 - Configurar firewall
 
 **Ongoing:**
+
 - Mantener software actualizado
 - Monitorear accesos
 - Rotar credenciales periódicamente
@@ -354,12 +396,14 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 ### Performance
 
 **Monitoreo:**
+
 - Configurar alertas de CPU/memoria
 - Monitorear tiempo de respuesta
 - Revisar tamaño de base de datos
 - Limpiar logs periódicamente
 
 **Optimización:**
+
 - Considerar cache para reportes pesados
 - Considerar índices adicionales si crece data
 - Considerar particionamiento de datos por sede
@@ -367,11 +411,13 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 ### Escalabilidad
 
 **Crecimiento de usuarios:**
+
 - El sistema soporta múltiples sedes
 - Considerar balanceo de carga si crece significativamente
 - Considerar base de datos separada por sede si crece mucho
 
 **Crecimiento de datos:**
+
 - Implementar archivado de datos antiguos
 - Implementar limpieza de logs
 - Considerar particionamiento de tablas grandes
@@ -403,17 +449,20 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 ## Documentación Adicional
 
 **Documentación técnica:**
+
 - `docs/FINAL_DEPLOYMENT_CHECKLIST.md` - Checklist de deployment
 - `docs/VPS_DEPLOYMENT_GUIDE.md` - Guía de deployment en VPS
 - `docs/STAFF_TRAINING_GUIDE.md` - Guía de capacitación
 - `docs/UI_FINAL_ADJUSTMENTS_AUDIT.md` - Auditoría de ajustes gráficos
 
 **Documentación de módulos:**
+
 - `docs/REPORTS_MODULE_*.md` - Documentación del módulo de reportes
 - `docs/DOCUMENT_MANAGEMENT_*.md` - Documentación de gestión documental
 - `docs/PAYMENT_AGREEMENTS_*.md` - Documentación de convenios de pago
 
 **Scripts de prueba:**
+
 - `scripts/test-reports-*.ts` - Tests del módulo de reportes
 - `scripts/test-final-delivery-readiness.ts` - Test de entrega final
 
@@ -421,21 +470,21 @@ Este documento describe la entrega llave en mano del Sistema de Gestión Institu
 
 **Por parte del cliente:**
 
-Nombre: _______________
+Nombre: **\*\***\_\_\_**\*\***
 
-Cargo: _______________
+Cargo: **\*\***\_\_\_**\*\***
 
-Fecha: _______________
+Fecha: **\*\***\_\_\_**\*\***
 
-Firma: _______________
+Firma: **\*\***\_\_\_**\*\***
 
 **Por parte del desarrollador:**
 
-Nombre: _______________
+Nombre: **\*\***\_\_\_**\*\***
 
-Fecha: _______________
+Fecha: **\*\***\_\_\_**\*\***
 
-Firma: _______________
+Firma: **\*\***\_\_\_**\*\***
 
 ## Anexos
 

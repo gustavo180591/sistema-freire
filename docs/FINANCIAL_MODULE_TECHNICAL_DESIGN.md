@@ -10,21 +10,21 @@
 
 ### 1.1 Entidades del Módulo y Responsabilidades
 
-| Entidad | Representa | Responsabilidad | Modelo Prisma |
-|---------|------------|------------------|---------------|
-| **ChargeConcept** | Concepto financiero (matrícula, cuota mensual, examen) | Define qué se cobra, código, descripción, estado activo | `ChargeConcept` (existente, conservar) |
-| **StudentCharge** | Cuota/Cargo individual de un alumno | Registro de un concepto a cobrar a un alumno en un período | `StudentCharge` (existente, modificar) |
-| **Payment** | Pago realizado por un alumno | Registro de un pago con método, monto, referencia | `Payment` (existente, modificar) |
-| **PaymentAllocation** | Asignación de pago a cuota | Relación muchos-a-muchos entre pago y cuota | `PaymentAllocation` (existente, conservar) |
-| **Receipt** | Recibo institucional de pago | Comprobante legal formal con número correlativo | `Receipt` (nuevo) |
-| **ReceiptItem** | Ítem de recibo | Línea de detalle del recibo (concepto, monto, recargo, descuento) | `ReceiptItem` (nuevo) |
-| **FinancialMovement** | Movimiento financiero unificado | Historial de todas las operaciones financieras | `FinancialMovement` (nuevo) |
-| **Scholarship** | Beca asignada a un alumno | Descuento porcentual por período | `Scholarship` (existente, modificar) |
-| **Discount** | Descuento configurado | Regla de descuento (porcentaje o fijo) con condiciones | `Discount` (nuevo) |
-| **LateFee** | Recargo por mora | Interés calculado por vencimiento de cuota | `LateFee` (nuevo) |
-| **FinancialBlock** | Bloqueo financiero | Registro de bloqueo/desbloqueo por deuda | `FinancialBlock` (nuevo) |
-| **FinancialConfig** | Configuración financiera institucional | Parámetros globales (recargos, días de gracia, etc.) | `FinancialConfig` (nuevo) |
-| **ReceiptNumber** | Secuencia de números de recibo | Control de números correlativos por año | `ReceiptNumber` (nuevo) |
+| Entidad               | Representa                                             | Responsabilidad                                                   | Modelo Prisma                              |
+| --------------------- | ------------------------------------------------------ | ----------------------------------------------------------------- | ------------------------------------------ |
+| **ChargeConcept**     | Concepto financiero (matrícula, cuota mensual, examen) | Define qué se cobra, código, descripción, estado activo           | `ChargeConcept` (existente, conservar)     |
+| **StudentCharge**     | Cuota/Cargo individual de un alumno                    | Registro de un concepto a cobrar a un alumno en un período        | `StudentCharge` (existente, modificar)     |
+| **Payment**           | Pago realizado por un alumno                           | Registro de un pago con método, monto, referencia                 | `Payment` (existente, modificar)           |
+| **PaymentAllocation** | Asignación de pago a cuota                             | Relación muchos-a-muchos entre pago y cuota                       | `PaymentAllocation` (existente, conservar) |
+| **Receipt**           | Recibo institucional de pago                           | Comprobante legal formal con número correlativo                   | `Receipt` (nuevo)                          |
+| **ReceiptItem**       | Ítem de recibo                                         | Línea de detalle del recibo (concepto, monto, recargo, descuento) | `ReceiptItem` (nuevo)                      |
+| **FinancialMovement** | Movimiento financiero unificado                        | Historial de todas las operaciones financieras                    | `FinancialMovement` (nuevo)                |
+| **Scholarship**       | Beca asignada a un alumno                              | Descuento porcentual por período                                  | `Scholarship` (existente, modificar)       |
+| **Discount**          | Descuento configurado                                  | Regla de descuento (porcentaje o fijo) con condiciones            | `Discount` (nuevo)                         |
+| **LateFee**           | Recargo por mora                                       | Interés calculado por vencimiento de cuota                        | `LateFee` (nuevo)                          |
+| **FinancialBlock**    | Bloqueo financiero                                     | Registro de bloqueo/desbloqueo por deuda                          | `FinancialBlock` (nuevo)                   |
+| **FinancialConfig**   | Configuración financiera institucional                 | Parámetros globales (recargos, días de gracia, etc.)              | `FinancialConfig` (nuevo)                  |
+| **ReceiptNumber**     | Secuencia de números de recibo                         | Control de números correlativos por año                           | `ReceiptNumber` (nuevo)                    |
 
 ### 1.2 Relaciones entre Entidades
 
@@ -279,7 +279,7 @@ model StudentCharge {
   updatedAt             DateTime            @updatedAt
   userId                String?
   academicTermId        String?
-  
+
   // NUEVOS CAMPOS
   lateFeeApplied       Decimal             @default(0) @db.Decimal(12, 2) // Recargos aplicados
   discountApplied      Decimal             @default(0) @db.Decimal(12, 2) // Descuentos aplicados
@@ -287,7 +287,7 @@ model StudentCharge {
   finalAmount          Decimal             @db.Decimal(12, 2) // Monto final (amount + lateFee - discount - scholarship)
   isOverdue            Boolean             @default(false) // Está vencida
   overdueSince         DateTime?           // Fecha desde la que está vencida
-  
+
   allocations          PaymentAllocation[]
   lateFees             LateFee[]
   academicTerm         AcademicTerm?       @relation(fields: [academicTermId], references: [id])
@@ -318,14 +318,14 @@ model Payment {
   createdAt      DateTime            @default(now())
   userId         String?
   academicTermId String?
-  
+
   // NUEVOS CAMPOS
   receiptId      String?             // Recibo asociado
   cancelledAt    DateTime?           // Fecha de anulación
   cancelledBy    String?             // userId del anulador
   cancelledReason String?            // Motivo de anulación
   isCancelled    Boolean             @default(false)
-  
+
   allocations    PaymentAllocation[]
   receipt        Receipt?            @relation(fields: [receiptId], references: [id])
   academicTerm   AcademicTerm?       @relation(fields: [academicTermId], references: [id])
@@ -352,14 +352,14 @@ model Scholarship {
   startDate       DateTime
   endDate         DateTime?
   userId          String?
-  
+
   // NUEVOS CAMPOS
   applicableTo    String[]      // ["MATRICULA", "CUOTA_MENSUAL", "EXAMEN"]
   autoApply       Boolean       @default(true) // Aplicar automáticamente
   maxMonthlyAmount Decimal?     @db.Decimal(12, 2) // Monto máximo mensual
   appliedAmount   Decimal       @default(0) @db.Decimal(12, 2) // Monto total aplicado
   lastAppliedAt   DateTime?     // Última fecha de aplicación
-  
+
   student         Student       @relation(fields: [studentId], references: [id])
   user            User?         @relation(fields: [userId], references: [id])
 
@@ -445,12 +445,12 @@ enum FinancialBlockType {
 
 ```typescript
 const existing = await prisma.studentCharge.findFirst({
-  where: {
-    studentId,
-    conceptId,
-    periodLabel,
-    status: { not: 'CANCELLED' }
-  }
+	where: {
+		studentId,
+		conceptId,
+		periodLabel,
+		status: { not: 'CANCELLED' }
+	}
 });
 if (existing) throw new Error('Cuota duplicada');
 ```
@@ -461,10 +461,10 @@ if (existing) throw new Error('Cuota duplicada');
 
 ```typescript
 if (method === 'BANK_TRANSFER' && reference) {
-  const existing = await prisma.payment.findFirst({
-    where: { method, reference, isCancelled: false }
-  });
-  if (existing) throw new Error('Pago duplicado');
+	const existing = await prisma.payment.findFirst({
+		where: { method, reference, isCancelled: false }
+	});
+	if (existing) throw new Error('Pago duplicado');
 }
 ```
 
@@ -510,6 +510,7 @@ if (method === 'BANK_TRANSFER' && reference) {
 ### 3.1 Diseño del Recibo
 
 El recibo seguirá el formato estándar del Instituto ISFD "PAULO FREIRE" 1117 con:
+
 - Encabezado institucional (nombre, tipo, CUIT, domicilio, condición IVA)
 - Número correlativo (ej: 0001-2026)
 - Fecha de emisión
@@ -523,23 +524,23 @@ El recibo seguirá el formato estándar del Instituto ISFD "PAULO FREIRE" 1117 c
 
 ### 3.2 Campos del Recibo
 
-| Campo | Tipo | Fuente |
-|-------|------|--------|
-| Número correlativo | Int | ReceiptNumber |
-| Fecha | DateTime | Receipt.issuedAt |
-| Institución nombre | String | Configuración |
-| CUIT | String | Configuración |
-| Domicilio | String | Configuración |
-| Condición IVA | String | Configuración |
-| Pagador nombre | String | Receipt.studentName |
-| Pagador DNI | String | Receipt.studentDni |
-| Pagador dirección | String | Receipt.studentAddress |
-| Conceptos | Array[ReceiptItem] | ReceiptItem[] |
-| Forma de pago | Enum | Receipt.paymentMethod |
-| Referencia | String | Receipt.paymentReference |
-| Emisor | String | Receipt.issuedByName |
-| Observaciones | String | Receipt.observations |
-| Estado | Enum | Receipt.status |
+| Campo              | Tipo               | Fuente                   |
+| ------------------ | ------------------ | ------------------------ |
+| Número correlativo | Int                | ReceiptNumber            |
+| Fecha              | DateTime           | Receipt.issuedAt         |
+| Institución nombre | String             | Configuración            |
+| CUIT               | String             | Configuración            |
+| Domicilio          | String             | Configuración            |
+| Condición IVA      | String             | Configuración            |
+| Pagador nombre     | String             | Receipt.studentName      |
+| Pagador DNI        | String             | Receipt.studentDni       |
+| Pagador dirección  | String             | Receipt.studentAddress   |
+| Conceptos          | Array[ReceiptItem] | ReceiptItem[]            |
+| Forma de pago      | Enum               | Receipt.paymentMethod    |
+| Referencia         | String             | Receipt.paymentReference |
+| Emisor             | String             | Receipt.issuedByName     |
+| Observaciones      | String             | Receipt.observations     |
+| Estado             | Enum               | Receipt.status           |
 
 ### 3.3 Generación de Número Correlativo
 
@@ -547,12 +548,12 @@ El recibo seguirá el formato estándar del Instituto ISFD "PAULO FREIRE" 1117 c
 
 ```typescript
 async function getNextReceiptNumber(year: number): Promise<number> {
-  const seq = await prisma.receiptNumber.upsert({
-    where: { year },
-    create: { year, lastNumber: 0 },
-    update: { lastNumber: { increment: 1 } }
-  });
-  return seq.lastNumber + 1;
+	const seq = await prisma.receiptNumber.upsert({
+		where: { year },
+		create: { year, lastNumber: 0 },
+		update: { lastNumber: { increment: 1 } }
+	});
+	return seq.lastNumber + 1;
 }
 ```
 
@@ -575,6 +576,7 @@ Soft delete con campos `cancelledAt`, `cancelledBy`, `cancelledReason`. Revertir
 **Estrategia:** Usar **PDFKit** (librería Node.js para generación de PDF)
 
 **Razones:**
+
 - Generación server-side (no depende del navegador)
 - Control total sobre el diseño
 - Soporte para fuentes, imágenes, tablas
@@ -610,6 +612,7 @@ NO permitir regeneración directa. Anular cuota existente (status CANCELLED) y g
 ### 4.5 Aplicación de Becas, Descuentos y Recargos
 
 **Orden de aplicación:**
+
 1. Monto base del concepto
 2. Aplicar beca (porcentaje)
 3. Aplicar descuentos configurados (por prioridad)
@@ -701,6 +704,7 @@ Se aplican en generación de cuota (ver sección 4.5)
 ### 6.6 Validación de Consistencia
 
 Validar periódicamente que:
+
 - sum(allocations) = sum(payments)
 - paidAmount = sum(allocations) por cuota
 
@@ -720,6 +724,7 @@ Validar periódicamente que:
 ### 7.2 Reglas Configurables
 
 Configuración en FinancialConfig:
+
 - blockOnAnyDebt: Bloquear con cualquier deuda
 - blockOnOverdueDebt: Bloquear solo con deuda vencida
 - minDebtAmount: Bloquear a partir de este monto
@@ -738,6 +743,7 @@ Auditar CREATE (bloqueo), UPDATE (desbloqueo/excepción). Metadata con debtAmoun
 ### 7.5 Servicios Backend de Validación
 
 Función `checkFinancialBlock(studentId, action)` que verifica:
+
 - Bloqueo activo con excepción no otorgada
 - Reglas de configuración (deuda total, deuda vencida, monto mínimo, cuotas vencidas)
 
@@ -777,6 +783,7 @@ Reporte de morosidad con: alumno, DNI, carrera, email, concepto, período, monto
 **Ubicación:** `src/lib/server/financial/financial-service.ts`
 
 **Métodos principales:**
+
 - generateCharge, generateBulkCharges, cancelCharge
 - registerPayment, cancelPayment, allocatePaymentManually
 - issueReceipt, cancelReceipt, reprintReceipt
@@ -790,6 +797,7 @@ Reporte de morosidad con: alumno, DNI, carrera, email, concepto, período, monto
 ### 9.2 Delegación desde Routes/Actions
 
 Las routes/actions solo deben:
+
 - Parsear FormData
 - Validar formato básico
 - Verificar autenticación (locals.user)
@@ -805,6 +813,7 @@ Toda la lógica de negocio está en FinancialService.
 ### 10.1 Permisos Granulares
 
 Nuevos permisos:
+
 - FINANCE_VIEW, FINANCE_VIEW_OWN
 - CHARGE_CREATE, CHARGE_EDIT, CHARGE_DELETE, CHARGE_VIEW
 - PAYMENT_CREATE, PAYMENT_CANCEL, PAYMENT_VIEW
@@ -815,15 +824,15 @@ Nuevos permisos:
 
 ### 10.2 Roles Autorizados
 
-| Rol | Permisos |
-|-----|----------|
-| SUPERADMIN | Todos |
-| DIRECTOR | Todos excepto configuración técnica |
+| Rol        | Permisos                                           |
+| ---------- | -------------------------------------------------- |
+| SUPERADMIN | Todos                                              |
+| DIRECTOR   | Todos excepto configuración técnica                |
 | SECRETARIA | Ver, registrar pagos, emitir recibos, ver reportes |
-| FINANZAS | Todos los financieros |
-| ALUMNO | FINANCE_VIEW_OWN, RECEIPT_VIEW (propios) |
-| DOCENTE | Ninguno |
-| PRECEPTOR | Ninguno |
+| FINANZAS   | Todos los financieros                              |
+| ALUMNO     | FINANCE_VIEW_OWN, RECEIPT_VIEW (propios)           |
+| DOCENTE    | Ninguno                                            |
+| PRECEPTOR  | Ninguno                                            |
 
 ### 10.3 Validación de Acceso Propio
 
@@ -836,6 +845,7 @@ Para alumnos: verificar que student.userId === user.id antes de permitir acceso 
 ### 11.1 Operaciones Financieras Auditables
 
 Todas las operaciones críticas:
+
 - Generación/anulación de cuotas
 - Registro/anulación de pagos
 - Emisión/anulación de recibos
@@ -879,6 +889,7 @@ Script de prueba que verifica registros reales en AuditLog después de cada oper
 ### 12.4 Preservación de Datos Existentes
 
 Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan automáticamente porque:
+
 - Solo se agregan nuevos campos con valores por defecto
 - No se eliminan ni renombran campos existentes
 - No se cambian tipos de datos existentes
@@ -892,24 +903,29 @@ Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan 
 **Objetivo:** Crear estructura de datos y servicio centralizado
 
 **Archivos a crear:**
+
 - `prisma/schema.prisma` - Agregar nuevos modelos y modificar existentes
 - `prisma/migrations/20260614_add_financial_receipts_and_blocks/migration.sql` - Nueva migración
 - `src/lib/server/financial/financial-service.ts` - FinancialService base
 
 **Archivos a modificar:**
+
 - `prisma/schema.prisma` - Agregar modelos y enums
 
 **Riesgos:**
+
 - Error en migración puede dejar base inconsistente
 - Validar en base temporal antes de aplicar a producción
 
 **Pruebas:**
+
 - `prisma migrate deploy` en base temporal
 - Verificar que todos los modelos se crean correctamente
 - Verificar que los índices se crean correctamente
 - Verificar que los constraints se crean correctamente
 
 **Criterios de cierre:**
+
 - Migración aplicada exitosamente en base temporal
 - Schema validado con `prisma validate`
 - FinancialService creado con estructura de métodos
@@ -922,27 +938,32 @@ Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan 
 **Objetivo:** Implementar generación individual y masiva de cuotas
 
 **Archivos a crear:**
+
 - `src/routes/(app)/finanzas/cuotas/generar/+page.server.ts`
 - `src/routes/(app)/finanzas/cuotas/generar/+page.svelte`
 - `src/routes/(app)/finanzas/cuotas/[id]/anular/+page.server.ts`
 - `src/routes/(app)/finanzas/cuotas/[id]/anular/+page.svelte`
 
 **Archivos a modificar:**
+
 - `src/lib/server/financial/financial-service.ts` - Implementar generateCharge, generateBulkCharges, cancelCharge
 - `src/lib/server/audit.ts` - Extender para auditoría de cuotas
 
 **Riesgos:**
+
 - Generación de cuotas duplicadas
 - Cálculo incorrecto de becas/descuentos
 - Validar prevención de duplicados
 
 **Pruebas:**
+
 - Script de prueba de cuotas duplicadas
 - Script de prueba de aplicación de becas
 - Script de prueba de aplicación de descuentos
 - Script de prueba de anulación de cuotas
 
 **Criterios de cierre:**
+
 - Generación individual funciona sin duplicados
 - Generación masiva funciona sin errores
 - Becas se aplican correctamente
@@ -957,19 +978,23 @@ Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan 
 **Objetivo:** Implementar registro de pagos y anulación con reversión
 
 **Archivos a crear:**
+
 - `src/routes/(app)/finanzas/pagos/[id]/anular/+page.server.ts`
 - `src/routes/(app)/finanzas/pagos/[id]/anular/+page.svelte`
 
 **Archivos a modificar:**
+
 - `src/routes/(app)/finanzas/pagos/nuevo/+page.server.ts` - Migrar a FinancialService
 - `src/lib/server/financial/financial-service.ts` - Implementar registerPayment, cancelPayment, allocatePaymentManually
 
 **Riesgos:**
+
 - Pagos duplicados no detectados
 - Reversión incorrecta de allocations
 - Validar consistencia después de anulación
 
 **Pruebas:**
+
 - Script de prueba de pago parcial
 - Script de prueba de pago total
 - Script de prueba de pago mayor al saldo
@@ -977,6 +1002,7 @@ Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan 
 - Script de prueba de consistencia de allocations
 
 **Criterios de cierre:**
+
 - Registro de pagos funciona
 - Asignación automática FIFO funciona
 - Asignación manual funciona
@@ -991,6 +1017,7 @@ Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan 
 **Objetivo:** Implementar generación, anulación e impresión de recibos
 
 **Archivos a crear:**
+
 - `src/lib/server/financial/receipt-pdf-generator.ts` - Generador de PDF con PDFKit
 - `src/routes/(app)/finanzas/recibos/emitir/+page.server.ts`
 - `src/routes/(app)/finanzas/recibos/emitir/+page.svelte`
@@ -1000,15 +1027,18 @@ Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan 
 - `src/routes/(app)/finanzas/recibos/[id]/imprimir/+server.ts`
 
 **Archivos a modificar:**
+
 - `src/lib/server/financial/financial-service.ts` - Implementar issueReceipt, cancelReceipt, reprintReceipt
 - `src/lib/server/audit.ts` - Extender para auditoría de recibos
 
 **Riesgos:**
+
 - Duplicados de números de recibo
 - Generación de PDF falla
 - Validar secuencia de números
 
 **Pruebas:**
+
 - Script de prueba de emisión de recibo
 - Script de prueba de duplicados de número
 - Script de prueba de anulación de recibo
@@ -1016,6 +1046,7 @@ Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan 
 - Script de prueba de generación de PDF
 
 **Criterios de cierre:**
+
 - Emisión de recibo genera número correlativo único
 - PDF se genera correctamente
 - Recibo agrupa múltiples pagos
@@ -1030,22 +1061,26 @@ Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan 
 **Objetivo:** Implementar cálculo de deuda y bloqueos automáticos
 
 **Archivos a crear:**
+
 - `src/lib/server/financial/debt-calculator.ts` - Calculadora de deuda
 - `src/lib/server/financial/block-validator.ts` - Validador de bloqueos
 - `src/lib/server/financial/late-fee-job.ts` - Job de recargos por mora
 
 **Archivos a modificar:**
+
 - `src/lib/server/financial/financial-service.ts` - Implementar calculateDebt, applyLateFees, checkFinancialBlock, createFinancialBlock, removeFinancialBlock, grantBlockException
 - `src/lib/server/auth/financial-access.ts` - Agregar validaciones de bloqueo
 - `src/routes/(app)/inscripciones/+page.server.ts` - Agregar validación de bloqueo
 - `src/routes/(app)/mesas/+page.server.ts` - Agregar validación de bloqueo
 
 **Riesgos:**
+
 - Cálculo incorrecto de deuda
 - Bloqueos no se aplican correctamente
 - Validar en inscripciones y mesas
 
 **Pruebas:**
+
 - Script de prueba de cálculo de deuda
 - Script de prueba de deuda vencida
 - Script de prueba de bloqueo por deuda
@@ -1053,6 +1088,7 @@ Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan 
 - Script de prueba de aplicación de recargos
 
 **Criterios de cierre:**
+
 - Cálculo de deuda es correcto
 - Bloqueos se aplican en inscripciones
 - Bloqueos se aplican en mesas de examen
@@ -1067,6 +1103,7 @@ Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan 
 **Objetivo:** Implementar panel financiero y reportes
 
 **Archivos a crear:**
+
 - `src/routes/(app)/finanzas/reportes/+page.server.ts`
 - `src/routes/(app)/finanzas/reportes/+page.svelte`
 - `src/routes/(app)/finanzas/reportes/deuda/+page.server.ts`
@@ -1077,16 +1114,19 @@ Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan 
 - `src/routes/(app)/finanzas/reportes/export.pdf/+server.ts`
 
 **Archivos a modificar:**
+
 - `src/lib/server/financial/financial-service.ts` - Implementar getFinancialMetrics, getStudentFinancialHistory, getDelinquencyReport
 - `src/routes/(app)/finanzas/+page.server.ts` - Migrar a FinancialService
 - `src/routes/(app)/reportes/financiero/+page.server.ts` - Migrar a FinancialService
 
 **Riesgos:**
+
 - Reportes lentos por falta de índices
 - Exportación falla
 - Validar performance de consultas
 
 **Pruebas:**
+
 - Script de prueba de panel financiero
 - Script de prueba de reporte de deuda
 - Script de prueba de reporte de cobranza
@@ -1094,6 +1134,7 @@ Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan 
 - Script de prueba de exportación PDF
 
 **Criterios de cierre:**
+
 - Panel financiero muestra métricas correctas
 - Reportes de deuda funcionan con filtros
 - Reportes de cobranza funcionan con filtros
@@ -1108,27 +1149,32 @@ Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan 
 **Objetivo:** Validar completa funcionalidad y documentar
 
 **Archivos a crear:**
+
 - `scripts/test-financial-module.ts` - Script de pruebas funcionales
 - `scripts/test-financial-audit.ts` - Script de pruebas de auditoría
 - `docs/FINANCIAL_MODULE_CHANGELOG.md` - Changelog del módulo
 - `docs/FINANCIAL_MODULE_MIGRATION_STRATEGY.md` - Estrategia de migración
 
 **Archivos a modificar:**
+
 - `src/lib/server/financial/financial-service.ts` - Validar todos los métodos
 - `src/lib/server/audit.ts` - Validar auditoría completa
 
 **Riesgos:**
+
 - Pruebas no cubren todos los casos
 - Auditoría incompleta
 - Validar cobertura de pruebas
 
 **Pruebas:**
+
 - Ejecutar script de pruebas funcionales
 - Ejecutar script de pruebas de auditoría
 - Validar migración desde cero
 - Validar consistencia de datos
 
 **Criterios de cierre:**
+
 - Todas las pruebas funcionales pasan
 - Todas las pruebas de auditoría pasan
 - Migración desde cero funciona
@@ -1145,6 +1191,7 @@ Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan 
 **Ubicación:** `scripts/test-financial-module.ts`
 
 **Casos de prueba:**
+
 1. Cuotas duplicadas - Intentar generar cuota duplicada, debe fallar
 2. Pago parcial - Registrar pago menor al saldo, verificar estado PARTIAL
 3. Pago total - Registrar pago igual al saldo, verificar estado PAID
@@ -1163,6 +1210,7 @@ Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan 
 **Ubicación:** `scripts/test-financial-audit.ts`
 
 **Casos de prueba:**
+
 1. Generación de cuota - Verificar registro CREATE en AuditLog
 2. Anulación de cuota - Verificar registro UPDATE en AuditLog con metadata
 3. Registro de pago - Verificar registro CREATE en AuditLog
@@ -1178,30 +1226,30 @@ Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan 
 
 ### 15.1 Riesgos Técnicos
 
-| Riesgo | Probabilidad | Impacto | Mitigación |
-|--------|--------------|---------|------------|
-| Error en migración | Media | Alto | Probar en base temporal antes de producción |
-| Duplicados de número de recibo | Baja | Alto | Constraint único en Prisma + validación en application layer |
-| Inconsistencia de datos | Media | Alto | Validación periódica de consistencia |
-| Performance de reportes | Media | Medio | Optimizar índices, usar paginación |
-| Falla en generación de PDF | Baja | Medio | Validar generación en pruebas |
+| Riesgo                         | Probabilidad | Impacto | Mitigación                                                   |
+| ------------------------------ | ------------ | ------- | ------------------------------------------------------------ |
+| Error en migración             | Media        | Alto    | Probar en base temporal antes de producción                  |
+| Duplicados de número de recibo | Baja         | Alto    | Constraint único en Prisma + validación en application layer |
+| Inconsistencia de datos        | Media        | Alto    | Validación periódica de consistencia                         |
+| Performance de reportes        | Media        | Medio   | Optimizar índices, usar paginación                           |
+| Falla en generación de PDF     | Baja         | Medio   | Validar generación en pruebas                                |
 
 ### 15.2 Riesgos Operativos
 
-| Riesgo | Probabilidad | Impacto | Mitigación |
-|--------|--------------|---------|------------|
-| Error en cálculo de deuda | Baja | Alto | Validar cálculo en pruebas |
-| Bloqueos incorrectos | Baja | Alto | Validar reglas de configuración |
-| Anulación incorrecta | Media | Medio | Validar reversión en pruebas |
-| Auditoría incompleta | Baja | Medio | Validar todas las operaciones auditadas |
+| Riesgo                    | Probabilidad | Impacto | Mitigación                              |
+| ------------------------- | ------------ | ------- | --------------------------------------- |
+| Error en cálculo de deuda | Baja         | Alto    | Validar cálculo en pruebas              |
+| Bloqueos incorrectos      | Baja         | Alto    | Validar reglas de configuración         |
+| Anulación incorrecta      | Media        | Medio   | Validar reversión en pruebas            |
+| Auditoría incompleta      | Baja         | Medio   | Validar todas las operaciones auditadas |
 
 ### 15.3 Riesgos de Negocio
 
-| Riesgo | Probabilidad | Impacto | Mitigación |
-|--------|--------------|---------|------------|
-| Rechazo de recibos por AFIP | Baja | Alto | Consultar con contador antes de implementar |
-| Quejas por bloqueos | Media | Medio | Configurar días de gracia y excepciones |
-| Errores en cálculo de recargos | Baja | Medio | Validar fórmulas con contador |
+| Riesgo                         | Probabilidad | Impacto | Mitigación                                  |
+| ------------------------------ | ------------ | ------- | ------------------------------------------- |
+| Rechazo de recibos por AFIP    | Baja         | Alto    | Consultar con contador antes de implementar |
+| Quejas por bloqueos            | Media        | Medio   | Configurar días de gracia y excepciones     |
+| Errores en cálculo de recargos | Baja         | Medio   | Validar fórmulas con contador               |
 
 ---
 
@@ -1210,6 +1258,7 @@ Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan 
 **Recomendación:** Aprobar el diseño técnico propuesto y proceder con la Fase 1.
 
 **Justificación:**
+
 - El diseño es completo y cubre todos los requisitos
 - La arquitectura es robusta y sigue patrones establecidos
 - Los riesgos están identificados y mitigados
@@ -1217,6 +1266,7 @@ Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan 
 - La estrategia de migración es segura (prueba en base temporal)
 
 **Próximos pasos:**
+
 1. Aprobar el diseño técnico
 2. Iniciar Fase 1: Schema y Servicio de Dominio
 3. Validar migración en base temporal
@@ -1225,6 +1275,7 @@ Los datos existentes de StudentCharge, Payment y PaymentAllocation se preservan 
 **Estimación de tiempo total:** 2-3 semanas de desarrollo full-time para completar todas las fases.
 
 **Estimación por fase:**
+
 - Fase 1: 2-3 días
 - Fase 2: 2-3 días
 - Fase 3: 2-3 días

@@ -35,24 +35,24 @@ This phase implements:
 
 ### Agreement Status Handling
 
-| Status | Covers Original Debt? | Counts as Installment Debt? | Notes |
-|--------|----------------------|----------------------------|-------|
-| `DRAFT` | No | No | Does not exclude original debt |
-| `ACTIVE` | Yes | Yes | Excludes covered original debt, counts installment debt |
-| `COMPLETED` | Yes | No | Has 0 installment debt |
-| `DEFAULTED` | Yes | Yes | Counts as defaulted debt |
-| `CANCELLED` | No | No | Does not exclude original debt |
+| Status      | Covers Original Debt? | Counts as Installment Debt? | Notes                                                   |
+| ----------- | --------------------- | --------------------------- | ------------------------------------------------------- |
+| `DRAFT`     | No                    | No                          | Does not exclude original debt                          |
+| `ACTIVE`    | Yes                   | Yes                         | Excludes covered original debt, counts installment debt |
+| `COMPLETED` | Yes                   | No                          | Has 0 installment debt                                  |
+| `DEFAULTED` | Yes                   | Yes                         | Counts as defaulted debt                                |
+| `CANCELLED` | No                    | No                          | Does not exclude original debt                          |
 
 ### Installment Status Handling
 
-| Status | Counts as Pending Debt? | Counts as Overdue Debt? |
-|--------|------------------------|------------------------|
-| `PENDING` | Yes | No (unless overdue) |
-| `PARTIAL` | Yes | No (unless overdue) |
-| `PAID` | No | No |
-| `OVERDUE` | Yes | Yes |
-| `CANCELLED` | No | No |
-| `WAIVED` | No | No |
+| Status      | Counts as Pending Debt? | Counts as Overdue Debt? |
+| ----------- | ----------------------- | ----------------------- |
+| `PENDING`   | Yes                     | No (unless overdue)     |
+| `PARTIAL`   | Yes                     | No (unless overdue)     |
+| `PAID`      | No                      | No                      |
+| `OVERDUE`   | Yes                     | Yes                     |
+| `CANCELLED` | No                      | No                      |
+| `WAIVED`    | No                      | No                      |
 
 ## Implemented Methods
 
@@ -211,11 +211,13 @@ The implementation prevents debt duplication through the following mechanism:
 4. **Effective Debt Calculation**: Sums uncovered debt + agreement installment debt
 
 **Formula**:
+
 ```
 effectiveTotalDebt = uncoveredDebt + agreementInstallmentTotal
 ```
 
 This ensures that:
+
 - Original debt is not double-counted when covered by agreements
 - Agreement installment debt represents the actual debt the student owes through agreements
 - Uncovered charges remain as payable debt

@@ -26,6 +26,7 @@ Esta fase cubre exclusivamente:
 #### createCharge()
 
 **Responsabilidades:**
+
 - Validar permisos del usuario (rol FINANZAS, DIRECTOR, SUPERADMIN)
 - Validar alumno existente y activo
 - Validar concepto existente y activo
@@ -42,12 +43,14 @@ Esta fase cubre exclusivamente:
 - Registrar auditoría con metadata completo
 
 **Orden de cálculo:**
+
 1. Monto base (input)
 2. Beca (porcentaje del monto base)
 3. Descuento (porcentaje o fijo sobre monto base)
 4. Monto final = monto base - beca - descuento
 
 **Validaciones:**
+
 - Permisos: `STUDENT_CHARGE` + `create`
 - Alumno: debe existir y estar `ACTIVE`
 - Concepto: debe existir y estar `active: true`
@@ -57,6 +60,7 @@ Esta fase cubre exclusivamente:
 - Duplicado: verifica constraint antes de insertar
 
 **Transacción:**
+
 - Obtiene balance actual del alumno
 - Crea `StudentCharge` con todos los campos calculados
 - Crea `FinancialMovement` tipo `CHARGE`
@@ -64,6 +68,7 @@ Esta fase cubre exclusivamente:
 - Todo en una transacción atómica
 
 **Auditoría:**
+
 - Action: `CREATE`
 - EntityType: `StudentCharge`
 - Metadata: studentId, studentName, conceptId, conceptName, periodLabel, academicTermId, baseAmount, scholarshipApplied, discountApplied, finalAmount
@@ -71,6 +76,7 @@ Esta fase cubre exclusivamente:
 #### createBulkCharges()
 
 **Responsabilidades:**
+
 - Validar permisos del usuario
 - Validar que todos los inputs tengan el mismo userId
 - Validación previa completa antes de escribir (no crear nada si hay errores)
@@ -80,6 +86,7 @@ Esta fase cubre exclusivamente:
 
 **Validación previa:**
 Para cada input:
+
 - Alumno existe y está activo
 - Concepto existe y está activo
 - Ciclo lectivo existe y está activo
@@ -88,11 +95,13 @@ Para cada input:
 - No existe duplicado
 
 **Transacción:**
+
 - Llama a `createCharge()` para cada input válido
 - Si alguno falla, toda la transacción hace rollback
 - Retorna array de `ChargeResult`
 
 **Auditoría:**
+
 - Action: `CREATE`
 - EntityType: `StudentCharge`
 - Description: "Generó N cuotas en masa"
@@ -101,6 +110,7 @@ Para cada input:
 #### applyScholarshipToCharge()
 
 **Responsabilidades:**
+
 - Validar cuota existente
 - Validar beca existente, activa y pertenece al alumno
 - Validar permisos del usuario
@@ -112,6 +122,7 @@ Para cada input:
 - Registrar auditoría
 
 **Transacción:**
+
 - Recalcula descuentos aplicables
 - Actualiza `StudentCharge.scholarshipApplied` y `finalAmount`
 - Actualiza `Scholarship.appliedAmount` y `lastAppliedAt`
@@ -120,6 +131,7 @@ Para cada input:
 #### applyDiscountToCharge()
 
 **Responsabilidades:**
+
 - Validar cuota existente
 - Validar descuento existente, activo, vigente y aplicable
 - Validar permisos del usuario
@@ -130,12 +142,14 @@ Para cada input:
 - Registrar auditoría
 
 **Transacción:**
+
 - Actualiza `StudentCharge.discountApplied` y `finalAmount`
 - Crea `FinancialMovement` tipo `DISCOUNT`
 
 #### getPendingCharges()
 
 **Responsabilidades:**
+
 - Retornar cuotas pendientes de un alumno
 - Incluir concepto y ciclo lectivo
 - Ordenar por fecha de vencimiento
@@ -143,6 +157,7 @@ Para cada input:
 #### getActiveScholarships()
 
 **Responsabilidades:**
+
 - Retornar becas activas de un alumno
 - Filtrar por `active: true` y vigencia temporal
 - Ordenar por fecha de creación descendente
@@ -150,6 +165,7 @@ Para cada input:
 #### getActiveDiscounts()
 
 **Responsabilidades:**
+
 - Retornar descuentos activos globalmente
 - Filtrar por `active: true` y vigencia temporal
 - Ordenar por prioridad descendente
@@ -159,6 +175,7 @@ Para cada input:
 #### Load Function
 
 Carga datos necesarios para el formulario:
+
 - Alumnos activos (filtrados por ubicación permitida)
 - Conceptos de cuota activos
 - Ciclos lectivos activos
@@ -167,12 +184,14 @@ Carga datos necesarios para el formulario:
 #### Actions
 
 **createCharge:**
+
 - Recibe datos del formulario
 - Valida campos requeridos
 - Delega en `financialService.createCharge()`
 - Retorna ID de cuota creada o error
 
 **createBulkCharges:**
+
 - Recibe array de studentIds
 - Valida campos requeridos
 - Convierte montos a `Decimal`
@@ -194,17 +213,14 @@ Carga datos necesarios para el formulario:
 - **ALUMNO**: read (solo sus propios datos)
 
 **Validación en código:**
+
 ```typescript
 const userRoles = await prisma.userRole.findMany({
-  where: { userId: input.userId },
-  include: { role: true }
+	where: { userId: input.userId },
+	include: { role: true }
 });
-const roleCodes = userRoles.map(ur => ur.role.code);
-const hasPermissionResult = await hasPermission(
-  roleCodes[0] || '',
-  'STUDENT_CHARGE',
-  'create'
-);
+const roleCodes = userRoles.map((ur) => ur.role.code);
+const hasPermissionResult = await hasPermission(roleCodes[0] || '', 'STUDENT_CHARGE', 'create');
 ```
 
 ### 4. Pruebas Funcionales
@@ -264,6 +280,7 @@ Script: `scripts/test-financial-charge-generation.ts`
 #### Registros creados
 
 **Generación individual:**
+
 ```typescript
 {
   action: 'CREATE',
@@ -287,6 +304,7 @@ Script: `scripts/test-financial-charge-generation.ts`
 ```
 
 **Generación masiva:**
+
 ```typescript
 {
   action: 'CREATE',
@@ -301,6 +319,7 @@ Script: `scripts/test-financial-charge-generation.ts`
 ```
 
 **Aplicación de beca:**
+
 ```typescript
 {
   action: 'UPDATE',
@@ -320,6 +339,7 @@ Script: `scripts/test-financial-charge-generation.ts`
 ```
 
 **Aplicación de descuento:**
+
 ```typescript
 {
   action: 'UPDATE',
@@ -342,11 +362,13 @@ Script: `scripts/test-financial-charge-generation.ts`
 ### 6. Decimal Strategy
 
 **Persistencia:**
+
 - Todos los montos usan `Decimal` de `@prisma/client/runtime/library`
 - No se persisten montos como `number`
 - Helpers de `decimal-helpers.ts` para cálculos seguros
 
 **Cálculos:**
+
 - Porcentajes: `DecimalHelpers.percentage(value, percent)`
 - Suma: `DecimalHelpers.add(a, b)`
 - Resta: `DecimalHelpers.subtract(a, b)`
@@ -355,60 +377,67 @@ Script: `scripts/test-financial-charge-generation.ts`
 ### 7. Prevención de Duplicados
 
 **Constraint de base de datos:**
+
 ```prisma
 @@unique([studentId, conceptId, periodLabel, academicTermId])
 ```
 
 **Validación previa en código:**
+
 ```typescript
 const existingCharge = await client.studentCharge.findUnique({
-  where: {
-    studentId_conceptId_periodLabel_academicTermId: {
-      studentId: input.studentId,
-      conceptId: input.conceptId,
-      periodLabel: input.periodLabel,
-      academicTermId: input.academicTermId
-    }
-  }
+	where: {
+		studentId_conceptId_periodLabel_academicTermId: {
+			studentId: input.studentId,
+			conceptId: input.conceptId,
+			periodLabel: input.periodLabel,
+			academicTermId: input.academicTermId
+		}
+	}
 });
 if (existingCharge) {
-  throw new Error('Ya existe una cuota para este alumno, concepto y período');
+	throw new Error('Ya existe una cuota para este alumno, concepto y período');
 }
 ```
 
 **Doble protección:**
+
 1. Validación previa (mejor UX, mensaje claro)
 2. Constraint de DB (garantía de integridad)
 
 ### 8. Transacción Atómica
 
 **En createCharge():**
+
 ```typescript
 await prisma.$transaction(async (tx) => {
-  // 1. Obtener balance actual
-  // 2. Crear StudentCharge
-  // 3. Crear FinancialMovement
-  // 4. Actualizar Scholarship
-  // Si algo falla, todo hace rollback
+	// 1. Obtener balance actual
+	// 2. Crear StudentCharge
+	// 3. Crear FinancialMovement
+	// 4. Actualizar Scholarship
+	// Si algo falla, todo hace rollback
 });
 ```
 
 **En createBulkCharges():**
+
 ```typescript
 await prisma.$transaction(async (tx) => {
-  for (const input of validInputs) {
-    await this.createCharge(input, tx);
-  }
-  // Si una falla, ninguna se crea
+	for (const input of validInputs) {
+		await this.createCharge(input, tx);
+	}
+	// Si una falla, ninguna se crea
 });
 ```
 
 ### 9. Archivos Modificados/Creados
 
 **Modificados:**
+
 - `src/lib/server/financial/financial-service.ts` - Implementación completa de Fase 2
 
 **Creados:**
+
 - `src/routes/(app)/finanzas/cuotas/+page.server.ts` - Routes/actions para generación
 - `scripts/test-financial-charge-generation.ts` - Pruebas funcionales
 - `docs/FINANCIAL_MODULE_PHASE_2_CHARGES.md` - Este documento
@@ -486,18 +515,21 @@ Usuario → Formulario → Action createBulkCharges
 ### Regla Final de Becas
 
 **Orden de cálculo:**
+
 1. Monto base (input del usuario)
 2. Beca (porcentaje del monto base)
 3. Descuento (porcentaje o fijo del monto base)
 4. Monto final = monto base - beca - descuento
 
 **Validaciones de becas:**
+
 - La beca individual no puede superar el monto base de la cuota
 - El total de becas no puede superar el monto base de la cuota
 - Si la beca tiene `maxMonthlyAmount`, se calcula cuánto se aplicó en el mes actual (cuotas creadas en el mes) y se limita al saldo disponible
 - Si el límite mensual se alcanza, se rechaza la aplicación de la beca con error explícito
 
 **Fórmula:**
+
 ```
 beca_individual = monto_base * (porcentaje_beca / 100)
 si maxMonthlyAmount existe:
@@ -514,6 +546,7 @@ sino:
 ### Regla Final de Descuentos
 
 **Orden de aplicación:**
+
 1. Los descuentos se calculan sobre el monto base (no sobre el saldo restante después de beca)
 2. Los descuentos se acumulan (se suman todos los descuentos aplicables)
 3. Los descuentos se ordenan por `priority` descendente
@@ -521,12 +554,14 @@ sino:
 5. Si un descuento haría que el total supere el saldo restante, se limita al saldo disponible
 
 **Validaciones de descuentos:**
+
 - El descuento individual se calcula sobre el monto base
 - El total de descuentos acumulados no puede superar el saldo restante después de beca
 - Si el total superaría el saldo restante, se limita el último descuento al saldo disponible
 - Esto garantiza que el monto final nunca sea negativo
 
 **Fórmula:**
+
 ```
 saldo_restante = monto_base - beca_total
 para cada descuento (ordenado por priority descendente):
@@ -534,18 +569,19 @@ para cada descuento (ordenado por priority descendente):
     descuento_valor = monto_base * (value / 100)
   sino:
     descuento_valor = value
-  
+
   total_descuentos_actual = descuento_acumulado + descuento_valor
   si total_descuentos_actual > saldo_restante:
     descuento_valor = saldo_restante - descuento_acumulado
     // Limitar al saldo disponible
-  
+
   descuento_acumulado += descuento_valor
 
 monto_final = monto_base - beca_total - descuento_acumulado
 ```
 
 **Ejemplo:**
+
 - Monto base: $10,000
 - Beca 50%: $5,000
 - Saldo restante: $5,000
@@ -555,6 +591,7 @@ monto_final = monto_base - beca_total - descuento_acumulado
 - Monto final: $10,000 - $5,000 - $1,500 = $3,500
 
 **Ejemplo con límite:**
+
 - Monto base: $10,000
 - Beca 50%: $5,000
 - Saldo restante: $5,000
@@ -565,28 +602,31 @@ monto_final = monto_base - beca_total - descuento_acumulado
 ## Manejo de Duplicados
 
 **Doble protección:**
+
 1. **Validación previa en código:** Antes de crear la cuota, se verifica si ya existe una cuota con la misma combinación de `studentId`, `conceptId`, `periodLabel` y `academicTermId`. Si existe, se lanza un error controlado: "Ya existe una cuota para este alumno, concepto, período y ciclo lectivo".
 
 2. **Constraint de base de datos:** El modelo `StudentCharge` tiene un constraint único `@@unique([studentId, conceptId, periodLabel, academicTermId])` que previene duplicados a nivel de base de datos.
 
 **Manejo de errores de concurrencia:**
+
 - Si dos usuarios intentan crear la misma cuota simultáneamente, la validación previa puede no detectar el duplicado (race condition)
 - En ese caso, el constraint de base de datos lanza un error `P2002`
 - El código captura este error específico y lo convierte en un error controlado con el mismo mensaje
 - Esto garantiza que nunca se devuelve un error 500 por duplicados esperables
 
 **Código:**
+
 ```typescript
 try {
-  result = await prisma.$transaction(async (tx) => {
-    return await this.createChargeInternal(input, student, concept, academicTerm, tx);
-  });
+	result = await prisma.$transaction(async (tx) => {
+		return await this.createChargeInternal(input, student, concept, academicTerm, tx);
+	});
 } catch (error) {
-  // Capturar errores de constraint de duplicado (P2002)
-  if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
-    throw new Error('Ya existe una cuota para este alumno, concepto, período y ciclo lectivo');
-  }
-  throw error;
+	// Capturar errores de constraint de duplicado (P2002)
+	if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+		throw new Error('Ya existe una cuota para este alumno, concepto, período y ciclo lectivo');
+	}
+	throw error;
 }
 ```
 
@@ -615,6 +655,7 @@ try {
 - La auditoría se registra **fuera** de la transacción, solo si la transacción fue exitosa
 
 **Confirmación técnica:**
+
 - `createBulkCharges` no llama a `createCharge`
 - `createBulkCharges` llama a `createChargeInternal` con el `tx` de la transacción masiva
 - Esto garantiza que todo el lote esté en una sola transacción atómica
@@ -623,6 +664,7 @@ try {
 ## Errores Controlados
 
 **Errores que se devuelven como mensajes de usuario (no 500):**
+
 - "No tiene permisos para crear cuotas"
 - "Alumno no encontrado"
 - "El alumno no está activo"
@@ -639,6 +681,7 @@ try {
 - "El monto final no puede ser negativo. Verifique las becas y descuentos aplicados."
 
 **Errores de validación en bulk:**
+
 - En `createBulkCharges`, se hace una validación previa completa antes de iniciar la transacción
 - Si hay errores, se devuelven todos los errores en un solo mensaje: "Validación falló para X cuotas: - error1 - error2 ..."
 - Esto permite al usuario corregir todos los errores de una vez
@@ -646,21 +689,25 @@ try {
 ## Auditoría
 
 **Cuándo se registra auditoría:**
+
 - Solo si la transacción fue **exitosa**
 - En `createCharge`: después de que la transacción se completa exitosamente
 - En `createBulkCharges`: después de que la transacción se completa exitosamente
 
 **Cuándo NO se registra auditoría:**
+
 - Si la validación previa falla
 - Si la transacción hace rollback
 - Si hay errores de constraint (duplicados)
 - Si hay errores de validación de becas/descuentos
 
 **Metadata de auditoría:**
+
 - Generación individual: incluye `studentId`, `studentName`, `conceptId`, `conceptName`, `periodLabel`, `academicTermId`, `baseAmount`, `scholarshipApplied`, `discountApplied`, `finalAmount`
 - Generación masiva: incluye `totalCharges`, `chargeIds`
 
 **Intentos fallidos:**
+
 - Los intentos fallidos NO se auditan como intentos fallidos
 - Solo se auditan las operaciones exitosas
 - Esto simplifica la auditoría y evita contaminar los logs con intentos fallidos esperables (como duplicados)
@@ -708,6 +755,7 @@ La Fase 2 del Módulo Financiero está completa con:
 - ✅ Documentación actualizada
 
 La implementación sigue las mejores prácticas de:
+
 - Separación de responsabilidades
 - Transacciones atómicas
 - Validaciones backend

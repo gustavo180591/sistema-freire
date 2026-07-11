@@ -11,6 +11,7 @@ Este documento audita las pantallas principales del sistema para identificar aju
 ## Metodología
 
 La auditoría se enfoca en:
+
 - Responsive design (mobile, tablet, desktop)
 - Usabilidad
 - Consistencia visual
@@ -18,6 +19,7 @@ La auditoría se enfoca en:
 - Problemas menores de CSS/HTML
 
 **No incluye:**
+
 - Rediseño grande de UI
 - Cambios de arquitectura
 - Nuevas funcionalidades
@@ -29,15 +31,18 @@ La auditoría se enfoca en:
 **Archivo:** `src/routes/(auth)/login/+page.svelte`
 
 **Estado actual:**
+
 - Formulario centrado
 - Campos: email, contraseña
 - Botón de ingreso
 - Link a recuperación de contraseña
 
 **Problemas detectados:**
+
 - Ninguno detectado en código
 
 **Ajustes recomendados:**
+
 - Ninguno
 
 **Prioridad:** N/A
@@ -51,14 +56,17 @@ La auditoría se enfoca en:
 **Archivo:** `src/routes/(app)/dashboard/+page.svelte`
 
 **Estado actual:**
+
 - Cards con métricas principales
 - Links a secciones principales
 - Diseño grid responsive
 
 **Problemas detectados:**
+
 - Ninguno detectado en código
 
 **Ajustes recomendados:**
+
 - Ninguno
 
 **Prioridad:** N/A
@@ -72,14 +80,17 @@ La auditoría se enfoca en:
 **Archivo:** `src/routes/(app)/alumnos/+page.svelte`
 
 **Estado actual:**
+
 - Tabla de alumnos
 - Filtros de búsqueda
 - Acciones (ver, editar, documentos)
 
 **Problemas detectados:**
+
 - Ninguno detectado en código
 
 **Ajustes recomendados:**
+
 - Ninguno
 
 **Prioridad:** N/A
@@ -93,14 +104,17 @@ La auditoría se enfoca en:
 **Archivo:** `src/routes/(app)/docentes/+page.svelte`
 
 **Estado actual:**
+
 - Tabla de docentes
 - Filtros de búsqueda
 - Acciones (ver, editar)
 
 **Problemas detectados:**
+
 - Ninguno detectado en código
 
 **Ajustes recomendados:**
+
 - Ninguno
 
 **Prioridad:** N/A
@@ -114,14 +128,17 @@ La auditoría se enfoca en:
 **Archivo:** `src/routes/(app)/finanzas/+page.svelte`
 
 **Estado actual:**
+
 - Resumen financiero
 - Links a secciones financieras
 - Métricas principales
 
 **Problemas detectados:**
+
 - Ninguno detectado en código
 
 **Ajustes recomendados:**
+
 - Ninguno
 
 **Prioridad:** N/A
@@ -135,14 +152,17 @@ La auditoría se enfoca en:
 **Archivo:** `src/routes/(app)/asistencia/+page.svelte`
 
 **Estado actual:**
+
 - Dashboard de asistencia
 - Links a gestión de asistencia
 - Métricas principales
 
 **Problemas detectados:**
+
 - Ninguno detectado en código
 
 **Ajustes recomendados:**
+
 - Ninguno
 
 **Prioridad:** N/A
@@ -156,14 +176,17 @@ La auditoría se enfoca en:
 **Archivo:** `src/routes/(app)/documentos/+page.svelte`
 
 **Estado actual:**
+
 - Lista de documentos
 - Filtros
 - Acciones (ver, descargar)
 
 **Problemas detectados:**
+
 - Ninguno detectado en código
 
 **Ajustes recomendados:**
+
 - Ninguno
 
 **Prioridad:** N/A
@@ -177,14 +200,17 @@ La auditoría se enfoca en:
 **Archivo:** `src/routes/(app)/reportes/dashboard/+page.svelte`
 
 **Estado actual:**
+
 - Tabs por tipo de reporte
 - KPIs y visualizaciones
 - Exportación CSV
 
 **Problemas detectados:**
+
 - Ninguno detectado en código
 
 **Ajustes recomendados:**
+
 - Ninguno
 
 **Prioridad:** N/A
@@ -198,17 +224,20 @@ La auditoría se enfoca en:
 **Archivo:** `src/routes/(app)/recibos/nuevo/+page.svelte`
 
 **Estado actual:**
+
 - Formulario de subida de PDF
 - Drag and drop
 - Validación de archivo
 
 **Problemas detectados:**
+
 - Warning de accesibilidad: `<div>` con dragover/dragleave/drop handler debe tener rol ARIA
 - Warning de accesibilidad: Label no asociado a control (campo de notas)
 
 **Ajustes recomendados:**
 
 **1. ARIA role para drag and drop (Prioridad: Media)**
+
 ```svelte
 <div
   role="button"
@@ -221,10 +250,9 @@ La auditoría se enfoca en:
 ```
 
 **2. Asociar label a textarea de notas (Prioridad: Baja)**
+
 ```svelte
-<label for="notas" class="mb-2 block text-sm font-medium text-slate-300">
-  Notas (opcional)
-</label>
+<label for="notas" class="mb-2 block text-sm font-medium text-slate-300"> Notas (opcional) </label>
 <textarea id="notas" name="notas" ...></textarea>
 ```
 
@@ -239,16 +267,19 @@ La auditoría se enfoca en:
 **Archivo:** `src/routes/(app)/usuarios/nuevo/+page.svelte`
 
 **Estado actual:**
+
 - Formulario de creación de usuario
 - Selección de rol
 - Selección de sedes
 
 **Problemas detectados:**
+
 - Warning de Svelte: Referencia a `data` solo captura valor inicial, debería usar derived
 
 **Ajustes recomendados:**
 
 **Usar derived para userType (Prioridad: Baja)**
+
 ```svelte
 let userType = $derived(data.type || 'ALUMNO');
 ```
@@ -264,19 +295,22 @@ let userType = $derived(data.type || 'ALUMNO');
 **Archivo:** `src/routes/(auth)/verify-2fa/+page.svelte`
 
 **Estado actual:**
+
 - Input de código TOTP
 - Autofocus en input
 
 **Problemas detectados:**
+
 - Warning de accesibilidad: Evitar autofocus
 
 **Ajustes recomendados:**
 
 **Remover autofocus (Prioridad: Baja)**
+
 ```svelte
 <input
-  class="..."
-  // autofocus removido
+	class="..."
+	// autofocus removido
 />
 ```
 
@@ -290,12 +324,12 @@ let userType = $derived(data.type || 'ALUMNO');
 
 ### Ajustes Requeridos (3)
 
-| Pantalla | Problema | Prioridad | Requiere Código |
-|----------|----------|-----------|----------------|
-| Recibos - Subida | ARIA role drag/drop | Media | Sí |
-| Recibos - Subida | Label no asociado | Baja | Sí |
-| Usuarios - Nuevo | Referencia data no derived | Baja | Sí |
-| Verificación 2FA | Autofocus | Baja | Sí |
+| Pantalla         | Problema                   | Prioridad | Requiere Código |
+| ---------------- | -------------------------- | --------- | --------------- |
+| Recibos - Subida | ARIA role drag/drop        | Media     | Sí              |
+| Recibos - Subida | Label no asociado          | Baja      | Sí              |
+| Usuarios - Nuevo | Referencia data no derived | Baja      | Sí              |
+| Verificación 2FA | Autofocus                  | Baja      | Sí              |
 
 ### Ajustes Opcionales
 
@@ -306,11 +340,13 @@ Ninguno detectado.
 ### Responsive Design
 
 **Estado actual:**
+
 - Sistema usa TailwindCSS con clases responsive
 - Grid layouts adaptativos
 - Menú móvil funcional
 
 **Recomendación:**
+
 - Probar en dispositivos reales antes de deployment
 - Verificar en iPhone (iOS Safari)
 - Verificar en Android (Chrome)
@@ -319,11 +355,13 @@ Ninguno detectado.
 ### Accesibilidad
 
 **Estado actual:**
+
 - HTML semántico
 - Labels en formularios
 - Contraste de colores aceptable
 
 **Recomendación:**
+
 - Aplicar ajustes de accesibilidad identificados
 - Considerar auditoría WCAG 2.1 AA si es requerido
 - Verificar navegación por teclado
@@ -331,11 +369,13 @@ Ninguno detectado.
 ### Performance
 
 **Estado actual:**
+
 - Build optimizado
 - Lazy loading de rutas
 - Imágenes optimizadas
 
 **Recomendación:**
+
 - Monitorear tiempo de carga en producción
 - Considerar lazy loading de imágenes si se agregan más
 - Verificar tamaño de bundle

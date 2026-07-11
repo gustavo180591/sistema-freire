@@ -29,18 +29,10 @@
 		PROMOCIONAL_SIN_FINAL: 'Promocional sin Final'
 	};
 
-	const correlativeTypeLabels: Record<string, string> = {
-		REGULAR: 'Para cursar regular',
-		APROBADO: 'Requiere aprobación final',
-		LIBRE: 'Para cursar libre',
-		EQUIVALENCIA: 'Equivalencia'
-	};
-
-	const correlativeTypeColors: Record<string, string> = {
-		REGULAR: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-		APROBADO: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-		LIBRE: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-		EQUIVALENCIA: 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+	const accreditationModeColors: Record<string, string> = {
+		PROMOCIONAL: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+		EXAMEN_FINAL: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+		PROMOCIONAL_SIN_FINAL: 'bg-purple-500/20 text-purple-300 border-purple-500/30'
 	};
 </script>
 
@@ -75,12 +67,6 @@
 			</div>
 			<div class="flex gap-2">
 				<a
-					href="/materias/{subject.id}/correlativas"
-					class="rounded-xl border border-slate-700 px-4 py-2 text-sm hover:border-slate-500"
-				>
-					Correlativas
-				</a>
-				<a
 					href="/materias/{subject.id}/editar"
 					class="rounded-2xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.02]"
 				>
@@ -107,109 +93,36 @@
 		</div>
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<p class="text-sm text-slate-400">Correlativas</p>
-			<h2 class="mt-3 text-2xl font-bold">{subject.correlatives.length}</h2>
+			<p class="text-sm text-slate-400">Estado</p>
+			<h2 class="mt-3 text-2xl font-bold">{subject.active ? 'Activo' : 'Inactivo'}</h2>
 		</div>
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<p class="text-sm text-slate-400">Carreras</p>
-			<h2 class="mt-3 text-2xl font-bold">{subject.careerSubjects.length}</h2>
+			<p class="text-sm text-slate-400">Umbral Aprobación</p>
+			<h2 class="mt-3 text-2xl font-bold">{subject.approvalThreshold}</h2>
 		</div>
 	</section>
 
-	<!-- Carreras -->
+	<!-- Additional Info -->
 	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-		<h2 class="mb-4 text-xl font-bold">Carreras que incluyen esta materia</h2>
-
-		{#if subject.careerSubjects.length > 0}
-			<div class="grid gap-3 md:grid-cols-2">
-				{#each subject.careerSubjects as cs}
-					<a
-						href="/carreras/{cs.career.id}"
-						class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-800/30 p-4 transition hover:border-slate-600"
-					>
-						<div>
-							<p class="font-medium">{cs.career.name}</p>
-							<p class="text-sm text-slate-400">{cs.career.code} • Año {cs.yearLevel}</p>
-						</div>
-						<span class="text-slate-500">→</span>
-					</a>
-				{/each}
+		<h2 class="mb-4 text-xl font-bold">Información adicional</h2>
+		<div class="grid gap-4 md:grid-cols-2">
+			<div>
+				<p class="text-sm text-slate-400">Umbral de Promoción</p>
+				<p class="text-lg font-semibold">{subject.promotionThreshold}</p>
 			</div>
-		{:else}
-			<p class="text-slate-400">Esta materia no está asociada a ninguna carrera específica.</p>
-		{/if}
+			<div>
+				<p class="text-sm text-slate-400">Materia Anual</p>
+				<p class="text-lg font-semibold">{subject.isAnnual ? 'Sí' : 'No'}</p>
+			</div>
+			<div>
+				<p class="text-sm text-slate-400">Materia Optativa</p>
+				<p class="text-lg font-semibold">{subject.isElective ? 'Sí' : 'No'}</p>
+			</div>
+			<div>
+				<p class="text-sm text-slate-400">Materia de Recuperación</p>
+				<p class="text-lg font-semibold">{subject.isRemedial ? 'Sí' : 'No'}</p>
+			</div>
+		</div>
 	</section>
-
-	<!-- Correlativas que requiere -->
-	{#if subject.correlatives.length > 0}
-		<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<h2 class="mb-4 text-xl font-bold">Materias requeridas para cursar esta</h2>
-
-			<div class="space-y-3">
-				{#each subject.correlatives as corr}
-					<div
-						class="flex items-center gap-4 rounded-xl border border-slate-800 bg-slate-800/30 p-4"
-					>
-						<div class="flex-1">
-							<a
-								href="/materias/{corr.requiredSubject.id}"
-								class="font-medium transition hover:text-blue-400"
-							>
-								{corr.requiredSubject.name}
-							</a>
-							<p class="text-sm text-slate-400">
-								{corr.requiredSubject.code} • Año {corr.requiredSubject.yearLevel}
-							</p>
-						</div>
-						<span
-							class="rounded-full border px-3 py-1 text-xs {correlativeTypeColors[
-								corr.correlativeType
-							]}"
-						>
-							{correlativeTypeLabels[corr.correlativeType]}
-						</span>
-						{#if corr.career}
-							<span class="text-xs text-slate-400">Solo: {corr.career.code}</span>
-						{/if}
-					</div>
-				{/each}
-			</div>
-		</section>
-	{/if}
-
-	<!-- Materias que la requieren -->
-	{#if subject.requiredBy.length > 0}
-		<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<h2 class="mb-4 text-xl font-bold">Materias que requieren esta</h2>
-
-			<div class="space-y-3">
-				{#each subject.requiredBy as req}
-					<div
-						class="flex items-center gap-4 rounded-xl border border-slate-800 bg-slate-800/30 p-4"
-					>
-						<div class="flex-1">
-							<a
-								href="/materias/{req.subject.id}"
-								class="font-medium transition hover:text-blue-400"
-							>
-								{req.subject.name}
-							</a>
-							<p class="text-sm text-slate-400">{req.subject.code} • Año {req.subject.yearLevel}</p>
-						</div>
-						<span
-							class="rounded-full border px-3 py-1 text-xs {correlativeTypeColors[
-								req.correlativeType
-							]}"
-						>
-							{correlativeTypeLabels[req.correlativeType]}
-						</span>
-						{#if req.career}
-							<span class="text-xs text-slate-400">Solo: {req.career.code}</span>
-						{/if}
-					</div>
-				{/each}
-			</div>
-		</section>
-	{/if}
 </div>

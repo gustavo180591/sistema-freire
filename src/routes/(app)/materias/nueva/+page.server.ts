@@ -1,37 +1,35 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
+import { SubjectType, TrainingField, AccreditationMode } from '@prisma/client';
 
 export const load: PageServerLoad = async () => {
-	const careers = await prisma.career.findMany({
-		where: { active: true },
-		select: { id: true, code: true, name: true },
-		orderBy: { name: 'asc' }
-	});
-
-	return { careers };
+	return {
+		subjectTypes: Object.values(SubjectType),
+		trainingFields: Object.values(TrainingField),
+		accreditationModes: Object.values(AccreditationMode)
+	};
 };
 
 export const actions: Actions = {
 	default: async ({ request }) => {
 		try {
 			const formData = await request.formData();
-			const code = formData.get('code') as string;
-			const name = formData.get('name') as string;
-			const subjectType = formData.get('subjectType') as string;
-			const trainingField = formData.get('trainingField') as string;
-			const yearLevel = formData.get('yearLevel') as string;
-			const accreditationMode = formData.get('accreditationMode') as string;
-			const hoursPerWeek = formData.get('hoursPerWeek') as string;
-			const description = formData.get('description') as string;
-			const approvalThreshold = formData.get('approvalThreshold') as string;
-			const promotionThreshold = formData.get('promotionThreshold') as string;
+			const code = formData.get('code')?.toString();
+			const name = formData.get('name')?.toString();
+			const subjectType = formData.get('subjectType')?.toString();
+			const trainingField = formData.get('trainingField')?.toString();
+			const yearLevel = formData.get('yearLevel')?.toString();
+			const accreditationMode = formData.get('accreditationMode')?.toString();
+			const hoursPerWeek = formData.get('hoursPerWeek')?.toString();
+			const description = formData.get('description')?.toString();
+			const approvalThreshold = formData.get('approvalThreshold')?.toString();
+			const promotionThreshold = formData.get('promotionThreshold')?.toString();
 			const isAnnual = formData.get('isAnnual') === 'true';
 			const isElective = formData.get('isElective') === 'true';
 			const isRemedial = formData.get('isRemedial') === 'true';
-			const active = formData.get('active') === 'true';
-			const careerIds = formData.getAll('careerIds') as string[];
 
+			// Validaciones
 			if (!code || !name || !subjectType || !trainingField || !yearLevel || !accreditationMode) {
 				return {
 					success: false,
@@ -67,7 +65,7 @@ export const actions: Actions = {
 			}
 
 			const approvalThresholdNum = approvalThreshold ? parseFloat(approvalThreshold) : 6;
-			const promotionThresholdNum = promotionThreshold ? parseFloat(promotionThreshold) : 7;
+			const promotionThresholdNum = promotionThreshold ? parseFloat(promotionThreshold) : 8;
 
 			if (isNaN(approvalThresholdNum) || approvalThresholdNum < 1 || approvalThresholdNum > 10) {
 				return {
@@ -87,6 +85,7 @@ export const actions: Actions = {
 				};
 			}
 
+			// Validar código único
 			const existingSubject = await prisma.subject.findUnique({
 				where: { code }
 			});
@@ -100,38 +99,23 @@ export const actions: Actions = {
 				};
 			}
 
-			await prisma.$transaction(async (tx) => {
-				const subject = await tx.subject.create({
-					data: {
-						code,
-						name,
-						subjectType: subjectType as any,
-						trainingField: trainingField as any,
-						yearLevel: yearLevelNum,
-						accreditationMode: accreditationMode as any,
-						hoursPerWeek: hoursPerWeekNum,
-						description: description || null,
-						approvalThreshold: approvalThresholdNum,
-						promotionThreshold: promotionThresholdNum,
-						isAnnual,
-						isElective,
-						isRemedial,
-						active
-					}
-				});
-
-				// Associate with careers if provided
-				if (careerIds && careerIds.length > 0) {
-					for (const careerId of careerIds) {
-						await tx.careerSubject.create({
-							data: {
-								careerId,
-								subjectId: subject.id,
-								yearLevel: yearLevelNum,
-								isMandatory: true
-							}
-						});
-					}
+			// Crear materia
+			await prisma.subject.create({
+				data: {
+					code,
+					name,
+					subjectType: subjectType as SubjectType,
+					trainingField: trainingField as TrainingField,
+					yearLevel: yearLevelNum,
+					accreditationMode: accreditationMode as AccreditationMode,
+					hoursPerWeek: hoursPerWeekNum,
+					description: description || null,
+					approvalThreshold: approvalThresholdNum,
+					promotionThreshold: promotionThresholdNum,
+					isAnnual,
+					isElective,
+					isRemedial,
+					active: true
 				}
 			});
 

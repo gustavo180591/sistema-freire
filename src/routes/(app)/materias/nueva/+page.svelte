@@ -232,29 +232,6 @@
 				></textarea>
 			</div>
 
-			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300"> Asociar a carreras </label>
-				{#if data.careers && data.careers.length > 0}
-					<div class="grid gap-2 md:grid-cols-2">
-						{#each data.careers as career}
-							<label
-								class="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-950 p-3 transition hover:border-slate-500"
-							>
-								<input
-									name="careerIds"
-									type="checkbox"
-									value={career.id}
-									class="h-5 w-5 rounded border-slate-700 bg-slate-950 text-slate-400 focus:ring-slate-500"
-								/>
-								<span class="text-sm text-slate-300">{career.name} ({career.code})</span>
-							</label>
-						{/each}
-					</div>
-				{:else}
-					<p class="text-sm text-slate-500">No hay carreras activas disponibles.</p>
-				{/if}
-			</div>
-
 			<div class="grid gap-4 md:grid-cols-3">
 				<label class="flex items-center gap-3">
 					<input

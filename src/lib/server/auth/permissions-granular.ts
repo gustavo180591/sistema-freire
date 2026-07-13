@@ -590,6 +590,112 @@ export async function seedDefaultPermissions() {
 			canDelete: false
 		},
 
+		// APODERADO - Permisos similares a DIRECTOR pero limitados
+		{
+			roleCode: 'APODERADO',
+			entity: 'USER',
+			canCreate: false,
+			canRead: true,
+			canUpdate: false,
+			canDelete: false
+		},
+		{
+			roleCode: 'APODERADO',
+			entity: 'STUDENT',
+			canCreate: true,
+			canRead: true,
+			canUpdate: true,
+			canDelete: true
+		},
+		{
+			roleCode: 'APODERADO',
+			entity: 'TEACHER',
+			canCreate: false,
+			canRead: true,
+			canUpdate: false,
+			canDelete: false
+		},
+		{
+			roleCode: 'APODERADO',
+			entity: 'CAREER',
+			canCreate: false,
+			canRead: true,
+			canUpdate: false,
+			canDelete: true
+		},
+		{
+			roleCode: 'APODERADO',
+			entity: 'SUBJECT',
+			canCreate: false,
+			canRead: true,
+			canUpdate: false,
+			canDelete: false
+		},
+		{
+			roleCode: 'APODERADO',
+			entity: 'ACADEMIC_TERM',
+			canCreate: false,
+			canRead: true,
+			canUpdate: false,
+			canDelete: false
+		},
+		{
+			roleCode: 'APODERADO',
+			entity: 'STUDENT_CHARGE',
+			canCreate: false,
+			canRead: true,
+			canUpdate: false,
+			canDelete: false
+		},
+		{
+			roleCode: 'APODERADO',
+			entity: 'PAYMENT',
+			canCreate: false,
+			canRead: true,
+			canUpdate: false,
+			canDelete: false
+		},
+		{
+			roleCode: 'APODERADO',
+			entity: 'FINANCIAL_REPORT',
+			canCreate: false,
+			canRead: true,
+			canUpdate: false,
+			canDelete: false
+		},
+		{
+			roleCode: 'APODERADO',
+			entity: 'PAYSLIP',
+			canCreate: false,
+			canRead: true,
+			canUpdate: false,
+			canDelete: false
+		},
+		{
+			roleCode: 'APODERADO',
+			entity: 'SCHOLARSHIP',
+			canCreate: false,
+			canRead: true,
+			canUpdate: false,
+			canDelete: false
+		},
+		{
+			roleCode: 'APODERADO',
+			entity: 'AUDIT_LOG',
+			canCreate: false,
+			canRead: true,
+			canUpdate: false,
+			canDelete: false
+		},
+		{
+			roleCode: 'APODERADO',
+			entity: 'PERMISSION',
+			canCreate: false,
+			canRead: false,
+			canUpdate: false,
+			canDelete: false
+		},
+
 		// PRECEPTOR - Gestión de asistencia, seguimiento de alumnos y calificaciones
 		{
 			roleCode: 'PRECEPTOR',

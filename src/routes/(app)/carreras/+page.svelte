@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageData } from './$types';
-	import { canManageCareers } from '$lib/client/permissions';
+	import { canManageCareers, canDeleteCareers } from '$lib/client/permissions';
 
 	interface Career {
 		id: string;
@@ -516,28 +516,30 @@
 												/>
 											</svg>
 										</a>
-										<button
-											onclick={() => (deletingCareer = career)}
-											class="rounded-lg p-2 text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300 focus:ring-2 focus:ring-red-500/50 focus:outline-none disabled:cursor-not-allowed disabled:text-slate-600 disabled:hover:bg-transparent"
-											aria-label={deleteDisabled ? deleteReason : 'Eliminar carrera'}
-											title={deleteDisabled ? deleteReason : 'Eliminar carrera'}
-											disabled={deleteDisabled}
-										>
-											<svg
-												class="h-4 w-4"
-												fill="none"
-												stroke="currentColor"
-												viewBox="0 0 24 24"
-												aria-hidden="true"
+										{#if canDeleteCareers()}
+											<button
+												onclick={() => (deletingCareer = career)}
+												class="rounded-lg p-2 text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300 focus:ring-2 focus:ring-red-500/50 focus:outline-none disabled:cursor-not-allowed disabled:text-slate-600 disabled:hover:bg-transparent"
+												aria-label={deleteDisabled ? deleteReason : 'Eliminar carrera'}
+												title={deleteDisabled ? deleteReason : 'Eliminar carrera'}
+												disabled={deleteDisabled}
 											>
-												<path
-													stroke-linecap="round"
-													stroke-linejoin="round"
-													stroke-width="2"
-													d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-												/>
-											</svg>
-										</button>
+												<svg
+													class="h-4 w-4"
+													fill="none"
+													stroke="currentColor"
+													viewBox="0 0 24 24"
+													aria-hidden="true"
+												>
+													<path
+														stroke-linecap="round"
+														stroke-linejoin="round"
+														stroke-width="2"
+														d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+													/>
+												</svg>
+											</button>
+										{/if}
 									</div>
 								</td>
 							</tr>

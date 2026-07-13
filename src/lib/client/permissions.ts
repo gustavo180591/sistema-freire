@@ -66,7 +66,12 @@ export function canManageDirectors(): boolean {
 
 // Función para verificar si el usuario puede gestionar carreras
 export function canManageCareers(): boolean {
-	return hasAnyRole(['SUPERADMIN', 'DIRECTOR']);
+	return hasAnyRole(['SUPERADMIN', 'DIRECTOR', 'APODERADO']);
+}
+
+// Función para verificar si el usuario puede eliminar carreras
+export function canDeleteCareers(): boolean {
+	return hasAnyRole(['SUPERADMIN', 'DIRECTOR', 'APODERADO']);
 }
 
 // Función para verificar si el usuario puede gestionar materias

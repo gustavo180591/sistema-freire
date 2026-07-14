@@ -10,6 +10,16 @@
 		currency: 'ARS',
 		maximumFractionDigits: 0
 	});
+
+	const statusTranslations: Record<string, string> = {
+		PENDING: 'Pendiente',
+		PAID: 'Pagado',
+		OVERDUE: 'Vencido',
+		CANCELLED: 'Cancelado',
+		PARTIALLY_PAID: 'Parcialmente pagado'
+	};
+
+	const translateStatus = (status: string) => statusTranslations[status] || status;
 </script>
 
 <svelte:head>
@@ -30,7 +40,7 @@
 
 		{#if metrics.blocked}
 			<div
-				class="mt-5 rounded-2xl border border-red-900 bg-red-950/40 px-4 py-3 text-sm text-red-200"
+				class="mt-5 rounded-2xl border border-red-600 bg-white px-4 py-3 text-sm text-red-600"
 			>
 				⚠️ El alumno posee deuda pendiente. Las acciones académicas pueden estar bloqueadas.
 			</div>
@@ -114,7 +124,7 @@
 						</td>
 						<td class="px-6 py-4">
 							<span class="rounded-full border border-slate-700 px-3 py-1 text-xs">
-								{charge.status}
+								{translateStatus(charge.status)}
 							</span>
 						</td>
 					</tr>

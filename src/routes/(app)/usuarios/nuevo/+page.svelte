@@ -501,6 +501,22 @@
 					</label>
 				</div>
 			</div>
+
+			<div class="space-y-3">
+				<h3 class="text-sm font-medium text-slate-300">Estado de inscripción</h3>
+				<label class="flex cursor-pointer items-center space-x-3">
+					<input
+						id="inscriptionPaid"
+						name="inscriptionPaid"
+						type="checkbox"
+						class="h-4 w-4 border-slate-600 bg-slate-950 text-blue-600 focus:ring-2 focus:ring-blue-500"
+					/>
+					<span class="text-sm text-slate-300">Inscripción pagada</span>
+				</label>
+				<p class="text-xs text-slate-500">
+					Si no marcás esta opción, se generará un cargo de inscripción pendiente
+				</p>
+			</div>
 		{/if}
 
 		<!-- 4. Contacto familiar -->

@@ -4,6 +4,7 @@ import { prisma } from '$lib/server/db/prisma';
 import bcrypt from 'bcryptjs';
 import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
+import { generateAutomaticCharges } from '$lib/server/financial/charge-generator';
 
 import type { RoleCode } from '@prisma/client';
 
@@ -98,6 +99,7 @@ export const actions: Actions = {
 		const cuil = data.get('cuil')?.toString()?.trim();
 		const careerId = data.get('careerId')?.toString();
 		const alumnoType = data.get('alumnoType')?.toString() || 'normal';
+		const inscriptionPaid = data.get('inscriptionPaid')?.toString() === 'on';
 
 		// Verificar permisos: SECRETARIA solo puede crear DOCENTE, ALUMNO, PRECEPTOR
 		const isSecretary = currentUser.roles.includes('SECRETARIA');
@@ -242,7 +244,12 @@ export const actions: Actions = {
 					// Generar ID con prefijo según localidad
 					const studentId = generateStudentId(locality);
 
-					await tx.student.create({
+					// Obtener locationId desde el code de locality
+					const location = await tx.location.findUnique({
+						where: { code: locality }
+					});
+
+					const student = await tx.student.create({
 						data: {
 							id: studentId,
 							userId: user.id,
@@ -256,6 +263,7 @@ export const actions: Actions = {
 							phone: phone || null,
 							address: address || null,
 							locality: locality || null,
+							locationId: location?.id,
 							postalCode: postalCode || null,
 							highSchool: highSchool || null,
 							highSchoolYear: highSchoolYear || null,
@@ -264,6 +272,40 @@ export const actions: Actions = {
 							familyContactPhone: familyContactPhone || null,
 							familyRelationship: familyRelationship || null
 						}
+					});
+
+					// Obtener el ciclo lectivo activo, considerando la sede del alumno
+					let activeAcademicTerm;
+					if (location?.id) {
+						activeAcademicTerm = await tx.academicTerm.findFirst({
+							where: { active: true, locationId: location.id }
+						});
+					}
+
+					// Fallback a un ciclo lectivo activo general
+					if (!activeAcademicTerm) {
+						activeAcademicTerm = await tx.academicTerm.findFirst({
+							where: { active: true }
+						});
+					}
+
+					if (!activeAcademicTerm) {
+						throw new Error('No hay un ciclo lectivo activo configurado');
+					}
+
+					// Generar cargos financieros automáticos
+					await generateAutomaticCharges({
+						studentId: student.id,
+						studentFirstName: firstName,
+						studentLastName: lastName,
+						isBecado,
+						isRecursante,
+						careerId,
+						inscriptionPaid,
+						userId: currentUser.id,
+						academicTermId: activeAcademicTerm.id,
+						locationId: location?.id,
+						tx
 					});
 				}
 

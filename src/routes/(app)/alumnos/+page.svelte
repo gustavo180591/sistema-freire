@@ -6,6 +6,8 @@
 	let editingStudent = $state<Student | null>(null);
 	let deletingStudent = $state<Student | null>(null);
 	let searchQuery = $state('');
+	let dischargeReason = $state('');
+	let dischargeNotes = $state('');
 
 	// data.selectedLocationId is server-loaded and won't change reactively
 	// We use it as initial value for the mutable state selectedLocation
@@ -1059,23 +1061,66 @@
 						return async ({ update }) => {
 							await update();
 							deletingStudent = null;
+							dischargeReason = '';
+							dischargeNotes = '';
 						};
 					}}
 				>
 					<input type="hidden" name="id" value={deletingStudent.id} />
 					<input type="hidden" name="userId" value={deletingStudent.userId} />
 
+					<div class="mb-4">
+						<label for="dischargeReason" class="mb-2 block text-sm font-medium text-slate-300">
+							Motivo de baja <span class="text-red-400">*</span>
+						</label>
+						<select
+							id="dischargeReason"
+							name="dischargeReason"
+							bind:value={dischargeReason}
+							required
+							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
+						>
+							<option value="">Seleccione un motivo</option>
+							<option value="VOLUNTARY_WITHDRAWAL">Retiro voluntario</option>
+							<option value="ACADEMIC_DISMISSAL">Baja académica</option>
+							<option value="FINANCIAL_DISMISSAL">Baja por situación financiera</option>
+							<option value="DISCIPLINARY_DISMISSAL">Baja disciplinaria</option>
+							<option value="TRANSFER">Transferencia a otra institución</option>
+							<option value="DECEASED">Fallecimiento</option>
+							<option value="OTHER">Otro</option>
+						</select>
+					</div>
+
+					<div class="mb-6">
+						<label for="dischargeNotes" class="mb-2 block text-sm font-medium text-slate-300">
+							Notas adicionales
+						</label>
+						<textarea
+							id="dischargeNotes"
+							name="dischargeNotes"
+							bind:value={dischargeNotes}
+							rows="3"
+							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
+							placeholder="Detalles adicionales sobre la baja..."
+						></textarea>
+					</div>
+
 					<div class="flex justify-end space-x-4">
 						<button
 							type="button"
-							onclick={() => (deletingStudent = null)}
+							onclick={() => {
+								deletingStudent = null;
+								dischargeReason = '';
+								dischargeNotes = '';
+							}}
 							class="rounded-2xl border border-slate-700 px-6 py-3 font-semibold text-white transition hover:bg-slate-800"
 						>
 							Cancelar
 						</button>
 						<button
 							type="submit"
-							class="rounded-2xl bg-red-500 px-6 py-3 font-semibold text-white transition hover:bg-red-600"
+							disabled={!dischargeReason}
+							class="rounded-2xl bg-red-500 px-6 py-3 font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
 						>
 							Eliminar Alumno
 						</button>

@@ -64,7 +64,13 @@ export const actions: Actions = {
 		const user = locals.user;
 		if (!user) throw redirect(302, '/login');
 
-		requirePermission(user, 'CAREER', 'delete');
+		// Verificar si el usuario tiene roles permitidos
+		const allowedRoles = ['SUPERADMIN', 'DIRECTOR', 'APODERADO'];
+		const hasPermission = user.roles.some((role) => allowedRoles.includes(role));
+
+		if (!hasPermission) {
+			return fail(403, { error: 'No tenés permiso para eliminar carreras' });
+		}
 
 		const formData = await request.formData();
 		const id = formData.get('id') as string;
@@ -74,12 +80,15 @@ export const actions: Actions = {
 		}
 
 		try {
-			// Verificar si tiene planes o alumnos
+			// Verificar si la carrera existe
 			const career = await prisma.career.findUnique({
 				where: { id },
 				include: {
 					studyPlans: { select: { id: true } },
-					students: { select: { id: true } }
+					students: { select: { id: true } },
+					careerSubjects: { select: { id: true } },
+					commissions: { select: { id: true } },
+					enrollments: { select: { id: true } }
 				}
 			});
 
@@ -87,24 +96,33 @@ export const actions: Actions = {
 				return fail(404, { error: 'Carrera no encontrada' });
 			}
 
-			if (career.studyPlans.length > 0) {
-				return fail(400, {
-					error: 'No se puede eliminar: la carrera tiene planes de estudio asociados'
+			// Verificar si tiene relaciones importantes
+			const hasRelations =
+				career.studyPlans.length > 0 ||
+				career.students.length > 0 ||
+				career.careerSubjects.length > 0 ||
+				career.commissions.length > 0 ||
+				career.enrollments.length > 0;
+
+			if (hasRelations) {
+				// Si tiene relaciones, hacer baja lógica
+				await prisma.career.update({
+					where: { id },
+					data: { active: false }
 				});
+				return { success: true, message: 'Carrera desactivada correctamente' };
 			}
 
-			if (career.students.length > 0) {
-				return fail(400, { error: 'No se puede eliminar: la carrera tiene alumnos inscriptos' });
-			}
-
-			await prisma.career.delete({
-				where: { id }
+			// Si no tiene relaciones, hacer baja lógica también (para mantener historial)
+			await prisma.career.update({
+				where: { id },
+				data: { active: false }
 			});
 
-			return { success: true };
+			return { success: true, message: 'Carrera desactivada correctamente' };
 		} catch (error) {
-			console.error('Error al eliminar carrera:', error);
-			return fail(500, { error: 'Error al eliminar la carrera. Intente nuevamente.' });
+			console.error('Error al desactivar carrera:', error);
+			return fail(500, { error: 'Error al desactivar la carrera. Intente nuevamente.' });
 		}
 	}
 };

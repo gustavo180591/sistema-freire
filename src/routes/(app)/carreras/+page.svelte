@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageData } from './$types';
-	import { canManageCareers, canDeleteCareers } from '$lib/client/permissions';
+	import { page } from '$app/stores';
 
 	interface Career {
 		id: string;
@@ -17,6 +17,20 @@
 
 	let search = $state('');
 	let deletingCareer = $state<Career | null>(null);
+
+	// Verificar si el usuario puede eliminar carreras
+	const canDeleteCareers = $derived(() => {
+		const userRoles = $page.data?.user?.roles || [];
+		const allowedRoles = ['SUPERADMIN', 'DIRECTOR', 'APODERADO'];
+		return userRoles.some((role: string) => allowedRoles.includes(role));
+	});
+
+	// Verificar si el usuario puede gestionar carreras
+	const canManageCareers = $derived(() => {
+		const userRoles = $page.data?.user?.roles || [];
+		const allowedRoles = ['SUPERADMIN', 'DIRECTOR', 'APODERADO'];
+		return userRoles.some((role: string) => allowedRoles.includes(role));
+	});
 
 	// Calcular métricas
 	const metrics = $derived(() => {
@@ -578,10 +592,11 @@
 					</div>
 					<div class="flex-1">
 						<h2 id="delete-modal-title" class="text-lg font-semibold text-white">
-							Eliminar Carrera
+							Desactivar Carrera
 						</h2>
 						<p class="mt-1 text-sm text-slate-400">
-							Esta acción no se puede deshacer. La carrera se eliminará permanentemente del sistema.
+							¿Seguro que querés desactivar esta carrera? La carrera ya no estará disponible para
+							nuevas inscripciones.
 						</p>
 					</div>
 				</div>
@@ -625,7 +640,7 @@
 							type="submit"
 							class="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600 focus:ring-2 focus:ring-red-500/50 focus:outline-none"
 						>
-							Eliminar Carrera
+							Desactivar Carrera
 						</button>
 					</div>
 				</form>

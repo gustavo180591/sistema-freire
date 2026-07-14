@@ -149,6 +149,33 @@
 				</div>
 			</div>
 
+			<!-- Configuración de Bloqueo -->
+			<div class="space-y-6">
+				<h3 class="text-lg font-semibold text-white">Configuración de Bloqueo</h3>
+
+				<!-- Cuotas Impagas para Bloqueo -->
+				<div>
+					<label
+						for="blockAfterUnpaidCharges"
+						class="mb-2 block text-sm font-medium text-slate-300"
+					>
+						Bloquear alumno después de cuotas impagas
+					</label>
+					<input
+						id="blockAfterUnpaidCharges"
+						name="blockAfterUnpaidCharges"
+						type="number"
+						min="0"
+						value={data.config.blockAfterUnpaidCharges || 1}
+						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500 dark:border-slate-600"
+						required
+					/>
+					<p class="mt-2 text-xs text-slate-500">
+						Número de cuotas impagas para bloquear al alumno (0 para desactivar bloqueo)
+					</p>
+				</div>
+			</div>
+
 			<!-- Mensajes de error/éxito -->
 			{#if form?.error}
 				<div class="rounded-xl border border-red-900/50 bg-red-950/30 p-4 text-red-400">

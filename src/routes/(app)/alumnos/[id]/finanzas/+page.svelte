@@ -122,6 +122,7 @@
 					<th class="px-6 py-4 text-sm font-semibold">Pendiente</th>
 					<th class="px-6 py-4 text-sm font-semibold">Tipo de cuota</th>
 					<th class="px-6 py-4 text-sm font-semibold">Estado</th>
+					<th class="px-6 py-4 text-sm font-semibold">Acción</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -145,6 +146,14 @@
 							<span class="rounded-full border border-slate-700 px-3 py-1 text-xs">
 								{translateStatus(charge.status)}
 							</span>
+						</td>
+						<td class="px-6 py-4">
+							<a
+								href={`/recibos/nuevo?chargeId=${charge.id}`}
+								class="text-sm text-indigo-400 hover:text-indigo-300"
+							>
+								Pagar
+							</a>
 						</td>
 					</tr>
 				{/each}

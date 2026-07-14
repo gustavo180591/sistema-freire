@@ -48,6 +48,7 @@
 						name="name"
 						type="text"
 						value={data.career.name}
+						required
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 					/>
 				</div>
@@ -60,7 +61,7 @@
 						id="resolution"
 						name="resolution"
 						type="text"
-						value={data.career.resolution || ''}
+						value={data.career.resolution ?? ''}
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 					/>
 				</div>
@@ -76,6 +77,7 @@
 						min="1"
 						max="10"
 						value={data.career.durationYears}
+						required
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 					/>
 				</div>

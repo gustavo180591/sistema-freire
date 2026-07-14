@@ -110,23 +110,21 @@ export const actions: Actions = {
 				});
 
 				// Crear nuevas relaciones de localidad
-				for (const locationId of locationIds) {
-					await tx.careerLocation.create({
-						data: {
+				if (locationIds.length > 0) {
+					await tx.careerLocation.createMany({
+						data: locationIds.map((locationId) => ({
 							careerId: params.id,
 							locationId
-						}
+						})),
+						skipDuplicates: true
 					});
 				}
 			});
-
-			throw redirect(303, `/carreras/${params.id}`);
 		} catch (error) {
-			if (error instanceof Error && error.message.includes('redirect')) {
-				throw error;
-			}
 			console.error('Error al actualizar carrera:', error);
 			return fail(500, { error: 'Error al actualizar la carrera' });
 		}
+
+		throw redirect(303, `/carreras/${params.id}`);
 	}
 };

@@ -7,7 +7,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const user = locals.user;
 	if (!user) throw redirect(302, '/login');
 
-	requirePermission(user, 'CAREER', 'update');
+	// Verificar si el usuario tiene roles permitidos
+	const allowedRoles = ['SUPERADMIN', 'DIRECTOR', 'APODERADO'];
+	const hasPermission = user.roles.some((role) => allowedRoles.includes(role));
+
+	if (!hasPermission) {
+		throw error(403, 'No tenés permiso para editar carreras');
+	}
 
 	const career = await prisma.career.findUnique({
 		where: {
@@ -32,10 +38,21 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		select: { id: true, name: true, code: true }
 	});
 
+	// Mapear a objeto serializable
+	const careerData = {
+		id: career.id,
+		code: career.code,
+		name: career.name,
+		trainingField: career.trainingField,
+		resolution: career.resolution,
+		durationYears: career.durationYears,
+		active: career.active,
+		locationIds: career.locations.map((cl) => cl.locationId)
+	};
+
 	return {
-		career,
-		locations,
-		careerLocationIds: career.locations.map((cl) => cl.locationId)
+		career: careerData,
+		locations
 	};
 };
 
@@ -44,7 +61,13 @@ export const actions: Actions = {
 		const user = locals.user;
 		if (!user) throw redirect(302, '/login');
 
-		requirePermission(user, 'CAREER', 'update');
+		// Verificar si el usuario tiene roles permitidos
+		const allowedRoles = ['SUPERADMIN', 'DIRECTOR', 'APODERADO'];
+		const hasPermission = user.roles.some((role) => allowedRoles.includes(role));
+
+		if (!hasPermission) {
+			return fail(403, { error: 'No tenés permiso para editar carreras' });
+		}
 
 		const formData = await request.formData();
 		const name = formData.get('name')?.toString();
@@ -63,6 +86,11 @@ export const actions: Actions = {
 			return fail(400, { error: 'Por favor seleccioná al menos una localidad' });
 		}
 
+		const durationYearsNum = parseInt(durationYears);
+		if (isNaN(durationYearsNum) || durationYearsNum < 1 || durationYearsNum > 10) {
+			return fail(400, { error: 'La duración debe ser un número entre 1 y 10' });
+		}
+
 		try {
 			await prisma.$transaction(async (tx) => {
 				// Actualizar datos básicos de la carrera
@@ -71,7 +99,7 @@ export const actions: Actions = {
 					data: {
 						name,
 						resolution: resolution || null,
-						durationYears: parseInt(durationYears),
+						durationYears: durationYearsNum,
 						active: active === 'true'
 					}
 				});

@@ -93,7 +93,7 @@
 									type="checkbox"
 									name="locationIds"
 									value={location.id}
-									checked={data.careerLocationIds.includes(location.id)}
+									checked={data.career.locationIds.includes(location.id)}
 									class="h-4 w-4 rounded border-slate-600 bg-slate-800 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-900"
 								/>
 								<span class="text-sm text-slate-300">{location.name}</span>

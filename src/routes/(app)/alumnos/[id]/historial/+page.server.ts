@@ -76,8 +76,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		}
 	}
 
-	// Construir lista de materias con datos reales (solo inscripciones activas)
-	const subjects = enrollments.map((enrollment) => {
+	// Construir lista de materias asignadas (solo inscripciones activas)
+	const assignedSubjects = enrollments.map((enrollment) => {
 		// Usar commissionId como clave para buscar asistencia específica de esa comisión
 		const attendanceKey = enrollment.commissionId || enrollment.subjectId;
 		const attendanceStats = attendanceByCommission.get(attendanceKey) || { present: 0, total: 0 };
@@ -105,6 +105,135 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			status: enrollment.status
 		};
 	});
+
+	// Obtener materias disponibles para cursar según carrera y año actual del alumno
+	// Primero buscar el StudyPlan activo/default de la carrera
+	const studyPlan = await prisma.studyPlan.findFirst({
+		where: {
+			careerId: student.careerId,
+			active: true,
+			isDefault: true
+		}
+	});
+
+	// Si no hay plan default, buscar el plan activo más reciente
+	const activeStudyPlan =
+		studyPlan ||
+		(await prisma.studyPlan.findFirst({
+			where: {
+				careerId: student.careerId,
+				active: true
+			},
+			orderBy: {
+				createdAt: 'desc'
+			}
+		}));
+
+	// Obtener materias del plan de estudio
+	const planSubjects = activeStudyPlan
+		? await prisma.planSubject.findMany({
+				where: {
+					planId: activeStudyPlan.id
+				},
+				include: {
+					subject: {
+						include: {
+							correlatives: {
+								where: {
+									isActive: true,
+									OR: [{ careerId: student.careerId }, { careerId: null }]
+								},
+								include: {
+									requiredSubject: true
+								}
+							}
+						}
+					}
+				},
+				orderBy: {
+					sortOrder: 'asc'
+				}
+			})
+		: [];
+
+	// Obtener IDs de materias aprobadas y regulares del alumno
+	const approvedSubjectIds = student.subjectStatuses
+		.filter((s) => s.approved)
+		.map((s) => s.subjectId);
+	const regularSubjectIds = student.subjectStatuses
+		.filter((s) => s.regularityStatus === 'REGULAR')
+		.map((s) => s.subjectId);
+	const enrolledSubjectIds = enrollments.map((e) => e.subjectId);
+
+	// Calcular estado de cada materia disponible
+	const availableSubjects = planSubjects
+		.filter((planSubject) => {
+			// Filtrar por año actual del alumno
+			if (planSubject.subject.yearLevel !== student.currentYear) {
+				return false;
+			}
+			// Filtrar solo materias activas
+			if (!planSubject.subject.active) {
+				return false;
+			}
+			return true;
+		})
+		.map((planSubject) => {
+			const subject = planSubject.subject;
+			const isEnrolled = enrolledSubjectIds.includes(subject.id);
+			const isApproved = approvedSubjectIds.includes(subject.id);
+			const isRegular = regularSubjectIds.includes(subject.id);
+
+			// Para alumnos de 1º año, no verificar correlatividades
+			// Las materias de 1º año deben estar disponibles por defecto
+			const isFirstYear = student.currentYear === 1;
+
+			// Verificar correlatividades (solo para 2º año en adelante)
+			let blockedByCorrelatives: string[] = [];
+			let allCorrelativesMet = true;
+
+			if (!isFirstYear && subject.correlatives.length > 0) {
+				for (const correlative of subject.correlatives) {
+					const requiredSubjectId = correlative.requiredSubjectId;
+					const isRequiredApproved = approvedSubjectIds.includes(requiredSubjectId);
+					const isRequiredRegular = regularSubjectIds.includes(requiredSubjectId);
+
+					// Para la mayoría de las correlatividades, se requiere estar regular o aprobado
+					const isCorrelativeMet = isRequiredApproved || isRequiredRegular;
+
+					if (!isCorrelativeMet) {
+						allCorrelativesMet = false;
+						blockedByCorrelatives.push(correlative.requiredSubject.name);
+					}
+				}
+			}
+
+			// Determinar estado
+			let state: 'AVAILABLE' | 'TAKING' | 'APPROVED' | 'REGULAR' | 'BLOCKED';
+			if (isApproved) {
+				state = 'APPROVED';
+			} else if (isEnrolled) {
+				state = 'TAKING';
+			} else if (isRegular) {
+				state = 'REGULAR';
+			} else if (!isFirstYear && !allCorrelativesMet) {
+				state = 'BLOCKED';
+			} else {
+				state = 'AVAILABLE';
+			}
+
+			return {
+				id: subject.id,
+				code: subject.code,
+				name: subject.name,
+				yearLevel: subject.yearLevel,
+				subjectType: subject.subjectType,
+				trainingField: subject.trainingField,
+				isMandatory: true, // PlanSubject no tiene isMandatory, asumimos todas son obligatorias en el plan
+				state,
+				blockedByCorrelatives: blockedByCorrelatives.length > 0 ? blockedByCorrelatives : null
+			};
+		});
 
 	// Calcular progreso real del alumno
 	const allCareerSubjects = await prisma.subject.findMany({
@@ -140,13 +269,16 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const totalDebt = totalCharges - Number(totalPayments._sum.amount || 0);
 
 	// Calcular métricas adicionales
-	const currentSubjects = subjects.filter((s) => s.status === 'ACTIVE').length;
-	const regularSubjects = subjects.filter((s) => s.regularityStatus === 'REGULAR').length;
+	const currentSubjects = assignedSubjects.filter((s) => s.status === 'ACTIVE').length;
+	const regularSubjects = assignedSubjects.filter((s) => s.regularityStatus === 'REGULAR').length;
 	const averageAttendance =
-		subjects.length > 0
-			? Math.round(subjects.reduce((sum, s) => sum + s.attendancePercent, 0) / subjects.length)
+		assignedSubjects.length > 0
+			? Math.round(
+					assignedSubjects.reduce((sum, s) => sum + s.attendancePercent, 0) /
+						assignedSubjects.length
+				)
 			: 0;
-	const lowAttendanceSubjects = subjects.filter(
+	const lowAttendanceSubjects = assignedSubjects.filter(
 		(s) => s.attendancePercent < 75 && s.attendanceTotal > 0
 	).length;
 
@@ -158,18 +290,20 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			dni: student.dni,
 			status: student.status,
 			career: student.career.name,
+			currentYear: student.currentYear,
 			isRecursante: student.isRecursante,
 			location: student.location?.name || null
 		},
 		academic: {
-			totalSubjects: subjects.length,
+			totalSubjects: assignedSubjects.length,
 			approvedSubjects: approvedCount,
 			regularSubjects,
 			currentSubjects,
 			progress,
 			averageAttendance,
 			lowAttendanceSubjects,
-			subjects
+			assignedSubjects,
+			availableSubjects
 		},
 		financial: {
 			totalDebt

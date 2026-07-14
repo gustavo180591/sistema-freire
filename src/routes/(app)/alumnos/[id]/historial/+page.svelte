@@ -158,11 +158,115 @@
 		</a>
 	</section>
 
-	<!-- Historial -->
+	<!-- Materias disponibles para cursar -->
 	<section class="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70">
-		{#if academic.subjects.length === 0}
+		<div class="border-b border-slate-800 bg-slate-900 px-6 py-4">
+			<h2 class="text-lg font-semibold">
+				Materias disponibles para cursar ({student.currentYear}° año)
+			</h2>
+		</div>
+		{#if academic.availableSubjects.length === 0}
 			<div class="p-12 text-center">
-				<p class="text-slate-400">Este alumno todavía no tiene materias/comisiones asignadas.</p>
+				<p class="text-slate-400">No hay materias disponibles para el año actual del alumno.</p>
+			</div>
+		{:else}
+			<table class="w-full text-left">
+				<thead class="border-b border-slate-800 bg-slate-900">
+					<tr>
+						<th class="px-6 py-4 text-sm font-semibold">Código</th>
+						<th class="px-6 py-4 text-sm font-semibold">Materia</th>
+						<th class="px-6 py-4 text-sm font-semibold">Tipo</th>
+						<th class="px-6 py-4 text-sm font-semibold">Estado</th>
+						<th class="px-6 py-4 text-sm font-semibold">Acción</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each academic.availableSubjects as subject}
+						<tr class="border-b border-slate-800 last:border-none">
+							<td class="px-6 py-4 font-mono text-sm">{subject.code}</td>
+							<td class="px-6 py-4 font-medium">{subject.name}</td>
+							<td class="px-6 py-4">
+								<span class="rounded-full border border-slate-700 px-3 py-1 text-xs">
+									{subject.isMandatory ? 'Obligatoria' : 'Optativa'}
+								</span>
+							</td>
+							<td class="px-6 py-4">
+								{#if subject.state === 'AVAILABLE'}
+									<span
+										class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400"
+									>
+										Disponible
+									</span>
+								{:else if subject.state === 'TAKING'}
+									<span
+										class="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs text-blue-400"
+									>
+										Cursando
+									</span>
+								{:else if subject.state === 'APPROVED'}
+									<span
+										class="rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-xs text-green-400"
+									>
+										Aprobada
+									</span>
+								{:else if subject.state === 'REGULAR'}
+									<span
+										class="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs text-amber-400"
+									>
+										Regular
+									</span>
+								{:else if subject.state === 'BLOCKED'}
+									<span
+										class="rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-xs text-red-400"
+									>
+										Bloqueada
+									</span>
+								{/if}
+							</td>
+							<td class="px-6 py-4">
+								{#if subject.state === 'AVAILABLE'}
+									{#if financial.totalDebt > 0}
+										<button
+											disabled
+											class="cursor-not-allowed rounded-xl border border-slate-700 bg-slate-800 px-3 py-1 text-xs text-slate-500"
+											title="El alumno tiene deuda pendiente. No puede ser inscripto hasta regularizar su situación financiera."
+										>
+											Inscribir
+										</button>
+									{:else}
+										<button
+											disabled
+											class="cursor-not-allowed rounded-xl border border-slate-700 bg-slate-800 px-3 py-1 text-xs text-slate-500"
+											title="Próximamente: asignar comisión"
+										>
+											Inscribir
+										</button>
+									{/if}
+								{:else if subject.state === 'BLOCKED'}
+									<span class="text-xs text-slate-500">
+										{#if subject.blockedByCorrelatives}
+											Requiere: {subject.blockedByCorrelatives.join(', ')}
+										{/if}
+									</span>
+								{:else}
+									<span class="text-xs text-slate-500">-</span>
+								{/if}
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		{/if}
+	</section>
+
+	<!-- Comisiones asignadas / Cursando -->
+	<section class="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70">
+		<div class="border-b border-slate-800 bg-slate-900 px-6 py-4">
+			<h2 class="text-lg font-semibold">Comisiones asignadas / Cursando</h2>
+		</div>
+		{#if academic.assignedSubjects.length === 0}
+			<div class="p-12 text-center">
+				<p class="text-slate-400">El alumno todavía no tiene comisiones asignadas.</p>
 			</div>
 		{:else}
 			<table class="w-full text-left">
@@ -178,7 +282,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each academic.subjects as subject}
+					{#each academic.assignedSubjects as subject}
 						<tr class="border-b border-slate-800 last:border-none">
 							<td class="px-6 py-4 font-medium">{subject.subject}</td>
 							<td class="px-6 py-4">{subject.yearLevel}°</td>

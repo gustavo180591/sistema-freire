@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
 import { generateAutomaticCharges } from '$lib/server/financial/charge-generator';
+import { autoEnrollStudentInYearSubjects } from '$lib/server/academic/enrollment-service';
 
 import type { RoleCode } from '@prisma/client';
 
@@ -304,6 +305,15 @@ export const actions: Actions = {
 						inscriptionPaid,
 						userId: currentUser.id,
 						academicTermId: activeAcademicTerm.id,
+						locationId: location?.id,
+						tx
+					});
+
+					// Inscribir automáticamente en materias del año actual
+					await autoEnrollStudentInYearSubjects({
+						studentId: student.id,
+						careerId,
+						currentYear,
 						locationId: location?.id,
 						tx
 					});

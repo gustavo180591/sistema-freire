@@ -39,9 +39,7 @@
 		</p>
 
 		{#if metrics.blocked}
-			<div
-				class="mt-5 rounded-2xl border border-red-600 bg-white px-4 py-3 text-sm text-red-600"
-			>
+			<div class="mt-5 rounded-2xl border border-red-600 bg-white px-4 py-3 text-sm text-red-600">
 				⚠️ El alumno posee deuda pendiente. Las acciones académicas pueden estar bloqueadas.
 			</div>
 		{/if}

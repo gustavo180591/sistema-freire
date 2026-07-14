@@ -87,5 +87,49 @@
 			<h3 class="mb-2 text-xl font-bold text-white">Cuotas</h3>
 			<p class="text-sm text-slate-400">Configurar beneficios de beca y recursante para cuotas</p>
 		</a>
+
+		<!-- Ciclos Lectivos -->
+		<a
+			href="/configuracion/ciclos-lectivos"
+			class="group rounded-3xl border border-slate-800 bg-slate-900/70 p-6 transition hover:border-indigo-500 hover:bg-slate-800/50 dark:border-slate-700 dark:hover:border-indigo-400"
+		>
+			<div
+				class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500 transition group-hover:bg-purple-500 group-hover:text-white dark:bg-purple-500/20 dark:text-purple-400"
+			>
+				<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+					/>
+				</svg>
+			</div>
+			<h3 class="mb-2 text-xl font-bold text-white">Ciclos Lectivos</h3>
+			<p class="text-sm text-slate-400">Gestionar ciclos lectivos activos y periodos académicos</p>
+		</a>
+
+		<!-- Conceptos de Cargo -->
+		<a
+			href="/configuracion/conceptos-cargo"
+			class="group rounded-3xl border border-slate-800 bg-slate-900/70 p-6 transition hover:border-indigo-500 hover:bg-slate-800/50 dark:border-slate-700 dark:hover:border-indigo-400"
+		>
+			<div
+				class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/10 text-rose-500 transition group-hover:bg-rose-500 group-hover:text-white dark:bg-rose-500/20 dark:text-rose-400"
+			>
+				<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+					/>
+				</svg>
+			</div>
+			<h3 class="mb-2 text-xl font-bold text-white">Conceptos de Cargo</h3>
+			<p class="text-sm text-slate-400">
+				Administrar conceptos de cobro (inscripción, cuotas, etc.)
+			</p>
+		</a>
 	</div>
 </div>

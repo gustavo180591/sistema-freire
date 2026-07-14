@@ -1,5 +1,5 @@
 <script lang="ts">
-	let { data } = $props();
+	let { data, form } = $props();
 
 	const student = $derived(data.student);
 	const metrics = $derived(data.metrics);
@@ -20,6 +20,20 @@
 	};
 
 	const translateStatus = (status: string) => statusTranslations[status] || status;
+
+	const getBenefitLabel = (charge: (typeof charges)[number]) => {
+		if (charge.conceptCode !== 'CUOTA_MENSUAL') return '';
+		if (charge.benefitType === 'SCHOLARSHIP') return 'Beca aplicada';
+		if (charge.benefitType === 'RECURSANT') return 'Beneficio recursante';
+		return 'Cuota normal';
+	};
+
+	const getBenefitColor = (charge: (typeof charges)[number]) => {
+		if (charge.conceptCode !== 'CUOTA_MENSUAL') return 'text-slate-400';
+		if (charge.benefitType === 'SCHOLARSHIP') return 'text-green-400';
+		if (charge.benefitType === 'RECURSANT') return 'text-blue-400';
+		return 'text-slate-400';
+	};
 </script>
 
 <svelte:head>
@@ -69,9 +83,9 @@
 		</div>
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<p class="text-sm text-slate-400">Becas activas</p>
+			<p class="text-sm text-slate-400">Estado de beca</p>
 			<h2 class="mt-3 text-4xl font-bold">
-				{metrics.activeScholarships}
+				{student.isBecado ? 'Becado' : 'Sin beca'}
 			</h2>
 		</div>
 	</section>
@@ -91,7 +105,24 @@
 		>
 			Generar certificado
 		</a>
+
+		<form method="POST" action="?/recalculateCharges">
+			<button
+				type="submit"
+				class="rounded-2xl border border-indigo-700 bg-indigo-950/50 px-5 py-3 text-sm font-semibold text-indigo-300 transition hover:border-indigo-500 hover:bg-indigo-950"
+			>
+				Recalcular cargos pendientes
+			</button>
+		</form>
 	</section>
+
+	{#if form?.success}
+		<div
+			class="rounded-2xl border border-green-600 bg-green-950/30 px-4 py-3 text-sm text-green-400"
+		>
+			✓ Cargos recalculados: {form.updatedCount} actualizados, {form.skippedCount} omitidos
+		</div>
+	{/if}
 
 	<!-- Tabla financiera -->
 	<section class="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70">
@@ -103,6 +134,7 @@
 					<th class="px-6 py-4 text-sm font-semibold">Importe</th>
 					<th class="px-6 py-4 text-sm font-semibold">Pagado</th>
 					<th class="px-6 py-4 text-sm font-semibold">Pendiente</th>
+					<th class="px-6 py-4 text-sm font-semibold">Beneficio</th>
 					<th class="px-6 py-4 text-sm font-semibold">Estado</th>
 				</tr>
 			</thead>
@@ -119,6 +151,9 @@
 						</td>
 						<td class="px-6 py-4">
 							{currency.format(charge.pending)}
+						</td>
+						<td class="px-6 py-4">
+							<span class={getBenefitColor(charge)}>{getBenefitLabel(charge)}</span>
 						</td>
 						<td class="px-6 py-4">
 							<span class="rounded-full border border-slate-700 px-3 py-1 text-xs">

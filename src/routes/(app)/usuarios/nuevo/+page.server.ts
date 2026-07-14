@@ -259,6 +259,8 @@ export const actions: Actions = {
 							lastName,
 							careerId,
 							currentYear,
+							isBecado,
+							isRecursante,
 							birthDate: birthDate ? new Date(birthDate) : null,
 							bloodType: bloodType || null,
 							phone: phone || null,

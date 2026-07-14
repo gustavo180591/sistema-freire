@@ -27,8 +27,26 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		}
 	});
 
+	const benefitsConfig = await getBenefitsConfig(prisma);
+
 	const charges = student.studentCharges.map((charge) => {
 		const pending = Number(charge.finalAmount) - Number(charge.paidAmount);
+
+		// Determine charge type based on student type and benefit month
+		let chargeType = 'Cuota Normal';
+		if (charge.concept.code === 'CUOTA_MENSUAL') {
+			const periodParts = charge.periodLabel.split('-');
+			if (periodParts.length === 2) {
+				const month = parseInt(periodParts[1], 10);
+				if (!isNaN(month) && benefitsConfig.benefitsMonths.includes(month)) {
+					if (student.isBecado) {
+						chargeType = 'Cuota Becado';
+					} else if (student.isRecursante) {
+						chargeType = 'Cuota Recursante';
+					}
+				}
+			}
+		}
 
 		return {
 			id: charge.id,
@@ -41,7 +59,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			pending,
 			status: charge.status,
 			benefitType: charge.benefitType,
-			benefitReason: charge.benefitReason
+			benefitReason: charge.benefitReason,
+			chargeType
 		};
 	});
 

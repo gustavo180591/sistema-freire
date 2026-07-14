@@ -20,20 +20,6 @@
 	};
 
 	const translateStatus = (status: string) => statusTranslations[status] || status;
-
-	const getBenefitLabel = (charge: (typeof charges)[number]) => {
-		if (charge.conceptCode !== 'CUOTA_MENSUAL') return '';
-		if (charge.benefitType === 'SCHOLARSHIP') return 'Beca aplicada';
-		if (charge.benefitType === 'RECURSANT') return 'Beneficio recursante';
-		return 'Cuota normal';
-	};
-
-	const getBenefitColor = (charge: (typeof charges)[number]) => {
-		if (charge.conceptCode !== 'CUOTA_MENSUAL') return 'text-slate-400';
-		if (charge.benefitType === 'SCHOLARSHIP') return 'text-green-400';
-		if (charge.benefitType === 'RECURSANT') return 'text-blue-400';
-		return 'text-slate-400';
-	};
 </script>
 
 <svelte:head>
@@ -134,7 +120,7 @@
 					<th class="px-6 py-4 text-sm font-semibold">Importe</th>
 					<th class="px-6 py-4 text-sm font-semibold">Pagado</th>
 					<th class="px-6 py-4 text-sm font-semibold">Pendiente</th>
-					<th class="px-6 py-4 text-sm font-semibold">Beneficio</th>
+					<th class="px-6 py-4 text-sm font-semibold">Tipo de cuota</th>
 					<th class="px-6 py-4 text-sm font-semibold">Estado</th>
 				</tr>
 			</thead>
@@ -153,7 +139,7 @@
 							{currency.format(charge.pending)}
 						</td>
 						<td class="px-6 py-4">
-							<span class={getBenefitColor(charge)}>{getBenefitLabel(charge)}</span>
+							<span class="text-slate-400">{charge.chargeType}</span>
 						</td>
 						<td class="px-6 py-4">
 							<span class="rounded-full border border-slate-700 px-3 py-1 text-xs">

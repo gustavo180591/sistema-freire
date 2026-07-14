@@ -73,25 +73,6 @@
 			text: 'Inactiva'
 		};
 	}
-
-	// Verificar si se puede eliminar
-	function canDelete(career: Career): boolean {
-		return career.plans === 0 && career.students === 0;
-	}
-
-	// Obtener mensaje de no eliminación
-	function getDeleteDisabledReason(career: Career): string {
-		if (career.plans > 0 && career.students > 0) {
-			return 'No se puede eliminar: tiene planes y alumnos';
-		}
-		if (career.plans > 0) {
-			return 'No se puede eliminar: tiene planes de estudio';
-		}
-		if (career.students > 0) {
-			return 'No se puede eliminar: tiene alumnos inscriptos';
-		}
-		return '';
-	}
 </script>
 
 <svelte:head>
@@ -430,8 +411,6 @@
 					{:else}
 						{#each filtered as career (career.id)}
 							{@const statusBadge = getStatusBadge(career.active)}
-							{@const deleteDisabled = !canDelete(career)}
-							{@const deleteReason = getDeleteDisabledReason(career)}
 							<tr class="transition-colors hover:bg-slate-800/30">
 								<td class="px-4 py-3">
 									<div class="min-w-0">
@@ -533,10 +512,9 @@
 										{#if canDeleteCareers()}
 											<button
 												onclick={() => (deletingCareer = career)}
-												class="rounded-lg p-2 text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300 focus:ring-2 focus:ring-red-500/50 focus:outline-none disabled:cursor-not-allowed disabled:text-slate-600 disabled:hover:bg-transparent"
-												aria-label={deleteDisabled ? deleteReason : 'Eliminar carrera'}
-												title={deleteDisabled ? deleteReason : 'Eliminar carrera'}
-												disabled={deleteDisabled}
+												class="rounded-lg p-2 text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300 focus:ring-2 focus:ring-red-500/50 focus:outline-none"
+												aria-label="Desactivar carrera"
+												title="Desactivar carrera"
 											>
 												<svg
 													class="h-4 w-4"

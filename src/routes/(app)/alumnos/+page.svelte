@@ -176,7 +176,7 @@
 
 	function getStudentTypeBadge(student: Student) {
 		if (student.isBecado)
-			return { text: 'Becado', color: 'bg-blue-950/50 text-blue-400 border-blue-800' };
+			return { text: 'Becado', color: 'bg-white text-orange-500 border-orange-500' };
 		if (student.isRecursante)
 			return { text: 'Recursante', color: 'bg-amber-950/50 text-amber-400 border-amber-800' };
 		return { text: 'Normal', color: 'bg-slate-800 text-slate-400 border-slate-700' };

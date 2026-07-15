@@ -3,7 +3,7 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	const MONTHS = data.months;
+	const MONTHS = $derived(data.months);
 </script>
 
 <svelte:head>
@@ -125,9 +125,7 @@
 
 				<!-- Meses con Beneficios -->
 				<div>
-					<label class="mb-3 block text-sm font-medium text-slate-300">
-						Meses donde aplican beneficios
-					</label>
+					<h4 class="mb-3 text-sm font-medium text-slate-300">Meses donde aplican beneficios</h4>
 					<div class="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
 						{#each MONTHS as month}
 							<label

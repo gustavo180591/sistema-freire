@@ -147,9 +147,9 @@
 	function getStatusBadgeColor(status: string) {
 		switch (status) {
 			case 'ACTIVE':
-				return 'bg-emerald-950/50 text-emerald-400 border-emerald-800';
+				return 'bg-white text-green-500 border-green-500';
 			case 'INACTIVE':
-				return 'bg-yellow-950/50 text-yellow-400 border-yellow-800';
+				return 'bg-white text-red-500 border-red-500';
 			case 'SUSPENDED':
 				return 'bg-red-950/50 text-red-400 border-red-800';
 			case 'GRADUATED':
@@ -178,8 +178,8 @@
 		if (student.isBecado)
 			return { text: 'Becado', color: 'bg-white text-orange-500 border-orange-500' };
 		if (student.isRecursante)
-			return { text: 'Recursante', color: 'bg-amber-950/50 text-amber-400 border-amber-800' };
-		return { text: 'Normal', color: 'bg-slate-800 text-slate-400 border-slate-700' };
+			return { text: 'Recursante', color: 'bg-white text-black border-purple-500' };
+		return { text: 'Normal', color: 'bg-white text-black border-green-500' };
 	}
 
 	function hasActiveFilters() {

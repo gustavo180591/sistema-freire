@@ -1,6 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { redirect } from '@sveltejs/kit';
+import { getStudentBlockingMessage } from '$lib/server/financial/student-blocking-service';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
@@ -115,6 +116,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// Calcular deuda total
 	const totalDebt = student.studentCharges.reduce((acc, charge) => acc + Number(charge.amount), 0);
 
+	// Verificar si el alumno está bloqueado financieramente
+	const blockingMessage = await getStudentBlockingMessage(student.id);
+
 	return {
 		student: {
 			id: student.id,
@@ -123,7 +127,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 			lastName: student.lastName,
 			fullName: `${student.firstName} ${student.lastName}`,
 			career: student.career?.name || 'Sin carrera',
-			status: student.status
+			status: student.status,
+			financialBlocked: student.financialBlocked,
+			blockingMessage
 		},
 		academic: {
 			totalSubjects,

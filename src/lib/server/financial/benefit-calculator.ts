@@ -21,6 +21,9 @@ export interface BenefitsConfig {
 	recursantBenefitType: RecursantBenefitType;
 	recursantBenefitValue: number;
 	benefitCombinationStrategy: BenefitCombinationStrategy;
+
+	// Configuración de bloqueo financiero
+	blockAfterUnpaidCharges: number; // Número de cuotas impagas para bloquear al alumno (0 para desactivar)
 }
 
 export interface ChargeCalculation {
@@ -227,7 +230,8 @@ export async function getBenefitsConfig(prisma: Prisma.TransactionClient): Promi
 			benefitsMonths: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
 			recursantBenefitType: 'FIXED_FINAL_AMOUNT',
 			recursantBenefitValue: 30000,
-			benefitCombinationStrategy: 'BEST_AMOUNT'
+			benefitCombinationStrategy: 'BEST_AMOUNT',
+			blockAfterUnpaidCharges: 0
 		};
 	}
 
@@ -255,7 +259,9 @@ export async function getBenefitsConfig(prisma: Prisma.TransactionClient): Promi
 				benefitsMonths: cfg.benefitsMonths as number[],
 				recursantBenefitType: cfg.recursantBenefitType as RecursantBenefitType,
 				recursantBenefitValue: cfg.recursantBenefitValue,
-				benefitCombinationStrategy: cfg.benefitCombinationStrategy as BenefitCombinationStrategy
+				benefitCombinationStrategy: cfg.benefitCombinationStrategy as BenefitCombinationStrategy,
+				blockAfterUnpaidCharges:
+					typeof cfg.blockAfterUnpaidCharges === 'number' ? cfg.blockAfterUnpaidCharges : 0
 			};
 		}
 	}
@@ -271,6 +277,7 @@ export async function getBenefitsConfig(prisma: Prisma.TransactionClient): Promi
 		benefitsMonths: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
 		recursantBenefitType: 'FIXED_FINAL_AMOUNT',
 		recursantBenefitValue: 30000,
-		benefitCombinationStrategy: 'BEST_AMOUNT'
+		benefitCombinationStrategy: 'BEST_AMOUNT',
+		blockAfterUnpaidCharges: 0
 	};
 }

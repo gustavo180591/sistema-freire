@@ -4,6 +4,7 @@ import { redirect, fail } from '@sveltejs/kit';
 import { canStudentEnroll, getAvailableSubjects } from '$lib/server/academic/plan-logic';
 import { auditLog } from '$lib/server/audit';
 import { EnrollmentStatus } from '@prisma/client';
+import { assertStudentNotFinanciallyBlocked } from '$lib/server/financial/student-blocking-service';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
@@ -143,6 +144,15 @@ export const actions: Actions = {
 
 		if (!student) {
 			return fail(404, { error: 'Alumno no encontrado' });
+		}
+
+		// Verificar si el alumno está bloqueado financieramente
+		try {
+			await assertStudentNotFinanciallyBlocked(student.id);
+		} catch (error) {
+			return fail(403, {
+				error: error instanceof Error ? error.message : 'Alumno bloqueado por deuda'
+			});
 		}
 
 		// Obtener período lectivo activo

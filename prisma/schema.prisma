@@ -141,6 +141,7 @@ model Student {
   currentYear        Int                    @default(1)
   isBecado           Boolean                @default(false)
   isRecursante       Boolean                @default(false)
+  financialBlocked   Boolean                @default(false)
   birthDate          DateTime?
   bloodType          String?
   phone              String?

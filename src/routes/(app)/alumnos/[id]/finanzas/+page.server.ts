@@ -8,6 +8,10 @@ import {
 } from '$lib/server/financial/benefit-calculator';
 import { Prisma } from '@prisma/client';
 import * as DecimalHelpers from '$lib/server/financial/decimal-helpers';
+import {
+	updateStudentFinancialBlockStatus,
+	shouldBlockStudent
+} from '$lib/server/financial/student-blocking-service';
 
 /**
  * Genera cuotas mensuales faltantes desde el inicio del ciclo lectivo hasta el mes actual
@@ -205,6 +209,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			include: { concept: true },
 			orderBy: [{ periodLabel: 'desc' }]
 		});
+
+		// Actualizar estado de bloqueo financiero del alumno
+		await updateStudentFinancialBlockStatus(student.id);
 	}
 
 	const charges = student.studentCharges.map((charge) => {
@@ -246,6 +253,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const totalPaid = student.payments.reduce((acc, payment) => acc + Number(payment.amount), 0);
 
+	// Obtener estado de bloqueo financiero
+	const blockingStatus = await shouldBlockStudent(student.id);
+
 	return {
 		student: {
 			id: student.id,
@@ -253,14 +263,17 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			dni: student.dni,
 			career: student.career.name,
 			isBecado: student.isBecado,
-			isRecursante: student.isRecursante
+			isRecursante: student.isRecursante,
+			financialBlocked: student.financialBlocked
 		},
 		metrics: {
 			totalDebt,
 			totalPaid,
 			pendingCharges: charges.filter((c) => c.pending > 0).length,
 			hasScholarship: student.isBecado,
-			blocked: totalDebt > 0
+			blocked: blockingStatus.isBlocked,
+			blockingThreshold: blockingStatus.blockingThreshold,
+			blockingReason: blockingStatus.reason
 		},
 		charges
 	};

@@ -1,6 +1,11 @@
 import { error } from '@sveltejs/kit';
 import { prisma } from '$lib/server/db/prisma';
 
+/**
+ * Roles que pueden asignar materias a docentes
+ */
+export const CAN_ASSIGN_SUBJECTS_ROLES = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'];
+
 export function hasRole(user: App.Locals['user'], allowed: string[]): boolean {
 	if (!user) return false;
 
@@ -10,6 +15,15 @@ export function hasRole(user: App.Locals['user'], allowed: string[]): boolean {
 export function requireRole(user: App.Locals['user'], allowed: string[]) {
 	if (!hasRole(user, allowed)) {
 		throw error(403, 'No tienes permisos para realizar esta acción');
+	}
+}
+
+/**
+ * Requiere que el usuario tenga permisos para asignar materias
+ */
+export function requireCanAssignSubjects(user: App.Locals['user']) {
+	if (!hasRole(user, CAN_ASSIGN_SUBJECTS_ROLES)) {
+		throw error(403, 'No tienes permisos para asignar materias');
 	}
 }
 

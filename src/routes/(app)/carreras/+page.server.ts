@@ -39,7 +39,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 								locationId: { in: allowedLocationIds }
 							}
 						}
-				  })
+					})
 		},
 		include: {
 			studyPlans: {

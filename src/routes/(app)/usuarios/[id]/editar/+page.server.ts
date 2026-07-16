@@ -23,7 +23,15 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				include: {
 					subjects: {
 						include: {
-							subject: true
+							subject: {
+								select: {
+									id: true,
+									code: true,
+									name: true,
+									yearLevel: true,
+									active: true
+								}
+							}
 						}
 					}
 				}

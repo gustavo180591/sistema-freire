@@ -394,7 +394,7 @@
 													class="inline-flex items-center rounded-lg bg-slate-800 px-2 py-1 text-xs font-medium text-slate-300"
 													title={subject.name}
 												>
-													{subject.code}
+													{subject.name}
 												</span>
 											{/each}
 											{#if teacher.subjects.length > 3}

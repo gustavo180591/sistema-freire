@@ -37,7 +37,11 @@ export const load: PageServerLoad = async () => {
 			email: t.user.email,
 			createdAt: t.createdAt,
 			subjects: t.subjects.map((st) => ({
-				...st.subject,
+				id: st.subject.id,
+				code: st.subject.code,
+				name: st.subject.name,
+				yearLevel: st.subject.yearLevel,
+				active: st.subject.active,
 				approvalThreshold: st.subject.approvalThreshold
 					? Number(st.subject.approvalThreshold)
 					: null,

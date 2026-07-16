@@ -253,10 +253,11 @@ model Subject {
 }
 
 model SubjectTeacher {
-  subjectId String
-  teacherId String
-  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subjectId      String
+  teacherId      String
+  assignmentType TeacherAssignmentType @default(TITULAR)
+  subject        Subject                @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher        Teacher                @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@id([subjectId, teacherId])
   @@map("subject_teachers")
@@ -1064,6 +1065,11 @@ enum TeacherStatus {
   INACTIVE
   SUSPENDED
   RESIGNED
+}
+
+enum TeacherAssignmentType {
+  TITULAR
+  SUPLENTE
 }
 
 enum AcademicYearStatus {

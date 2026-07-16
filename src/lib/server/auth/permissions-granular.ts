@@ -231,6 +231,14 @@ export async function seedDefaultPermissions() {
 		},
 		{
 			roleCode: 'DIRECTOR',
+			entity: 'SUBJECT_COMMISSION',
+			canCreate: true,
+			canRead: true,
+			canUpdate: true,
+			canDelete: true
+		},
+		{
+			roleCode: 'DIRECTOR',
 			entity: 'ACADEMIC_TERM',
 			canCreate: true,
 			canRead: true,
@@ -333,6 +341,14 @@ export async function seedDefaultPermissions() {
 			canCreate: false,
 			canRead: true,
 			canUpdate: false,
+			canDelete: false
+		},
+		{
+			roleCode: 'SECRETARIA',
+			entity: 'SUBJECT_COMMISSION',
+			canCreate: true,
+			canRead: true,
+			canUpdate: true,
 			canDelete: false
 		},
 
@@ -629,6 +645,14 @@ export async function seedDefaultPermissions() {
 			canCreate: false,
 			canRead: true,
 			canUpdate: false,
+			canDelete: false
+		},
+		{
+			roleCode: 'APODERADO',
+			entity: 'SUBJECT_COMMISSION',
+			canCreate: true,
+			canRead: true,
+			canUpdate: true,
 			canDelete: false
 		},
 		{

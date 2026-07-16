@@ -7,34 +7,100 @@
 	let assigningSubject = $state(false);
 	let removingSubject = $state<{ subjectId: string; subjectName: string } | null>(null);
 	let selectedSubjectId = $state('');
-
-	interface Subject {
-		id: string;
-		code: string;
-		name: string;
-		yearLevel: number;
-		careers: Array<{ name: string }>;
-	}
-
-	interface AssignedSubject extends Subject {
+	let editingAssignmentType = $state<{
 		subjectId: string;
-		teacherId: string;
+		subjectName: string;
+		currentType: string;
+	} | null>(null);
+
+	// Filtros
+	let searchQuery = $state('');
+	let selectedCareerId = $state('');
+	let selectedYear = $state('');
+	let selectedAssignmentType = $state('TITULAR');
+
+	interface SubjectByCareer {
+		careerId: string;
+		careerName: string;
+		subjects: Array<{
+			id: string;
+			code: string;
+			name: string;
+			yearLevel: number;
+			careerId: string;
+			careerName: string;
+			sortOrder: number;
+			isAssigned: boolean;
+		}>;
 	}
+
+	// Obtener años únicos
+	const availableYears = $derived(
+		data.availableSubjectsByCareer
+			.flatMap((career) => career.subjects.map((s) => s.yearLevel))
+			.filter((year, index, self) => self.indexOf(year) === index)
+			.sort((a, b) => a - b)
+	);
+
+	// Filtrar materias
+	const filteredSubjectsByCareer = $derived(
+		data.availableSubjectsByCareer
+			.filter((career) => {
+				if (selectedCareerId && career.careerId !== selectedCareerId) return false;
+				return true;
+			})
+			.map((career) => ({
+				...career,
+				subjects: career.subjects.filter((subject) => {
+					if (selectedYear && subject.yearLevel !== parseInt(selectedYear)) return false;
+					if (searchQuery) {
+						const query = searchQuery.toLowerCase();
+						return (
+							subject.code.toLowerCase().includes(query) ||
+							subject.name.toLowerCase().includes(query)
+						);
+					}
+					return true;
+				})
+			}))
+			.filter((career) => career.subjects.length > 0)
+	);
 
 	// Asignar materia
-	async function assignSubject() {
-		if (!selectedSubjectId) return;
+	async function assignSubject(subjectId: string) {
+		selectedSubjectId = subjectId;
 		assigningSubject = true;
 	}
 
 	// Eliminar materia
-	function confirmRemoveSubject(subject: AssignedSubject) {
+	function confirmRemoveSubject(subject: PageData['assignedSubjects'][number]) {
 		removingSubject = { subjectId: subject.subjectId, subjectName: subject.name };
+	}
+
+	// Editar condición de asignación
+	function editAssignmentType(subject: PageData['assignedSubjects'][number]) {
+		editingAssignmentType = {
+			subjectId: subject.subjectId,
+			subjectName: subject.name,
+			currentType: (subject as any).assignmentType || 'TITULAR'
+		};
+	}
+
+	// Cancelar edición
+	function cancelEditAssignmentType() {
+		editingAssignmentType = null;
 	}
 
 	// Volver a la lista
 	function goBack() {
 		goto('/docentes');
+	}
+
+	// Limpiar filtros
+	function clearFilters() {
+		searchQuery = '';
+		selectedCareerId = '';
+		selectedYear = '';
 	}
 </script>
 
@@ -96,17 +162,77 @@
 								<div>
 									<p class="font-medium text-white">{subject.name}</p>
 									<p class="text-sm text-slate-400">
-										Año {subject.yearLevel} · {subject.careers.map((c) => c.name).join(', ')}
+										Año {subject.yearLevel} · {subject.careers
+											.map((c: { name: string }) => c.name)
+											.join(', ')}
+									</p>
+									<p class="text-sm text-slate-400">
+										Condición: <span class="font-medium text-white"
+											>{(subject as any).assignmentType === 'TITULAR'
+												? 'Titular'
+												: 'Suplente'}</span
+										>
 									</p>
 								</div>
 							</div>
 						</div>
-						<button
-							onclick={() => confirmRemoveSubject(subject)}
-							class="ml-4 rounded-xl bg-red-500/10 px-4 py-2 text-red-400 transition-colors hover:bg-red-500/20"
-						>
-							Eliminar
-						</button>
+						<div class="flex items-center gap-2">
+							{#if editingAssignmentType?.subjectId === subject.subjectId}
+								<form
+									method="POST"
+									action="?/updateAssignmentType"
+									use:enhance={() => {
+										return async ({ update }) => {
+											await update();
+											editingAssignmentType = null;
+										};
+									}}
+									class="flex items-center gap-2"
+								>
+									<input type="hidden" name="teacherId" value={data.teacher.id} />
+									<input type="hidden" name="subjectId" value={subject.subjectId} />
+									<select
+										name="assignmentType"
+										class="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-300 transition outline-none focus:border-slate-500"
+									>
+										<option
+											value="TITULAR"
+											selected={editingAssignmentType?.currentType === 'TITULAR'}>Titular</option
+										>
+										<option
+											value="SUPLENTE"
+											selected={editingAssignmentType?.currentType === 'SUPLENTE'}>Suplente</option
+										>
+									</select>
+									<button
+										type="submit"
+										class="rounded-xl bg-emerald-500/10 px-3 py-2 text-emerald-400 transition-colors hover:bg-emerald-500/20"
+									>
+										Guardar
+									</button>
+									<button
+										type="button"
+										onclick={cancelEditAssignmentType}
+										class="rounded-xl bg-slate-700/50 px-3 py-2 text-slate-400 transition-colors hover:bg-slate-700"
+									>
+										Cancelar
+									</button>
+								</form>
+							{:else}
+								<button
+									onclick={() => editAssignmentType(subject)}
+									class="rounded-xl bg-slate-700/50 px-3 py-2 text-slate-400 transition-colors hover:bg-slate-700"
+								>
+									Editar
+								</button>
+								<button
+									onclick={() => confirmRemoveSubject(subject)}
+									class="rounded-xl bg-red-500/10 px-4 py-2 text-red-400 transition-colors hover:bg-red-500/20"
+								>
+									Eliminar
+								</button>
+							{/if}
+						</div>
 					</div>
 				{/each}
 			</div>
@@ -117,52 +243,152 @@
 	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 		<h2 class="mb-4 text-xl font-bold text-white">Asignar Nueva Materia</h2>
 
-		{#if data.availableSubjects.length === 0}
+		{#if data.error}
+			<div class="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-400">
+				{data.error}
+			</div>
+		{/if}
+
+		{#if data.teacherLocation}
+			<div class="mb-6 rounded-2xl bg-slate-800/50 p-4">
+				<p class="text-sm text-slate-400">
+					Localidad de la docente: <span class="font-medium text-white"
+						>{data.teacherLocation.name}</span
+					>
+				</p>
+			</div>
+		{/if}
+
+		{#if data.availableSubjectsByCareer.length === 0}
 			<div class="py-8 text-center text-slate-400">
 				<p>No hay materias disponibles para asignar</p>
 			</div>
 		{:else}
-			<form
-				method="POST"
-				action="?/assignSubject"
-				use:enhance={() => {
-					return async ({ update }) => {
-						await update();
-						assigningSubject = false;
-						selectedSubjectId = '';
-					};
-				}}
-			>
-				<input type="hidden" name="teacherId" value={data.teacher.id} />
-
-				<div class="mb-4">
-					<label for="subjectSelect" class="mb-2 block text-sm font-medium text-slate-300"
-						>Seleccionar Materia</label
+			<!-- Filtros -->
+			<div class="mb-6 grid gap-4 md:grid-cols-4">
+				<div>
+					<label for="search" class="mb-2 block text-sm font-medium text-slate-300">Buscar</label>
+					<input
+						id="search"
+						type="text"
+						bind:value={searchQuery}
+						placeholder="Código o nombre de materia"
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 transition outline-none focus:border-slate-500"
+					/>
+				</div>
+				<div>
+					<label for="careerFilter" class="mb-2 block text-sm font-medium text-slate-300"
+						>Carrera</label
 					>
 					<select
-						id="subjectSelect"
-						bind:value={selectedSubjectId}
-						name="subjectId"
+						id="careerFilter"
+						bind:value={selectedCareerId}
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 transition outline-none focus:border-slate-500"
-						required
 					>
-						<option value="">-- Seleccionar materia --</option>
-						{#each data.availableSubjects as subject}
-							<option value={subject.id}>
-								{subject.code} - {subject.name} (Año {subject.yearLevel})
-							</option>
+						<option value="">Todas las carreras</option>
+						{#each data.availableSubjectsByCareer as career}
+							<option value={career.careerId}>{career.careerName}</option>
 						{/each}
 					</select>
 				</div>
+				<div>
+					<label for="yearFilter" class="mb-2 block text-sm font-medium text-slate-300">Año</label>
+					<select
+						id="yearFilter"
+						bind:value={selectedYear}
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 transition outline-none focus:border-slate-500"
+					>
+						<option value="">Todos los años</option>
+						{#each availableYears as year}
+							<option value={year}>{year}º año</option>
+						{/each}
+					</select>
+				</div>
+				<div>
+					<label for="assignmentType" class="mb-2 block text-sm font-medium text-slate-300"
+						>Condición</label
+					>
+					<select
+						id="assignmentType"
+						bind:value={selectedAssignmentType}
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 transition outline-none focus:border-slate-500"
+					>
+						<option value="TITULAR">Titular</option>
+						<option value="SUPLENTE">Suplente</option>
+					</select>
+				</div>
+			</div>
 
+			{#if searchQuery || selectedCareerId || selectedYear}
 				<button
-					type="submit"
-					disabled={!selectedSubjectId || assigningSubject}
-					class="rounded-2xl bg-indigo-500 px-6 py-3 font-semibold text-white transition hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
+					onclick={clearFilters}
+					class="mb-6 text-sm text-slate-400 transition hover:text-white"
 				>
-					{assigningSubject ? 'Asignando...' : 'Asignar Materia'}
+					Limpiar filtros
 				</button>
-			</form>
+			{/if}
+
+			<!-- Materias agrupadas por carrera -->
+			{#if filteredSubjectsByCareer.length === 0}
+				<div class="py-8 text-center text-slate-400">
+					<p>No hay materias que coincidan con los filtros</p>
+				</div>
+			{:else}
+				{#each filteredSubjectsByCareer as career}
+					<div class="mb-8">
+						<h3 class="mb-4 text-lg font-bold text-white">{career.careerName}</h3>
+						<div class="space-y-3">
+							{#each career.subjects as subject}
+								<div
+									class="flex items-center justify-between rounded-2xl border border-slate-700 bg-slate-800/50 p-4"
+								>
+									<div class="flex-1">
+										<div class="flex items-center gap-3">
+											<span
+												class="rounded-full bg-indigo-500/20 px-3 py-1 text-sm font-medium text-indigo-400"
+											>
+												{subject.code}
+											</span>
+											<div>
+												<p class="font-medium text-white">{subject.name}</p>
+												<p class="text-sm text-slate-400">Año {subject.yearLevel}</p>
+											</div>
+										</div>
+									</div>
+									{#if subject.isAssigned}
+										<span class="text-sm text-slate-400">Ya asignada</span>
+									{:else}
+										<form
+											method="POST"
+											action="?/assignSubject"
+											use:enhance={() => {
+												return async ({ update }) => {
+													await update();
+													assigningSubject = false;
+													selectedSubjectId = '';
+												};
+											}}
+										>
+											<input type="hidden" name="teacherId" value={data.teacher.id} />
+											<input type="hidden" name="subjectId" value={subject.id} />
+											<input type="hidden" name="assignmentType" value={selectedAssignmentType} />
+											<button
+												type="submit"
+												disabled={assigningSubject}
+												class="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
+											>
+												{assigningSubject && selectedSubjectId === subject.id
+													? 'Asignando...'
+													: 'Asignar'}
+											</button>
+										</form>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/each}
+			{/if}
 		{/if}
 	</div>
 

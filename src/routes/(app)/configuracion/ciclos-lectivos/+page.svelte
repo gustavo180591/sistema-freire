@@ -88,7 +88,7 @@
 		</div>
 		<button
 			onclick={handleCreate}
-			class="rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700"
+			class="rounded-2xl border-2 border-pink-600 bg-white px-5 py-3 text-sm font-semibold text-pink-600 transition hover:border-pink-700 hover:bg-pink-50"
 		>
 			Nuevo Ciclo Lectivo
 		</button>

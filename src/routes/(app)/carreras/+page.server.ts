@@ -11,14 +11,35 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
 
+	// Verificar si el usuario tiene acceso global a todas las localidades
+	const user = await prisma.user.findUnique({
+		where: { id: locals.user.id },
+		include: {
+			roles: {
+				include: {
+					role: true
+				}
+			}
+		}
+	});
+
+	const globalAccessRoles = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'FINANZAS', 'APODERADO'];
+	const hasGlobalAccess = user?.roles.some((r) => globalAccessRoles.includes(r.role.code)) || false;
+
 	const careers = await prisma.career.findMany({
 		where: {
 			active: true,
-			locations: {
-				some: {
-					locationId: { in: allowedLocationIds }
-				}
-			}
+			// Para usuarios con acceso global, mostrar todas las carreras activas
+			// Para usuarios con acceso restringido, filtrar por localidades permitidas
+			...(hasGlobalAccess
+				? {}
+				: {
+						locations: {
+							some: {
+								locationId: { in: allowedLocationIds }
+							}
+						}
+				  })
 		},
 		include: {
 			studyPlans: {

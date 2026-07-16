@@ -891,8 +891,8 @@
 						<div class="grid gap-6 md:grid-cols-2">
 							<div>
 								<label for="highSchool" class="mb-2 block text-sm font-medium text-slate-300"
-									>Escuela Secundaria</label
-								>
+									>Escuela Secundaria donde
+								</label>
 								<input
 									id="highSchool"
 									name="highSchool"
@@ -917,7 +917,7 @@
 							</div>
 							<div>
 								<label for="instituteYear" class="mb-2 block text-sm font-medium text-slate-300"
-									>Año de Ingreso al Instituto</label
+									>Año de Ingreso al Instituto Paulo Freire</label
 								>
 								<input
 									id="instituteYear"

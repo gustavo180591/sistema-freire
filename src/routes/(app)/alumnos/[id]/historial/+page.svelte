@@ -38,7 +38,7 @@
 					{/if}
 				</p>
 				<div class="mt-4 flex flex-wrap gap-2">
-					<div class="inline-flex rounded-full border border-slate-700 px-4 py-2 text-sm">
+					<div class="inline-flex rounded-full border border-green-500 px-4 py-2 text-sm">
 						{#if student.status === 'ACTIVE'}
 							<span class="text-green-400">Activo</span>
 						{:else if student.status === 'INACTIVE'}
@@ -53,9 +53,9 @@
 					</div>
 					{#if student.isRecursante}
 						<div
-							class="inline-flex rounded-full border border-amber-700/50 bg-amber-950/30 px-4 py-2 text-sm"
+							class="inline-flex rounded-full border border-orange-500 bg-white px-4 py-2 text-sm"
 						>
-							<span class="text-amber-400">Recursante</span>
+							<span class="text-black">Recursante</span>
 						</div>
 					{/if}
 				</div>
@@ -63,7 +63,7 @@
 			<div class="flex flex-wrap gap-2">
 				<a
 					href="/alumnos/{student.id}/documentos"
-					class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500"
+					class="inline-flex items-center gap-2 rounded-xl border-2 border-violet-500 bg-white px-4 py-2 text-sm font-medium text-violet-400 transition hover:bg-violet-50"
 				>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
@@ -77,7 +77,7 @@
 				</a>
 				<a
 					href="/alumnos/{student.id}/seguimiento"
-					class="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-500"
+					class="inline-flex items-center gap-2 rounded-xl border-2 border-pink-700 bg-white px-4 py-2 text-sm font-medium text-pink-700 transition hover:bg-pink-50"
 				>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
@@ -138,21 +138,21 @@
 	<section class="flex flex-wrap gap-3">
 		<a
 			href={`/alumnos/${student.id}/historial-anual`}
-			class="rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:scale-[1.02]"
+			class="rounded-2xl border-2 border-violet-700 bg-white px-5 py-3 text-sm font-semibold text-violet-700 transition hover:scale-[1.02]"
 		>
 			Historial por Ciclo Lectivo
 		</a>
 
 		<a
 			href={`/alumnos/${student.id}/certificados`}
-			class="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.02]"
+			class="rounded-2xl border-2 border-blue-900 bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.02]"
 		>
 			Generar certificado
 		</a>
 
 		<a
 			href={`/alumnos/${student.id}/finanzas`}
-			class="rounded-2xl border border-slate-700 px-5 py-3 text-sm font-semibold transition hover:border-slate-500"
+			class="rounded-2xl border-2 border-green-900 px-5 py-3 text-sm font-semibold transition hover:border-green-700"
 		>
 			Ver finanzas
 		</a>

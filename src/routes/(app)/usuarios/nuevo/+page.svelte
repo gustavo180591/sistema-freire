@@ -329,7 +329,7 @@
 
 					<div>
 						<label for="highSchool" class="mb-2 block text-sm font-medium text-slate-300"
-							>Escuela secundaria</label
+							>Escuela secundaria donde egresó</label
 						>
 						<input
 							id="highSchool"
@@ -353,16 +353,16 @@
 						/>
 					</div>
 
-					<div class="md:col-span-2">
+					<div>
 						<label for="instituteYear" class="mb-2 block text-sm font-medium text-slate-300"
-							>Año de ingreso al instituto</label
+							>Año de ingreso al instituto Paulo Freire</label
 						>
 						<input
 							id="instituteYear"
 							name="instituteYear"
 							type="number"
 							min="1950"
-							max={new Date().getFullYear() + 1}
+							max={new Date().getFullYear()}
 							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 						/>
 					</div>

@@ -152,8 +152,19 @@ export async function generateAutomaticCharges(
 	const currentDate = new Date();
 	const currentMonth = currentDate.getMonth() + 1; // 1-12
 
-	const startMonth = benefitsConfig.benefitsStartMonth; // 3 (marzo) por defecto
-	const startYear = currentMonth >= startMonth ? currentYear : currentYear - 1;
+	// Obtener el ciclo lectivo para usar su fecha de inicio
+	const academicTerm = await tx.academicTerm.findUnique({
+		where: { id: academicTermId }
+	});
+
+	if (!academicTerm) {
+		throw new Error('Ciclo lectivo no encontrado');
+	}
+
+	// Usar la fecha de inicio del ciclo lectivo
+	const startDate = new Date(academicTerm.startDate);
+	const startMonth = startDate.getMonth() + 1; // 1-12
+	const startYear = startDate.getFullYear();
 
 	// Calcular cuotas a generar
 	let installmentNumber = 1;

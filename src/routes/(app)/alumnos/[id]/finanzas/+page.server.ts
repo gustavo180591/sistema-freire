@@ -7,6 +7,155 @@ import {
 	calculateChargeBenefit
 } from '$lib/server/financial/benefit-calculator';
 import { Prisma } from '@prisma/client';
+import * as DecimalHelpers from '$lib/server/financial/decimal-helpers';
+
+/**
+ * Genera cuotas mensuales faltantes desde el inicio del ciclo lectivo hasta el mes actual
+ */
+async function generateMissingMonthlyCharges(
+	studentId: string,
+	studentFirstName: string,
+	studentLastName: string,
+	isBecado: boolean,
+	isRecursante: boolean,
+	academicTermId: string,
+	userId: string
+): Promise<{ created: number; skipped: number }> {
+	const benefitsConfig = await getBenefitsConfig(prisma);
+	const monthlyConcept = await prisma.chargeConcept.findUnique({
+		where: { code: 'CUOTA_MENSUAL' }
+	});
+
+	if (!monthlyConcept) {
+		throw new Error('Concepto de cuota mensual no encontrado');
+	}
+
+	// Obtener el ciclo lectivo para usar su fecha de inicio
+	const academicTerm = await prisma.academicTerm.findUnique({
+		where: { id: academicTermId }
+	});
+
+	if (!academicTerm) {
+		throw new Error('Ciclo lectivo no encontrado');
+	}
+
+	// Usar la fecha de inicio del ciclo lectivo
+	const startDate = new Date(academicTerm.startDate);
+	const startMonth = startDate.getMonth() + 1; // 1-12
+	const startYear = startDate.getFullYear();
+
+	// Mes actual
+	const currentDate = new Date();
+	const currentMonth = currentDate.getMonth() + 1;
+	const currentYear = currentDate.getFullYear();
+
+	let created = 0;
+	let skipped = 0;
+
+	// Calcular cuotas a generar
+	let installmentNumber = 1;
+	for (let year = startYear; year <= currentYear; year++) {
+		const monthStart = year === startYear ? startMonth : 1;
+		const monthEnd = year === currentYear ? currentMonth : 12;
+
+		for (let month = monthStart; month <= monthEnd; month++) {
+			// Verificar si este mes está en los meses de beneficios
+			const monthInBenefits = benefitsConfig.benefitsMonths.includes(month);
+
+			// Determinar el monto base según el tipo de alumno
+			let baseAmount: number;
+			if (isBecado && monthInBenefits) {
+				baseAmount = benefitsConfig.becadoFeeAmount;
+			} else if (isRecursante && monthInBenefits) {
+				baseAmount = benefitsConfig.recursantFeeAmount;
+			} else {
+				baseAmount = benefitsConfig.normalFeeAmount;
+			}
+
+			// Formatear periodLabel como YYYY-MM
+			const periodLabel = `${year}-${month.toString().padStart(2, '0')}`;
+
+			// Verificar si ya existe un cargo para este período
+			const existingCharge = await prisma.studentCharge.findUnique({
+				where: {
+					studentId_conceptId_periodLabel_academicTermId: {
+						studentId,
+						conceptId: monthlyConcept.id,
+						periodLabel,
+						academicTermId
+					}
+				}
+			});
+
+			if (existingCharge) {
+				installmentNumber++;
+				skipped++;
+				continue;
+			}
+
+			// Calcular beneficios usando el sistema existente
+			const benefitCalculation = calculateChargeBenefit(
+				new Decimal(baseAmount),
+				{ isBecado, isRecursante },
+				installmentNumber,
+				month,
+				benefitsConfig
+			);
+
+			// Crear cuota mensual
+			const monthlyCharge = await prisma.studentCharge.create({
+				data: {
+					studentId,
+					conceptId: monthlyConcept.id,
+					periodLabel,
+					amount: new Decimal(baseAmount),
+					dueDate: null,
+					academicTermId,
+					notes: `Cuota mensual - ${periodLabel}`,
+					userId,
+					lateFeeApplied: DecimalHelpers.zero(),
+					discountApplied: benefitCalculation.discountApplied,
+					scholarshipApplied: benefitCalculation.scholarshipApplied,
+					finalAmount: benefitCalculation.finalAmount,
+					status: 'PENDING',
+					installmentNumber,
+					benefitType: benefitCalculation.benefitType,
+					benefitReason: benefitCalculation.benefitReason,
+					ruleSnapshot: benefitCalculation.ruleSnapshot as Prisma.InputJsonValue
+				}
+			});
+
+			// Crear movimiento financiero
+			const currentCharges = await prisma.studentCharge.findMany({
+				where: { studentId }
+			});
+			const currentBalance = currentCharges.reduce(
+				(acc: Decimal, c: Prisma.StudentChargeGetPayload<{}>) =>
+					DecimalHelpers.add(acc, DecimalHelpers.subtract(c.finalAmount, c.paidAmount)),
+				DecimalHelpers.zero()
+			);
+
+			await prisma.financialMovement.create({
+				data: {
+					studentId,
+					movementType: 'CHARGE',
+					entityType: 'StudentCharge',
+					entityId: monthlyCharge.id,
+					description: `Cuota: ${monthlyConcept.name} - ${periodLabel}`,
+					amount: benefitCalculation.finalAmount,
+					balanceBefore: currentBalance,
+					balanceAfter: DecimalHelpers.add(currentBalance, benefitCalculation.finalAmount),
+					userId
+				}
+			});
+
+			created++;
+			installmentNumber++;
+		}
+	}
+
+	return { created, skipped };
+}
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	await requireFinancialAccess(locals.user, params.id);
@@ -15,11 +164,12 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		where: { id: params.id },
 		include: {
 			career: true,
+			location: true,
 			studentCharges: {
 				include: {
 					concept: true
 				},
-				orderBy: [{ createdAt: 'desc' }]
+				orderBy: [{ periodLabel: 'desc' }]
 			},
 			payments: {
 				orderBy: [{ paidAt: 'desc' }]
@@ -28,6 +178,34 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	});
 
 	const benefitsConfig = await getBenefitsConfig(prisma);
+
+	// Obtener el ciclo lectivo activo para el alumno
+	const activeAcademicTerm = await prisma.academicTerm.findFirst({
+		where: {
+			active: true,
+			...(student.locationId ? { locationId: student.locationId } : {})
+		}
+	});
+
+	// Si hay un ciclo lectivo activo, generar cuotas faltantes
+	if (activeAcademicTerm && locals.user) {
+		await generateMissingMonthlyCharges(
+			student.id,
+			student.firstName,
+			student.lastName,
+			student.isBecado,
+			student.isRecursante,
+			activeAcademicTerm.id,
+			locals.user.id
+		);
+
+		// Recargar los cargos después de generar los faltantes
+		student.studentCharges = await prisma.studentCharge.findMany({
+			where: { studentId: student.id },
+			include: { concept: true },
+			orderBy: [{ periodLabel: 'desc' }]
+		});
+	}
 
 	const charges = student.studentCharges.map((charge) => {
 		const pending = Number(charge.finalAmount) - Number(charge.paidAmount);

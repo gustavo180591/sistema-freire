@@ -94,6 +94,11 @@ export function canManageFinances(): boolean {
 	return hasAnyRole(['SUPERADMIN', 'DIRECTOR', 'FINANZAS']);
 }
 
+// Función para verificar si el usuario puede gestionar horarios
+export function canManageSchedules(): boolean {
+	return hasAnyRole(['SUPERADMIN', 'DIRECTOR', 'SECRETARIA']);
+}
+
 // Función para verificar si el usuario es docente
 export function isTeacher(): boolean {
 	return hasRole('DOCENTE');

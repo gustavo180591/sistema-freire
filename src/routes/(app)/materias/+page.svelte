@@ -8,6 +8,7 @@
 	const subjects = $derived(data?.subjects ?? []);
 	const filters = $derived(data?.filters ?? {});
 	const subjectTypes = $derived(data?.subjectTypes ?? []);
+	const careers = $derived(data?.careers ?? []);
 	const accreditationModes = $derived(data?.accreditationModes ?? []);
 	const yearLevels = $derived(data?.yearLevels ?? [1, 2, 3, 4, 5, 6, 7]);
 
@@ -64,6 +65,7 @@
 			filters.search ||
 			filters.yearLevel ||
 			filters.subjectType ||
+			filters.careerId ||
 			filters.accreditationMode ||
 			filters.active
 		)
@@ -167,6 +169,22 @@
 					{#each subjectTypes as type}
 						<option value={type} selected={filters.subjectType === type}>
 							{subjectTypeLabels[type] || type}
+						</option>
+					{/each}
+				</select>
+			</div>
+
+			<div>
+				<label for="careerId" class="sr-only">Filtrar por carrera</label>
+				<select
+					id="careerId"
+					name="careerId"
+					class="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-300 transition-all outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
+				>
+					<option value="">Todas las carreras</option>
+					{#each careers as career}
+						<option value={career.id} selected={filters.careerId === career.id}>
+							{career.name}
 						</option>
 					{/each}
 				</select>
@@ -288,10 +306,6 @@
 							>
 							<th
 								class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
-								>Tipo</th
-							>
-							<th
-								class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
 								>Campo</th
 							>
 							<th
@@ -339,11 +353,6 @@
 								</td>
 								<td class="px-4 py-3">
 									<span class="text-sm text-slate-300">Año {subject.yearLevel}</span>
-								</td>
-								<td class="px-4 py-3">
-									<span class="text-sm text-slate-300">
-										{subjectTypeLabels[subject.subjectType] || subject.subjectType}
-									</span>
 								</td>
 								<td class="px-4 py-3">
 									<span

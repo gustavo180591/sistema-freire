@@ -161,12 +161,20 @@
 			<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Sistema / Configuración</p>
 			<h1 class="text-3xl font-bold">Calendario</h1>
 		</div>
-		<a
-			href="/configuracion"
-			class="rounded-2xl border border-slate-700 px-6 py-3 font-semibold text-white transition hover:bg-slate-800"
-		>
-			Volver
-		</a>
+		<div class="flex gap-2">
+			<a
+				href="/configuracion/horarios"
+				class="rounded-2xl border border-slate-700 px-6 py-3 font-semibold text-white transition hover:bg-slate-800"
+			>
+				Horarios
+			</a>
+			<a
+				href="/configuracion"
+				class="rounded-2xl border border-slate-700 px-6 py-3 font-semibold text-white transition hover:bg-slate-800"
+			>
+				Volver
+			</a>
+		</div>
 	</div>
 
 	<!-- Tabs -->

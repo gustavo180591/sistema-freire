@@ -105,6 +105,7 @@ model Career {
   commissions         SubjectCommission[]
   subjectCorrelatives SubjectCorrelative[]
   enrollments         SubjectEnrollment[]
+  classSchedules      ClassSchedule[]
 
   @@index([active])
   @@map("careers")
@@ -209,6 +210,7 @@ model Teacher {
   payslips     Payslip[]
   commissions  SubjectCommission[]
   subjects     SubjectTeacher[]
+  classSchedules ClassSchedule[]
   user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([lastName, firstName])
@@ -245,6 +247,7 @@ model Subject {
   correlatives       SubjectCorrelative[]   @relation("subject_correlatives")
   enrollments        SubjectEnrollment[]
   teachers           SubjectTeacher[]
+  classSchedules     ClassSchedule[]
 
   @@index([subjectType, yearLevel])
   @@index([trainingField, yearLevel])
@@ -392,6 +395,7 @@ model StudyPlan {
   career        Career              @relation(fields: [careerId], references: [id])
   commissions   SubjectCommission[]
   enrollments   SubjectEnrollment[]
+  classSchedules ClassSchedule[]
 
   @@unique([careerId, version])
   @@map("study_plans")
@@ -779,6 +783,7 @@ model Location {
   commissions     SubjectCommission[]
   userPermissions UserLocationPermission[]
   students        Student[]
+  classSchedules  ClassSchedule[]
 
   @@index([active])
   @@map("locations")
@@ -968,6 +973,7 @@ model SubjectCommission {
   subject           Subject             @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   teacher           Teacher?            @relation(fields: [teacherId], references: [id])
   enrollments       SubjectEnrollment[]
+  classSchedules    ClassSchedule[]
 
   @@index([subjectId, active])
   @@index([academicTermId, active])
@@ -1640,4 +1646,49 @@ model ImportantDate {
   @@index([year])
   @@index([date])
   @@map("important_dates")
+}
+
+model ClassSchedule {
+  id            String   @id @default(cuid())
+  locationId    String?
+  careerId      String
+  studyPlanId   String?
+  subjectId     String
+  commissionId  String?
+  teacherId     String?
+
+  yearLevel     Int
+  dayOfWeek     WeekDay
+  startTime     String
+  endTime       String
+  classroom     String?
+  observations  String?
+  active        Boolean  @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  location      Location?           @relation(fields: [locationId], references: [id])
+  career        Career              @relation(fields: [careerId], references: [id])
+  studyPlan     StudyPlan?          @relation(fields: [studyPlanId], references: [id])
+  subject       Subject             @relation(fields: [subjectId], references: [id])
+  teacher       Teacher?            @relation(fields: [teacherId], references: [id])
+  commission    SubjectCommission?  @relation(fields: [commissionId], references: [id])
+
+  @@index([careerId, yearLevel, active])
+  @@index([subjectId, active])
+  @@index([teacherId, active])
+  @@index([commissionId, active])
+  @@index([locationId, active])
+  @@map("class_schedules")
+}
+
+enum WeekDay {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
 }

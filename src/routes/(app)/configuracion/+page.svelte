@@ -34,8 +34,11 @@
 					/>
 				</svg>
 			</div>
-			<h3 class="mb-2 text-xl font-bold text-white">Calendario</h3>
-			<p class="text-sm text-slate-400">Configurar el calendario académico y fechas importantes</p>
+			<h3 class="mb-2 text-xl font-bold text-white">Calendario y Horarios</h3>
+			<p class="text-sm text-slate-400">
+				Configurar el calendario académico, fechas importantes y horarios de todas las carreras y
+				años
+			</p>
 		</a>
 
 		<!-- Localidades / Sedes -->

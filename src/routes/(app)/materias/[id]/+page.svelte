@@ -68,7 +68,7 @@
 			<div class="flex gap-2">
 				<a
 					href="/materias/{subject.id}/editar"
-					class="rounded-2xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.02]"
+					class="rounded-2xl border border-slate-800 bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.02]"
 				>
 					Editar
 				</a>

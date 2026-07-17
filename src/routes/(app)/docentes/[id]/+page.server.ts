@@ -20,7 +20,10 @@ type AssignedSubject = {
 	}>;
 };
 
-export const load: PageServerLoad = async ({ params, locals }): Promise<{
+export const load: PageServerLoad = async ({
+	params,
+	locals
+}): Promise<{
 	teacher: {
 		id: string;
 		userId: string;

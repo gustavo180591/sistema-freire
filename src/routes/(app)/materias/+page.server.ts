@@ -8,6 +8,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	const search = url.searchParams.get('search') || '';
 	const yearLevel = url.searchParams.get('yearLevel') || '';
 	const subjectType = url.searchParams.get('subjectType') || '';
+	const careerId = url.searchParams.get('careerId') || '';
 	const accreditationMode = url.searchParams.get('accreditationMode') || '';
 	const active = url.searchParams.get('active') || '';
 
@@ -21,6 +22,11 @@ export const load: PageServerLoad = async ({ url }) => {
 		subjectType?: SubjectType;
 		accreditationMode?: AccreditationMode;
 		active?: boolean;
+		careerSubjects?: {
+			some: {
+				careerId: string;
+			};
+		};
 	} = {};
 
 	// Search condition
@@ -38,6 +44,14 @@ export const load: PageServerLoad = async ({ url }) => {
 
 	if (subjectType) {
 		where.subjectType = subjectType as SubjectType;
+	}
+
+	if (careerId) {
+		where.careerSubjects = {
+			some: {
+				careerId
+			}
+		};
 	}
 
 	if (accreditationMode) {
@@ -79,13 +93,21 @@ export const load: PageServerLoad = async ({ url }) => {
 			search,
 			yearLevel,
 			subjectType,
+			careerId,
 			accreditationMode,
 			active
 		},
 		// Opciones para filtros
 		subjectTypes: Object.values(SubjectType),
 		accreditationModes: Object.values(AccreditationMode),
-		yearLevels: [1, 2, 3, 4, 5, 6, 7]
+		yearLevels: [1, 2, 3, 4, 5, 6, 7],
+		careers: await prisma.career.findMany({
+			select: {
+				id: true,
+				name: true
+			},
+			orderBy: { name: 'asc' }
+		})
 	};
 };
 

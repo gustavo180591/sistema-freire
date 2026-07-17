@@ -1,9 +1,9 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import type { PageData, ActionData } from './$types';
 	import { enhance } from '$app/forms';
 	import { canManageTeachers } from '$lib/client/permissions';
 
-	let { data, form }: { data: PageData; form?: any } = $props();
+	let { data, form }: { data: PageData; form?: ActionData } = $props();
 	let searchQuery = $state('');
 	let deletingTeacher = $state<Teacher | null>(null);
 

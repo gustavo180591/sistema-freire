@@ -5,7 +5,62 @@ import { requireCanAssignSubjects } from '$lib/server/auth/authorization';
 import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
 
-export const load: PageServerLoad = async ({ params, locals }) => {
+type AssignedSubject = {
+	subjectId: string;
+	teacherId: string;
+	assignmentType: 'TITULAR' | 'SUPLENTE';
+	id: string;
+	code: string;
+	name: string;
+	yearLevel: number;
+	active: boolean;
+	careers: Array<{
+		id: string;
+		name: string;
+	}>;
+};
+
+export const load: PageServerLoad = async ({ params, locals }): Promise<{
+	teacher: {
+		id: string;
+		userId: string;
+		dni: string;
+		firstName: string;
+		lastName: string;
+		email: string;
+	};
+	assignedSubjects: AssignedSubject[];
+	availableSubjects: Array<{
+		id: string;
+		code: string;
+		name: string;
+		yearLevel: number;
+		careers: Array<{
+			id: string;
+			name: string;
+		}>;
+	}>;
+	availableSubjectsByCareer: Array<{
+		careerId: string;
+		careerName: string;
+		subjects: Array<{
+			id: string;
+			code: string;
+			name: string;
+			yearLevel: number;
+			careerId: string;
+			careerName: string;
+			sortOrder: number;
+			isAssigned: boolean;
+		}>;
+	}>;
+	teacherLocation: {
+		id: string;
+		name: string;
+		code: string;
+	} | null;
+	error?: string;
+}> => {
 	requireCanAssignSubjects(locals.user);
 
 	if (!locals.user) {
@@ -61,6 +116,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			assignedSubjects: teacher.subjects.map((st) => ({
 				subjectId: st.subjectId,
 				teacherId: st.teacherId,
+				assignmentType: (st as { assignmentType: 'TITULAR' | 'SUPLENTE' }).assignmentType,
 				id: st.subject.id,
 				code: st.subject.code,
 				name: st.subject.name,
@@ -208,14 +264,14 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		assignedSubjects: teacher.subjects.map((st) => ({
 			subjectId: st.subjectId,
 			teacherId: st.teacherId,
-			assignmentType: 'TITULAR' as const,
+			assignmentType: (st as { assignmentType: 'TITULAR' | 'SUPLENTE' }).assignmentType,
 			id: st.subject.id,
 			code: st.subject.code,
 			name: st.subject.name,
 			yearLevel: st.subject.yearLevel,
 			active: st.subject.active,
 			careers: st.subject.careerSubjects.map((cs) => cs.career)
-		})),
+		})) satisfies AssignedSubject[],
 		availableSubjects,
 		availableSubjectsByCareer,
 		teacherLocation: {

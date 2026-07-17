@@ -34,24 +34,28 @@
 		}>;
 	}
 
+	type Subject = SubjectByCareer['subjects'][number];
+
 	// Obtener años únicos
 	const availableYears = $derived(
 		data.availableSubjectsByCareer
-			.flatMap((career) => career.subjects.map((s) => s.yearLevel))
-			.filter((year, index, self) => self.indexOf(year) === index)
-			.sort((a, b) => a - b)
+			.flatMap((career: { subjects: Array<{ yearLevel: number }> }) =>
+				career.subjects.map((s) => s.yearLevel)
+			)
+			.filter((year: number, index: number, self: number[]) => self.indexOf(year) === index)
+			.sort((a: number, b: number) => a - b)
 	);
 
 	// Filtrar materias
 	const filteredSubjectsByCareer = $derived(
 		data.availableSubjectsByCareer
-			.filter((career) => {
+			.filter((career: SubjectByCareer) => {
 				if (selectedCareerId && career.careerId !== selectedCareerId) return false;
 				return true;
 			})
-			.map((career) => ({
+			.map((career: SubjectByCareer) => ({
 				...career,
-				subjects: career.subjects.filter((subject) => {
+				subjects: career.subjects.filter((subject: Subject) => {
 					if (selectedYear && subject.yearLevel !== parseInt(selectedYear)) return false;
 					if (searchQuery) {
 						const query = searchQuery.toLowerCase();
@@ -63,7 +67,7 @@
 					return true;
 				})
 			}))
-			.filter((career) => career.subjects.length > 0)
+			.filter((career: SubjectByCareer) => career.subjects.length > 0)
 	);
 
 	// Asignar materia
@@ -82,7 +86,7 @@
 		editingAssignmentType = {
 			subjectId: subject.subjectId,
 			subjectName: subject.name,
-			currentType: (subject as any).assignmentType || 'TITULAR'
+			currentType: subject.assignmentType || 'TITULAR'
 		};
 	}
 
@@ -168,9 +172,7 @@
 									</p>
 									<p class="text-sm text-slate-400">
 										Condición: <span class="font-medium text-white"
-											>{(subject as any).assignmentType === 'TITULAR'
-												? 'Titular'
-												: 'Suplente'}</span
+											>{subject.assignmentType === 'TITULAR' ? 'Titular' : 'Suplente'}</span
 										>
 									</p>
 								</div>

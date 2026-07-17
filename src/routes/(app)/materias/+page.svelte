@@ -1,14 +1,13 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import type { PageData, ActionData } from './$types';
 	import { enhance } from '$app/forms';
 	import { canManageSubjects } from '$lib/client/permissions';
 
-	let { data, form }: { data: PageData; form?: any } = $props();
+	let { data, form }: { data: PageData; form?: ActionData } = $props();
 
 	const subjects = $derived(data?.subjects ?? []);
 	const filters = $derived(data?.filters ?? {});
 	const subjectTypes = $derived(data?.subjectTypes ?? []);
-	const trainingFields = $derived(data?.trainingFields ?? []);
 	const accreditationModes = $derived(data?.accreditationModes ?? []);
 	const yearLevels = $derived(data?.yearLevels ?? [1, 2, 3, 4, 5, 6, 7]);
 
@@ -65,7 +64,6 @@
 			filters.search ||
 			filters.yearLevel ||
 			filters.subjectType ||
-			filters.trainingField ||
 			filters.accreditationMode ||
 			filters.active
 		)
@@ -169,22 +167,6 @@
 					{#each subjectTypes as type}
 						<option value={type} selected={filters.subjectType === type}>
 							{subjectTypeLabels[type] || type}
-						</option>
-					{/each}
-				</select>
-			</div>
-
-			<div>
-				<label for="trainingField" class="sr-only">Filtrar por campo</label>
-				<select
-					id="trainingField"
-					name="trainingField"
-					class="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-300 transition-all outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
-				>
-					<option value="">Todos los campos</option>
-					{#each trainingFields as field}
-						<option value={field} selected={filters.trainingField === field}>
-							{trainingFieldLabels[field] || field}
 						</option>
 					{/each}
 				</select>

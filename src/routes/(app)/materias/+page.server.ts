@@ -8,12 +8,20 @@ export const load: PageServerLoad = async ({ url }) => {
 	const search = url.searchParams.get('search') || '';
 	const yearLevel = url.searchParams.get('yearLevel') || '';
 	const subjectType = url.searchParams.get('subjectType') || '';
-	const trainingField = url.searchParams.get('trainingField') || '';
 	const accreditationMode = url.searchParams.get('accreditationMode') || '';
 	const active = url.searchParams.get('active') || '';
 
 	// Construir where clause
-	const where: any = {};
+	const where: {
+		OR?: Array<
+			| { name: { contains: string; mode: 'insensitive' } }
+			| { code: { contains: string; mode: 'insensitive' } }
+		>;
+		yearLevel?: number;
+		subjectType?: SubjectType;
+		accreditationMode?: AccreditationMode;
+		active?: boolean;
+	} = {};
 
 	// Search condition
 	if (search) {
@@ -30,10 +38,6 @@ export const load: PageServerLoad = async ({ url }) => {
 
 	if (subjectType) {
 		where.subjectType = subjectType as SubjectType;
-	}
-
-	if (trainingField) {
-		where.trainingField = trainingField as TrainingField;
 	}
 
 	if (accreditationMode) {
@@ -75,13 +79,11 @@ export const load: PageServerLoad = async ({ url }) => {
 			search,
 			yearLevel,
 			subjectType,
-			trainingField,
 			accreditationMode,
 			active
 		},
 		// Opciones para filtros
 		subjectTypes: Object.values(SubjectType),
-		trainingFields: Object.values(TrainingField),
 		accreditationModes: Object.values(AccreditationMode),
 		yearLevels: [1, 2, 3, 4, 5, 6, 7]
 	};

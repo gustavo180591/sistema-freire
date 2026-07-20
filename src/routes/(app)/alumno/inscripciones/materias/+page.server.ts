@@ -1,10 +1,11 @@
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
-import { redirect, fail } from '@sveltejs/kit';
+import { redirect, fail, error } from '@sveltejs/kit';
 import { canStudentEnroll, getAvailableSubjects } from '$lib/server/academic/plan-logic';
 import { auditLog } from '$lib/server/audit';
 import { EnrollmentStatus } from '@prisma/client';
 import { assertStudentNotFinanciallyBlocked } from '$lib/server/financial/student-blocking-service';
+import { getCurrentStudentForUser } from '$lib/server/students/current-student-service';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
@@ -19,9 +20,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/dashboard');
 	}
 
-	// Buscar el estudiante asociado al usuario
-	const student = await prisma.student.findFirst({
-		where: { userId: user.id },
+	// Obtener el estudiante asociado al usuario (por userId o DNI)
+	const student = await getCurrentStudentForUser(user.id);
+
+	// Cargar datos adicionales del estudiante
+	const studentWithRelations = await prisma.student.findUnique({
+		where: { id: student.id },
 		include: {
 			career: {
 				include: {
@@ -35,8 +39,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	if (!student) {
-		throw redirect(303, '/dashboard');
+	if (!studentWithRelations) {
+		throw error(404, 'No se encontraron datos del estudiante');
 	}
 
 	// Obtener período lectivo activo
@@ -46,12 +50,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	// Obtener materias disponibles usando plan-logic
-	const availableSubjects = await getAvailableSubjects(student.id, student.careerId);
+	const availableSubjects = await getAvailableSubjects(
+		studentWithRelations.id,
+		studentWithRelations.careerId
+	);
 
 	// Obtener inscripciones del alumno en el período actual
 	const enrollments = await prisma.subjectEnrollment.findMany({
 		where: {
-			studentId: student.id,
+			studentId: studentWithRelations.id,
 			...(activeTerm ? { academicTermId: activeTerm.id } : {})
 		}
 	});
@@ -63,7 +70,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			where: {
 				subjectId: subject.subject.id,
 				active: true,
-				OR: [{ careerId: null }, { careerId: student.careerId }],
+				OR: [{ careerId: null }, { careerId: studentWithRelations.careerId }],
 				...(activeTerm ? { academicTermId: activeTerm.id } : {})
 			},
 			include: {
@@ -81,7 +88,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	// Obtener estados académicos del alumno
 	const subjectStatuses = await prisma.studentSubjectStatus.findMany({
-		where: { studentId: student.id },
+		where: { studentId: studentWithRelations.id },
 		include: { subject: true }
 	});
 
@@ -105,11 +112,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		student: {
-			id: student.id,
-			fullName: `${student.firstName} ${student.lastName}`,
-			career: student.career.name,
-			careerId: student.careerId,
-			currentYear: student.currentYear
+			id: studentWithRelations.id,
+			fullName: `${studentWithRelations.firstName} ${studentWithRelations.lastName}`,
+			career: studentWithRelations.career.name,
+			careerId: studentWithRelations.careerId,
+			currentYear: studentWithRelations.currentYear
 		},
 		activeTerm,
 		subjects: subjectsWithStatus,
@@ -137,10 +144,7 @@ export const actions: Actions = {
 		}
 
 		// Buscar el estudiante
-		const student = await prisma.student.findFirst({
-			where: { userId: user.id },
-			include: { career: true }
-		});
+		const student = await getCurrentStudentForUser(user.id);
 
 		if (!student) {
 			return fail(404, { error: 'Alumno no encontrado' });

@@ -17,7 +17,18 @@ const routePermissions: Record<string, string[]> = {
 	'/recibos': [...FULL_ACCESS_ROLES, 'DOCENTE', 'FINANZAS'],
 	'/reportes': [...FULL_ACCESS_ROLES, 'FINANZAS'],
 	'/auditoria': ['SUPERADMIN', 'DIRECTOR'], // Solo admins pueden ver auditoría
-	'/permisos': ['SUPERADMIN'] // Solo SUPERADMIN puede gestionar permisos
+	'/permisos': ['SUPERADMIN'], // Solo SUPERADMIN puede gestionar permisos
+	'/configuracion': FULL_ACCESS_ROLES, // Configuración del sistema
+	'/docentes': FULL_ACCESS_ROLES, // Gestión de docentes
+	'/preceptores': FULL_ACCESS_ROLES, // Gestión de preceptores
+	'/secretarios': FULL_ACCESS_ROLES, // Gestión de secretarios
+	'/directores': FULL_ACCESS_ROLES, // Gestión de directores
+	'/comisiones': FULL_ACCESS_ROLES, // Gestión de comisiones
+	'/correlatividades': FULL_ACCESS_ROLES, // Gestión de correlatividades
+	'/asistencia': FULL_ACCESS_ROLES, // Gestión de asistencia administrativa
+	'/inscripciones': FULL_ACCESS_ROLES, // Gestión de inscripciones administrativa
+	'/preceptor': FULL_ACCESS_ROLES, // Panel de preceptor
+	'/docente': [...FULL_ACCESS_ROLES, 'DOCENTE'] // Panel de docente
 };
 
 export const handle: Handle = async ({ event, resolve }) => {

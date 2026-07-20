@@ -1,6 +1,30 @@
 import type { PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
-import { redirect } from '@sveltejs/kit';
+import { redirect, error } from '@sveltejs/kit';
+import { getStudentBlockingMessage } from '$lib/server/financial/student-blocking-service';
+import { getCurrentStudentForUser } from '$lib/server/students/current-student-service';
+
+interface EnhancedSubject {
+	id: string;
+	subjectId: string;
+	attendancePercent: number;
+	regularityStatus: string;
+	approved: boolean;
+	subject: {
+		id: string;
+		code: string;
+		name: string;
+		yearLevel: number;
+		subjectType: string;
+		accreditationMode: string;
+		approvalThreshold: number;
+		promotionThreshold: number;
+	};
+	isApproved: boolean;
+	isRegular: boolean;
+	pendingCorrelatives: string[];
+	metCorrelatives: string[];
+}
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
@@ -15,109 +39,189 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/dashboard');
 	}
 
-	// Buscar el estudiante asociado al usuario
-	const student = await prisma.student.findFirst({
-		where: { userId: user.id },
+	// Obtener el estudiante asociado al usuario (por userId o DNI)
+	const student = await getCurrentStudentForUser(user.id);
+
+	// Cargar datos adicionales del estudiante
+	const studentWithRelations = await prisma.student.findUnique({
+		where: { id: student.id },
 		include: {
 			career: true,
+			location: true,
 			subjectStatuses: {
 				include: {
-					subject: true
+					subject: {
+						include: {
+							correlatives: {
+								where: {
+									isActive: true,
+									OR: [{ careerId: null }, { careerId: undefined }]
+								},
+								include: {
+									requiredSubject: true
+								}
+							}
+						}
+					}
 				}
 			},
 			studentCharges: true
 		}
 	});
 
-	if (!student) {
-		throw redirect(303, '/dashboard');
+	if (!studentWithRelations) {
+		throw error(404, 'No se encontraron datos del estudiante');
 	}
 
-	// Determinar si el alumno es de primer año
-	const isFirstYear = student.currentYear === 1;
+	// Obtener mensaje de bloqueo financiero
+	const blockingMessage = await getStudentBlockingMessage(studentWithRelations.id);
 
-	let subjects = student.subjectStatuses.map((status) => ({
-		id: status.id,
-		subject: status.subject.name,
-		subjectId: status.subject.id,
-		yearLevel: status.subject.yearLevel,
-		attendancePercent: Number(status.attendancePercent),
-		regularityStatus: status.regularityStatus,
-		approved: status.approved,
-		hasStatus: true
-	}));
-
-	// Si es de primer año, agregar todas las materias de primer año de la carrera
-	if (isFirstYear && student.careerId) {
-		const firstYearSubjects = await prisma.subject.findMany({
-			where: {
-				active: true,
-				yearLevel: 1,
-				careerSubjects: {
-					some: {
-						careerId: student.careerId
-					}
-				}
-			},
-			orderBy: { name: 'asc' }
-		});
-
-		// Agregar materias que no tienen status asignado
-		const subjectIdsWithStatus = new Set(student.subjectStatuses.map((s) => s.subjectId));
-		const subjectsWithoutStatus = firstYearSubjects
-			.filter((s) => !subjectIdsWithStatus.has(s.id))
-			.map((s) => ({
-				id: s.id,
-				subject: s.name,
-				subjectId: s.id,
-				yearLevel: s.yearLevel,
-				attendancePercent: 0,
-				regularityStatus: 'LIBRE' as const,
-				approved: false,
-				hasStatus: false
-			}));
-
-		subjects = [...subjects, ...subjectsWithoutStatus];
-	}
-
-	// Calcular progreso real basado en materias aprobadas
-	const totalCareerSubjects = await prisma.subject.count({
+	// Obtener el plan de estudio activo de la carrera
+	const studyPlan = await prisma.studyPlan.findFirst({
 		where: {
+			careerId: studentWithRelations.careerId,
 			active: true,
-			careerSubjects: {
-				some: {
-					careerId: student.careerId
-				}
-			}
+			isDefault: true
 		}
 	});
 
+	const activeStudyPlan =
+		studyPlan ||
+		(await prisma.studyPlan.findFirst({
+			where: {
+				careerId: studentWithRelations.careerId,
+				active: true
+			},
+			orderBy: {
+				createdAt: 'desc'
+			}
+		}));
+
+	// Obtener materias del plan de estudio
+	const planSubjects = activeStudyPlan
+		? await prisma.planSubject.findMany({
+				where: {
+					planId: activeStudyPlan.id
+				},
+				include: {
+					subject: {
+						include: {
+							correlatives: {
+								where: {
+									isActive: true,
+									OR: [{ careerId: null }, { careerId: undefined }]
+								},
+								include: {
+									requiredSubject: true
+								}
+							}
+						}
+					}
+				},
+				orderBy: {
+					sortOrder: 'asc'
+				}
+			})
+		: [];
+
+	// Obtener IDs de materias aprobadas y regulares del alumno
+	const approvedSubjectIds = studentWithRelations.subjectStatuses
+		.filter((s) => s.approved)
+		.map((s) => s.subjectId);
+	const regularSubjectIds = studentWithRelations.subjectStatuses
+		.filter((s) => s.regularityStatus === 'REGULAR')
+		.map((s) => s.subjectId);
+
+	// Calcular estado de cada materia del plan
+	const subjectsByYear: Record<number, EnhancedSubject[]> = {};
+
+	for (const planSubject of planSubjects) {
+		const subject = planSubject.subject;
+		const subjectStatus = studentWithRelations.subjectStatuses.find(
+			(s) => s.subjectId === subject.id
+		);
+
+		const isApproved = approvedSubjectIds.includes(subject.id);
+		const isRegular = regularSubjectIds.includes(subject.id);
+
+		// Verificar correlatividades
+		let pendingCorrelatives: string[] = [];
+		let metCorrelatives: string[] = [];
+
+		if (subject.correlatives.length > 0) {
+			for (const correlative of subject.correlatives) {
+				const requiredSubjectId = correlative.requiredSubjectId;
+				const isRequiredApproved = approvedSubjectIds.includes(requiredSubjectId);
+				const isRequiredRegular = regularSubjectIds.includes(requiredSubjectId);
+
+				if (isRequiredApproved || isRequiredRegular) {
+					metCorrelatives.push(correlative.requiredSubject.name);
+				} else {
+					pendingCorrelatives.push(correlative.requiredSubject.name);
+				}
+			}
+		}
+
+		const yearLevel = subject.yearLevel;
+		if (!subjectsByYear[yearLevel]) {
+			subjectsByYear[yearLevel] = [];
+		}
+
+		const enhancedSubject: EnhancedSubject = {
+			id: subjectStatus?.id || '',
+			subjectId: subject.id,
+			attendancePercent: subjectStatus ? Number(subjectStatus.attendancePercent) : 0,
+			regularityStatus: subjectStatus?.regularityStatus || 'LIBRE',
+			approved: isApproved,
+			subject: {
+				id: subject.id,
+				code: subject.code,
+				name: subject.name,
+				yearLevel: subject.yearLevel,
+				subjectType: subject.subjectType,
+				accreditationMode: subject.accreditationMode,
+				approvalThreshold: Number(subject.approvalThreshold),
+				promotionThreshold: Number(subject.promotionThreshold)
+			},
+			isApproved,
+			isRegular,
+			pendingCorrelatives,
+			metCorrelatives
+		};
+
+		subjectsByYear[yearLevel].push(enhancedSubject);
+	}
+
+	// Calcular progreso real basado en materias del plan
+	const totalPlanSubjects = planSubjects.length;
+	const approvedCount = approvedSubjectIds.length;
 	const progress =
-		totalCareerSubjects > 0
-			? Math.round((subjects.filter((s) => s.approved).length / totalCareerSubjects) * 100)
-			: 0;
+		totalPlanSubjects > 0 ? Math.round((approvedCount / totalPlanSubjects) * 100) : 0;
 
 	// Calcular deuda financiera real
-	const totalDebt = student.studentCharges.reduce((sum, charge) => {
+	const totalDebt = studentWithRelations.studentCharges.reduce((sum: number, charge) => {
 		return sum + Number(charge.amount) - Number(charge.paidAmount);
 	}, 0);
 
 	return {
 		student: {
-			id: student.id,
-			fullName: `${student.firstName} ${student.lastName}`,
-			dni: student.dni,
-			status: student.status,
-			career: student.career.name,
-			currentYear: student.currentYear
+			id: studentWithRelations.id,
+			fullName: `${studentWithRelations.firstName} ${studentWithRelations.lastName}`,
+			dni: studentWithRelations.dni,
+			status: studentWithRelations.status,
+			career: studentWithRelations.career.name,
+			location: studentWithRelations.location?.name || null,
+			currentYear: studentWithRelations.currentYear,
+			financialBlocked: studentWithRelations.financialBlocked,
+			blockingMessage
 		},
 		academic: {
-			totalSubjects: subjects.length,
-			approvedSubjects: subjects.filter((s) => s.approved).length,
-			regularSubjects: subjects.filter((s) => s.regularityStatus === 'REGULAR').length,
-			freeSubjects: subjects.filter((s) => s.regularityStatus === 'LIBRE').length,
+			totalSubjects: totalPlanSubjects,
+			approvedSubjects: approvedCount,
+			regularSubjects: regularSubjectIds.length,
+			freeSubjects: totalPlanSubjects - approvedCount - regularSubjectIds.length,
 			progress,
-			subjects
+			subjectsByYear
 		},
 		financial: {
 			totalDebt

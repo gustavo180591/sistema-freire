@@ -1,8 +1,9 @@
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
-import { redirect, fail } from '@sveltejs/kit';
+import { redirect, fail, error } from '@sveltejs/kit';
 import { auditLog } from '$lib/server/audit';
 import { EnrollmentStatus } from '@prisma/client';
+import { getCurrentStudentForUser } from '$lib/server/students/current-student-service';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
@@ -17,21 +18,24 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/dashboard');
 	}
 
-	// Buscar el estudiante asociado al usuario
-	const student = await prisma.student.findFirst({
-		where: { userId: user.id },
+	// Obtener el estudiante asociado al usuario (por userId o DNI)
+	const student = await getCurrentStudentForUser(user.id);
+
+	// Cargar datos adicionales del estudiante
+	const studentWithRelations = await prisma.student.findUnique({
+		where: { id: student.id },
 		include: {
 			career: true
 		}
 	});
 
-	if (!student) {
-		throw redirect(303, '/dashboard');
+	if (!studentWithRelations) {
+		throw error(404, 'No se encontraron datos del estudiante');
 	}
 
 	// Obtener inscripciones del alumno
 	const enrollments = await prisma.subjectEnrollment.findMany({
-		where: { studentId: student.id },
+		where: { studentId: studentWithRelations.id },
 		include: {
 			subject: true,
 			commission: {
@@ -55,9 +59,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		student: {
-			id: student.id,
-			fullName: `${student.firstName} ${student.lastName}`,
-			career: student.career.name
+			id: studentWithRelations.id,
+			fullName: `${studentWithRelations.firstName} ${studentWithRelations.lastName}`,
+			career: studentWithRelations.career.name
 		},
 		enrollments: enrollments.map((e) => ({
 			id: e.id,
@@ -132,9 +136,7 @@ export const actions: Actions = {
 		}
 
 		// Buscar el estudiante
-		const student = await prisma.student.findFirst({
-			where: { userId: user.id }
-		});
+		const student = await getCurrentStudentForUser(user.id);
 
 		if (!student) {
 			return fail(404, { error: 'Alumno no encontrado' });

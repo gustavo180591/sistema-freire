@@ -1,6 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
-import { redirect } from '@sveltejs/kit';
+import { redirect, error } from '@sveltejs/kit';
+import { getCurrentStudentForUser } from '$lib/server/students/current-student-service';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
@@ -9,21 +10,25 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/login');
 	}
 
-	const student = await prisma.student.findFirst({
-		where: { userId: user.id },
+	// Obtener el estudiante asociado al usuario (por userId o DNI)
+	const student = await getCurrentStudentForUser(user.id);
+
+	// Cargar datos adicionales del estudiante
+	const studentWithRelations = await prisma.student.findUnique({
+		where: { id: student.id },
 		include: {
 			career: true
 		}
 	});
 
-	if (!student) {
-		throw redirect(303, '/dashboard');
+	if (!studentWithRelations) {
+		throw error(404, 'No se encontraron datos del estudiante');
 	}
 
 	// Obtener estados de materia del estudiante (incluye attendancePercent y regularityStatus calculados)
 	const subjectStatuses = await prisma.studentSubjectStatus.findMany({
 		where: {
-			studentId: student.id
+			studentId: studentWithRelations.id
 		},
 		include: {
 			subject: true
@@ -33,7 +38,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// Obtener entradas de asistencia del estudiante (historial completo)
 	const attendanceEntries = await prisma.attendanceEntry.findMany({
 		where: {
-			studentId: student.id
+			studentId: studentWithRelations.id
 		},
 		include: {
 			attendance: {
@@ -130,9 +135,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		student: {
-			id: student.id,
-			firstName: student.firstName,
-			lastName: student.lastName
+			id: studentWithRelations.id,
+			firstName: studentWithRelations.firstName,
+			lastName: studentWithRelations.lastName
 		},
 		subjects,
 		totalClasses,

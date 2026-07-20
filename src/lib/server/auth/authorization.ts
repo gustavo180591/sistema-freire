@@ -47,6 +47,88 @@ export function requireRoleOrOwnership(
 }
 
 /**
+ * Obtiene el estudiante asociado a un usuario
+ */
+export async function getCurrentStudentFromUser(userId: string) {
+	const student = await prisma.student.findUnique({
+		where: { userId },
+		select: {
+			id: true,
+			dni: true,
+			firstName: true,
+			lastName: true,
+			careerId: true,
+			locationId: true,
+			currentYear: true,
+			status: true,
+			financialBlocked: true
+		}
+	});
+
+	return student;
+}
+
+/**
+ * Verifica que el usuario es propietario del recurso estudiante
+ * Permite acceso si el usuario tiene rol administrativo o es el propio alumno
+ */
+export async function assertStudentOwnsResource(
+	user: App.Locals['user'],
+	studentId: string
+): Promise<void> {
+	if (!user) {
+		throw error(401, 'No autenticado');
+	}
+
+	// Roles con acceso global a datos de estudiantes
+	const adminRoles = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'FINANZAS', 'APODERADO'];
+	if (hasRole(user, adminRoles)) {
+		return;
+	}
+
+	// Alumno solo puede acceder a sus propios datos
+	if (hasRole(user, ['ALUMNO'])) {
+		const student = await prisma.student.findUnique({
+			where: { id: studentId },
+			select: { userId: true }
+		});
+
+		if (!student) {
+			throw error(404, 'Estudiante no encontrado');
+		}
+
+		if (student.userId !== user.id) {
+			throw error(403, 'No tienes permisos para acceder a este recurso');
+		}
+
+		return;
+	}
+
+	throw error(403, 'No autorizado');
+}
+
+/**
+ * Verifica que el usuario puede acceder a sus propios datos de estudiante
+ */
+export async function assertCanAccessOwnStudentData(user: App.Locals['user']): Promise<string> {
+	if (!user) {
+		throw error(401, 'No autenticado');
+	}
+
+	if (!hasRole(user, ['ALUMNO'])) {
+		throw error(403, 'Solo los alumnos pueden acceder a esta función');
+	}
+
+	const student = await getCurrentStudentFromUser(user.id);
+
+	if (!student) {
+		throw error(404, 'No se encontró el registro de estudiante asociado');
+	}
+
+	return student.id;
+}
+
+/**
  * Obtiene los IDs de localidades permitidos para un usuario
  * Roles con acceso global a todas las localidades: SUPERADMIN, DIRECTOR, SECRETARIA, FINANZAS, APODERADO
  * Otros roles (DOCENTE, PRECEPTOR, ALUMNO) solo ven sus localidades asignadas

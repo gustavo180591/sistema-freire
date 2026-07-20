@@ -1,7 +1,8 @@
 import type { PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
-import { redirect } from '@sveltejs/kit';
+import { redirect, error } from '@sveltejs/kit';
 import { getStudentBlockingMessage } from '$lib/server/financial/student-blocking-service';
+import { getCurrentStudentForUser } from '$lib/server/students/current-student-service';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
@@ -16,9 +17,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/dashboard');
 	}
 
-	// Buscar el estudiante asociado al usuario
-	const student = await prisma.student.findFirst({
-		where: { userId: user.id },
+	// Obtener el estudiante asociado al usuario (por userId o DNI)
+	const student = await getCurrentStudentForUser(user.id);
+
+	// Cargar datos adicionales del estudiante
+	const studentWithRelations = await prisma.student.findUnique({
+		where: { id: student.id },
 		include: {
 			career: true,
 			subjectStatuses: {
@@ -34,12 +38,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	if (!student) {
-		throw redirect(303, '/dashboard');
+	if (!studentWithRelations) {
+		throw error(404, 'No se encontraron datos del estudiante');
 	}
 
 	// Cargar evaluaciones de las materias del alumno (nuevo modelo)
-	const subjectIds = student.subjectStatuses.map((s) => s.subjectId);
+	const subjectIds = studentWithRelations.subjectStatuses.map((s) => s.subjectId);
 	const evaluations = await prisma.evaluation.findMany({
 		where: {
 			subjectId: { in: subjectIds },
@@ -53,10 +57,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	// Determinar si el alumno es de primer año
-	const isFirstYear = student.currentYear === 1;
+	const isFirstYear = studentWithRelations.currentYear === 1;
 
 	// Calcular todas las materias (como en historial)
-	let allSubjects = student.subjectStatuses.map((status) => ({
+	let allSubjects = studentWithRelations.subjectStatuses.map((status) => ({
 		id: status.id,
 		subject: status.subject.name,
 		subjectId: status.subject.id,
@@ -68,14 +72,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 	}));
 
 	// Si es de primer año, agregar todas las materias de primer año de la carrera
-	if (isFirstYear && student.careerId) {
+	if (isFirstYear && studentWithRelations.careerId) {
 		const firstYearSubjects = await prisma.subject.findMany({
 			where: {
 				active: true,
 				yearLevel: 1,
 				careerSubjects: {
 					some: {
-						careerId: student.careerId
+						careerId: studentWithRelations.careerId
 					}
 				}
 			},
@@ -83,7 +87,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		});
 
 		// Agregar materias que no tienen status asignado
-		const subjectIdsWithStatus = new Set(student.subjectStatuses.map((s) => s.subjectId));
+		const subjectIdsWithStatus = new Set(
+			studentWithRelations.subjectStatuses.map((s) => s.subjectId)
+		);
 		const subjectsWithoutStatus = firstYearSubjects
 			.filter((s) => !subjectIdsWithStatus.has(s.id))
 			.map((s) => ({
@@ -114,21 +120,24 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const currentSubjects = allSubjects.filter((s) => s.regularityStatus === 'LIBRE');
 
 	// Calcular deuda total
-	const totalDebt = student.studentCharges.reduce((acc, charge) => acc + Number(charge.amount), 0);
+	const totalDebt = studentWithRelations.studentCharges.reduce(
+		(acc: number, charge) => acc + Number(charge.amount),
+		0
+	);
 
 	// Verificar si el alumno está bloqueado financieramente
-	const blockingMessage = await getStudentBlockingMessage(student.id);
+	const blockingMessage = await getStudentBlockingMessage(studentWithRelations.id);
 
 	return {
 		student: {
-			id: student.id,
-			dni: student.dni,
-			firstName: student.firstName,
-			lastName: student.lastName,
-			fullName: `${student.firstName} ${student.lastName}`,
-			career: student.career?.name || 'Sin carrera',
-			status: student.status,
-			financialBlocked: student.financialBlocked,
+			id: studentWithRelations.id,
+			dni: studentWithRelations.dni,
+			firstName: studentWithRelations.firstName,
+			lastName: studentWithRelations.lastName,
+			fullName: `${studentWithRelations.firstName} ${studentWithRelations.lastName}`,
+			career: studentWithRelations.career?.name || 'Sin carrera',
+			status: studentWithRelations.status,
+			financialBlocked: studentWithRelations.financialBlocked,
 			blockingMessage
 		},
 		academic: {
@@ -155,7 +164,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		},
 		finances: {
 			totalDebt,
-			charges: student.studentCharges.slice(0, 5) // Últimos 5 cargos
+			charges: studentWithRelations.studentCharges.slice(0, 5) // Últimos 5 cargos
 		},
 		evaluations: evaluations.map((e) => ({
 			id: e.id,

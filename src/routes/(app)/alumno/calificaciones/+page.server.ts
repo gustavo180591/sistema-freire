@@ -1,7 +1,8 @@
 import type { PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
-import { redirect } from '@sveltejs/kit';
+import { redirect, error } from '@sveltejs/kit';
 import { CorrelativeType } from '@prisma/client';
+import { getCurrentStudentForUser } from '$lib/server/students/current-student-service';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
@@ -10,8 +11,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/login');
 	}
 
-	const student = await prisma.student.findFirst({
-		where: { userId: user.id },
+	// Obtener el estudiante asociado al usuario (por userId o DNI)
+	const student = await getCurrentStudentForUser(user.id);
+
+	// Cargar datos adicionales del estudiante
+	const studentWithRelations = await prisma.student.findUnique({
+		where: { id: student.id },
 		include: {
 			career: true,
 			grades: {
@@ -34,14 +39,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	if (!student) {
-		throw redirect(303, '/dashboard');
+	if (!studentWithRelations) {
+		throw error(404, 'No se encontraron datos del estudiante');
 	}
 
 	// Agrupar calificaciones por materia (nuevo modelo Grade → Evaluation → Subject)
 	const gradesBySubject = new Map();
 
-	for (const grade of student.grades) {
+	for (const grade of studentWithRelations.grades) {
 		const subjectName = grade.evaluation?.subject?.name || 'Sin materia';
 		const key = subjectName;
 
@@ -76,7 +81,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	// Incluir materias sin calificaciones pero con estado (nuevos campos)
-	const subjectStatuses = student.subjectStatuses.map((status) => ({
+	const subjectStatuses = studentWithRelations.subjectStatuses.map((status) => ({
 		subject: status.subject.name,
 		status: status.regularityStatus,
 		approved: status.approved,
@@ -92,7 +97,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 	}));
 
 	// Calcular promedio general (solo notas PRESENT con valor)
-	const validGrades = student.grades.filter((g) => g.status === 'PRESENT' && g.value !== null);
+	const validGrades = studentWithRelations.grades.filter(
+		(g) => g.status === 'PRESENT' && g.value !== null
+	);
 	const allGrades = validGrades.map((g) => Number(g.value));
 	const overallAverage =
 		allGrades.length > 0
@@ -100,26 +107,26 @@ export const load: PageServerLoad = async ({ locals }) => {
 			: 0;
 
 	// Obtener materias que puede cursar basado en correlatividades
-	const approvedSubjectIds = student.subjectStatuses
+	const approvedSubjectIds = studentWithRelations.subjectStatuses
 		.filter((s) => s.approved)
 		.map((s) => s.subjectId);
 
-	const regularSubjectIds = student.subjectStatuses
+	const regularSubjectIds = studentWithRelations.subjectStatuses
 		.filter((s) => s.regularityStatus === 'REGULAR')
 		.map((s) => s.subjectId);
 
 	// Obtener todas las materias de la carrera para el año actual del alumno
 	const careerSubjects = await prisma.careerSubject.findMany({
 		where: {
-			careerId: student.careerId,
-			yearLevel: student.currentYear
+			careerId: studentWithRelations.careerId,
+			yearLevel: studentWithRelations.currentYear
 		},
 		include: {
 			subject: {
 				include: {
 					correlatives: {
 						where: {
-							careerId: student.careerId,
+							careerId: studentWithRelations.careerId,
 							isActive: true
 						}
 					}
@@ -169,16 +176,16 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		student: {
-			id: student.id,
-			firstName: student.firstName,
-			lastName: student.lastName,
-			currentYear: student.currentYear
+			id: studentWithRelations.id,
+			firstName: studentWithRelations.firstName,
+			lastName: studentWithRelations.lastName,
+			currentYear: studentWithRelations.currentYear
 		},
 		subjects,
 		subjectStatuses,
 		overallAverage,
 		totalGrades: allGrades.length,
-		approvedCount: student.subjectStatuses.filter((s) => s.approved).length,
+		approvedCount: studentWithRelations.subjectStatuses.filter((s) => s.approved).length,
 		availableSubjects
 	};
 };

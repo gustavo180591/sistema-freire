@@ -512,9 +512,12 @@ export async function updateSchedule(id: string, input: Partial<ScheduleInput>) 
 				subjectId: existing.subjectId,
 				studyPlanId: existing.studyPlanId || undefined,
 				commissionId: existing.commissionId || undefined,
-				teacherId: input.teacherId !== undefined ? input.teacherId : (existing.teacherId || undefined),
-				locationId: input.locationId !== undefined ? input.locationId : (existing.locationId || undefined),
-				classroom: input.classroom !== undefined ? input.classroom : (existing.classroom || undefined),
+				teacherId:
+					input.teacherId !== undefined ? input.teacherId : existing.teacherId || undefined,
+				locationId:
+					input.locationId !== undefined ? input.locationId : existing.locationId || undefined,
+				classroom:
+					input.classroom !== undefined ? input.classroom : existing.classroom || undefined,
 				observations: existing.observations || undefined,
 				yearLevel: input.yearLevel !== undefined ? input.yearLevel : existing.yearLevel,
 				dayOfWeek: input.dayOfWeek || existing.dayOfWeek,

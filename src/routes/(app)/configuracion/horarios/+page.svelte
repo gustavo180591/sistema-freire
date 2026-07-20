@@ -40,7 +40,7 @@
 
 	const locations = $derived(data?.locations ?? []);
 	const careers = $derived(data?.careers ?? []);
-	const schedules = $derived(data?.schedules ?? {} as Record<string, CareerData>);
+	const schedules = $derived(data?.schedules ?? ({} as Record<string, CareerData>));
 	const filters = $derived(data?.filters ?? {});
 
 	let selectedLocation = $state((filters.locationId as string) || '');

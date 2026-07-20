@@ -33,10 +33,33 @@
 		}
 	}
 
-	function getApprovedBadge(approved: boolean): string {
-		return approved
-			? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-			: 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+	function getStatusBadgeColor(subject: (typeof academic.subjectsByYear)[number][number]): string {
+		if (subject.isApproved) {
+			return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+		}
+		if (subject.isRegular) {
+			return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+		}
+		if (subject.regularityStatus === 'LIBRE') {
+			return 'bg-red-500/20 text-red-400 border-red-500/30';
+		}
+		return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+	}
+
+	function getStatusText(subject: (typeof academic.subjectsByYear)[number][number]): string {
+		if (subject.isApproved) return 'APROBADA';
+		if (subject.isRegular) return 'REGULAR';
+		if (subject.regularityStatus === 'LIBRE') return 'LIBRE';
+		return subject.regularityStatus;
+	}
+
+	function getAccreditationModeLabel(mode: string): string {
+		const labels: Record<string, string> = {
+			EXAMEN_FINAL: 'Examen Final',
+			PROMOCION: 'Promoción',
+			REGULARIDAD: 'Regularidad'
+		};
+		return labels[mode] || mode;
 	}
 </script>
 
@@ -56,10 +79,20 @@
 				</h1>
 				<p class="mt-3 text-sm text-slate-400">
 					DNI: {student.dni} · {student.career} · {student.currentYear}° Año
+					{#if student.location}
+						· {student.location}
+					{/if}
 				</p>
 				<div class="mt-4 inline-flex rounded-full border border-slate-700 px-4 py-2 text-sm">
 					{student.status}
 				</div>
+				{#if student.financialBlocked && student.blockingMessage}
+					<div
+						class="mt-3 rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400"
+					>
+						{student.blockingMessage}
+					</div>
+				{/if}
 			</div>
 			<div class="flex flex-wrap gap-2">
 				<a
@@ -124,47 +157,61 @@
 		</div>
 	</section>
 
-	<!-- Historial -->
-	<section class="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70">
-		<table class="w-full text-left">
-			<thead class="border-b border-slate-800 bg-slate-900">
-				<tr>
-					<th class="px-6 py-4 text-sm font-semibold">Materia</th>
-					<th class="px-6 py-4 text-sm font-semibold">Año</th>
-					<th class="px-6 py-4 text-sm font-semibold">Asistencia</th>
-					<th class="px-6 py-4 text-sm font-semibold">Regularidad</th>
-					<th class="px-6 py-4 text-sm font-semibold">Aprobada</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each academic.subjects as subject}
-					<tr class="border-b border-slate-800 last:border-none">
-						<td class="px-6 py-4 font-medium">{subject.subject}</td>
-						<td class="px-6 py-4">{subject.yearLevel}°</td>
-						<td class="px-6 py-4">
-							<span class="font-semibold {getAttendanceColor(subject.attendancePercent)}">
-								{subject.attendancePercent}%
-							</span>
-						</td>
-						<td class="px-6 py-4">
-							<span
-								class="rounded-full border px-3 py-1 text-xs {getRegularityBadgeColor(
-									subject.regularityStatus
-								)}"
-							>
-								{subject.regularityStatus}
-							</span>
-						</td>
-						<td class="px-6 py-4">
-							<span
-								class="rounded-full border px-3 py-1 text-xs {getApprovedBadge(subject.approved)}"
-							>
-								{subject.approved ? 'Sí' : 'No'}
-							</span>
-						</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-	</section>
+	<!-- Historial por año -->
+	{#each Object.entries(academic.subjectsByYear).sort((a, b) => Number(a[0]) - Number(b[0])) as [yearStr, subjects]}
+		{@const year = Number(yearStr)}
+		<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+			<h2 class="mb-4 text-2xl font-bold">Año {year}</h2>
+			<div class="overflow-x-auto">
+				<table class="w-full text-left">
+					<thead class="border-b border-slate-800 bg-slate-900">
+						<tr>
+							<th class="px-4 py-3 text-sm font-semibold">Código</th>
+							<th class="px-4 py-3 text-sm font-semibold">Materia</th>
+							<th class="px-4 py-3 text-sm font-semibold">Estado</th>
+							<th class="px-4 py-3 text-sm font-semibold">Asistencia</th>
+							<th class="px-4 py-3 text-sm font-semibold">Modalidad</th>
+							<th class="px-4 py-3 text-sm font-semibold">Correlativas</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each subjects as subject}
+							<tr class="border-b border-slate-800 last:border-none">
+								<td class="px-4 py-3 font-mono text-sm">{subject.subject.code}</td>
+								<td class="px-4 py-3 font-medium">{subject.subject.name}</td>
+								<td class="px-4 py-3">
+									<span
+										class="rounded-full border px-3 py-1 text-xs {getStatusBadgeColor(subject)}"
+									>
+										{getStatusText(subject)}
+									</span>
+								</td>
+								<td class="px-4 py-3">
+									<span class="font-semibold {getAttendanceColor(subject.attendancePercent)}">
+										{subject.attendancePercent}%
+									</span>
+								</td>
+								<td class="px-4 py-3 text-sm">
+									{getAccreditationModeLabel(subject.subject.accreditationMode)}
+								</td>
+								<td class="px-4 py-3 text-sm">
+									{#if subject.pendingCorrelatives.length > 0}
+										<div class="text-red-400">
+											Pendientes: {subject.pendingCorrelatives.join(', ')}
+										</div>
+									{:else if subject.metCorrelatives.length > 0}
+										<div class="text-emerald-400">
+											Cumplidas: {subject.metCorrelatives.join(', ')}
+										</div>
+									{:else}
+										<span class="text-slate-500">Sin correlativas</span>
+									{/if}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		</section>
+	{/each}
 </div>

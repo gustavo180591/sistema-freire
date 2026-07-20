@@ -44,6 +44,38 @@
 			]
 		},
 		{
+			category: 'Mis Estudios',
+			collapsible: true,
+			items: [
+				{ label: 'Perfil', href: '/alumno/perfil', icon: 'user-circle', roles: ['ALUMNO'] },
+				{
+					label: 'Historial',
+					href: '/alumno/historial',
+					icon: 'graduation-cap',
+					roles: ['ALUMNO']
+				},
+				{
+					label: 'Asistencia',
+					href: '/alumno/asistencia',
+					icon: 'clipboard-user',
+					roles: ['ALUMNO']
+				},
+				{
+					label: 'Calificaciones',
+					href: '/alumno/calificaciones',
+					icon: 'book-open',
+					roles: ['ALUMNO']
+				},
+				{
+					label: 'Inscripciones',
+					href: '/alumno/inscripciones',
+					icon: 'diagram-project',
+					roles: ['ALUMNO']
+				},
+				{ label: 'Finanzas', href: '/alumno/finanzas', icon: 'coins', roles: ['ALUMNO'] }
+			]
+		},
+		{
 			category: 'Académico',
 			collapsible: true,
 			items: [
@@ -88,6 +120,12 @@
 					href: '/materias',
 					icon: 'book-open',
 					roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE']
+				},
+				{
+					label: 'Comisiones',
+					href: '/comisiones',
+					icon: 'users',
+					roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO']
 				},
 				{
 					label: 'Correlatividades',

@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
+import { checkAndExpireScholarshipsForStudent } from '$lib/server/financial/scholarship-expiration-service';
 
 export const load: PageServerLoad = async () => {
 	const students = await prisma.student.findMany({
@@ -29,7 +30,7 @@ export const load: PageServerLoad = async () => {
 };
 
 export const actions: Actions = {
-	create: async ({ request }) => {
+	create: async ({ request, locals }) => {
 		const form = await request.formData();
 
 		const studentId = String(form.get('studentId') ?? '');
@@ -48,6 +49,15 @@ export const actions: Actions = {
 			return fail(400, {
 				message: 'Alumno e importe son obligatorios'
 			});
+		}
+
+		// Expirar becas vencidas antes de registrar pago
+		if (locals.user) {
+			await checkAndExpireScholarshipsForStudent(
+				studentId,
+				locals.user.id,
+				`${locals.user.firstName} ${locals.user.lastName}`
+			);
 		}
 
 		const pendingCharges = await prisma.studentCharge.findMany({

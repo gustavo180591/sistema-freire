@@ -12,6 +12,7 @@ import {
 	updateStudentFinancialBlockStatus,
 	shouldBlockStudent
 } from '$lib/server/financial/student-blocking-service';
+import { checkAndExpireScholarshipsForStudent } from '$lib/server/financial/scholarship-expiration-service';
 
 /**
  * Genera cuotas mensuales faltantes desde el inicio del ciclo lectivo hasta el mes actual
@@ -163,6 +164,15 @@ async function generateMissingMonthlyCharges(
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	await requireFinancialAccess(locals.user, params.id);
+
+	// Expirar becas vencidas por pago fuera de término antes de cargar datos
+	if (locals.user) {
+		await checkAndExpireScholarshipsForStudent(
+			params.id,
+			locals.user.id,
+			`${locals.user.firstName} ${locals.user.lastName}`
+		);
+	}
 
 	const student = await prisma.student.findUniqueOrThrow({
 		where: { id: params.id },

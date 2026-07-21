@@ -9,7 +9,15 @@ export const load: PageServerLoad = async () => {
 			user: true,
 			subjects: {
 				include: {
-					subject: true
+					subject: {
+						include: {
+							commissions: {
+								include: {
+									location: true
+								}
+							}
+						}
+					}
 				}
 			}
 		},
@@ -21,35 +29,56 @@ export const load: PageServerLoad = async () => {
 			user: true;
 			subjects: {
 				include: {
-					subject: true;
+					subject: {
+						include: {
+							commissions: {
+								include: {
+									location: true;
+								};
+							};
+						};
+					};
 				};
 			};
 		};
 	}>;
 
 	return {
-		teachers: teachers.map((t: TeacherWithRelations) => ({
-			id: t.id,
-			userId: t.userId,
-			dni: t.dni,
-			firstName: t.firstName,
-			lastName: t.lastName,
-			email: t.user.email,
-			createdAt: t.createdAt,
-			subjects: t.subjects.map((st) => ({
-				id: st.subject.id,
-				code: st.subject.code,
-				name: st.subject.name,
-				yearLevel: st.subject.yearLevel,
-				active: st.subject.active,
-				approvalThreshold: st.subject.approvalThreshold
-					? Number(st.subject.approvalThreshold)
-					: null,
-				promotionThreshold: st.subject.promotionThreshold
-					? Number(st.subject.promotionThreshold)
-					: null
-			}))
-		}))
+		teachers: teachers.map((t: TeacherWithRelations) => {
+			// Obtener localidades únicas de las materias del docente
+			const locations = new Set<string>();
+			t.subjects.forEach((st) => {
+				st.subject.commissions.forEach((comm) => {
+					if (comm.location) {
+						locations.add(comm.location.name);
+					}
+				});
+			});
+
+			return {
+				id: t.id,
+				userId: t.userId,
+				dni: t.dni,
+				firstName: t.firstName,
+				lastName: t.lastName,
+				email: t.user.email,
+				createdAt: t.createdAt,
+				locations: Array.from(locations),
+				subjects: t.subjects.map((st) => ({
+					id: st.subject.id,
+					code: st.subject.code,
+					name: st.subject.name,
+					yearLevel: st.subject.yearLevel,
+					active: st.subject.active,
+					approvalThreshold: st.subject.approvalThreshold
+						? Number(st.subject.approvalThreshold)
+						: null,
+					promotionThreshold: st.subject.promotionThreshold
+						? Number(st.subject.promotionThreshold)
+						: null
+				}))
+			};
+		})
 	};
 };
 

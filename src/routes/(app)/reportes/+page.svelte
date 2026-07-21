@@ -35,7 +35,7 @@
 			},
 			{
 				id: 'salary-receipts',
-				title: 'Recibos de sueldo docentes',
+				title: 'Recibos de sueldo',
 				description: 'Acceso al portal externo de recibos de sueldo generado por el liquidador.',
 				format: 'PDF',
 				href: PAYSLLIP_PORTAL_URL || '#',

@@ -9,15 +9,12 @@ export const load: PageServerLoad = async () => {
 			user: true,
 			subjects: {
 				include: {
-					subject: {
-						include: {
-							commissions: {
-								include: {
-									location: true
-								}
-							}
-						}
-					}
+					subject: true
+				}
+			},
+			commissions: {
+				include: {
+					location: true
 				}
 			}
 		},
@@ -29,15 +26,12 @@ export const load: PageServerLoad = async () => {
 			user: true;
 			subjects: {
 				include: {
-					subject: {
-						include: {
-							commissions: {
-								include: {
-									location: true;
-								};
-							};
-						};
-					};
+					subject: true;
+				};
+			};
+			commissions: {
+				include: {
+					location: true;
 				};
 			};
 		};
@@ -45,14 +39,12 @@ export const load: PageServerLoad = async () => {
 
 	return {
 		teachers: teachers.map((t: TeacherWithRelations) => {
-			// Obtener localidades únicas de las materias del docente
+			// Obtener localidades únicas de las comisiones donde el docente dicta clases
 			const locations = new Set<string>();
-			t.subjects.forEach((st) => {
-				st.subject.commissions.forEach((comm) => {
-					if (comm.location) {
-						locations.add(comm.location.name);
-					}
-				});
+			t.commissions.forEach((comm) => {
+				if (comm.location) {
+					locations.add(comm.location.name);
+				}
 			});
 
 			return {

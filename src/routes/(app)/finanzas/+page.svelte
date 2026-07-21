@@ -54,8 +54,14 @@
 		>
 			<p class="text-sm text-slate-400">Alumnos con deuda</p>
 			<h2 class="mt-3 text-4xl font-bold">{data?.metrics?.studentsWithDebt ?? 0}</h2>
-			<p class="mt-2 text-sm text-slate-500">Con posible bloqueo académico</p>
+			<p class="mt-2 text-sm text-slate-500">Con saldo pendiente</p>
 		</a>
+
+		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+			<p class="text-sm text-slate-400">Alumnos bloqueados</p>
+			<h2 class="mt-3 text-4xl font-bold">{data?.metrics?.studentsBlocked ?? 0}</h2>
+			<p class="mt-2 text-sm text-slate-500">Con bloqueo académico activo</p>
+		</div>
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<p class="text-sm text-slate-400">Deuda total</p>
@@ -66,9 +72,21 @@
 		</div>
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<p class="text-sm text-slate-400">Pagos registrados</p>
-			<h2 class="mt-3 text-4xl font-bold">{data?.metrics?.paymentsCount ?? 0}</h2>
-			<p class="mt-2 text-sm text-slate-500">Movimientos cargados en el sistema</p>
+			<p class="text-sm text-slate-400">Deuda vencida</p>
+			<h2 class="mt-3 text-4xl font-bold">
+				{currency.format(formatDecimal(data?.metrics?.overdueDebt ?? 0))}
+			</h2>
+			<p class="mt-2 text-sm text-slate-500">Pagos fuera de término</p>
+		</div>
+	</section>
+
+	<section class="grid gap-4 md:grid-cols-4">
+		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+			<p class="text-sm text-slate-400">Total facturado</p>
+			<h2 class="mt-3 text-4xl font-bold">
+				{currency.format(formatDecimal(data?.metrics?.totalBilled ?? 0))}
+			</h2>
+			<p class="mt-2 text-sm text-slate-500">Suma de todas las cuotas</p>
 		</div>
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
@@ -77,6 +95,32 @@
 				{currency.format(formatDecimal(data?.metrics?.totalCollected ?? 0))}
 			</h2>
 			<p class="mt-2 text-sm text-slate-500">Ingresos registrados</p>
+		</div>
+
+		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+			<p class="text-sm text-slate-400">Pagos hoy</p>
+			<h2 class="mt-3 text-4xl font-bold">{data?.metrics?.paymentsToday ?? 0}</h2>
+			<p class="mt-2 text-sm text-slate-500">Registrados en el día</p>
+		</div>
+
+		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+			<p class="text-sm text-slate-400">Pagos este mes</p>
+			<h2 class="mt-3 text-4xl font-bold">{data?.metrics?.paymentsCount ?? 0}</h2>
+			<p class="mt-2 text-sm text-slate-500">Movimientos del mes actual</p>
+		</div>
+	</section>
+
+	<section class="grid gap-4 md:grid-cols-2">
+		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+			<p class="text-sm text-slate-400">Recibos emitidos</p>
+			<h2 class="mt-3 text-4xl font-bold">{data?.metrics?.receiptsIssued ?? 0}</h2>
+			<p class="mt-2 text-sm text-slate-500">Comprobantes generados</p>
+		</div>
+
+		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+			<p class="text-sm text-slate-400">Recibos cancelados</p>
+			<h2 class="mt-3 text-4xl font-bold">{data?.metrics?.receiptsCancelled ?? 0}</h2>
+			<p class="mt-2 text-sm text-slate-500">Comprobantes anulados</p>
 		</div>
 	</section>
 

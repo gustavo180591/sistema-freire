@@ -42,6 +42,7 @@
 		PAID: 'Pagado',
 		OVERDUE: 'Vencido',
 		CANCELLED: 'Cancelado',
+		PARTIAL: 'Parcial',
 		PARTIALLY_PAID: 'Parcialmente pagado'
 	};
 

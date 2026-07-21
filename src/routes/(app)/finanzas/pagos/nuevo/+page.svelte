@@ -32,6 +32,8 @@
 	>([]);
 
 	let selectedChargeIds = $state<Set<string>>(new Set());
+	let editedAmounts = $state<Record<string, number>>({});
+	let editingChargeId = $state<string | null>(null);
 
 	const currency = new Intl.NumberFormat('es-AR', {
 		style: 'currency',
@@ -49,7 +51,10 @@
 	const totalSelected = $derived(() => {
 		return charges
 			.filter((charge) => selectedChargeIds.has(charge.id))
-			.reduce((sum, charge) => sum + charge.pending, 0);
+			.reduce((sum, charge) => {
+				const editedAmount = editedAmounts[charge.id];
+				return sum + (editedAmount !== undefined ? editedAmount : charge.pending);
+			}, 0);
 	});
 
 	// Inicializar con datos del servidor
@@ -125,6 +130,32 @@
 		} else {
 			selectedChargeIds = new Set(charges.map((c) => c.id));
 		}
+		amount = totalSelected();
+	}
+
+	function updateChargeAmount(chargeId: string, value: string) {
+		const numValue = Number(value);
+		if (!isNaN(numValue) && numValue >= 0) {
+			editedAmounts[chargeId] = numValue;
+			amount = totalSelected();
+		}
+	}
+
+	function getChargeAmount(chargeId: string, originalAmount: number): number {
+		return editedAmounts[chargeId] !== undefined ? editedAmounts[chargeId] : originalAmount;
+	}
+
+	function startEditing(chargeId: string) {
+		editingChargeId = chargeId;
+	}
+
+	function saveEditing(chargeId: string) {
+		editingChargeId = null;
+	}
+
+	function cancelEditing(chargeId: string) {
+		editingChargeId = null;
+		delete editedAmounts[chargeId];
 		amount = totalSelected();
 	}
 </script>
@@ -240,11 +271,18 @@
 					<p>Seleccioná un alumno para ver sus cargos pendientes.</p>
 				{:else}
 					{#each charges as charge}
-						<button
-							type="button"
-							class="flex w-full items-center justify-between rounded-xl border border-slate-800 px-4 py-3 transition hover:border-slate-600"
+						<div
+							role="button"
+							tabindex="0"
+							class="flex w-full cursor-pointer items-center justify-between rounded-xl border border-slate-800 px-4 py-3 transition hover:border-slate-600"
 							class:border-indigo-600={selectedChargeIds.has(charge.id)}
 							onclick={() => toggleCharge(charge.id)}
+							onkeydown={(e) => {
+								if (e.key === 'Enter' || e.key === ' ') {
+									e.preventDefault();
+									toggleCharge(charge.id);
+								}
+							}}
 						>
 							<div class="flex items-center gap-3">
 								<input
@@ -272,10 +310,63 @@
 								</div>
 							</div>
 							<div class="text-right">
-								<p class="font-semibold text-slate-200">{currency.format(charge.pending)}</p>
+								{#if editingChargeId === charge.id}
+									<div class="flex items-center justify-end gap-2">
+										<input
+											type="number"
+											min="0"
+											step="0.01"
+											value={getChargeAmount(charge.id, charge.pending)}
+											oninput={(e) => {
+												const target = e.target as HTMLInputElement;
+												if (target) {
+													updateChargeAmount(charge.id, target.value);
+												}
+											}}
+											onclick={(e) => e.stopPropagation()}
+											class="w-20 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-right text-sm font-semibold text-slate-200 outline-none focus:border-indigo-500"
+										/>
+										<button
+											type="button"
+											onclick={(e) => {
+												e.stopPropagation();
+												saveEditing(charge.id);
+											}}
+											class="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-500"
+										>
+											✓
+										</button>
+										<button
+											type="button"
+											onclick={(e) => {
+												e.stopPropagation();
+												cancelEditing(charge.id);
+											}}
+											class="rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white hover:bg-red-500"
+										>
+											✕
+										</button>
+									</div>
+								{:else}
+									<div class="flex items-center justify-end gap-2">
+										<p class="font-semibold text-slate-200">
+											{currency.format(getChargeAmount(charge.id, charge.pending))}
+										</p>
+										<button
+											type="button"
+											onclick={(e) => {
+												e.stopPropagation();
+												startEditing(charge.id);
+											}}
+											class="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-400 hover:border-indigo-500 hover:text-indigo-400"
+										>
+											Editar
+										</button>
+									</div>
+								{/if}
 								<p class="text-xs text-slate-500">Pendiente</p>
 							</div>
-						</button>
+						</div>
 					{/each}
 				{/if}
 			</div>

@@ -223,10 +223,46 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const charges = await Promise.all(
 		student.studentCharges.map(async (charge) => {
-			const pending = Number(charge.finalAmount) - Number(charge.paidAmount);
 			const scholarshipApplied = Number(charge.scholarshipApplied);
-			const amount = Number(charge.amount);
-			const finalAmount = Number(charge.finalAmount);
+			let amount = Number(charge.amount);
+			let finalAmount = Number(charge.finalAmount);
+
+			// Si el cargo no está pagado completamente, recalcular monto con configuración actual
+			if (charge.status !== 'PAID' && charge.concept.code === 'CUOTA_MENSUAL') {
+				const periodParts = charge.periodLabel.split('-');
+				if (periodParts.length === 2) {
+					const month = parseInt(periodParts[1], 10);
+					if (!isNaN(month)) {
+						const monthInBenefits = benefitsConfig.benefitsMonths.includes(month);
+
+						// Determinar el monto base según configuración actual
+						let baseAmount: number;
+						if (student.isBecado && monthInBenefits) {
+							baseAmount = benefitsConfig.becadoFeeAmount;
+						} else if (student.isRecursante && monthInBenefits) {
+							baseAmount = benefitsConfig.recursantFeeAmount;
+						} else {
+							baseAmount = benefitsConfig.normalFeeAmount;
+						}
+
+						// Recalcular beneficios con configuración actual
+						const benefitCalculation = calculateChargeBenefit(
+							new Decimal(baseAmount),
+							{ isBecado: student.isBecado, isRecursante: student.isRecursante },
+							charge.installmentNumber || 1,
+							month,
+							benefitsConfig
+						);
+
+						// Usar montos recalculados para display
+						amount = baseAmount;
+						finalAmount = Number(benefitCalculation.finalAmount);
+					}
+				}
+			}
+
+			// Calcular pendiente con el monto recalculado
+			const pending = finalAmount - Number(charge.paidAmount);
 
 			// Determine charge type based on student type, benefit month, and scholarship status
 			let chargeType = 'Cuota Normal';

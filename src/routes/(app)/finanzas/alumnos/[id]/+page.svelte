@@ -3,6 +3,17 @@
 
 	let { data }: { data: PageData } = $props();
 	const { report } = data;
+
+	const statusTranslations: Record<string, string> = {
+		PENDING: 'Pendiente',
+		PAID: 'Pagado',
+		OVERDUE: 'Vencido',
+		CANCELLED: 'Cancelado',
+		PARTIAL: 'Parcial',
+		PARTIALLY_PAID: 'Parcialmente pagado'
+	};
+
+	const translateStatus = (status: string) => statusTranslations[status] || status;
 </script>
 
 <div class="p-6">
@@ -73,7 +84,7 @@
 												? 'bg-yellow-100 text-yellow-800'
 												: 'bg-red-100 text-red-800'}"
 									>
-										{charge.status}
+										{translateStatus(charge.status)}
 									</span>
 								</td>
 							</tr>

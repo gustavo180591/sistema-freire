@@ -28,9 +28,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// Map to UI-expected format (convert Decimal to number for serialization)
 	const metrics = {
 		studentsWithDebt: dashboardMetrics.studentsWithDebt,
+		studentsBlocked: dashboardMetrics.studentsBlocked,
 		totalDebt: Number(dashboardMetrics.totalPending),
+		totalBilled: Number(dashboardMetrics.totalBilled),
+		overdueDebt: Number(dashboardMetrics.overdueDebt),
+		paymentsToday: dashboardMetrics.paymentsToday,
 		paymentsCount: dashboardMetrics.paymentsThisMonth,
-		totalCollected: Number(dashboardMetrics.totalCollected)
+		totalCollected: Number(dashboardMetrics.totalCollected),
+		receiptsIssued: dashboardMetrics.receiptsIssued,
+		receiptsCancelled: dashboardMetrics.receiptsCancelled
 	};
 
 	return {

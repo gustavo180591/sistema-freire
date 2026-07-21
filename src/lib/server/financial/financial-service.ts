@@ -3023,6 +3023,9 @@ export class FinancialService {
 
 		const movementsWithStudent = movements.map((movement) => ({
 			...movement,
+			amount: Number(movement.amount),
+			balanceBefore: Number(movement.balanceBefore),
+			balanceAfter: Number(movement.balanceAfter),
 			student: studentMap.get(movement.studentId)
 		}));
 

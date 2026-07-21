@@ -43,7 +43,7 @@
 				{#if !resettingPassword}
 					<button
 						onclick={() => (resettingPassword = true)}
-						class="rounded-2xl border border-amber-600 bg-amber-950/30 px-6 py-3 font-semibold text-amber-400 transition hover:bg-amber-950/50"
+						class="rounded-2xl border border-amber-700 bg-white px-6 py-3 font-semibold text-slate-950 transition hover:bg-slate-100"
 					>
 						Reestablecer Contraseña
 					</button>

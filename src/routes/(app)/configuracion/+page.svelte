@@ -134,5 +134,28 @@
 				Administrar conceptos de cobro (inscripción, cuotas, etc.)
 			</p>
 		</a>
+
+		<!-- Recibos de Sueldo -->
+		<a
+			href="/configuracion/recibos-sueldo"
+			class="group rounded-3xl border border-slate-800 bg-slate-900/70 p-6 transition hover:border-indigo-500 hover:bg-slate-800/50 dark:border-slate-700 dark:hover:border-indigo-400"
+		>
+			<div
+				class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-500 transition group-hover:bg-cyan-500 group-hover:text-white dark:bg-cyan-500/20 dark:text-cyan-400"
+			>
+				<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+					/>
+				</svg>
+			</div>
+			<h3 class="mb-2 text-xl font-bold text-white">Recibos de Sueldo</h3>
+			<p class="text-sm text-slate-400">
+				Configurar el dominio del portal externo de recibos de sueldo
+			</p>
+		</a>
 	</div>
 </div>

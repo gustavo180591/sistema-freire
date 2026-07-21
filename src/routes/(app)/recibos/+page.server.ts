@@ -3,6 +3,7 @@ import {
 	getPayslipsForUser,
 	getActiveTeachers
 } from '$lib/server/services/payroll/payslip.service';
+import { prisma } from '$lib/server/db/prisma';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const isTeacher = locals.user?.roles.includes('TEACHER');
@@ -20,6 +21,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const currentYear = new Date().getFullYear();
 	const years = [currentYear, currentYear - 1, currentYear - 2];
 
+	// Obtener URL del portal de recibos desde la base de datos
+	const payslipConfig = await prisma.financialConfig.findUnique({
+		where: { key: 'payslip_portal_url' }
+	});
+
 	return {
 		...(await getPayslipsForUser(locals.user)),
 		teachers,
@@ -29,6 +35,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			year,
 			month,
 			status
-		}
+		},
+		payslipPortalUrl: payslipConfig?.value as string | null
 	};
 };

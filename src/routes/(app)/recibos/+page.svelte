@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { PAYSLLIP_PORTAL_URL } from '$lib/config';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
 </script>
 
 <svelte:head>
@@ -50,7 +52,7 @@
 		</div>
 
 		<div class="flex flex-col gap-3 sm:flex-row sm:justify-center">
-			{#if !PAYSLLIP_PORTAL_URL}
+			{#if !data.payslipPortalUrl}
 				<button
 					disabled
 					class="inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-2xl bg-slate-400 px-6 py-3 text-sm font-semibold text-white opacity-50"
@@ -59,7 +61,7 @@
 				</button>
 			{:else}
 				<a
-					href={PAYSLLIP_PORTAL_URL}
+					href={data.payslipPortalUrl}
 					target="_blank"
 					rel="noopener noreferrer"
 					class="inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500"
@@ -84,7 +86,7 @@
 			</a>
 		</div>
 
-		{#if !PAYSLLIP_PORTAL_URL}
+		{#if !data.payslipPortalUrl}
 			<p class="text-xs text-slate-500 dark:text-slate-500">
 				El enlace externo será informado por el liquidador.
 			</p>

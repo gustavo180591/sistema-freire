@@ -1,9 +1,8 @@
 import type { PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
-import { PAYSLLIP_PORTAL_URL } from '$lib/config';
 
 export const load: PageServerLoad = async () => {
-	const [activeStudents, activeSubjects, studentsWithDebt] = await Promise.all([
+	const [activeStudents, activeSubjects, studentsWithDebt, payslipConfig] = await Promise.all([
 		prisma.student.count({
 			where: { status: 'ACTIVE' }
 		}),
@@ -17,10 +16,14 @@ export const load: PageServerLoad = async () => {
 					in: ['PENDING', 'PARTIAL']
 				}
 			}
+		}),
+		prisma.financialConfig.findUnique({
+			where: { key: 'payslip_portal_url' }
 		})
 	]);
 
-	const hasPayslipPortal = Boolean(PAYSLLIP_PORTAL_URL);
+	const payslipPortalUrl = payslipConfig?.value as string | null;
+	const hasPayslipPortal = Boolean(payslipPortalUrl);
 
 	const reports = [
 		{
@@ -46,7 +49,7 @@ export const load: PageServerLoad = async () => {
 			title: 'Recibos de sueldo',
 			description: 'Acceso al portal externo de recibos de sueldo generado por el liquidador.',
 			format: 'PDF',
-			href: PAYSLLIP_PORTAL_URL || '#',
+			href: payslipPortalUrl || '#',
 			status: hasPayslipPortal ? ('external' as const) : ('pending' as const),
 			isExternal: hasPayslipPortal
 		},

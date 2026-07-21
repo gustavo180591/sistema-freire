@@ -12,7 +12,10 @@ import {
 	updateStudentFinancialBlockStatus,
 	shouldBlockStudent
 } from '$lib/server/financial/student-blocking-service';
-import { checkAndExpireScholarshipsForStudent } from '$lib/server/financial/scholarship-expiration-service';
+import {
+	checkAndExpireScholarshipsForStudent,
+	getChargeDueDate
+} from '$lib/server/financial/scholarship-expiration-service';
 
 /**
  * Genera cuotas mensuales faltantes desde el inicio del ciclo lectivo hasta el mes actual
@@ -67,15 +70,9 @@ async function generateMissingMonthlyCharges(
 			// Verificar si este mes está en los meses de beneficios
 			const monthInBenefits = benefitsConfig.benefitsMonths.includes(month);
 
-			// Determinar el monto base según el tipo de alumno
-			let baseAmount: number;
-			if (isBecado && monthInBenefits) {
-				baseAmount = benefitsConfig.becadoFeeAmount;
-			} else if (isRecursante && monthInBenefits) {
-				baseAmount = benefitsConfig.recursantFeeAmount;
-			} else {
-				baseAmount = benefitsConfig.normalFeeAmount;
-			}
+			// Determinar el monto base: siempre usar normalFeeAmount como amount
+			// La beca se aplica como descuento en finalAmount
+			const baseAmount = benefitsConfig.normalFeeAmount;
 
 			// Formatear periodLabel como YYYY-MM
 			const periodLabel = `${year}-${month.toString().padStart(2, '0')}`;
@@ -224,40 +221,67 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		await updateStudentFinancialBlockStatus(student.id);
 	}
 
-	const charges = student.studentCharges.map((charge) => {
-		const pending = Number(charge.finalAmount) - Number(charge.paidAmount);
+	const charges = await Promise.all(
+		student.studentCharges.map(async (charge) => {
+			const pending = Number(charge.finalAmount) - Number(charge.paidAmount);
+			const scholarshipApplied = Number(charge.scholarshipApplied);
+			const amount = Number(charge.amount);
+			const finalAmount = Number(charge.finalAmount);
 
-		// Determine charge type based on student type and benefit month
-		let chargeType = 'Cuota Normal';
-		if (charge.concept.code === 'CUOTA_MENSUAL') {
-			const periodParts = charge.periodLabel.split('-');
-			if (periodParts.length === 2) {
-				const month = parseInt(periodParts[1], 10);
-				if (!isNaN(month) && benefitsConfig.benefitsMonths.includes(month)) {
-					if (student.isBecado) {
-						chargeType = 'Cuota Becado';
-					} else if (student.isRecursante) {
-						chargeType = 'Cuota Recursante';
+			// Determine charge type based on student type, benefit month, and scholarship status
+			let chargeType = 'Cuota Normal';
+			let scholarshipLost = false;
+
+			if (charge.concept.code === 'CUOTA_MENSUAL') {
+				const periodParts = charge.periodLabel.split('-');
+				if (periodParts.length === 2) {
+					const month = parseInt(periodParts[1], 10);
+					if (!isNaN(month) && benefitsConfig.benefitsMonths.includes(month)) {
+						if (student.isBecado) {
+							// Verificar si la beca se perdió (scholarshipApplied es 0 pero amount > finalAmount)
+							if (scholarshipApplied === 0 && amount > finalAmount) {
+								chargeType = 'Beca perdida';
+								scholarshipLost = true;
+							} else if (scholarshipApplied > 0) {
+								chargeType = 'Cuota Becado';
+							}
+						} else if (student.isRecursante) {
+							chargeType = 'Cuota Recursante';
+						}
 					}
 				}
 			}
-		}
 
-		return {
-			id: charge.id,
-			concept: charge.concept.name,
-			conceptCode: charge.concept.code,
-			period: charge.periodLabel,
-			amount: Number(charge.amount),
-			finalAmount: Number(charge.finalAmount),
-			paid: Number(charge.paidAmount),
-			pending,
-			status: charge.status,
-			benefitType: charge.benefitType,
-			benefitReason: charge.benefitReason,
-			chargeType
-		};
-	});
+			// Calcular estado de vencimiento
+			let isOverdue = false;
+			let dueDate: Date | null = null;
+
+			if (charge.concept.code === 'CUOTA_MENSUAL' && charge.periodLabel) {
+				dueDate = await getChargeDueDate(charge.periodLabel);
+				const now = new Date();
+				isOverdue = now > dueDate && pending > 0;
+			}
+
+			return {
+				id: charge.id,
+				concept: charge.concept.name,
+				conceptCode: charge.concept.code,
+				period: charge.periodLabel,
+				amount,
+				finalAmount,
+				paid: Number(charge.paidAmount),
+				pending,
+				status: charge.status,
+				benefitType: charge.benefitType,
+				benefitReason: charge.benefitReason,
+				chargeType,
+				scholarshipLost,
+				scholarshipApplied,
+				isOverdue,
+				dueDate: dueDate ? dueDate.toISOString() : null
+			};
+		})
+	);
 
 	const totalDebt = charges.reduce((acc, charge) => acc + charge.pending, 0);
 
@@ -317,20 +341,14 @@ export const actions: Actions = {
 				continue;
 			}
 
-			// Skip if not pending
-			if (charge.status !== 'PENDING') {
+			// Skip if already paid
+			if (charge.status === 'PAID') {
 				skippedCount++;
 				continue;
 			}
 
-			// Skip if has payments
-			if (charge.allocations.length > 0) {
-				skippedCount++;
-				continue;
-			}
-
-			// Skip if paidAmount > 0
-			if (Number(charge.paidAmount) > 0) {
+			// Skip if not PENDING or PARTIAL
+			if (charge.status !== 'PENDING' && charge.status !== 'PARTIAL') {
 				skippedCount++;
 				continue;
 			}
@@ -351,15 +369,9 @@ export const actions: Actions = {
 			// Check if month is in benefits months
 			const monthInBenefits = benefitsConfig.benefitsMonths.includes(month);
 
-			// Calculate correct base amount
-			let correctBaseAmount: number;
-			if (student.isBecado && monthInBenefits) {
-				correctBaseAmount = benefitsConfig.becadoFeeAmount;
-			} else if (student.isRecursante && monthInBenefits) {
-				correctBaseAmount = benefitsConfig.recursantFeeAmount;
-			} else {
-				correctBaseAmount = benefitsConfig.normalFeeAmount;
-			}
+			// Calculate correct base amount: always use normalFeeAmount
+			// The scholarship is applied as discount in finalAmount
+			const correctBaseAmount = benefitsConfig.normalFeeAmount;
 
 			// Calculate benefit
 			const benefitCalculation = calculateChargeBenefit(

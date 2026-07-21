@@ -37,7 +37,7 @@ export async function load({ locals }) {
 		recursantBenefitType: 'FIXED_FINAL_AMOUNT',
 		recursantBenefitValue: 30000,
 		benefitCombinationStrategy: 'BEST_AMOUNT',
-		blockAfterUnpaidCharges: 1
+		paymentDueGraceDays: 0
 	};
 
 	if (config && config.value) {
@@ -66,8 +66,8 @@ export async function load({ locals }) {
 					typeof value.benefitCombinationStrategy === 'string'
 						? value.benefitCombinationStrategy
 						: 'BEST_AMOUNT',
-				blockAfterUnpaidCharges:
-					typeof value.blockAfterUnpaidCharges === 'number' ? value.blockAfterUnpaidCharges : 1
+				paymentDueGraceDays:
+					typeof value.paymentDueGraceDays === 'number' ? value.paymentDueGraceDays : 0
 			};
 		}
 	}
@@ -89,7 +89,7 @@ export const actions = {
 		const becadoFeeAmount = parseInt(formData.get('becadoFeeAmount') as string);
 		const recursantFeeAmount = parseInt(formData.get('recursantFeeAmount') as string);
 		const enrollmentAmount = parseInt(formData.get('enrollmentAmount') as string);
-		const blockAfterUnpaidCharges = parseInt(formData.get('blockAfterUnpaidCharges') as string);
+		const paymentDueGraceDays = parseInt(formData.get('paymentDueGraceDays') as string);
 
 		// Obtener meses seleccionados
 		const benefitsMonths: number[] = [];
@@ -117,8 +117,8 @@ export const actions = {
 			return { error: 'El monto de inscripción debe ser positivo' };
 		}
 
-		if (isNaN(blockAfterUnpaidCharges) || blockAfterUnpaidCharges < 0) {
-			return { error: 'El número de cuotas impagas para bloqueo debe ser positivo' };
+		if (isNaN(paymentDueGraceDays) || paymentDueGraceDays < 0) {
+			return { error: 'Los días de tolerancia deben ser un número positivo' };
 		}
 
 		if (benefitsMonths.length === 0) {
@@ -136,7 +136,7 @@ export const actions = {
 			recursantBenefitType: 'FIXED_FINAL_AMOUNT',
 			recursantBenefitValue: recursantFeeAmount,
 			benefitCombinationStrategy: 'BEST_AMOUNT',
-			blockAfterUnpaidCharges
+			paymentDueGraceDays
 		};
 
 		// Guardar o actualizar configuración

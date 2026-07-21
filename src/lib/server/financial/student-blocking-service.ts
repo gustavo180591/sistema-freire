@@ -16,11 +16,12 @@ export interface StudentBlockingStatus {
 
 /**
  * Obtiene la configuración de bloqueo financiero
+ * Nota: El bloqueo financiero por cuotas impagas está desactivado
  */
 export async function getFinancialBlockingConfig(): Promise<FinancialBlockingConfig> {
-	const config = await getBenefitsConfig(prisma);
+	// Bloqueo financiero desactivado por configuración
 	return {
-		blockAfterUnpaidCharges: config.blockAfterUnpaidCharges || 0
+		blockAfterUnpaidCharges: 0
 	};
 }
 

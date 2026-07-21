@@ -22,8 +22,8 @@ export interface BenefitsConfig {
 	recursantBenefitValue: number;
 	benefitCombinationStrategy: BenefitCombinationStrategy;
 
-	// Configuración de bloqueo financiero
-	blockAfterUnpaidCharges: number; // Número de cuotas impagas para bloquear al alumno (0 para desactivar)
+	// Configuración de vencimiento
+	paymentDueGraceDays: number; // Días de tolerancia después del fin del mes antes de considerar vencida la cuota
 }
 
 export interface ChargeCalculation {
@@ -88,7 +88,7 @@ export function calculateChargeBenefit(
 
 	// Calcular alternativas de monto final
 	const normalAmount = baseAmount;
-	const scholarshipAmount = calculateScholarshipAmount(baseAmount, studentBenefitInfo);
+	const scholarshipAmount = calculateScholarshipAmount(baseAmount, studentBenefitInfo, config);
 	const recursantAmount = calculateRecursantAmount(baseAmount, config);
 
 	// Seleccionar el monto más favorable (menor monto final)
@@ -156,18 +156,21 @@ export function calculateChargeBenefit(
 }
 
 /**
- * Calcula el monto final aplicando beca por porcentaje.
+ * Calcula el monto final aplicando beca por monto fijo.
+ * Para alumnos becados: finalAmount = becadoFeeAmount (monto fijo)
+ * scholarshipApplied = normalFeeAmount - becadoFeeAmount
  */
 function calculateScholarshipAmount(
 	baseAmount: Decimal,
-	studentBenefitInfo: StudentBenefitInfo
+	studentBenefitInfo: StudentBenefitInfo,
+	config: BenefitsConfig
 ): Decimal {
-	if (!studentBenefitInfo.isBecado || !studentBenefitInfo.scholarshipPercentage) {
+	if (!studentBenefitInfo.isBecado) {
 		return baseAmount;
 	}
 
-	const discount = DecimalHelpers.percentage(baseAmount, studentBenefitInfo.scholarshipPercentage);
-	return DecimalHelpers.subtract(baseAmount, discount);
+	// Usar becadoFeeAmount como monto final fijo
+	return new Decimal(config.becadoFeeAmount);
 }
 
 /**
@@ -231,7 +234,7 @@ export async function getBenefitsConfig(prisma: Prisma.TransactionClient): Promi
 			recursantBenefitType: 'FIXED_FINAL_AMOUNT',
 			recursantBenefitValue: 30000,
 			benefitCombinationStrategy: 'BEST_AMOUNT',
-			blockAfterUnpaidCharges: 0
+			paymentDueGraceDays: 0
 		};
 	}
 
@@ -260,8 +263,8 @@ export async function getBenefitsConfig(prisma: Prisma.TransactionClient): Promi
 				recursantBenefitType: cfg.recursantBenefitType as RecursantBenefitType,
 				recursantBenefitValue: cfg.recursantBenefitValue,
 				benefitCombinationStrategy: cfg.benefitCombinationStrategy as BenefitCombinationStrategy,
-				blockAfterUnpaidCharges:
-					typeof cfg.blockAfterUnpaidCharges === 'number' ? cfg.blockAfterUnpaidCharges : 0
+				paymentDueGraceDays:
+					typeof cfg.paymentDueGraceDays === 'number' ? cfg.paymentDueGraceDays : 0
 			};
 		}
 	}
@@ -278,6 +281,6 @@ export async function getBenefitsConfig(prisma: Prisma.TransactionClient): Promi
 		recursantBenefitType: 'FIXED_FINAL_AMOUNT',
 		recursantBenefitValue: 30000,
 		benefitCombinationStrategy: 'BEST_AMOUNT',
-		blockAfterUnpaidCharges: 0
+		paymentDueGraceDays: 0
 	};
 }

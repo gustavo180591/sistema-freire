@@ -4,6 +4,32 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const MONTHS = $derived(data.months);
+
+	let showSuccess = $state(false);
+	let successOpacity = $state(1);
+
+	// Mostrar mensaje de éxito cuando hay form.success
+	$effect(() => {
+		if (form?.success) {
+			showSuccess = true;
+			successOpacity = 1;
+
+			// Desvanecer después de 5 segundos
+			const fadeTimer = setTimeout(() => {
+				successOpacity = 0;
+			}, 5000);
+
+			// Ocultar después de la animación de desvanecimiento
+			const hideTimer = setTimeout(() => {
+				showSuccess = false;
+			}, 5500);
+
+			return () => {
+				clearTimeout(fadeTimer);
+				clearTimeout(hideTimer);
+			};
+		}
+	});
 </script>
 
 <svelte:head>
@@ -147,42 +173,42 @@
 				</div>
 			</div>
 
-			<!-- Configuración de Bloqueo -->
+			<!-- Configuración de Vencimiento -->
 			<div class="space-y-6">
-				<h3 class="text-lg font-semibold text-white">Configuración de Bloqueo</h3>
+				<h3 class="text-lg font-semibold text-white">Configuración de Vencimiento</h3>
 
-				<!-- Cuotas Impagas para Bloqueo -->
+				<!-- Días de Tolerancia -->
 				<div>
-					<label
-						for="blockAfterUnpaidCharges"
-						class="mb-2 block text-sm font-medium text-slate-300"
-					>
-						Bloquear alumno después de cuotas impagas
+					<label for="paymentDueGraceDays" class="mb-2 block text-sm font-medium text-slate-300">
+						Días de tolerancia para vencimiento de cuota
 					</label>
 					<input
-						id="blockAfterUnpaidCharges"
-						name="blockAfterUnpaidCharges"
+						id="paymentDueGraceDays"
+						name="paymentDueGraceDays"
 						type="number"
 						min="0"
-						value={data.config.blockAfterUnpaidCharges || 1}
+						value={data.config.paymentDueGraceDays || 0}
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500 dark:border-slate-600"
 						required
 					/>
 					<p class="mt-2 text-xs text-slate-500">
-						Número de cuotas impagas para bloquear al alumno (0 para desactivar bloqueo)
+						Día del mes en que vence la cuota (ej: 10 = la cuota de julio vence el 10 de julio)
 					</p>
 				</div>
 			</div>
 
 			<!-- Mensajes de error/éxito -->
 			{#if form?.error}
-				<div class="rounded-xl border border-red-900/50 bg-red-950/30 p-4 text-red-400">
+				<div class="rounded-xl border border-red-900/50 bg-red-950/30 p-4 text-black">
 					{form.error}
 				</div>
 			{/if}
 
-			{#if form?.success}
-				<div class="rounded-xl border border-emerald-900/50 bg-emerald-950/30 p-4 text-emerald-400">
+			{#if showSuccess}
+				<div
+					class="rounded-xl border border-emerald-900/50 bg-emerald-950/30 p-4 text-black transition-opacity duration-500"
+					style="opacity: {successOpacity}"
+				>
 					Configuración guardada exitosamente.
 				</div>
 			{/if}
@@ -191,7 +217,7 @@
 			<div class="flex justify-end">
 				<button
 					type="submit"
-					class="rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-700"
+					class="cursor-pointer rounded-xl border border-purple-900 bg-white px-6 py-3 font-medium text-black transition hover:bg-gray-100 hover:shadow-lg"
 				>
 					Guardar Configuración
 				</button>

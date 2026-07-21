@@ -1,11 +1,12 @@
 import { prisma } from '$lib/server/db/prisma';
 import type { Prisma } from '@prisma/client';
+import { getBenefitsConfig } from './benefit-calculator';
 
 /**
  * Servicio para manejar la expiración automática de becas por pago fuera de término
  *
  * Regla: Un alumno becado pierde el beneficio de beca de una cuota si el pago
- * se realiza fuera del mes correspondiente de la cuota.
+ * se realiza fuera del mes correspondiente de la cuota más los días de tolerancia configurados.
  */
 
 /**
@@ -20,6 +21,22 @@ export function getMonthEndFromPeriodLabel(periodLabel: string): Date {
 }
 
 /**
+ * Obtiene la fecha de vencimiento de una cuota considerando los días de tolerancia
+ * Ejemplo: "2026-07" con 10 días de tolerancia -> 2026-07-10T23:59:59.999Z
+ * La cuota vence el día X del mismo mes del período
+ */
+export async function getChargeDueDate(periodLabel: string): Promise<Date> {
+	const [year, month] = periodLabel.split('-').map(Number);
+	const config = await getBenefitsConfig(prisma);
+	const graceDays = config.paymentDueGraceDays || 0;
+
+	// La fecha de vencimiento es el día X del mismo mes
+	const dueDate = new Date(year, month - 1, graceDays);
+	dueDate.setHours(23, 59, 59, 999);
+	return dueDate;
+}
+
+/**
  * Obtiene la fecha de inicio del mes a partir de un periodLabel
  * Ejemplo: "2026-07" -> 2026-07-01T00:00:00.000Z
  */
@@ -31,18 +48,18 @@ export function getMonthStartFromPeriodLabel(periodLabel: string): Date {
 /**
  * Verifica si una cuota está completamente pagada dentro de su período
  */
-export function isChargePaidWithinPeriod(charge: {
+export async function isChargePaidWithinPeriod(charge: {
 	paidAmount: { toString: () => string };
 	finalAmount: { toString: () => string };
 	periodLabel: string;
-}): boolean {
+}): Promise<boolean> {
 	const paidAmount = Number(charge.paidAmount);
 	const finalAmount = Number(charge.finalAmount);
-	const monthEnd = getMonthEndFromPeriodLabel(charge.periodLabel);
+	const dueDate = await getChargeDueDate(charge.periodLabel);
 	const now = new Date();
 
-	// Si está completamente pagada y la fecha actual está dentro del mes del período
-	return paidAmount >= finalAmount && now <= monthEnd;
+	// Si está completamente pagada y la fecha actual está dentro del período de tolerancia
+	return paidAmount >= finalAmount && now <= dueDate;
 }
 
 /**
@@ -50,9 +67,9 @@ export function isChargePaidWithinPeriod(charge: {
  * Condiciones:
  * - Tiene beca aplicada (scholarshipApplied > 0)
  * - No está completamente pagada
- * - Está fuera del mes del período
+ * - Está fuera del período de tolerancia
  */
-export function shouldExpireScholarshipForCharge(
+export async function shouldExpireScholarshipForCharge(
 	charge: {
 		scholarshipApplied: { toString: () => string };
 		paidAmount: { toString: () => string };
@@ -60,11 +77,11 @@ export function shouldExpireScholarshipForCharge(
 		periodLabel: string;
 	},
 	today: Date = new Date()
-): boolean {
+): Promise<boolean> {
 	const scholarshipApplied = Number(charge.scholarshipApplied);
 	const paidAmount = Number(charge.paidAmount);
 	const finalAmount = Number(charge.finalAmount);
-	const monthEnd = getMonthEndFromPeriodLabel(charge.periodLabel);
+	const dueDate = await getChargeDueDate(charge.periodLabel);
 
 	// No tiene beca aplicada
 	if (scholarshipApplied <= 0) {
@@ -76,12 +93,12 @@ export function shouldExpireScholarshipForCharge(
 		return false;
 	}
 
-	// Está dentro del mes del período
-	if (today <= monthEnd) {
+	// Está dentro del período de tolerancia
+	if (today <= dueDate) {
 		return false;
 	}
 
-	// Fuera del mes, con beca aplicada y no pagada completamente -> debe expirar
+	// Fuera del período de tolerancia, con beca aplicada y no pagada completamente -> debe expirar
 	return true;
 }
 
@@ -181,7 +198,7 @@ export async function expireOverdueScholarshipsForStudent(
 	const today = new Date();
 
 	for (const charge of charges) {
-		if (shouldExpireScholarshipForCharge(charge, today)) {
+		if (await shouldExpireScholarshipForCharge(charge, today)) {
 			await expireScholarshipForCharge(tx, charge.id, userId, userName);
 			expiredCount++;
 		}

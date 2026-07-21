@@ -5,6 +5,32 @@
 	const metrics = $derived(data.metrics);
 	const charges = $derived(data.charges);
 
+	let showSuccess = $state(false);
+	let successOpacity = $state(1);
+
+	// Mostrar mensaje de éxito cuando hay form.success
+	$effect(() => {
+		if (form?.success) {
+			showSuccess = true;
+			successOpacity = 1;
+
+			// Desvanecer después de 5 segundos
+			const fadeTimer = setTimeout(() => {
+				successOpacity = 0;
+			}, 5000);
+
+			// Ocultar después de la animación de desvanecimiento
+			const hideTimer = setTimeout(() => {
+				showSuccess = false;
+			}, 5500);
+
+			return () => {
+				clearTimeout(fadeTimer);
+				clearTimeout(hideTimer);
+			};
+		}
+	});
+
 	const currency = new Intl.NumberFormat('es-AR', {
 		style: 'currency',
 		currency: 'ARS',
@@ -95,18 +121,19 @@
 		<form method="POST" action="?/recalculateCharges">
 			<button
 				type="submit"
-				class="rounded-2xl border border-indigo-700 bg-indigo-950/50 px-5 py-3 text-sm font-semibold text-indigo-300 transition hover:border-indigo-500 hover:bg-indigo-950"
+				class="cursor-pointer rounded-2xl border border-indigo-700 bg-indigo-950/50 px-5 py-3 text-sm font-semibold text-indigo-300 transition hover:border-indigo-500 hover:bg-indigo-950 hover:shadow-lg"
 			>
 				Recalcular cargos pendientes
 			</button>
 		</form>
 	</section>
 
-	{#if form?.success}
+	{#if showSuccess}
 		<div
-			class="rounded-2xl border border-green-600 bg-green-950/30 px-4 py-3 text-sm text-green-400"
+			class="rounded-2xl border border-green-600 bg-green-950/30 px-4 py-3 text-sm text-black transition-opacity duration-500"
+			style="opacity: {successOpacity}"
 		>
-			✓ Cargos recalculados: {form.updatedCount} actualizados, {form.skippedCount} omitidos
+			✓ Cargos recalculados: {form?.updatedCount} actualizados, {form?.skippedCount} omitidos
 		</div>
 	{/if}
 
@@ -122,6 +149,7 @@
 					<th class="px-6 py-4 text-sm font-semibold">Pendiente</th>
 					<th class="px-6 py-4 text-sm font-semibold">Tipo de cuota</th>
 					<th class="px-6 py-4 text-sm font-semibold">Estado</th>
+					<th class="px-6 py-4 text-sm font-semibold">Vencimiento</th>
 					<th class="px-6 py-4 text-sm font-semibold">Acción</th>
 				</tr>
 			</thead>
@@ -140,7 +168,18 @@
 							{currency.format(charge.pending)}
 						</td>
 						<td class="px-6 py-4">
-							<span class="text-slate-400">{charge.chargeType}</span>
+							{#if charge.scholarshipLost}
+								<span
+									class="rounded-full border border-red-600 bg-red-950/30 px-3 py-1 text-xs text-red-400"
+								>
+									Beca perdida
+								</span>
+								<div class="mt-1 text-xs text-slate-500">
+									Beneficio perdido por pago fuera de término
+								</div>
+							{:else}
+								<span class="text-slate-400">{charge.chargeType}</span>
+							{/if}
 						</td>
 						<td class="px-6 py-4">
 							<span class="rounded-full border border-slate-700 px-3 py-1 text-xs">
@@ -148,11 +187,30 @@
 							</span>
 						</td>
 						<td class="px-6 py-4">
+							{#if charge.conceptCode === 'CUOTA_MENSUAL' && charge.dueDate}
+								{#if charge.isOverdue}
+									<span
+										class="rounded-full border border-red-600 bg-red-950/30 px-3 py-1 text-xs text-red-400"
+									>
+										Vencida
+									</span>
+								{:else}
+									<span
+										class="rounded-full border border-emerald-600 bg-white px-3 py-1 text-xs text-black"
+									>
+										Al día
+									</span>
+								{/if}
+							{:else}
+								<span class="text-xs text-slate-500">-</span>
+							{/if}
+						</td>
+						<td class="px-6 py-4">
 							<a
-								href={`/recibos/nuevo?chargeId=${charge.id}`}
+								href={`/finanzas/pagos/nuevo?studentId=${student.id}`}
 								class="text-sm text-indigo-400 hover:text-indigo-300"
 							>
-								Pagar
+								Registrar pago
 							</a>
 						</td>
 					</tr>

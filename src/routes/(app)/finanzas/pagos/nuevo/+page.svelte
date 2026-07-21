@@ -1,14 +1,132 @@
 <script lang="ts">
-	let { data } = $props();
+	import { goto } from '$app/navigation';
+
+	let { data, form } = $props();
 
 	const students = $derived(data?.students ?? []);
-	const pendingCharges = $derived(data?.pendingCharges ?? []);
+	const initialStudentId = $derived(data?.selectedStudent?.id ?? null);
+	const initialCharges = $derived(data?.charges ?? []);
 
 	let studentId = $state('');
 	let amount = $state<number | ''>('');
 	let method = $state('CASH');
 	let reference = $state('');
 	let notes = $state('');
+
+	let charges = $state<
+		Array<{
+			id: string;
+			concept: string;
+			conceptCode: string;
+			periodLabel: string;
+			amount: number;
+			paidAmount: number;
+			finalAmount: number;
+			pending: number;
+			scholarshipApplied: number;
+			lateFeeApplied: number;
+			discountApplied: number;
+			status: string;
+			dueDate: string | null;
+		}>
+	>([]);
+
+	let selectedChargeIds = $state<Set<string>>(new Set());
+
+	const currency = new Intl.NumberFormat('es-AR', {
+		style: 'currency',
+		currency: 'ARS',
+		maximumFractionDigits: 0
+	});
+
+	const dateFormat = new Intl.DateTimeFormat('es-AR', {
+		day: '2-digit',
+		month: '2-digit',
+		year: 'numeric'
+	});
+
+	// Calcular total seleccionado
+	const totalSelected = $derived(() => {
+		return charges
+			.filter((charge) => selectedChargeIds.has(charge.id))
+			.reduce((sum, charge) => sum + charge.pending, 0);
+	});
+
+	// Inicializar con datos del servidor
+	$effect(() => {
+		if (initialStudentId && !studentId) {
+			studentId = initialStudentId;
+		}
+		if (initialCharges.length > 0 && charges.length === 0) {
+			charges = initialCharges;
+			selectedChargeIds = new Set(initialCharges.map((c) => c.id));
+			amount = totalSelected();
+		}
+	});
+
+	// Inicializar amount con el total seleccionado
+	$effect(() => {
+		if (charges.length > 0 && amount === '') {
+			amount = totalSelected();
+		}
+	});
+
+	// Actualizar URL cuando cambia el alumno
+	$effect(() => {
+		if (studentId) {
+			const url = new URL(window.location.href);
+			url.searchParams.set('studentId', studentId);
+			window.history.replaceState({}, '', url.toString());
+		}
+	});
+
+	// Cargar cargos cuando cambia el alumno (solo si no viene del servidor)
+	$effect(() => {
+		if (studentId && studentId !== initialStudentId) {
+			loadCharges();
+		} else if (!studentId) {
+			charges = [];
+			selectedChargeIds = new Set();
+		}
+	});
+
+	async function loadCharges() {
+		if (!studentId) return;
+
+		const formData = new FormData();
+		formData.append('studentId', studentId);
+
+		const response = await fetch('?/getCharges', {
+			method: 'POST',
+			body: formData
+		});
+
+		const result = await response.json();
+		if (result.data?.charges) {
+			charges = result.data.charges;
+			// Seleccionar todos por defecto
+			selectedChargeIds = new Set(charges.map((c) => c.id));
+			amount = totalSelected();
+		}
+	}
+
+	function toggleCharge(chargeId: string) {
+		if (selectedChargeIds.has(chargeId)) {
+			selectedChargeIds.delete(chargeId);
+		} else {
+			selectedChargeIds.add(chargeId);
+		}
+		amount = totalSelected();
+	}
+
+	function toggleAll() {
+		if (selectedChargeIds.size === charges.length) {
+			selectedChargeIds = new Set();
+		} else {
+			selectedChargeIds = new Set(charges.map((c) => c.id));
+		}
+		amount = totalSelected();
+	}
 </script>
 
 <svelte:head>
@@ -26,11 +144,16 @@
 		</p>
 	</section>
 
-	<form method="POST" class="space-y-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
+	<form
+		method="POST"
+		action="?/create"
+		class="space-y-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-8"
+	>
 		<div class="grid gap-6 md:grid-cols-2">
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Alumno</label>
+				<label for="studentId" class="mb-2 block text-sm font-medium text-slate-300">Alumno</label>
 				<select
+					id="studentId"
 					bind:value={studentId}
 					name="studentId"
 					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none"
@@ -43,8 +166,9 @@
 			</div>
 
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Importe</label>
+				<label for="amount" class="mb-2 block text-sm font-medium text-slate-300">Importe</label>
 				<input
+					id="amount"
 					bind:value={amount}
 					name="amount"
 					type="number"
@@ -56,8 +180,9 @@
 			</div>
 
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Método</label>
+				<label for="method" class="mb-2 block text-sm font-medium text-slate-300">Método</label>
 				<select
+					id="method"
 					bind:value={method}
 					name="method"
 					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none"
@@ -71,8 +196,11 @@
 			</div>
 
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Referencia</label>
+				<label for="reference" class="mb-2 block text-sm font-medium text-slate-300"
+					>Referencia</label
+				>
 				<input
+					id="reference"
 					bind:value={reference}
 					name="reference"
 					placeholder="Comprobante / operación"
@@ -82,8 +210,9 @@
 		</div>
 
 		<div>
-			<label class="mb-2 block text-sm font-medium text-slate-300">Observaciones</label>
+			<label for="notes" class="mb-2 block text-sm font-medium text-slate-300">Observaciones</label>
 			<textarea
+				id="notes"
 				bind:value={notes}
 				name="notes"
 				rows="4"
@@ -92,21 +221,79 @@
 		</div>
 
 		<div class="rounded-2xl border border-slate-800 bg-slate-950 p-5">
-			<h2 class="text-lg font-semibold">Cargos pendientes detectados</h2>
+			<div class="mb-4 flex items-center justify-between">
+				<h2 class="text-lg font-semibold">Cargos pendientes</h2>
+				{#if charges.length > 0}
+					<button
+						type="button"
+						onclick={toggleAll}
+						class="text-sm text-indigo-400 hover:text-indigo-300"
+					>
+						{selectedChargeIds.size === charges.length
+							? 'Deseleccionar todos'
+							: 'Seleccionar todos'}
+					</button>
+				{/if}
+			</div>
 			<div class="mt-4 space-y-3 text-sm text-slate-400">
-				{#if pendingCharges.length === 0}
-					<p>No hay cargos cargados o se mostrarán al seleccionar alumno.</p>
+				{#if charges.length === 0}
+					<p>Seleccioná un alumno para ver sus cargos pendientes.</p>
 				{:else}
-					{#each pendingCharges as charge}
-						<div
-							class="flex items-center justify-between rounded-xl border border-slate-800 px-4 py-3"
+					{#each charges as charge}
+						<button
+							type="button"
+							class="flex w-full items-center justify-between rounded-xl border border-slate-800 px-4 py-3 transition hover:border-slate-600"
+							class:border-indigo-600={selectedChargeIds.has(charge.id)}
+							onclick={() => toggleCharge(charge.id)}
 						>
-							<span>{charge.periodLabel} · {charge.concept}</span>
-							<span>${charge.pending}</span>
-						</div>
+							<div class="flex items-center gap-3">
+								<input
+									type="checkbox"
+									checked={selectedChargeIds.has(charge.id)}
+									onclick={(e) => {
+										e.stopPropagation();
+										toggleCharge(charge.id);
+									}}
+									class="h-4 w-4 rounded border-slate-600 bg-slate-950 text-indigo-600 focus:ring-indigo-500"
+								/>
+								<div>
+									<p class="font-medium text-slate-200">{charge.concept}</p>
+									<p class="text-xs text-slate-500">{charge.periodLabel}</p>
+									{#if charge.scholarshipApplied > 0}
+										<p class="text-xs text-emerald-400">
+											Beca aplicada: {currency.format(charge.scholarshipApplied)}
+										</p>
+									{/if}
+									{#if charge.lateFeeApplied > 0}
+										<p class="text-xs text-red-400">
+											Recargo: {currency.format(charge.lateFeeApplied)}
+										</p>
+									{/if}
+								</div>
+							</div>
+							<div class="text-right">
+								<p class="font-semibold text-slate-200">{currency.format(charge.pending)}</p>
+								<p class="text-xs text-slate-500">Pendiente</p>
+							</div>
+						</button>
 					{/each}
 				{/if}
 			</div>
+		</div>
+
+		<!-- Hidden input for chargeIds -->
+		<input type="hidden" name="chargeIds" value={Array.from(selectedChargeIds).join(',')} />
+
+		<div class="rounded-2xl border border-slate-800 bg-slate-950 p-5">
+			<div class="flex items-center justify-between">
+				<h2 class="text-lg font-semibold">Total a pagar</h2>
+				<p class="text-2xl font-bold text-indigo-400">{currency.format(amount || 0)}</p>
+			</div>
+			{#if amount && totalSelected() > amount}
+				<p class="mt-2 text-sm text-amber-400">
+					Pago parcial: faltan {currency.format(totalSelected() - (amount || 0))}
+				</p>
+			{/if}
 		</div>
 
 		<div class="flex items-center justify-end gap-3">

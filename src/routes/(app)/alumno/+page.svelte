@@ -9,7 +9,7 @@
 </script>
 
 <svelte:head>
-	<title>Mi Panel | ISFD "PAULO FREIRE" 1117</title>
+	<title>Panel del Estudiante | ISFD "PAULO FREIRE" 1117</title>
 </svelte:head>
 
 <div class="mx-auto max-w-7xl space-y-8 p-6">

@@ -9,6 +9,7 @@
 		active: boolean;
 		plans: number;
 		students: number;
+		teachers: number;
 	}
 
 	let { data, form }: { data: PageData; form?: { error?: string } } = $props();
@@ -298,6 +299,11 @@
 						<th
 							class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
 						>
+							Docentes
+						</th>
+						<th
+							class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+						>
 							Estado
 						</th>
 						<th
@@ -310,7 +316,7 @@
 				<tbody class="divide-y divide-slate-800">
 					{#if careers.length === 0}
 						<tr>
-							<td colspan="5" class="px-4 py-12 text-center">
+							<td colspan="6" class="px-4 py-12 text-center">
 								<div class="flex flex-col items-center gap-4">
 									<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-800">
 										<svg
@@ -361,7 +367,7 @@
 						</tr>
 					{:else if filtered.length === 0}
 						<tr>
-							<td colspan="5" class="px-4 py-12 text-center">
+							<td colspan="6" class="px-4 py-12 text-center">
 								<div class="flex flex-col items-center gap-4">
 									<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-800">
 										<svg
@@ -429,6 +435,12 @@
 									<div class="flex items-center gap-2">
 										<span class="text-sm text-slate-300">{career.students ?? 0}</span>
 										<span class="text-xs text-slate-500">alumnos</span>
+									</div>
+								</td>
+								<td class="px-4 py-3">
+									<div class="flex items-center gap-2">
+										<span class="text-sm text-slate-300">{career.teachers ?? 0}</span>
+										<span class="text-xs text-slate-500">docentes</span>
 									</div>
 								</td>
 								<td class="px-4 py-3">

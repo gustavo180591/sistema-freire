@@ -51,6 +51,19 @@ export const load: PageServerLoad = async ({ locals }) => {
 				select: {
 					id: true
 				}
+			},
+			careerSubjects: {
+				include: {
+					subject: {
+						include: {
+							teachers: {
+								select: {
+									teacherId: true
+								}
+							}
+						}
+					}
+				}
 			}
 		},
 		orderBy: {
@@ -58,14 +71,25 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	const normalizedCareers = careers.map((career) => ({
-		id: career.id,
-		code: career.code,
-		name: career.name,
-		active: career.active,
-		plans: career.studyPlans.length,
-		students: career.students.length
-	}));
+	const normalizedCareers = careers.map((career) => {
+		// Obtener docentes únicos de todas las materias de la carrera
+		const teacherIds = new Set<string>();
+		career.careerSubjects.forEach((cs) => {
+			cs.subject.teachers.forEach((t) => {
+				teacherIds.add(t.teacherId);
+			});
+		});
+
+		return {
+			id: career.id,
+			code: career.code,
+			name: career.name,
+			active: career.active,
+			plans: career.studyPlans.length,
+			students: career.students.length,
+			teachers: teacherIds.size
+		};
+	});
 
 	const totalPlans = normalizedCareers.reduce((acc, item) => acc + item.plans, 0);
 	const totalStudents = normalizedCareers.reduce((acc, item) => acc + item.students, 0);

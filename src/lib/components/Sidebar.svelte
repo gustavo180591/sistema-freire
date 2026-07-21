@@ -152,7 +152,7 @@
 					roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS']
 				},
 				{
-					label: 'Recibos',
+					label: 'Recibos de sueldo',
 					href: '/recibos',
 					icon: 'receipt',
 					roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE', 'FINANZAS']

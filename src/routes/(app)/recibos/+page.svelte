@@ -1,5 +1,5 @@
 <script lang="ts">
-	const EXTERNAL_SYSTEM_URL = '#'; // Próximamente: URL del sistema de liquidación externo
+	import { PAYSLLIP_PORTAL_URL } from '$lib/config';
 </script>
 
 <svelte:head>
@@ -50,16 +50,16 @@
 		</div>
 
 		<div class="flex flex-col gap-3 sm:flex-row sm:justify-center">
-			{#if EXTERNAL_SYSTEM_URL === '#'}
+			{#if !PAYSLLIP_PORTAL_URL}
 				<button
 					disabled
 					class="inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-2xl bg-slate-400 px-6 py-3 text-sm font-semibold text-white opacity-50"
 				>
-					<span>Próximamente</span>
+					<span>Pendiente de configuración</span>
 				</button>
 			{:else}
 				<a
-					href={EXTERNAL_SYSTEM_URL}
+					href={PAYSLLIP_PORTAL_URL}
 					target="_blank"
 					rel="noopener noreferrer"
 					class="inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500"
@@ -84,9 +84,9 @@
 			</a>
 		</div>
 
-		{#if EXTERNAL_SYSTEM_URL === '#'}
+		{#if !PAYSLLIP_PORTAL_URL}
 			<p class="text-xs text-slate-500 dark:text-slate-500">
-				El sistema de liquidación externo estará disponible próximamente.
+				El enlace externo será informado por el liquidador.
 			</p>
 		{/if}
 	</div>

@@ -39,7 +39,6 @@
 					icon: 'dashboard',
 					roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO']
 				},
-				{ label: 'Mi Panel', href: '/alumno', icon: 'user-circle', roles: ['ALUMNO'] },
 				{ label: 'Inicio', href: '/', icon: 'home', roles: [] }
 			]
 		},
@@ -155,7 +154,16 @@
 					label: 'Recibos de sueldo',
 					href: '/recibos',
 					icon: 'receipt',
-					roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE', 'FINANZAS', 'PRECEPTOR', 'LIQUIDADOR']
+					roles: [
+						'SUPERADMIN',
+						'DIRECTOR',
+						'SECRETARIA',
+						'APODERADO',
+						'DOCENTE',
+						'FINANZAS',
+						'PRECEPTOR',
+						'LIQUIDADOR'
+					]
 				},
 				{
 					label: 'Reportes',

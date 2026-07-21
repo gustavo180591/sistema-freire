@@ -67,6 +67,9 @@
 	let currentPage = $state(data.currentFilters.page || 1);
 	let currentPageSize = $state(data.currentFilters.pageSize || 25);
 
+	// Estado de visibilidad de filtros
+	let showFilters = $state(false);
+
 	// Actualizar URL cuando cambian los filtros
 	function updateURL() {
 		const params = new URLSearchParams();
@@ -289,185 +292,203 @@
 			</select>
 		</div>
 
-		<!-- Filtros -->
-		<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Fecha desde</label>
-				<input
-					type="date"
-					bind:value={startDate}
-					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
-				/>
-			</div>
-			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Fecha hasta</label>
-				<input
-					type="date"
-					bind:value={endDate}
-					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
-				/>
-			</div>
-			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Buscar alumno</label>
-				<input
-					type="text"
-					bind:value={studentSearch}
-					placeholder="Nombre, apellido o DNI"
-					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
-				/>
-			</div>
-			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Carrera</label>
-				<select
-					bind:value={careerId}
-					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
-				>
-					<option value="">Todas</option>
-					{#each data.filters.careers as career}
-						<option value={career.id}>{career.name}</option>
-					{/each}
-				</select>
-			</div>
-			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Sede</label>
-				<select
-					bind:value={locationId}
-					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
-				>
-					<option value="">Todas</option>
-					{#each data.filters.locations as location}
-						<option value={location.id}>{location.name}</option>
-					{/each}
-				</select>
-			</div>
-			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Tipo alumno</label>
-				<select
-					bind:value={studentType}
-					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
-				>
-					<option value="">Todos</option>
-					{#each studentTypes as type}
-						<option value={type.value}>{type.label}</option>
-					{/each}
-				</select>
-			</div>
-			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Concepto</label>
-				<select
-					bind:value={conceptCode}
-					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
-				>
-					<option value="">Todos</option>
-					{#each data.filters.concepts as concept}
-						<option value={concept.code}>{concept.name}</option>
-					{/each}
-				</select>
-			</div>
+		<!-- Botón toggle filtros -->
+		<button
+			onclick={() => (showFilters = !showFilters)}
+			class="mb-4 flex items-center gap-2 text-sm font-medium text-indigo-400 transition hover:text-indigo-300"
+		>
+			<svg
+				class="h-4 w-4 transition-transform {showFilters ? 'rotate-180' : ''}"
+				fill="none"
+				stroke="currentColor"
+				viewBox="0 0 24 24"
+			>
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+			</svg>
+			{showFilters ? 'Ocultar filtros' : 'Mostrar filtros'}
+		</button>
 
-			<!-- Filtros específicos por tipo de reporte -->
-			{#if selectedReportType === 'payments' || selectedReportType === 'receipts'}
+		<!-- Filtros -->
+		{#if showFilters}
+			<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Método de pago</label>
+					<label class="mb-2 block text-sm font-medium text-slate-300">Fecha desde</label>
+					<input
+						type="date"
+						bind:value={startDate}
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
+					/>
+				</div>
+				<div>
+					<label class="mb-2 block text-sm font-medium text-slate-300">Fecha hasta</label>
+					<input
+						type="date"
+						bind:value={endDate}
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
+					/>
+				</div>
+				<div>
+					<label class="mb-2 block text-sm font-medium text-slate-300">Buscar alumno</label>
+					<input
+						type="text"
+						bind:value={studentSearch}
+						placeholder="Nombre, apellido o DNI"
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
+					/>
+				</div>
+				<div>
+					<label class="mb-2 block text-sm font-medium text-slate-300">Carrera</label>
 					<select
-						bind:value={paymentMethod}
+						bind:value={careerId}
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
 					>
-						<option value="">Todos</option>
-						{#each paymentMethods as method}
-							<option value={method.value}>{method.label}</option>
+						<option value="">Todas</option>
+						{#each data.filters.careers as career}
+							<option value={career.id}>{career.name}</option>
 						{/each}
 					</select>
 				</div>
-			{/if}
-
-			{#if selectedReportType === 'payments'}
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Solo anulados</label>
-					<div class="flex items-center gap-2">
-						<input
-							type="checkbox"
-							bind:checked={onlyCancelled}
-							class="h-5 w-5 rounded border-slate-700 bg-slate-950 text-indigo-500 focus:ring-indigo-500"
-						/>
-						<span class="text-sm text-slate-300">Mostrar solo pagos anulados</span>
-					</div>
-				</div>
-			{/if}
-
-			{#if selectedReportType === 'movements'}
-				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Tipo de movimiento</label>
+					<label class="mb-2 block text-sm font-medium text-slate-300">Sede</label>
 					<select
-						bind:value={movementType}
+						bind:value={locationId}
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
+					>
+						<option value="">Todas</option>
+						{#each data.filters.locations as location}
+							<option value={location.id}>{location.name}</option>
+						{/each}
+					</select>
+				</div>
+				<div>
+					<label class="mb-2 block text-sm font-medium text-slate-300">Tipo alumno</label>
+					<select
+						bind:value={studentType}
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
 					>
 						<option value="">Todos</option>
-						{#each movementTypes as type}
+						{#each studentTypes as type}
 							<option value={type.value}>{type.label}</option>
 						{/each}
 					</select>
 				</div>
-			{/if}
-
-			{#if selectedReportType === 'debt' || selectedReportType === 'overdue_debt'}
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Estado del cargo</label>
+					<label class="mb-2 block text-sm font-medium text-slate-300">Concepto</label>
 					<select
-						bind:value={chargeStatus}
+						bind:value={conceptCode}
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
 					>
 						<option value="">Todos</option>
-						{#each chargeStatuses as status}
-							<option value={status.value}>{status.label}</option>
+						{#each data.filters.concepts as concept}
+							<option value={concept.code}>{concept.name}</option>
 						{/each}
 					</select>
 				</div>
-				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Filtros adicionales</label>
-					<div class="space-y-2">
+
+				<!-- Filtros específicos por tipo de reporte -->
+				{#if selectedReportType === 'payments' || selectedReportType === 'receipts'}
+					<div>
+						<label class="mb-2 block text-sm font-medium text-slate-300">Método de pago</label>
+						<select
+							bind:value={paymentMethod}
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
+						>
+							<option value="">Todos</option>
+							{#each paymentMethods as method}
+								<option value={method.value}>{method.label}</option>
+							{/each}
+						</select>
+					</div>
+				{/if}
+
+				{#if selectedReportType === 'payments'}
+					<div>
+						<label class="mb-2 block text-sm font-medium text-slate-300">Solo anulados</label>
 						<div class="flex items-center gap-2">
 							<input
 								type="checkbox"
-								bind:checked={onlyOverdue}
+								bind:checked={onlyCancelled}
 								class="h-5 w-5 rounded border-slate-700 bg-slate-950 text-indigo-500 focus:ring-indigo-500"
 							/>
-							<span class="text-sm text-slate-300">Solo deuda vencida</span>
-						</div>
-						<div class="flex items-center gap-2">
-							<input
-								type="checkbox"
-								bind:checked={onlyBlocked}
-								class="h-5 w-5 rounded border-slate-700 bg-slate-950 text-indigo-500 focus:ring-indigo-500"
-							/>
-							<span class="text-sm text-slate-300">Solo bloqueados</span>
+							<span class="text-sm text-slate-300">Mostrar solo pagos anulados</span>
 						</div>
 					</div>
-				</div>
-			{/if}
-		</div>
+				{/if}
 
-		<!-- Botones de acción -->
-		<div class="mt-4 flex gap-3">
-			<button
-				onclick={applyFilters}
-				class="rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700"
-			>
-				Aplicar filtros
-			</button>
-			<button
-				onclick={clearFilters}
-				class="rounded-2xl border border-slate-700 px-6 py-3 text-sm font-semibold text-slate-300 transition hover:border-slate-500"
-			>
-				Limpiar filtros
-			</button>
-			<button
-				onclick={exportCSV}
-				class="rounded-2xl border border-slate-700 px-6 py-3 text-sm font-semibold text-slate-300 transition hover:border-slate-500"
-			>
-				Exportar CSV
-			</button>
-		</div>
+				{#if selectedReportType === 'movements'}
+					<div>
+						<label class="mb-2 block text-sm font-medium text-slate-300">Tipo de movimiento</label>
+						<select
+							bind:value={movementType}
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
+						>
+							<option value="">Todos</option>
+							{#each movementTypes as type}
+								<option value={type.value}>{type.label}</option>
+							{/each}
+						</select>
+					</div>
+				{/if}
+
+				{#if selectedReportType === 'debt' || selectedReportType === 'overdue_debt'}
+					<div>
+						<label class="mb-2 block text-sm font-medium text-slate-300">Estado del cargo</label>
+						<select
+							bind:value={chargeStatus}
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
+						>
+							<option value="">Todos</option>
+							{#each chargeStatuses as status}
+								<option value={status.value}>{status.label}</option>
+							{/each}
+						</select>
+					</div>
+					<div>
+						<label class="mb-2 block text-sm font-medium text-slate-300">Filtros adicionales</label>
+						<div class="space-y-2">
+							<div class="flex items-center gap-2">
+								<input
+									type="checkbox"
+									bind:checked={onlyOverdue}
+									class="h-5 w-5 rounded border-slate-700 bg-slate-950 text-indigo-500 focus:ring-indigo-500"
+								/>
+								<span class="text-sm text-slate-300">Solo deuda vencida</span>
+							</div>
+							<div class="flex items-center gap-2">
+								<input
+									type="checkbox"
+									bind:checked={onlyBlocked}
+									class="h-5 w-5 rounded border-slate-700 bg-slate-950 text-indigo-500 focus:ring-indigo-500"
+								/>
+								<span class="text-sm text-slate-300">Solo bloqueados</span>
+							</div>
+						</div>
+					</div>
+				{/if}
+			</div>
+
+			<!-- Botones de acción -->
+			<div class="mt-4 flex gap-3">
+				<button
+					onclick={applyFilters}
+					class="rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700"
+				>
+					Aplicar filtros
+				</button>
+				<button
+					onclick={clearFilters}
+					class="rounded-2xl border border-slate-700 px-6 py-3 text-sm font-semibold text-slate-300 transition hover:border-slate-500"
+				>
+					Limpiar filtros
+				</button>
+				<button
+					onclick={exportCSV}
+					class="rounded-2xl border border-slate-700 px-6 py-3 text-sm font-semibold text-slate-300 transition hover:border-slate-500"
+				>
+					Exportar CSV
+				</button>
+			</div>
+		{/if}
 	</div>
 
 	<!-- Métricas -->

@@ -32,7 +32,9 @@
 	>([]);
 
 	let selectedChargeIds = $state<Set<string>>(new Set());
-	let editedAmounts = $state<Record<string, number>>({});
+	let chargeForgiveness = $state<
+		Record<string, { amountToPay: number; forgivenAmount: number; forgivenessReason: string }>
+	>({});
 	let editingChargeId = $state<string | null>(null);
 
 	const currency = new Intl.NumberFormat('es-AR', {
@@ -52,9 +54,28 @@
 		return charges
 			.filter((charge) => selectedChargeIds.has(charge.id))
 			.reduce((sum, charge) => {
-				const editedAmount = editedAmounts[charge.id];
-				return sum + (editedAmount !== undefined ? editedAmount : charge.pending);
+				const forgiveness = chargeForgiveness[charge.id];
+				return (
+					sum + (forgiveness?.amountToPay !== undefined ? forgiveness.amountToPay : charge.pending)
+				);
 			}, 0);
+	});
+
+	// Calcular total condonado
+	const totalForgiven = $derived(() => {
+		return charges
+			.filter((charge) => selectedChargeIds.has(charge.id))
+			.reduce((sum, charge) => {
+				const forgiveness = chargeForgiveness[charge.id];
+				return sum + (forgiveness?.forgivenAmount || 0);
+			}, 0);
+	});
+
+	// Calcular total deuda original seleccionada
+	const totalOriginal = $derived(() => {
+		return charges
+			.filter((charge) => selectedChargeIds.has(charge.id))
+			.reduce((sum, charge) => sum + charge.pending, 0);
 	});
 
 	// Inicializar con datos del servidor
@@ -134,15 +155,31 @@
 	}
 
 	function updateChargeAmount(chargeId: string, value: string) {
+		const charge = charges.find((c) => c.id === chargeId);
+		if (!charge) return;
+
 		const numValue = Number(value);
 		if (!isNaN(numValue) && numValue >= 0) {
-			editedAmounts[chargeId] = numValue;
+			const pending = charge.pending;
+			const forgivenAmount = Math.max(0, pending - numValue);
+
+			chargeForgiveness[chargeId] = {
+				amountToPay: numValue,
+				forgivenAmount,
+				forgivenessReason: chargeForgiveness[chargeId]?.forgivenessReason || ''
+			};
 			amount = totalSelected();
 		}
 	}
 
 	function getChargeAmount(chargeId: string, originalAmount: number): number {
-		return editedAmounts[chargeId] !== undefined ? editedAmounts[chargeId] : originalAmount;
+		return chargeForgiveness[chargeId]?.amountToPay !== undefined
+			? chargeForgiveness[chargeId].amountToPay
+			: originalAmount;
+	}
+
+	function getForgivenAmount(chargeId: string): number {
+		return chargeForgiveness[chargeId]?.forgivenAmount || 0;
 	}
 
 	function startEditing(chargeId: string) {
@@ -155,8 +192,47 @@
 
 	function cancelEditing(chargeId: string) {
 		editingChargeId = null;
-		delete editedAmounts[chargeId];
+		delete chargeForgiveness[chargeId];
 		amount = totalSelected();
+	}
+
+	function validateForm(): { valid: boolean; error?: string } {
+		// Validar que haya alumno seleccionado
+		if (!studentId) {
+			return { valid: false, error: 'Debes seleccionar un alumno' };
+		}
+
+		// Validar que haya cargos seleccionados
+		if (selectedChargeIds.size === 0) {
+			return { valid: false, error: 'Debes seleccionar al menos un cargo' };
+		}
+
+		// Validar condonaciones
+		for (const [chargeId, data] of Object.entries(chargeForgiveness)) {
+			if (data.forgivenAmount > 0) {
+				if (!data.forgivenessReason || data.forgivenessReason.trim().length === 0) {
+					return {
+						valid: false,
+						error: 'El motivo de condonación es obligatorio cuando hay monto condonado'
+					};
+				}
+			}
+		}
+
+		// Validar que el monto a pagar sea correcto
+		if (amount === '' || amount < 0) {
+			return { valid: false, error: 'El monto a pagar debe ser mayor o igual a 0' };
+		}
+
+		return { valid: true };
+	}
+
+	function handleSubmit(e: Event) {
+		const validation = validateForm();
+		if (!validation.valid) {
+			e.preventDefault();
+			alert(validation.error);
+		}
 	}
 </script>
 
@@ -178,6 +254,7 @@
 	<form
 		method="POST"
 		action="?/create"
+		onsubmit={handleSubmit}
 		class="space-y-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-8"
 	>
 		<div class="grid gap-6 md:grid-cols-2">
@@ -311,47 +388,71 @@
 							</div>
 							<div class="text-right">
 								{#if editingChargeId === charge.id}
-									<div class="flex items-center justify-end gap-2">
-										<input
-											type="number"
-											min="0"
-											step="0.01"
-											value={getChargeAmount(charge.id, charge.pending)}
-											oninput={(e) => {
-												const target = e.target as HTMLInputElement;
-												if (target) {
-													updateChargeAmount(charge.id, target.value);
-												}
-											}}
-											onclick={(e) => e.stopPropagation()}
-											class="w-20 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-right text-sm font-semibold text-slate-200 outline-none focus:border-indigo-500"
-										/>
-										<button
-											type="button"
-											onclick={(e) => {
-												e.stopPropagation();
-												saveEditing(charge.id);
-											}}
-											class="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-500"
-										>
-											✓
-										</button>
-										<button
-											type="button"
-											onclick={(e) => {
-												e.stopPropagation();
-												cancelEditing(charge.id);
-											}}
-											class="rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white hover:bg-red-500"
-										>
-											✕
-										</button>
+									<div class="flex flex-col items-end gap-2">
+										<div class="flex items-center justify-end gap-2">
+											<input
+												type="number"
+												min="0"
+												step="0.01"
+												max={charge.pending}
+												value={getChargeAmount(charge.id, charge.pending)}
+												oninput={(e) => {
+													const target = e.target as HTMLInputElement;
+													if (target) {
+														updateChargeAmount(charge.id, target.value);
+													}
+												}}
+												onclick={(e) => e.stopPropagation()}
+												class="w-24 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-right text-sm font-semibold text-slate-200 outline-none focus:border-indigo-500"
+											/>
+											<button
+												type="button"
+												onclick={(e) => {
+													e.stopPropagation();
+													saveEditing(charge.id);
+												}}
+												class="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-500"
+											>
+												✓
+											</button>
+											<button
+												type="button"
+												onclick={(e) => {
+													e.stopPropagation();
+													cancelEditing(charge.id);
+												}}
+												class="rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white hover:bg-red-500"
+											>
+												✕
+											</button>
+										</div>
+										{#if getForgivenAmount(charge.id) > 0}
+											<div class="flex flex-col items-end gap-1">
+												<p class="text-xs text-emerald-400">
+													Condonado: {currency.format(getForgivenAmount(charge.id))}
+												</p>
+												<input
+													type="text"
+													placeholder="Motivo de condonación (obligatorio)"
+													bind:value={chargeForgiveness[charge.id].forgivenessReason}
+													onclick={(e) => e.stopPropagation()}
+													class="w-48 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-200 outline-none focus:border-indigo-500"
+												/>
+											</div>
+										{/if}
 									</div>
 								{:else}
 									<div class="flex items-center justify-end gap-2">
-										<p class="font-semibold text-slate-200">
-											{currency.format(getChargeAmount(charge.id, charge.pending))}
-										</p>
+										<div class="text-right">
+											<p class="font-semibold text-slate-200">
+												{currency.format(getChargeAmount(charge.id, charge.pending))}
+											</p>
+											{#if getForgivenAmount(charge.id) > 0}
+												<p class="text-xs text-emerald-400">
+													-{currency.format(getForgivenAmount(charge.id))}
+												</p>
+											{/if}
+										</div>
 										<button
 											type="button"
 											onclick={(e) => {
@@ -375,16 +476,36 @@
 		<!-- Hidden input for chargeIds -->
 		<input type="hidden" name="chargeIds" value={Array.from(selectedChargeIds).join(',')} />
 
+		<!-- Hidden inputs for forgiveness data -->
+		{#each Object.entries(chargeForgiveness) as [chargeId, data]}
+			<input type="hidden" name={`charge_${chargeId}_amountToPay`} value={data.amountToPay} />
+			<input type="hidden" name={`charge_${chargeId}_forgivenAmount`} value={data.forgivenAmount} />
+			<input
+				type="hidden"
+				name={`charge_${chargeId}_forgivenessReason`}
+				value={data.forgivenessReason}
+			/>
+		{/each}
+
 		<div class="rounded-2xl border border-slate-800 bg-slate-950 p-5">
-			<div class="flex items-center justify-between">
-				<h2 class="text-lg font-semibold">Total a pagar</h2>
-				<p class="text-2xl font-bold text-indigo-400">{currency.format(amount || 0)}</p>
+			<div class="space-y-3">
+				<div class="flex items-center justify-between">
+					<h2 class="text-lg font-semibold">Total deuda seleccionada</h2>
+					<p class="text-2xl font-bold text-slate-200">{currency.format(totalOriginal())}</p>
+				</div>
+				{#if totalForgiven() > 0}
+					<div class="flex items-center justify-between">
+						<p class="text-sm text-slate-400">Total condonado</p>
+						<p class="text-lg font-semibold text-emerald-400">
+							-{currency.format(totalForgiven())}
+						</p>
+					</div>
+				{/if}
+				<div class="flex items-center justify-between">
+					<p class="text-sm text-slate-400">Total a cobrar</p>
+					<p class="text-2xl font-bold text-indigo-400">{currency.format(amount || 0)}</p>
+				</div>
 			</div>
-			{#if amount && totalSelected() > amount}
-				<p class="mt-2 text-sm text-amber-400">
-					Pago parcial: faltan {currency.format(totalSelected() - (amount || 0))}
-				</p>
-			{/if}
 		</div>
 
 		<div class="flex items-center justify-end gap-3">

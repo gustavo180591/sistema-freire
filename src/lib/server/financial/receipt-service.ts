@@ -79,6 +79,45 @@ export async function createReceiptForPayment(paymentId: string, userId: string)
 
 	const { number: receiptNumber, year: receiptYear } = await getNextReceiptNumber();
 
+	// Buscar movimientos de condonación para los cargos del pago
+	const chargeIds = payment.allocations
+		.map((a) => a.chargeId)
+		.filter((id): id is string => id !== null);
+	const forgivenessMovements =
+		chargeIds.length > 0
+			? await prisma.financialMovement.findMany({
+					where: {
+						entityType: 'STUDENT_CHARGE',
+						entityId: { in: chargeIds },
+						movementType: 'DISCOUNT'
+					}
+				})
+			: [];
+
+	const forgivenessMap = new Map(
+		forgivenessMovements.map((m) => [
+			m.entityId,
+			{
+				amount: Number(m.amount),
+				reason: m.metadata as { reason?: string } | null
+			}
+		])
+	);
+
+	// Construir observaciones con motivos de condonación
+	let observations = payment.notes || '';
+	const forgivenessNotes: string[] = [];
+	for (const [chargeId, data] of forgivenessMap) {
+		if (data.reason?.reason) {
+			forgivenessNotes.push(`Condonación autorizada: ${data.reason.reason}`);
+		}
+	}
+	if (forgivenessNotes.length > 0) {
+		observations = observations
+			? `${observations}\n\n${forgivenessNotes.join('\n')}`
+			: forgivenessNotes.join('\n');
+	}
+
 	const receipt = await prisma.$transaction(async (tx) => {
 		// Crear el recibo
 		const createdReceipt = await tx.receipt.create({
@@ -96,7 +135,7 @@ export async function createReceiptForPayment(paymentId: string, userId: string)
 				issuedByName: payment.user
 					? `${payment.user.firstName} ${payment.user.lastName}`
 					: 'Sistema',
-				observations: payment.notes
+				observations
 			}
 		});
 
@@ -105,9 +144,14 @@ export async function createReceiptForPayment(paymentId: string, userId: string)
 			const charge = allocation.charge;
 			if (!charge) continue;
 
-			const baseAmount = charge.amount;
+			// baseAmount es el valor original del cargo menos beca (si aplica)
+			// Para becados, el valor base es el valor con beca aplicada
+			const scholarshipAmount = charge.scholarshipApplied || new Decimal(0);
+			const baseAmount = charge.amount.sub(scholarshipAmount);
 			const lateFeeAmount = charge.lateFeeApplied || new Decimal(0);
-			const discountAmount = charge.scholarshipApplied || new Decimal(0);
+			// discountAmount incluye solo condonación (beca ya está restada de baseAmount)
+			const forgivenessAmount = charge.discountApplied.sub(scholarshipAmount);
+			const discountAmount = forgivenessAmount.gt(0) ? forgivenessAmount : new Decimal(0);
 			const finalAmount = charge.finalAmount;
 
 			await tx.receiptItem.create({

@@ -149,9 +149,24 @@ export const actions: Actions = {
 		const notes = String(form.get('notes') ?? '');
 		const chargeIdsStr = String(form.get('chargeIds') ?? '');
 
-		if (!studentId || amount <= 0) {
+		// Parsear datos de condonación por cargo
+		const chargeForgivenessData: Record<
+			string,
+			{ amountToPay: number; forgivenAmount: number; forgivenessReason: string }
+		> = {};
+		for (const [key, value] of form.entries()) {
+			if (key.startsWith('charge_') && key.endsWith('_amountToPay')) {
+				const chargeId = key.replace('charge_', '').replace('_amountToPay', '');
+				const amountToPay = Number(value);
+				const forgivenAmount = Number(form.get(`charge_${chargeId}_forgivenAmount`) ?? 0);
+				const forgivenessReason = String(form.get(`charge_${chargeId}_forgivenessReason`) ?? '');
+				chargeForgivenessData[chargeId] = { amountToPay, forgivenAmount, forgivenessReason };
+			}
+		}
+
+		if (!studentId) {
 			return fail(400, {
-				message: 'Alumno e importe son obligatorios'
+				message: 'Alumno es obligatorio'
 			});
 		}
 
@@ -172,6 +187,50 @@ export const actions: Actions = {
 				return fail(400, {
 					message: 'Uno o más cargos no pertenecen al alumno seleccionado'
 				});
+			}
+		}
+
+		// Verificar permisos para condonación
+		const hasForgivenessPermission = locals.user
+			? await prisma.userRole.findFirst({
+					where: {
+						userId: locals.user.id,
+						role: {
+							code: {
+								in: ['SUPERADMIN', 'DIRECTOR', 'FINANZAS', 'SECRETARIA']
+							}
+						}
+					}
+				})
+			: null;
+
+		// Validar datos de condonación
+		for (const [chargeId, data] of Object.entries(chargeForgivenessData)) {
+			if (data.amountToPay < 0) {
+				return fail(400, {
+					message: 'El monto a cobrar no puede ser negativo'
+				});
+			}
+
+			if (data.forgivenAmount < 0) {
+				return fail(400, {
+					message: 'El monto condonado no puede ser negativo'
+				});
+			}
+
+			// Si hay condonación, verificar permisos y motivo
+			if (data.forgivenAmount > 0) {
+				if (!hasForgivenessPermission) {
+					return fail(403, {
+						message: 'No tenés permisos para condonar deuda'
+					});
+				}
+
+				if (!data.forgivenessReason || data.forgivenessReason.trim().length === 0) {
+					return fail(400, {
+						message: 'El motivo de condonación es obligatorio cuando hay monto condonado'
+					});
+				}
 			}
 		}
 
@@ -205,45 +264,130 @@ export const actions: Actions = {
 					});
 
 		const payment = await prisma.$transaction(async (tx) => {
-			const createdPayment = await tx.payment.create({
-				data: {
-					studentId,
-					amount,
-					method,
-					reference: reference || null,
-					notes: notes || null
-				}
-			});
-
+			let createdPayment = null;
 			let remaining = amount;
 
+			// Si hay monto a pagar, crear el pago
+			if (amount > 0) {
+				createdPayment = await tx.payment.create({
+					data: {
+						studentId,
+						amount,
+						method,
+						reference: reference || null,
+						notes: notes || null
+					}
+				});
+			}
+
+			// Procesar cada cargo con sus datos de condonación
 			for (const charge of chargesToAllocate) {
-				if (remaining <= 0) break;
+				const forgivenessData = chargeForgivenessData[charge.id];
+				const amountToPay =
+					forgivenessData?.amountToPay ?? Number(charge.finalAmount) - Number(charge.paidAmount);
+				const forgivenAmount = forgivenessData?.forgivenAmount ?? 0;
+				const forgivenessReason = forgivenessData?.forgivenessReason ?? '';
 
+				// Calcular pending real desde base de datos
 				const pending = Number(charge.finalAmount) - Number(charge.paidAmount);
-				if (pending <= 0) continue;
 
-				const applied = Math.min(remaining, pending);
-				const nextPaid = Number(charge.paidAmount) + applied;
-				const nextPending = Number(charge.finalAmount) - nextPaid;
+				// Validar que amountToPay <= pending
+				if (amountToPay > pending) {
+					throw new Error(
+						`El monto a cobrar (${amountToPay}) no puede ser mayor al pendiente (${pending}) para el cargo ${charge.id}`
+					);
+				}
 
-				await tx.paymentAllocation.create({
-					data: {
-						paymentId: createdPayment.id,
-						chargeId: charge.id,
-						amount: applied
+				// Aplicar condonación si existe
+				if (forgivenAmount > 0) {
+					// Validar que forgivenAmount = pending - amountToPay
+					const expectedForgiven = pending - amountToPay;
+					if (Math.abs(forgivenAmount - expectedForgiven) > 0.01) {
+						throw new Error(
+							`El monto condonado (${forgivenAmount}) no coincide con la diferencia (${expectedForgiven}) para el cargo ${charge.id}`
+						);
 					}
-				});
 
-				await tx.studentCharge.update({
-					where: { id: charge.id },
-					data: {
-						paidAmount: nextPaid,
-						status: nextPending <= 0 ? 'PAID' : nextPaid > 0 ? 'PARTIAL' : 'PENDING'
-					}
-				});
+					// Actualizar cargo con condonación
+					const newDiscount = Number(charge.discountApplied) + forgivenAmount;
+					const newFinalAmount = Number(charge.finalAmount) - forgivenAmount;
 
-				remaining -= applied;
+					await tx.studentCharge.update({
+						where: { id: charge.id },
+						data: {
+							discountApplied: newDiscount,
+							finalAmount: newFinalAmount
+						}
+					});
+
+					// Registrar FinancialMovement para la condonación
+					await tx.financialMovement.create({
+						data: {
+							studentId,
+							movementType: 'DISCOUNT',
+							entityType: 'STUDENT_CHARGE',
+							entityId: charge.id,
+							description: 'Condonación de deuda autorizada',
+							amount: forgivenAmount,
+							balanceBefore: Number(charge.finalAmount),
+							balanceAfter: newFinalAmount,
+							metadata: {
+								originalFinalAmount: Number(charge.finalAmount),
+								originalPaidAmount: Number(charge.paidAmount),
+								originalPendingAmount: pending,
+								amountToPay,
+								forgivenAmount,
+								reason: forgivenessReason,
+								approvedByUserId: locals.user?.id,
+								approvedByName: locals.user
+									? `${locals.user.firstName} ${locals.user.lastName}`
+									: null,
+								createdFrom: 'finanzas/pagos/nuevo'
+							},
+							userId: locals.user?.id
+						}
+					});
+				}
+
+				// Aplicar pago si existe
+				if (amountToPay > 0 && createdPayment) {
+					if (remaining <= 0) break;
+
+					const applied = Math.min(remaining, amountToPay);
+					const nextPaid = Number(charge.paidAmount) + applied;
+					const nextFinalAmount = Number(charge.finalAmount) - (forgivenAmount || 0);
+					const nextPending = nextFinalAmount - nextPaid;
+
+					await tx.paymentAllocation.create({
+						data: {
+							paymentId: createdPayment.id,
+							chargeId: charge.id,
+							amount: applied
+						}
+					});
+
+					await tx.studentCharge.update({
+						where: { id: charge.id },
+						data: {
+							paidAmount: nextPaid,
+							status: nextPending <= 0 ? 'PAID' : nextPaid > 0 ? 'PARTIAL' : 'PENDING'
+						}
+					});
+
+					remaining -= applied;
+				} else if (forgivenAmount > 0 && amountToPay === 0) {
+					// Caso especial: condonación total sin pago
+					const nextFinalAmount = Number(charge.finalAmount) - forgivenAmount;
+					const nextPending = nextFinalAmount - Number(charge.paidAmount);
+
+					await tx.studentCharge.update({
+						where: { id: charge.id },
+						data: {
+							status:
+								nextPending <= 0 ? 'PAID' : Number(charge.paidAmount) > 0 ? 'PARTIAL' : 'PENDING'
+						}
+					});
+				}
 			}
 
 			return createdPayment;
@@ -255,15 +399,29 @@ export const actions: Actions = {
 			include: { user: true }
 		});
 
-		await auditLog({
-			action: AuditAction.CREATE,
-			entityType: 'PAYMENT',
-			entityId: payment.id,
-			description: `Pago registrado: ${amount} (${method}) para ${student?.firstName} ${student?.lastName}`
-		});
+		if (payment) {
+			await auditLog({
+				action: AuditAction.CREATE,
+				entityType: 'PAYMENT',
+				entityId: payment.id,
+				description: `Pago registrado: ${amount} (${method}) para ${student?.firstName} ${student?.lastName}`
+			});
+		}
 
-		// Crear recibo para el pago
-		if (locals.user) {
+		// Registrar auditoría de condonaciones
+		for (const [chargeId, data] of Object.entries(chargeForgivenessData)) {
+			if (data.forgivenAmount > 0) {
+				await auditLog({
+					action: AuditAction.UPDATE,
+					entityType: 'STUDENT_CHARGE',
+					entityId: chargeId,
+					description: `Condonación de deuda: ${data.forgivenAmount} - Motivo: ${data.forgivenessReason}`
+				});
+			}
+		}
+
+		// Crear recibo para el pago si existe
+		if (payment && locals.user) {
 			const receipt = await createReceiptForPayment(payment.id, locals.user.id);
 
 			// Auditoría del recibo
@@ -277,6 +435,11 @@ export const actions: Actions = {
 			throw redirect(303, `/recibos/${receipt.id}`);
 		}
 
-		throw redirect(303, `/finanzas/${payment.id}`);
+		// Si no hay pago pero hay condonaciones, redirigir a finanzas del alumno
+		if (!payment && Object.keys(chargeForgivenessData).length > 0) {
+			throw redirect(303, `/alumnos/${studentId}/finanzas`);
+		}
+
+		throw redirect(303, `/finanzas/${payment?.id || ''}`);
 	}
 };

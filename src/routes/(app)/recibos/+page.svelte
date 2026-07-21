@@ -33,7 +33,7 @@
 
 		<div class="space-y-2">
 			<h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-				Sistema de Liquidación
+				Sistema de Recibo de Sueldo
 			</h1>
 			<p class="text-lg text-slate-600 dark:text-slate-400">Acceso a recibos de sueldo</p>
 		</div>
@@ -64,9 +64,9 @@
 					href={data.payslipPortalUrl}
 					target="_blank"
 					rel="noopener noreferrer"
-					class="inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500"
+					class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-800 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:border-slate-900 dark:border-slate-400 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:border-slate-300"
 				>
-					<span>Acceder al sistema de liquidación</span>
+					<span>Acceder a recibo de sueldos</span>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
 							stroke-linecap="round"

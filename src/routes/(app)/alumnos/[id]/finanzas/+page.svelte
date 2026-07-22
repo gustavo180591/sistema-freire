@@ -16,6 +16,7 @@
 	let selectedCharge = $state<any>(null);
 	let showViewModal = $state(false);
 	let showEditModal = $state(false);
+	let showReceiptModal = $state(false);
 
 	// Mostrar mensaje de éxito cuando hay form.success
 	$effect(() => {
@@ -420,7 +421,19 @@
 					<p><span class="text-slate-400">Motivo:</span> {selectedCharge.benefitReason}</p>
 				{/if}
 			</div>
-			<div class="mt-6 flex justify-end">
+			<div class="mt-6 flex justify-end gap-3">
+				{#if selectedCharge.paid > 0}
+					<button
+						type="button"
+						onclick={() => {
+							showViewModal = false;
+							showReceiptModal = true;
+						}}
+						class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+					>
+						Ver recibo de pago
+					</button>
+				{/if}
 				<button
 					type="button"
 					onclick={() => {
@@ -428,6 +441,94 @@
 						selectedCharge = null;
 					}}
 					class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-slate-800"
+				>
+					Cerrar
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Modal Recibo de pago -->
+{#if showReceiptModal && selectedCharge}
+	<div class="fixed inset-0 z-50 overflow-y-auto bg-black/80 p-4 print:bg-white print:p-0">
+		<div class="mx-auto max-w-2xl rounded-3xl border border-slate-700 bg-white p-8 text-black print:max-w-none print:rounded-none print:border-0 print:shadow-none">
+			<div class="mb-6 flex items-center justify-between print:hidden">
+				<h2 class="text-xl font-bold text-white">Recibo de pago</h2>
+				<button
+					type="button"
+					onclick={() => {
+						showReceiptModal = false;
+						selectedCharge = null;
+					}}
+					class="text-slate-400 hover:text-white"
+				>
+					✕
+				</button>
+			</div>
+
+			<div id="receipt-content" class="space-y-6">
+				<div class="border-b-2 border-black pb-4">
+					<h1 class="text-2xl font-bold">RECIBO DE PAGO</h1>
+					<p class="text-sm text-slate-600">Fecha: {new Date().toLocaleDateString('es-AR')}</p>
+				</div>
+
+				<div>
+					<p class="font-bold">Alumno:</p>
+					<p>{student.fullName}</p>
+					<p>DNI: {student.dni}</p>
+					<p>Carrera: {student.career}</p>
+				</div>
+
+				<div>
+					<table class="w-full border-collapse border border-black">
+						<thead>
+							<tr class="bg-slate-100">
+								<th class="border border-black px-4 py-2 text-left">Concepto</th>
+								<th class="border border-black px-4 py-2 text-left">Período</th>
+								<th class="border border-black px-4 py-2 text-right">Monto</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="border border-black px-4 py-2">{selectedCharge.concept}</td>
+								<td class="border border-black px-4 py-2">{selectedCharge.period}</td>
+								<td class="border border-black px-4 py-2 text-right">
+									{currency.format(selectedCharge.paid)}
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<div class="text-right">
+					<p class="text-xl font-bold">
+						Total pagado: {currency.format(selectedCharge.paid)}
+					</p>
+				</div>
+
+				<div class="border-t-2 border-black pt-4">
+					<p class="text-sm text-slate-600">
+						Este documento es un comprobante de pago generado por el sistema.
+					</p>
+				</div>
+			</div>
+
+			<div class="mt-8 flex justify-end gap-3 print:hidden">
+				<button
+					type="button"
+					onclick={() => window.print()}
+					class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+				>
+					Imprimir / Guardar PDF
+				</button>
+				<button
+					type="button"
+					onclick={() => {
+						showReceiptModal = false;
+						selectedCharge = null;
+					}}
+					class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
 				>
 					Cerrar
 				</button>

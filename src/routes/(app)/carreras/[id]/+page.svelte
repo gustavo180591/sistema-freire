@@ -15,6 +15,14 @@
 
 	let deletingPlan = $state<Plan | null>(null);
 
+	interface Teacher {
+		id: string;
+		firstName: string;
+		lastName: string;
+		email: string;
+		dni: string;
+	}
+
 	// Cerrar modal cuando la eliminación es exitosa
 	$effect(() => {
 		if (form && !form.error) {
@@ -47,6 +55,8 @@
 			]
 		}
 	);
+
+	const teachers = $derived<Teacher[]>((data?.teachers as Teacher[]) ?? []);
 </script>
 
 <svelte:head>
@@ -85,7 +95,7 @@
 		</div>
 	</section>
 
-	<section class="grid gap-4 md:grid-cols-3">
+	<section class="grid gap-4 md:grid-cols-4">
 		<a
 			href={`/carreras/${career.id}/planes`}
 			class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 transition hover:border-slate-700 hover:bg-slate-900/50"
@@ -107,6 +117,12 @@
 				{career.plans.reduce((acc, plan) => acc + plan.subjects, 0)}
 			</h2>
 			<p class="mt-2 text-sm text-slate-500">Suma consolidada entre planes</p>
+		</div>
+
+		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+			<p class="text-sm text-slate-400">Docentes vinculados</p>
+			<h2 class="mt-3 text-4xl font-bold">{teachers.length}</h2>
+			<p class="mt-2 text-sm text-slate-500">Cuerpo docente de la carrera</p>
 		</div>
 	</section>
 
@@ -197,6 +213,44 @@
 							</td>
 						</tr>
 					{/each}
+				</tbody>
+			</table>
+		</div>
+	</section>
+
+	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+		<div class="flex items-center justify-between">
+			<h2 class="text-2xl font-semibold">Docentes Vinculados</h2>
+			<span class="text-sm text-slate-400">{teachers.length} registros</span>
+		</div>
+
+		<div class="mt-6 overflow-hidden rounded-2xl border border-slate-800">
+			<table class="w-full text-left">
+				<thead class="border-b border-slate-800 bg-slate-900">
+					<tr>
+						<th class="px-6 py-4 text-sm font-semibold">Docente</th>
+						<th class="px-6 py-4 text-sm font-semibold">Email</th>
+						<th class="px-6 py-4 text-sm font-semibold">DNI</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#if teachers.length === 0}
+						<tr>
+							<td colspan="3" class="px-6 py-12 text-center text-slate-400">
+								No hay docentes vinculados a esta carrera
+							</td>
+						</tr>
+					{:else}
+						{#each teachers as teacher}
+							<tr class="border-b border-slate-800 last:border-none">
+								<td class="px-6 py-4 font-medium">
+									{teacher.lastName}, {teacher.firstName}
+								</td>
+								<td class="px-6 py-4">{teacher.email}</td>
+								<td class="px-6 py-4">{teacher.dni}</td>
+							</tr>
+						{/each}
+					{/if}
 				</tbody>
 			</table>
 		</div>

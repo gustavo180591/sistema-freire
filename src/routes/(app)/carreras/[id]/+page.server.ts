@@ -27,6 +27,23 @@ export const load: PageServerLoad = async ({ params }) => {
 				orderBy: {
 					version: 'desc'
 				}
+			},
+			careerSubjects: {
+				include: {
+					subject: {
+						include: {
+							teachers: {
+								include: {
+									teacher: {
+										include: {
+											user: true
+										}
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 	});
@@ -34,6 +51,24 @@ export const load: PageServerLoad = async ({ params }) => {
 	if (!career) {
 		throw error(404, 'Carrera no encontrada');
 	}
+
+	// Obtener docentes únicos de la carrera
+	const teacherMap = new Map<string, any>();
+	career.careerSubjects.forEach((cs) => {
+		cs.subject.teachers.forEach((st) => {
+			if (!teacherMap.has(st.teacher.id)) {
+				teacherMap.set(st.teacher.id, {
+					id: st.teacher.id,
+					firstName: st.teacher.firstName,
+					lastName: st.teacher.lastName,
+					email: st.teacher.user.email,
+					dni: st.teacher.dni
+				});
+			}
+		});
+	});
+
+	const teachers = Array.from(teacherMap.values());
 
 	const normalizedCareer = {
 		id: career.id,
@@ -52,10 +87,12 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	return {
 		career: normalizedCareer,
+		teachers,
 		metrics: {
 			totalStudents: normalizedCareer.students,
 			totalPlans: normalizedCareer.plans.length,
-			totalSubjects: normalizedCareer.plans.reduce((acc, plan) => acc + plan.subjects, 0)
+			totalSubjects: normalizedCareer.plans.reduce((acc, plan) => acc + plan.subjects, 0),
+			totalTeachers: teachers.length
 		}
 	};
 };

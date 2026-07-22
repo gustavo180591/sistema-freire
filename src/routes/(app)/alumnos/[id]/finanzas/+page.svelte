@@ -378,7 +378,7 @@
 									href={`/finanzas/pagos/nuevo?studentId=${student.id}`}
 									class="text-sm text-emerald-400 hover:text-emerald-300"
 								>
-									Pagar
+									Registrar pago
 								</a>
 							</div>
 						</td>

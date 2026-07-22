@@ -157,36 +157,21 @@
 		</div>
 	{/if}
 
-	{#if data.user.teacher}
+	{#if isTeacher && data.teacherCareer}
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<h2 class="mb-4 text-xl font-bold">Datos de Docente</h2>
-			<div class="space-y-3">
-				<div>
-					<p class="text-sm text-slate-400">DNI</p>
-					<p class="font-medium">{data.user.teacher.dni}</p>
-				</div>
-				{#if data.teacherCareers && data.teacherCareers.length > 0}
-					<div>
-						<p class="text-sm text-slate-400">Carreras</p>
-						<div class="mt-2 space-y-2">
-							{#each data.teacherCareers as career}
-								<div class="rounded-xl bg-slate-800/50 p-3">
-									<p class="font-medium">{career.name}</p>
-									<p class="text-sm text-slate-400">{career.code}</p>
-									{#if career.locations && career.locations.length > 0}
-										<div class="mt-2 flex flex-wrap gap-1.5">
-											{#each career.locations as location}
-												<span
-													class="inline-flex items-center rounded-lg bg-slate-700 px-2 py-1 text-xs font-medium text-slate-300"
-												>
-													{location}
-												</span>
-											{/each}
-										</div>
-									{/if}
-								</div>
-							{/each}
-						</div>
+			<h2 class="mb-4 text-xl font-bold">Carrera</h2>
+			<div class="rounded-xl bg-slate-800/50 p-4">
+				<p class="font-medium">{data.teacherCareer.name}</p>
+				<p class="text-sm text-slate-400">{data.teacherCareer.code}</p>
+				{#if data.teacherCareer.locations && data.teacherCareer.locations.length > 0}
+					<div class="mt-3 flex flex-wrap gap-1.5">
+						{#each data.teacherCareer.locations as location}
+							<span
+								class="inline-flex items-center rounded-lg bg-slate-700 px-2 py-1 text-xs font-medium text-slate-300"
+							>
+								{location}
+							</span>
+						{/each}
 					</div>
 				{/if}
 			</div>

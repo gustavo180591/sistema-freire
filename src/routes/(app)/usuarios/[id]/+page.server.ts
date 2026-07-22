@@ -50,25 +50,54 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		throw error(404, 'Usuario no encontrado');
 	}
 
-	// Obtener carreras del docente con sus localidades
-	let teacherCareers: any[] = [];
-	if (user.teacher) {
-		const careerMap = new Map<string, any>();
-		user.teacher.subjects.forEach((st) => {
-			st.subject.careerSubjects.forEach((cs) => {
-				if (!careerMap.has(cs.career.id)) {
-					const locations = cs.career.locations.map((cl) => cl.location.name);
-					careerMap.set(cs.career.id, {
-						id: cs.career.id,
-						name: cs.career.name,
-						code: cs.career.code,
-						locations
-					});
-				}
-			});
-		});
-		teacherCareers = Array.from(careerMap.values());
+	// Obtener carrera del docente si tiene materias asignadas
+	let teacherCareer: any = null;
+	if (user.teacher && user.teacher.subjects.length > 0) {
+		const firstSubject = user.teacher.subjects[0];
+		if (firstSubject.subject.careerSubjects.length > 0) {
+			const careerSubject = firstSubject.subject.careerSubjects[0];
+			// Obtener localidades donde el docente presta servicio
+			const locations = user.locationPermissions.map((lp) => lp.location.name);
+			teacherCareer = {
+				id: careerSubject.career.id,
+				name: careerSubject.career.name,
+				code: careerSubject.career.code,
+				locations
+			};
+		}
 	}
+
+	// Serializar valores Decimal a números para evitar errores de serialización
+	const serializedUser = {
+		...user,
+		teacher: user.teacher
+			? {
+					...user.teacher,
+					subjects: user.teacher.subjects.map((st) => ({
+						...st,
+						subject: {
+							...st.subject,
+							approvalThreshold: st.subject.approvalThreshold
+								? Number(st.subject.approvalThreshold)
+								: null,
+							promotionThreshold: st.subject.promotionThreshold
+								? Number(st.subject.promotionThreshold)
+								: null,
+							careerSubjects: st.subject.careerSubjects.map((cs) => ({
+								...cs,
+								career: {
+									...cs.career,
+									locations: cs.career.locations.map((cl) => ({
+										...cl,
+										location: cl.location
+									}))
+								}
+							}))
+						}
+					}))
+			  }
+			: null
+	};
 
 	// Obtener usuario actual y sus roles
 	const currentUser = locals.user;
@@ -100,8 +129,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	});
 
 	return {
-		user,
-		teacherCareers,
+		user: serializedUser,
+		teacherCareer,
 		canResetPassword,
 		evaluations: evaluations.map((e) => ({
 			id: e.id,

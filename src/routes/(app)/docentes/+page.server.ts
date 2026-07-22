@@ -6,15 +6,18 @@ import { fail } from '@sveltejs/kit';
 export const load: PageServerLoad = async () => {
 	const teachers = await prisma.teacher.findMany({
 		include: {
-			user: true,
+			user: {
+				include: {
+					locationPermissions: {
+						include: {
+							location: true
+						}
+					}
+				}
+			},
 			subjects: {
 				include: {
 					subject: true
-				}
-			},
-			commissions: {
-				include: {
-					location: true
 				}
 			}
 		},
@@ -23,15 +26,18 @@ export const load: PageServerLoad = async () => {
 
 	type TeacherWithRelations = Prisma.TeacherGetPayload<{
 		include: {
-			user: true;
+			user: {
+				include: {
+					locationPermissions: {
+						include: {
+							location: true;
+						};
+					};
+				};
+			};
 			subjects: {
 				include: {
 					subject: true;
-				};
-			};
-			commissions: {
-				include: {
-					location: true;
 				};
 			};
 		};
@@ -39,12 +45,10 @@ export const load: PageServerLoad = async () => {
 
 	return {
 		teachers: teachers.map((t: TeacherWithRelations) => {
-			// Obtener localidades únicas de las comisiones donde el docente dicta clases
+			// Obtener localidades únicas de las sedes asignadas al docente
 			const locations = new Set<string>();
-			t.commissions.forEach((comm) => {
-				if (comm.location) {
-					locations.add(comm.location.name);
-				}
+			t.user.locationPermissions.forEach((lp) => {
+				locations.add(lp.location.name);
 			});
 
 			return {

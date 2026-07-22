@@ -254,11 +254,6 @@
 							Materias
 						</th>
 						<th
-							class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
-						>
-							Fecha Alta
-						</th>
-						<th
 							class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-slate-400 uppercase"
 						>
 							Acciones
@@ -268,7 +263,7 @@
 				<tbody class="divide-y divide-slate-800">
 					{#if data.teachers.length === 0}
 						<tr>
-							<td colspan="6" class="px-4 py-12 text-center">
+							<td colspan="5" class="px-4 py-12 text-center">
 								<div class="flex flex-col items-center gap-4">
 									<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-800">
 										<svg
@@ -319,7 +314,7 @@
 						</tr>
 					{:else if filteredTeachers.length === 0}
 						<tr>
-							<td colspan="6" class="px-4 py-12 text-center">
+							<td colspan="5" class="px-4 py-12 text-center">
 								<div class="flex flex-col items-center gap-4">
 									<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-800">
 										<svg
@@ -433,11 +428,6 @@
 											</a>
 										</div>
 									{/if}
-								</td>
-								<td class="px-4 py-3">
-									<p class="text-sm text-slate-300">
-										{new Date(teacher.createdAt).toLocaleDateString('es-AR')}
-									</p>
 								</td>
 								<td class="px-4 py-3 text-right">
 									<div class="flex items-center justify-end gap-1">

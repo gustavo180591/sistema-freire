@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
+
 	let { data, form } = $props();
 
 	const student = $derived(data.student);
@@ -11,6 +13,9 @@
 	let selectedType = $state<'NORMAL' | 'BECADO' | 'RECURSANTE'>('NORMAL');
 	let changeReason = $state('');
 	let recalculateCharges = $state(false);
+	let selectedCharge = $state<any>(null);
+	let showViewModal = $state(false);
+	let showEditModal = $state(false);
 
 	// Mostrar mensaje de éxito cuando hay form.success
 	$effect(() => {
@@ -348,12 +353,34 @@
 							{/if}
 						</td>
 						<td class="px-4 py-4">
-							<a
-								href={`/finanzas/pagos/nuevo?studentId=${student.id}`}
-								class="text-sm text-indigo-400 hover:text-indigo-300"
-							>
-								Pagar
-							</a>
+							<div class="flex flex-wrap gap-2">
+								<button
+									type="button"
+									onclick={() => {
+										selectedCharge = charge;
+										showViewModal = true;
+									}}
+									class="text-sm text-slate-400 hover:text-white"
+								>
+									Ver
+								</button>
+								<button
+									type="button"
+									onclick={() => {
+										selectedCharge = charge;
+										showEditModal = true;
+									}}
+									class="text-sm text-indigo-400 hover:text-indigo-300"
+								>
+									Editar
+								</button>
+								<a
+									href={`/finanzas/pagos/nuevo?studentId=${student.id}`}
+									class="text-sm text-emerald-400 hover:text-emerald-300"
+								>
+									Pagar
+								</a>
+							</div>
 						</td>
 					</tr>
 				{/each}
@@ -361,3 +388,123 @@
 		</table>
 	</section>
 </div>
+
+<!-- Modal Ver cargo -->
+{#if showViewModal && selectedCharge}
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+		<div class="w-full max-w-md rounded-3xl border border-slate-700 bg-slate-900 p-6">
+			<div class="mb-4 flex items-center justify-between">
+				<h2 class="text-xl font-bold">Detalle del cargo</h2>
+				<button
+					type="button"
+					onclick={() => {
+						showViewModal = false;
+						selectedCharge = null;
+					}}
+					class="text-slate-400 hover:text-white"
+				>
+					✕
+				</button>
+			</div>
+			<div class="space-y-3 text-sm">
+				<p><span class="text-slate-400">Concepto:</span> {selectedCharge.concept}</p>
+				<p><span class="text-slate-400">Período:</span> {selectedCharge.period}</p>
+				<p><span class="text-slate-400">Importe a cobrar:</span> {currency.format(selectedCharge.finalAmount)}</p>
+				<p><span class="text-slate-400">Pagado:</span> {currency.format(selectedCharge.paid)}</p>
+				<p><span class="text-slate-400">Pendiente:</span> {currency.format(selectedCharge.pending)}</p>
+				<p><span class="text-slate-400">Estado:</span> {translateStatus(selectedCharge.status)}</p>
+				<p><span class="text-slate-400">Tipo de cuota:</span> {selectedCharge.chargeType}</p>
+				{#if selectedCharge.benefitReason}
+					<p><span class="text-slate-400">Motivo:</span> {selectedCharge.benefitReason}</p>
+				{/if}
+			</div>
+			<div class="mt-6 flex justify-end">
+				<button
+					type="button"
+					onclick={() => {
+						showViewModal = false;
+						selectedCharge = null;
+					}}
+					class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-slate-800"
+				>
+					Cerrar
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Modal Editar cargo -->
+{#if showEditModal && selectedCharge}
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+		<div class="w-full max-w-md rounded-3xl border border-slate-700 bg-slate-900 p-6">
+			<div class="mb-4 flex items-center justify-between">
+				<h2 class="text-xl font-bold">Editar cargo</h2>
+				<button
+					type="button"
+					onclick={() => {
+						showEditModal = false;
+						selectedCharge = null;
+					}}
+					class="text-slate-400 hover:text-white"
+				>
+					✕
+				</button>
+			</div>
+			<form
+				method="POST"
+				action="?/editCharge"
+				use:enhance
+				class="space-y-4"
+			>
+				<input type="hidden" name="chargeId" value={selectedCharge.id} />
+				<div>
+					<label for="finalAmount" class="mb-2 block text-sm font-medium text-slate-300">
+						Importe a cobrar
+					</label>
+					<input
+						type="number"
+						id="finalAmount"
+						name="finalAmount"
+						value={selectedCharge.finalAmount}
+						class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
+						step="0.01"
+						required
+					/>
+				</div>
+				<div>
+					<label for="paidAmount" class="mb-2 block text-sm font-medium text-slate-300">
+						Monto pagado
+					</label>
+					<input
+						type="number"
+						id="paidAmount"
+						name="paidAmount"
+						value={selectedCharge.paid}
+						class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
+						step="0.01"
+						required
+					/>
+				</div>
+				<div class="flex justify-end gap-3">
+					<button
+						type="button"
+						onclick={() => {
+							showEditModal = false;
+							selectedCharge = null;
+						}}
+						class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-slate-800"
+					>
+						Cancelar
+					</button>
+					<button
+						type="submit"
+						class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+					>
+						Guardar
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{/if}

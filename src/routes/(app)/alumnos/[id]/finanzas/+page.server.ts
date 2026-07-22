@@ -554,5 +554,91 @@ export const actions: Actions = {
 			updatedCount,
 			skippedCount
 		};
+	},
+
+	editCharge: async ({ params, locals, request }) => {
+		await requireFinancialAccess(locals.user, params.id);
+
+		if (!locals.user) {
+			return { error: 'No autenticado' };
+		}
+
+		const data = await request.formData();
+		const chargeId = data.get('chargeId')?.toString();
+		const finalAmountStr = data.get('finalAmount')?.toString();
+		const paidAmountStr = data.get('paidAmount')?.toString();
+
+		if (!chargeId || !finalAmountStr || !paidAmountStr) {
+			return { error: 'Todos los campos son requeridos' };
+		}
+
+		const finalAmount = Number(finalAmountStr);
+		const paidAmount = Number(paidAmountStr);
+
+		if (isNaN(finalAmount) || isNaN(paidAmount) || finalAmount < 0 || paidAmount < 0) {
+			return { error: 'Importes inválidos' };
+		}
+
+		const charge = await prisma.studentCharge.findFirst({
+			where: { id: chargeId, studentId: params.id },
+			include: { concept: true }
+		});
+
+		if (!charge) {
+			return { error: 'Cargo no encontrado' };
+		}
+
+		try {
+			const previousFinalAmount = Number(charge.finalAmount);
+			const previousPaidAmount = Number(charge.paidAmount);
+
+			let newStatus = charge.status;
+			if (paidAmount === 0) {
+				newStatus = 'PENDING';
+			} else if (paidAmount >= finalAmount) {
+				newStatus = 'PAID';
+			} else {
+				newStatus = 'PARTIAL';
+			}
+
+			await prisma.studentCharge.update({
+				where: { id: chargeId },
+				data: {
+					finalAmount: new Decimal(finalAmount),
+					paidAmount: new Decimal(paidAmount),
+					status: newStatus
+				}
+			});
+
+			// Log audit movement
+			await prisma.financialMovement.create({
+				data: {
+					studentId: params.id,
+					movementType: 'ADJUSTMENT',
+					entityType: 'StudentCharge',
+					entityId: chargeId,
+					description: 'Edición manual de cargo desde finanzas del alumno',
+					amount: new Decimal(finalAmount).minus(new Decimal(previousFinalAmount)),
+					balanceBefore: previousFinalAmount - previousPaidAmount,
+					balanceAfter: finalAmount - paidAmount,
+					metadata: {
+						concept: charge.concept.name,
+						periodLabel: charge.periodLabel,
+						previousFinalAmount,
+						newFinalAmount: finalAmount,
+						previousPaidAmount,
+						newPaidAmount: paidAmount,
+						previousStatus: charge.status,
+						newStatus
+					},
+					userId: locals.user.id
+				}
+			});
+
+			return { success: true, message: 'Cargo actualizado correctamente' };
+		} catch (error) {
+			console.error('Error al editar cargo:', error);
+			return { error: 'Error al editar cargo' };
+		}
 	}
 };

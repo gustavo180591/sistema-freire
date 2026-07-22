@@ -374,12 +374,14 @@
 								>
 									Editar
 								</button>
-								<a
-									href={`/finanzas/pagos/nuevo?studentId=${student.id}`}
-									class="text-sm text-emerald-400 hover:text-emerald-300"
-								>
-									Registrar pago
-								</a>
+								{#if charge.status !== 'PAID'}
+									<a
+										href={`/finanzas/pagos/nuevo?studentId=${student.id}`}
+										class="text-sm text-emerald-400 hover:text-emerald-300"
+									>
+										Registrar pago
+									</a>
+								{/if}
 							</div>
 						</td>
 					</tr>

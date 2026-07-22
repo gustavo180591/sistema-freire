@@ -16,6 +16,7 @@ import {
 	checkAndExpireScholarshipsForStudent,
 	getChargeDueDate
 } from '$lib/server/financial/scholarship-expiration-service';
+import { studentFinancialSummaryService } from '$lib/server/financial/student-financial-summary-service';
 
 /**
  * Genera cuotas mensuales faltantes desde el inicio del ciclo lectivo hasta el mes actual
@@ -322,6 +323,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const totalDebt = charges.reduce((acc, charge) => acc + charge.pending, 0);
 
 	const totalPaid = student.payments.reduce((acc, payment) => acc + Number(payment.amount), 0);
+
+	// Obtener resumen financiero base para estado de bloqueo
+	const financialSummary = await studentFinancialSummaryService.getStudentFinancialSummary(
+		student.id
+	);
 
 	// Obtener estado de bloqueo financiero
 	const blockingStatus = await shouldBlockStudent(student.id);

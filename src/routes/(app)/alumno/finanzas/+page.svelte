@@ -39,6 +39,20 @@
 		};
 		return labels[status] || status;
 	}
+
+	function getPaymentMethodLabel(method: string): string {
+		const labels: Record<string, string> = {
+			CASH: 'Efectivo',
+			TRANSFER: 'Transferencia',
+			CARD: 'Tarjeta',
+			CHEQUE: 'Cheque',
+			MERCADO_PAGO: 'Mercado Pago',
+			MP: 'Mercado Pago',
+			DEBIT: 'Débito',
+			CREDIT: 'Crédito'
+		};
+		return labels[method] || method;
+	}
 </script>
 
 <svelte:head>
@@ -236,7 +250,7 @@
 								<td class="px-4 py-3 font-semibold text-emerald-400">
 									{currency.format(Number(payment.amount))}
 								</td>
-								<td class="px-4 py-3">{payment.method}</td>
+								<td class="px-4 py-3">{getPaymentMethodLabel(payment.method)}</td>
 								<td class="px-4 py-3">{payment.reference || '-'}</td>
 								<td class="px-4 py-3">
 									{#if payment.receipt}

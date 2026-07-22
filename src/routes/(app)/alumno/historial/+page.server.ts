@@ -3,6 +3,7 @@ import { prisma } from '$lib/server/db/prisma';
 import { redirect, error } from '@sveltejs/kit';
 import { getStudentBlockingMessage } from '$lib/server/financial/student-blocking-service';
 import { getCurrentStudentForUser } from '$lib/server/students/current-student-service';
+import { studentFinancialSummaryService } from '$lib/server/financial/student-financial-summary-service';
 
 interface EnhancedSubject {
 	id: string;
@@ -198,10 +199,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const progress =
 		totalPlanSubjects > 0 ? Math.round((approvedCount / totalPlanSubjects) * 100) : 0;
 
-	// Calcular deuda financiera real
-	const totalDebt = studentWithRelations.studentCharges.reduce((sum: number, charge) => {
-		return sum + Number(charge.amount) - Number(charge.paidAmount);
-	}, 0);
+	// Calcular resumen financiero usando el servicio común
+	const financialSummary = await studentFinancialSummaryService.getStudentFinancialSummary(
+		studentWithRelations.id
+	);
 
 	return {
 		student: {
@@ -212,8 +213,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			career: studentWithRelations.career.name,
 			location: studentWithRelations.location?.name || null,
 			currentYear: studentWithRelations.currentYear,
-			financialBlocked: studentWithRelations.financialBlocked,
-			blockingMessage
+			financialBlocked: financialSummary.financialBlocked,
+			blockingMessage: financialSummary.blockingMessage
 		},
 		academic: {
 			totalSubjects: totalPlanSubjects,
@@ -224,7 +225,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			subjectsByYear
 		},
 		financial: {
-			totalDebt
+			totalDebt: financialSummary.totalDebt
 		}
 	};
 };

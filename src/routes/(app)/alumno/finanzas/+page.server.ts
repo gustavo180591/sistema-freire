@@ -4,6 +4,7 @@ import { redirect, error } from '@sveltejs/kit';
 import { getStudentBlockingMessage } from '$lib/server/financial/student-blocking-service';
 import { getCurrentStudentForUser } from '$lib/server/students/current-student-service';
 import { checkAndExpireScholarshipsForStudent } from '$lib/server/financial/scholarship-expiration-service';
+import { studentFinancialSummaryService } from '$lib/server/financial/student-financial-summary-service';
 
 /**
  * Mapper para convertir StudentCharge a POJO serializable
@@ -211,21 +212,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// Obtener mensaje de bloqueo financiero
 	const blockingMessage = await getStudentBlockingMessage(studentWithRelations.id);
 
-	// Calcular deuda total
-	const totalCharges = studentWithRelations.studentCharges.reduce(
-		(sum: number, charge) => sum + Number(charge.amount),
-		0
+	// Calcular resumen financiero usando el servicio común
+	const financialSummary = await studentFinancialSummaryService.getStudentFinancialSummary(
+		studentWithRelations.id
 	);
-	const totalPayments = studentWithRelations.payments.reduce(
-		(sum: number, payment) => sum + Number(payment.amount),
-		0
-	);
-	const totalDebt = totalCharges - totalPayments;
-
-	// Calcular deuda vencida
-	const overdueDebt = studentWithRelations.studentCharges
-		.filter((charge) => charge.dueDate && new Date(charge.dueDate) < new Date())
-		.reduce((sum: number, charge) => sum + Number(charge.amount) - Number(charge.paidAmount), 0);
 
 	// Agrupar cargos por concepto
 	const chargesByConcept = studentWithRelations.studentCharges.reduce(
@@ -250,14 +240,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 			career: studentWithRelations.career.name,
 			location: studentWithRelations.location?.name || null,
 			currentYear: studentWithRelations.currentYear,
-			financialBlocked: studentWithRelations.financialBlocked,
+			financialBlocked: financialSummary.financialBlocked,
 			blockingMessage
 		},
 		financial: {
-			totalCharges,
-			totalPayments,
-			totalDebt,
-			overdueDebt,
+			totalCharges: studentWithRelations.studentCharges.reduce(
+				(sum: number, charge) => sum + Number(charge.amount),
+				0
+			),
+			totalPayments: financialSummary.totalPaid,
+			totalDebt: financialSummary.totalDebt,
+			overdueDebt: financialSummary.overdueDebt,
 			charges: studentWithRelations.studentCharges.map(serializeStudentCharge),
 			payments: studentWithRelations.payments.map(serializePayment),
 			chargesByConcept

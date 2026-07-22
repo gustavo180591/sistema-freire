@@ -565,18 +565,21 @@ export const actions: Actions = {
 
 		const data = await request.formData();
 		const chargeId = data.get('chargeId')?.toString();
-		const finalAmountStr = data.get('finalAmount')?.toString();
 		const paidAmountStr = data.get('paidAmount')?.toString();
+		const chargeType = data.get('chargeType')?.toString() as 'NORMAL' | 'BECADO' | 'RECURSANTE';
 
-		if (!chargeId || !finalAmountStr || !paidAmountStr) {
+		if (!chargeId || !paidAmountStr || !chargeType) {
 			return { error: 'Todos los campos son requeridos' };
 		}
 
-		const finalAmount = Number(finalAmountStr);
 		const paidAmount = Number(paidAmountStr);
 
-		if (isNaN(finalAmount) || isNaN(paidAmount) || finalAmount < 0 || paidAmount < 0) {
+		if (isNaN(paidAmount) || paidAmount < 0) {
 			return { error: 'Importes inválidos' };
+		}
+
+		if (!['NORMAL', 'BECADO', 'RECURSANTE'].includes(chargeType)) {
+			return { error: 'Tipo de cuota inválido' };
 		}
 
 		const charge = await prisma.studentCharge.findFirst({
@@ -592,6 +595,38 @@ export const actions: Actions = {
 			const previousFinalAmount = Number(charge.finalAmount);
 			const previousPaidAmount = Number(charge.paidAmount);
 
+			// Determinar flags de tipo de cuota
+			const isBecado = chargeType === 'BECADO';
+			const isRecursante = chargeType === 'RECURSANTE';
+
+			let finalAmount: number;
+			let benefitType: string | null = null;
+			let benefitReason = 'Normal';
+			let discountApplied = 0;
+			let scholarshipApplied = 0;
+
+			if (charge.concept.code === 'CUOTA_MENSUAL') {
+				const benefitsConfig = await getBenefitsConfig(prisma);
+				const periodParts = charge.periodLabel.split('-');
+				const month = periodParts.length === 2 ? parseInt(periodParts[1], 10) : null;
+
+				const benefitCalculation = calculateChargeBenefit(
+					new Decimal(benefitsConfig.normalFeeAmount),
+					{ isBecado, isRecursante, isAlumno: false },
+					charge.installmentNumber,
+					isNaN(month as number) ? null : month,
+					benefitsConfig
+				);
+
+				finalAmount = Number(benefitCalculation.finalAmount);
+				benefitType = benefitCalculation.benefitType;
+				benefitReason = benefitCalculation.benefitReason || 'Normal';
+				discountApplied = Number(benefitCalculation.discountApplied || 0);
+				scholarshipApplied = Number(benefitCalculation.scholarshipApplied || 0);
+			} else {
+				finalAmount = previousFinalAmount;
+			}
+
 			let newStatus = charge.status;
 			if (paidAmount === 0) {
 				newStatus = 'PENDING';
@@ -601,13 +636,22 @@ export const actions: Actions = {
 				newStatus = 'PARTIAL';
 			}
 
+			const updateData: any = {
+				paidAmount: new Decimal(paidAmount),
+				status: newStatus
+			};
+
+			if (charge.concept.code === 'CUOTA_MENSUAL') {
+				updateData.finalAmount = new Decimal(finalAmount);
+				updateData.benefitType = benefitType;
+				updateData.benefitReason = benefitReason;
+				updateData.discountApplied = new Decimal(discountApplied);
+				updateData.scholarshipApplied = new Decimal(scholarshipApplied);
+			}
+
 			await prisma.studentCharge.update({
 				where: { id: chargeId },
-				data: {
-					finalAmount: new Decimal(finalAmount),
-					paidAmount: new Decimal(paidAmount),
-					status: newStatus
-				}
+				data: updateData
 			});
 
 			// Log audit movement
@@ -617,7 +661,7 @@ export const actions: Actions = {
 					movementType: 'ADJUSTMENT',
 					entityType: 'StudentCharge',
 					entityId: chargeId,
-					description: 'Edición manual de cargo desde finanzas del alumno',
+					description: `Edición manual de cargo: tipo cambiado a ${chargeType}`,
 					amount: new Decimal(finalAmount).minus(new Decimal(previousFinalAmount)),
 					balanceBefore: previousFinalAmount - previousPaidAmount,
 					balanceAfter: finalAmount - paidAmount,
@@ -629,7 +673,8 @@ export const actions: Actions = {
 						previousPaidAmount,
 						newPaidAmount: paidAmount,
 						previousStatus: charge.status,
-						newStatus
+						newStatus,
+						chargeType
 					},
 					userId: locals.user.id
 				}

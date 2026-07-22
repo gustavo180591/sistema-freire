@@ -461,17 +461,32 @@
 			>
 				<input type="hidden" name="chargeId" value={selectedCharge.id} />
 				<div>
+					<label for="chargeType" class="mb-2 block text-sm font-medium text-slate-300">
+						Tipo de cuota
+					</label>
+					<select
+						id="chargeType"
+						name="chargeType"
+						value={selectedCharge.benefitType === 'SCHOLARSHIP' ? 'BECADO' : selectedCharge.benefitType === 'RECURSANT' ? 'RECURSANTE' : 'NORMAL'}
+						class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
+						required
+					>
+						<option value="NORMAL">Normal</option>
+						<option value="BECADO">Becado</option>
+						<option value="RECURSANTE">Recursante</option>
+					</select>
+				</div>
+				<div>
 					<label for="finalAmount" class="mb-2 block text-sm font-medium text-slate-300">
-						Importe a cobrar
+						Importe a cobrar (se recalcula según el tipo)
 					</label>
 					<input
 						type="number"
 						id="finalAmount"
-						name="finalAmount"
 						value={selectedCharge.finalAmount}
-						class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
+						disabled
+						class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-slate-500"
 						step="0.01"
-						required
 					/>
 				</div>
 				<div>

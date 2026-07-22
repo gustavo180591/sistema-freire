@@ -103,9 +103,12 @@
 	<!-- KPIs -->
 	<section class="grid gap-4 md:grid-cols-4">
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<p class="text-sm text-slate-400">Deuda total</p>
+			<p class="text-sm text-slate-400">{metrics.financialLabel}</p>
 			<h2 class="mt-3 text-4xl font-bold">
-				{currency.format(metrics.totalDebt)}
+				{#if metrics.hasCredit}
+					+
+				{/if}
+				{currency.format(metrics.financialAmount)}
 			</h2>
 		</div>
 

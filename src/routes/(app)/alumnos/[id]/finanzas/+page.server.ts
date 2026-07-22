@@ -334,6 +334,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const totalPaid = student.payments.reduce((acc, payment) => acc + Number(payment.amount), 0);
 
+	// Determinar si es saldo a favor o deuda pendiente
+	const hasCredit = totalDebt < 0;
+	const financialLabel = hasCredit ? 'Saldo a favor' : 'Deuda total';
+	const financialAmount = Math.abs(totalDebt);
+
 	// Obtener resumen financiero base para estado de bloqueo
 	const financialSummary = await studentFinancialSummaryService.getStudentFinancialSummary(
 		student.id
@@ -355,6 +360,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		metrics: {
 			totalDebt,
 			totalPaid,
+			hasCredit,
+			financialLabel,
+			financialAmount,
 			pendingCharges: charges.filter((c) => c.pending > 0).length,
 			hasScholarship: student.isBecado,
 			blocked: blockingStatus.isBlocked,

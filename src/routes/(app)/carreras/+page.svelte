@@ -10,6 +10,7 @@
 		plans: number;
 		students: number;
 		teachers: number;
+		locations: string[];
 	}
 
 	let { data, form }: { data: PageData; form?: { error?: string } } = $props();
@@ -304,6 +305,11 @@
 						<th
 							class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
 						>
+							Localidad
+						</th>
+						<th
+							class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+						>
 							Estado
 						</th>
 						<th
@@ -316,7 +322,7 @@
 				<tbody class="divide-y divide-slate-800">
 					{#if careers.length === 0}
 						<tr>
-							<td colspan="6" class="px-4 py-12 text-center">
+							<td colspan="7" class="px-4 py-12 text-center">
 								<div class="flex flex-col items-center gap-4">
 									<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-800">
 										<svg
@@ -367,7 +373,7 @@
 						</tr>
 					{:else if filtered.length === 0}
 						<tr>
-							<td colspan="6" class="px-4 py-12 text-center">
+							<td colspan="7" class="px-4 py-12 text-center">
 								<div class="flex flex-col items-center gap-4">
 									<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-800">
 										<svg
@@ -442,6 +448,21 @@
 										<span class="text-sm text-slate-300">{career.teachers ?? 0}</span>
 										<span class="text-xs text-slate-500">docentes</span>
 									</div>
+								</td>
+								<td class="px-4 py-3">
+									{#if career.locations.length > 0}
+										<div class="flex flex-wrap gap-1.5">
+											{#each career.locations as location}
+												<span
+													class="inline-flex items-center rounded-lg bg-slate-800 px-2 py-1 text-xs font-medium text-slate-300"
+												>
+													{location}
+												</span>
+											{/each}
+										</div>
+									{:else}
+										<span class="text-xs text-slate-500">Sin localidad</span>
+									{/if}
 								</td>
 								<td class="px-4 py-3">
 									<span

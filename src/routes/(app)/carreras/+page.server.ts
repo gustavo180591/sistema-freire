@@ -64,6 +64,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 						}
 					}
 				}
+			},
+			locations: {
+				include: {
+					location: true
+				}
 			}
 		},
 		orderBy: {
@@ -80,6 +85,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 			});
 		});
 
+		// Obtener localidades de la carrera
+		const locationNames = career.locations.map((cl) => cl.location.name);
+
 		return {
 			id: career.id,
 			code: career.code,
@@ -87,7 +95,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			active: career.active,
 			plans: career.studyPlans.length,
 			students: career.students.length,
-			teachers: teacherIds.size
+			teachers: teacherIds.size,
+			locations: locationNames
 		};
 	});
 

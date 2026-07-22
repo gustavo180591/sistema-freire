@@ -268,6 +268,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	});
 	const totalDebt = totalCharges - Number(totalPayments._sum.amount || 0);
 
+	// Determinar si es saldo a favor o deuda pendiente
+	const hasCredit = totalDebt < 0;
+	const financialLabel = hasCredit ? 'Saldo a favor' : 'Deuda pendiente';
+	const financialAmount = Math.abs(totalDebt);
+
 	// Calcular métricas adicionales
 	const currentSubjects = assignedSubjects.filter((s) => s.status === 'ACTIVE').length;
 	const regularSubjects = assignedSubjects.filter((s) => s.regularityStatus === 'REGULAR').length;
@@ -306,7 +311,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			availableSubjects
 		},
 		financial: {
-			totalDebt
+			totalDebt,
+			hasCredit,
+			financialLabel,
+			financialAmount
 		}
 	};
 };

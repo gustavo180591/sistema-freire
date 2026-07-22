@@ -127,9 +127,12 @@
 		</div>
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<p class="text-sm text-slate-400">Deuda pendiente</p>
+			<p class="text-sm text-slate-400">{financial.financialLabel}</p>
 			<h2 class="mt-3 text-4xl font-bold">
-				{currency.format(financial.totalDebt)}
+				{#if financial.hasCredit}
+					+
+				{/if}
+				{currency.format(financial.financialAmount)}
 			</h2>
 		</div>
 	</section>

@@ -253,9 +253,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const progress =
 		totalCareerSubjects > 0 ? Math.round((approvedCount / totalCareerSubjects) * 100) : 0;
 
-	// Calcular deuda financiera real
+	// Calcular deuda financiera real (usar finalAmount según tipo de alumno)
 	const totalCharges = student.studentCharges.reduce(
-		(sum, charge) => sum + Number(charge.amount),
+		(sum, charge) => sum + Number(charge.finalAmount),
 		0
 	);
 	const totalPayments = await prisma.payment.aggregate({

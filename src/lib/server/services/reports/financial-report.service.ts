@@ -48,7 +48,7 @@ export async function getFinancialReport(): Promise<FinancialReportResult> {
 	]);
 
 	const rows: FinancialReportRow[] = charges.map((charge) => {
-		const pending = Number(charge.amount) - Number(charge.paidAmount);
+		const pending = Number(charge.finalAmount) - Number(charge.paidAmount);
 
 		return {
 			id: charge.id,

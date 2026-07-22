@@ -93,11 +93,11 @@ async function getTotalPending(filters?: ReportFilters): Promise<number> {
 	const where = buildChargeWhere(filters);
 	const charges = await prisma.studentCharge.findMany({
 		where: { ...where, status: { in: ['PENDING', 'PARTIAL'] } },
-		select: { amount: true, paidAmount: true }
+		select: { finalAmount: true, paidAmount: true }
 	});
 
 	return charges.reduce((acc, charge) => {
-		return acc + Number(charge.amount) - Number(charge.paidAmount);
+		return acc + Number(charge.finalAmount) - Number(charge.paidAmount);
 	}, 0);
 }
 
@@ -112,11 +112,11 @@ async function getOverdueDebt(filters?: ReportFilters): Promise<number> {
 			status: { in: ['PENDING', 'PARTIAL'] },
 			dueDate: { lt: new Date() }
 		},
-		select: { amount: true, paidAmount: true }
+		select: { finalAmount: true, paidAmount: true }
 	});
 
 	return charges.reduce((acc, charge) => {
-		return acc + Number(charge.amount) - Number(charge.paidAmount);
+		return acc + Number(charge.finalAmount) - Number(charge.paidAmount);
 	}, 0);
 }
 
@@ -127,12 +127,12 @@ async function getStudentsWithDebt(filters?: ReportFilters): Promise<number> {
 	const where = buildChargeWhere(filters);
 	const charges = await prisma.studentCharge.findMany({
 		where: { ...where, status: { in: ['PENDING', 'PARTIAL'] } },
-		select: { studentId: true, amount: true, paidAmount: true }
+		select: { studentId: true, finalAmount: true, paidAmount: true }
 	});
 
 	const studentsWithDebt = new Set<string>();
 	for (const charge of charges) {
-		const pending = Number(charge.amount) - Number(charge.paidAmount);
+		const pending = Number(charge.finalAmount) - Number(charge.paidAmount);
 		if (pending > 0) {
 			studentsWithDebt.add(charge.studentId);
 		}

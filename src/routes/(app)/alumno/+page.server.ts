@@ -119,9 +119,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// Materias cursando (en estado LIBRE)
 	const currentSubjects = allSubjects.filter((s) => s.regularityStatus === 'LIBRE');
 
-	// Calcular deuda total
+	// Calcular deuda total (usar finalAmount según tipo de alumno)
 	const totalDebt = studentWithRelations.studentCharges.reduce(
-		(acc: number, charge) => acc + Number(charge.amount),
+		(acc: number, charge) => acc + Number(charge.finalAmount),
 		0
 	);
 

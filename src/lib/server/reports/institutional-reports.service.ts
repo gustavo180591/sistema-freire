@@ -95,9 +95,9 @@ export async function getInstitutionalMetrics(): Promise<ReportResult<Institutio
  */
 async function getTotalDebt(): Promise<number> {
 	const result = await prisma.studentCharge.aggregate({
-		_sum: { amount: true }
+		_sum: { finalAmount: true }
 	});
-	return Number(result._sum.amount ?? 0);
+	return Number(result._sum.finalAmount ?? 0);
 }
 
 /**
@@ -116,11 +116,11 @@ async function getTotalCollected(): Promise<number> {
 async function getTotalPending(): Promise<number> {
 	const charges = await prisma.studentCharge.findMany({
 		where: { status: { in: ['PENDING', 'PARTIAL'] } },
-		select: { amount: true, paidAmount: true }
+		select: { finalAmount: true, paidAmount: true }
 	});
 
 	return charges.reduce((acc, charge) => {
-		return acc + Number(charge.amount) - Number(charge.paidAmount);
+		return acc + Number(charge.finalAmount) - Number(charge.paidAmount);
 	}, 0);
 }
 
@@ -133,11 +133,11 @@ async function getOverdueDebt(): Promise<number> {
 			status: { in: ['PENDING', 'PARTIAL'] },
 			dueDate: { lt: new Date() }
 		},
-		select: { amount: true, paidAmount: true }
+		select: { finalAmount: true, paidAmount: true }
 	});
 
 	return charges.reduce((acc, charge) => {
-		return acc + Number(charge.amount) - Number(charge.paidAmount);
+		return acc + Number(charge.finalAmount) - Number(charge.paidAmount);
 	}, 0);
 }
 

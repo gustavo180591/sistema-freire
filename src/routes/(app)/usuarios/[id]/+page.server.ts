@@ -18,12 +18,20 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 					subjects: {
 						include: {
 							subject: {
-								select: {
-									id: true,
-									code: true,
-									name: true,
-									yearLevel: true,
-									active: true
+								include: {
+									careerSubjects: {
+										include: {
+											career: {
+												include: {
+													locations: {
+														include: {
+															location: true
+														}
+													}
+												}
+											}
+										}
+									}
 								}
 							}
 						}
@@ -40,6 +48,26 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	if (!user) {
 		throw error(404, 'Usuario no encontrado');
+	}
+
+	// Obtener carreras del docente con sus localidades
+	let teacherCareers: any[] = [];
+	if (user.teacher) {
+		const careerMap = new Map<string, any>();
+		user.teacher.subjects.forEach((st) => {
+			st.subject.careerSubjects.forEach((cs) => {
+				if (!careerMap.has(cs.career.id)) {
+					const locations = cs.career.locations.map((cl) => cl.location.name);
+					careerMap.set(cs.career.id, {
+						id: cs.career.id,
+						name: cs.career.name,
+						code: cs.career.code,
+						locations
+					});
+				}
+			});
+		});
+		teacherCareers = Array.from(careerMap.values());
 	}
 
 	// Obtener usuario actual y sus roles
@@ -73,6 +101,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	return {
 		user,
+		teacherCareers,
 		canResetPassword,
 		evaluations: evaluations.map((e) => ({
 			id: e.id,

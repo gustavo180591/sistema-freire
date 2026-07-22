@@ -165,6 +165,30 @@
 					<p class="text-sm text-slate-400">DNI</p>
 					<p class="font-medium">{data.user.teacher.dni}</p>
 				</div>
+				{#if data.teacherCareers && data.teacherCareers.length > 0}
+					<div>
+						<p class="text-sm text-slate-400">Carreras</p>
+						<div class="mt-2 space-y-2">
+							{#each data.teacherCareers as career}
+								<div class="rounded-xl bg-slate-800/50 p-3">
+									<p class="font-medium">{career.name}</p>
+									<p class="text-sm text-slate-400">{career.code}</p>
+									{#if career.locations && career.locations.length > 0}
+										<div class="mt-2 flex flex-wrap gap-1.5">
+											{#each career.locations as location}
+												<span
+													class="inline-flex items-center rounded-lg bg-slate-700 px-2 py-1 text-xs font-medium text-slate-300"
+												>
+													{location}
+												</span>
+											{/each}
+										</div>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/if}
 			</div>
 		</div>
 	{/if}

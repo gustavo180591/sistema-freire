@@ -612,7 +612,7 @@ export const actions: Actions = {
 
 				const benefitCalculation = calculateChargeBenefit(
 					new Decimal(benefitsConfig.normalFeeAmount),
-					{ isBecado, isRecursante, isAlumno: false },
+					{ isBecado, isRecursante },
 					charge.installmentNumber,
 					isNaN(month as number) ? null : month,
 					benefitsConfig

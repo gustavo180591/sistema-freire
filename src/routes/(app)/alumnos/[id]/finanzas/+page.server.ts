@@ -307,6 +307,14 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			const lateFeeAppliedValue = Number(charge.lateFeeApplied);
 			const paidAmountValue = Number(charge.paidAmount);
 
+			// Buscar recibo asociado al cargo
+			const allocation = await prisma.paymentAllocation.findFirst({
+				where: { chargeId: charge.id },
+				include: { payment: { include: { receipt: { select: { id: true } } } } },
+				orderBy: { createdAt: 'desc' }
+			});
+			const receiptId = allocation?.payment?.receipt?.id || null;
+
 			return {
 				id: charge.id,
 				concept: charge.concept.name,
@@ -325,6 +333,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				chargeType,
 				scholarshipLost,
 				isOverdue,
+				receiptId,
 				dueDate: dueDate ? dueDate.toISOString() : null
 			};
 		})

@@ -263,8 +263,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				}
 			}
 
-			// Calcular pendiente correctamente: max(finalAmount - paidAmount, 0)
-			const pending = Math.max(finalAmount - Number(charge.paidAmount), 0);
+			// Calcular pendiente correctamente (puede ser negativo para saldo a favor)
+			const pending = finalAmount - Number(charge.paidAmount);
 
 			// Determine charge type based on student type, benefit month, and scholarship status
 			let chargeType = 'Cuota Normal';

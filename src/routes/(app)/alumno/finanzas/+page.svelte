@@ -161,61 +161,84 @@
 				<table class="w-full text-left">
 					<thead class="border-b border-slate-800 bg-slate-900">
 						<tr>
-							<th class="px-4 py-3 text-sm font-semibold">Concepto</th>
-							<th class="px-4 py-3 text-sm font-semibold">Periodo</th>
-							<th class="px-4 py-3 text-sm font-semibold">Monto</th>
-							<th class="px-4 py-3 text-sm font-semibold">Beca</th>
-							<th class="px-4 py-3 text-sm font-semibold">Pagado</th>
-							<th class="px-4 py-3 text-sm font-semibold">Saldo</th>
-							<th class="px-4 py-3 text-sm font-semibold">Vencimiento</th>
-							<th class="px-4 py-3 text-sm font-semibold">Estado</th>
+							<th class="px-3 py-3 text-sm font-semibold">Concepto</th>
+							<th class="px-3 py-3 text-sm font-semibold">Período</th>
+							<th class="px-3 py-3 text-sm font-semibold">Tipo de cuota</th>
+							<th class="px-3 py-3 text-right text-sm font-semibold">Importe a cobrar</th>
+							<th class="px-3 py-3 text-right text-sm font-semibold">Pagado</th>
+							<th class="px-3 py-3 text-right text-sm font-semibold">Pendiente</th>
+							<th class="px-3 py-3 text-sm font-semibold">Estado</th>
+							<th class="px-3 py-3 text-sm font-semibold">Vencimiento</th>
 						</tr>
 					</thead>
 					<tbody>
 						{#each financial.charges as charge}
 							<tr class="border-b border-slate-800 last:border-none">
-								<td class="px-4 py-3 font-medium">{charge.concept?.name || 'Sin concepto'}</td>
-								<td class="px-4 py-3">{charge.periodLabel}</td>
-								<td class="px-4 py-3">{currency.format(charge.amount)}</td>
-								<td class="px-4 py-3">
-									{#if charge.scholarshipApplied > 0}
-										<span class="text-emerald-400"
-											>{currency.format(charge.scholarshipApplied)}</span
+								<td class="px-3 py-3 font-medium">{charge.concept?.name || 'Sin concepto'}</td>
+								<td class="px-3 py-3">{charge.periodLabel}</td>
+								<td class="px-3 py-3">
+									{#if charge.benefitType === 'SCHOLARSHIP'}
+										<span
+											class="inline-flex items-center rounded-full bg-emerald-950/50 px-2 py-1 text-xs font-medium text-emerald-400"
 										>
-									{:else if charge.scholarshipLost}
-										<span class="text-red-400" title="Beneficio perdido por pago fuera de término">
-											Perdida
+											Becado
+										</span>
+									{:else if charge.benefitType === 'RECURSANT'}
+										<span
+											class="inline-flex items-center rounded-full bg-amber-950/50 px-2 py-1 text-xs font-medium text-amber-400"
+										>
+											Recursante
 										</span>
 									{:else}
-										<span class="text-slate-500">-</span>
+										<span
+											class="inline-flex items-center rounded-full bg-slate-800 px-2 py-1 text-xs font-medium text-slate-400"
+										>
+											Normal
+										</span>
 									{/if}
 								</td>
-								<td class="px-4 py-3">{currency.format(charge.paidAmount)}</td>
-								<td class="px-4 py-3 font-semibold">
-									{currency.format(charge.amount - charge.paidAmount)}
+								<td class="px-3 py-3 text-right font-semibold">
+									{currency.format(charge.finalAmount)}
 								</td>
-								<td class="px-4 py-3">
-									{#if charge.dueDate}
-										{dateFormat.format(new Date(charge.dueDate))}
+								<td class="px-3 py-3 text-right">
+									{currency.format(charge.paid)}
+								</td>
+								<td class="px-3 py-3 text-right">
+									{#if charge.pending > 0}
+										<span class="text-red-400">{currency.format(charge.pending)}</span>
 									{:else}
-										<span class="text-slate-500">Sin fecha</span>
+										<span class="text-emerald-400">{currency.format(charge.pending)}</span>
 									{/if}
 								</td>
-								<td class="px-4 py-3">
+								<td class="px-3 py-3">
 									<span
-										class="rounded-full border px-3 py-1 text-xs {getStatusColor(charge.status)}"
+										class="rounded-full border border-slate-700 px-2 py-1 text-xs {getStatusColor(
+											charge.status
+										)}"
 									>
 										{getStatusLabel(charge.status)}
 									</span>
 								</td>
+								<td class="px-3 py-3">
+									{#if charge.dueDate}
+										{#if charge.isOverdue}
+											<span
+												class="rounded-full border border-red-600 bg-red-950/30 px-2 py-1 text-xs text-red-400"
+											>
+												Vencida
+											</span>
+										{:else}
+											<span
+												class="rounded-full border border-emerald-600 bg-white px-2 py-1 text-xs text-black"
+											>
+												Al día
+											</span>
+										{/if}
+									{:else}
+										<span class="text-xs text-slate-500">-</span>
+									{/if}
+								</td>
 							</tr>
-							{#if charge.scholarshipLost}
-								<tr class="border-b border-slate-800/50 bg-red-950/10">
-									<td colspan="8" class="px-4 py-2 text-xs text-red-400">
-										⚠️ Beneficio de beca perdido por pago fuera del mes correspondiente
-									</td>
-								</tr>
-							{/if}
 						{/each}
 					</tbody>
 				</table>

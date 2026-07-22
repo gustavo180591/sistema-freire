@@ -7,6 +7,10 @@
 
 	let showSuccess = $state(false);
 	let successOpacity = $state(1);
+	let showTypeChangeModal = $state(false);
+	let selectedType = $state<'NORMAL' | 'BECADO' | 'RECURSANTE'>('NORMAL');
+	let changeReason = $state('');
+	let recalculateCharges = $state(false);
 
 	// Mostrar mensaje de éxito cuando hay form.success
 	$effect(() => {
@@ -30,6 +34,30 @@
 			};
 		}
 	});
+
+	// Cerrar modal si hay éxito
+	$effect(() => {
+		if (form?.success && showTypeChangeModal) {
+			showTypeChangeModal = false;
+			changeReason = '';
+			recalculateCharges = false;
+		}
+	});
+
+	function getCurrentType(): 'NORMAL' | 'BECADO' | 'RECURSANTE' {
+		if (student.isBecado) return 'BECADO';
+		if (student.isRecursante) return 'RECURSANTE';
+		return 'NORMAL';
+	}
+
+	function getTypeLabel(type: 'NORMAL' | 'BECADO' | 'RECURSANTE'): string {
+		const labels = {
+			NORMAL: 'Normal',
+			BECADO: 'Becado',
+			RECURSANTE: 'Recursante'
+		};
+		return labels[type];
+	}
 
 	const currency = new Intl.NumberFormat('es-AR', {
 		style: 'currency',
@@ -119,6 +147,16 @@
 			Generar certificado
 		</a>
 
+		<button
+			onclick={() => {
+				selectedType = getCurrentType();
+				showTypeChangeModal = true;
+			}}
+			class="cursor-pointer rounded-2xl border border-amber-700 bg-amber-950/50 px-5 py-3 text-sm font-semibold text-amber-300 transition hover:border-amber-500 hover:bg-amber-950 hover:shadow-lg"
+		>
+			Cambiar tipo de alumno
+		</button>
+
 		<form method="POST" action="?/recalculateCharges">
 			<button
 				type="submit"
@@ -134,7 +172,96 @@
 			class="rounded-2xl border border-green-600 bg-green-950/30 px-4 py-3 text-sm text-black transition-opacity duration-500"
 			style="opacity: {successOpacity}"
 		>
-			✓ Cargos recalculados: {form?.updatedCount} actualizados, {form?.skippedCount} omitidos
+			✓ {form?.message ||
+				`Cargos recalculados: ${form?.updatedCount} actualizados, ${form?.skippedCount} omitidos`}
+		</div>
+	{/if}
+
+	{#if form?.error}
+		<div class="rounded-2xl border border-red-600 bg-red-950/30 px-4 py-3 text-sm text-red-400">
+			✗ {form.error}
+		</div>
+	{/if}
+
+	<!-- Modal de cambio de tipo de alumno -->
+	{#if showTypeChangeModal}
+		<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+			<div class="w-full max-w-md rounded-3xl border border-slate-700 bg-slate-900 p-6">
+				<h2 class="mb-4 text-2xl font-bold">Cambiar tipo de alumno</h2>
+				<p class="mb-4 text-sm text-slate-400">
+					Tipo actual: <span class="font-semibold text-slate-300"
+						>{getTypeLabel(getCurrentType())}</span
+					>
+				</p>
+
+				<form method="POST" action="?/changeStudentType">
+					<div class="mb-4">
+						<label for="newType" class="mb-2 block text-sm font-medium text-slate-300"
+							>Nuevo tipo</label
+						>
+						<select
+							id="newType"
+							name="newType"
+							bind:value={selectedType}
+							class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
+						>
+							<option value="NORMAL">Normal</option>
+							<option value="BECADO">Becado</option>
+							<option value="RECURSANTE">Recursante</option>
+						</select>
+					</div>
+
+					<div class="mb-4">
+						<label for="reason" class="mb-2 block text-sm font-medium text-slate-300"
+							>Motivo (obligatorio)</label
+						>
+						<textarea
+							id="reason"
+							name="reason"
+							bind:value={changeReason}
+							class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
+							rows="3"
+							required
+						></textarea>
+					</div>
+
+					<div class="mb-6">
+						<label class="flex items-center gap-2">
+							<input
+								type="checkbox"
+								name="recalculateCharges"
+								bind:checked={recalculateCharges}
+								class="h-4 w-4 rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-indigo-500"
+							/>
+							<span class="text-sm text-slate-300">Recalcular cuotas pendientes con nuevo tipo</span
+							>
+						</label>
+						<p class="mt-1 text-xs text-slate-500">
+							Solo aplica a cuotas PENDING/PARTIAL. No modifica pagos históricos.
+						</p>
+					</div>
+
+					<div class="flex justify-end gap-3">
+						<button
+							type="button"
+							onclick={() => {
+								showTypeChangeModal = false;
+								changeReason = '';
+								recalculateCharges = false;
+							}}
+							class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-slate-800"
+						>
+							Cancelar
+						</button>
+						<button
+							type="submit"
+							class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+						>
+							Confirmar cambio
+						</button>
+					</div>
+				</form>
+			</div>
 		</div>
 	{/if}
 
@@ -143,61 +270,72 @@
 		<table class="w-full text-left">
 			<thead class="border-b border-slate-800 bg-slate-900">
 				<tr>
-					<th class="px-6 py-4 text-sm font-semibold">Concepto</th>
-					<th class="px-6 py-4 text-sm font-semibold">Período</th>
-					<th class="px-6 py-4 text-sm font-semibold">Importe</th>
-					<th class="px-6 py-4 text-sm font-semibold">Pagado</th>
-					<th class="px-6 py-4 text-sm font-semibold">Pendiente</th>
-					<th class="px-6 py-4 text-sm font-semibold">Tipo de cuota</th>
-					<th class="px-6 py-4 text-sm font-semibold">Estado</th>
-					<th class="px-6 py-4 text-sm font-semibold">Vencimiento</th>
-					<th class="px-6 py-4 text-sm font-semibold">Acción</th>
+					<th class="px-4 py-4 text-sm font-semibold">Concepto</th>
+					<th class="px-4 py-4 text-sm font-semibold">Período</th>
+					<th class="px-4 py-4 text-sm font-semibold">Tipo de cuota</th>
+					<th class="px-4 py-4 text-right text-sm font-semibold">Importe a cobrar</th>
+					<th class="px-4 py-4 text-right text-sm font-semibold">Pagado</th>
+					<th class="px-4 py-4 text-right text-sm font-semibold">Pendiente</th>
+					<th class="px-4 py-4 text-sm font-semibold">Estado</th>
+					<th class="px-4 py-4 text-sm font-semibold">Vencimiento</th>
+					<th class="px-4 py-4 text-sm font-semibold">Acción</th>
 				</tr>
 			</thead>
 			<tbody>
 				{#each charges as charge}
 					<tr class="border-b border-slate-800 last:border-none">
-						<td class="px-6 py-4 font-medium">{charge.concept}</td>
-						<td class="px-6 py-4">{charge.period}</td>
-						<td class="px-6 py-4">
-							{currency.format(charge.amount)}
-						</td>
-						<td class="px-6 py-4">
-							{currency.format(charge.paid)}
-						</td>
-						<td class="px-6 py-4">
-							{currency.format(charge.pending)}
-						</td>
-						<td class="px-6 py-4">
-							{#if charge.scholarshipLost}
+						<td class="px-4 py-4 font-medium">{charge.concept}</td>
+						<td class="px-4 py-4">{charge.period}</td>
+						<td class="px-4 py-4">
+							{#if charge.benefitType === 'SCHOLARSHIP'}
 								<span
-									class="rounded-full border border-red-600 bg-red-950/30 px-3 py-1 text-xs text-red-400"
+									class="inline-flex items-center rounded-full bg-emerald-950/50 px-2 py-1 text-xs font-medium text-emerald-400"
 								>
-									Beca perdida
+									Becado
 								</span>
-								<div class="mt-1 text-xs text-slate-500">
-									Beneficio perdido por pago fuera de término
-								</div>
+							{:else if charge.benefitType === 'RECURSANT'}
+								<span
+									class="inline-flex items-center rounded-full bg-amber-950/50 px-2 py-1 text-xs font-medium text-amber-400"
+								>
+									Recursante
+								</span>
 							{:else}
-								<span class="text-slate-400">{charge.chargeType}</span>
+								<span
+									class="inline-flex items-center rounded-full bg-slate-800 px-2 py-1 text-xs font-medium text-slate-400"
+								>
+									Normal
+								</span>
 							{/if}
 						</td>
-						<td class="px-6 py-4">
-							<span class="rounded-full border border-slate-700 px-3 py-1 text-xs">
+						<td class="px-4 py-4 text-right font-semibold">
+							{currency.format(charge.finalAmount)}
+						</td>
+						<td class="px-4 py-4 text-right">
+							{currency.format(charge.paid)}
+						</td>
+						<td class="px-4 py-4 text-right">
+							{#if charge.pending > 0}
+								<span class="text-red-400">{currency.format(charge.pending)}</span>
+							{:else}
+								<span class="text-emerald-400">{currency.format(charge.pending)}</span>
+							{/if}
+						</td>
+						<td class="px-4 py-4">
+							<span class="rounded-full border border-slate-700 px-2 py-1 text-xs">
 								{translateStatus(charge.status)}
 							</span>
 						</td>
-						<td class="px-6 py-4">
+						<td class="px-4 py-4">
 							{#if charge.conceptCode === 'CUOTA_MENSUAL' && charge.dueDate}
 								{#if charge.isOverdue}
 									<span
-										class="rounded-full border border-red-600 bg-red-950/30 px-3 py-1 text-xs text-red-400"
+										class="rounded-full border border-red-600 bg-red-950/30 px-2 py-1 text-xs text-red-400"
 									>
 										Vencida
 									</span>
 								{:else}
 									<span
-										class="rounded-full border border-emerald-600 bg-white px-3 py-1 text-xs text-black"
+										class="rounded-full border border-emerald-600 bg-white px-2 py-1 text-xs text-black"
 									>
 										Al día
 									</span>
@@ -206,12 +344,12 @@
 								<span class="text-xs text-slate-500">-</span>
 							{/if}
 						</td>
-						<td class="px-6 py-4">
+						<td class="px-4 py-4">
 							<a
 								href={`/finanzas/pagos/nuevo?studentId=${student.id}`}
 								class="text-sm text-indigo-400 hover:text-indigo-300"
 							>
-								Registrar pago
+								Pagar
 							</a>
 						</td>
 					</tr>

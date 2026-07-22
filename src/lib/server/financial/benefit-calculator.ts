@@ -43,8 +43,14 @@ export interface StudentBenefitInfo {
 }
 
 /**
- * Calcula el monto final de una cuota aplicando beneficios de beca y recursante
- * según la configuración institucional.
+ * Calcula el monto final de una cuota según el tipo de alumno y configuración.
+ *
+ * Regla:
+ * - Alumno normal → paga normalFeeAmount
+ * - Alumno becado → paga becadoFeeAmount
+ * - Alumno recursante → paga recursantFeeAmount
+ *
+ * Los montos se toman directamente de la configuración, no se calculan como descuento.
  */
 export function calculateChargeBenefit(
 	baseAmount: Decimal,
@@ -70,7 +76,7 @@ export function calculateChargeBenefit(
 	const monthToCheck = monthNumber || installmentNumber;
 	if (monthToCheck && !config.benefitsMonths.includes(monthToCheck)) {
 		return {
-			finalAmount: baseAmount,
+			finalAmount: new Decimal(config.normalFeeAmount),
 			discountApplied: DecimalHelpers.zero(),
 			scholarshipApplied: DecimalHelpers.zero(),
 			benefitType: 'NONE',
@@ -86,71 +92,55 @@ export function calculateChargeBenefit(
 		};
 	}
 
-	// Calcular alternativas de monto final
-	const normalAmount = baseAmount;
-	const scholarshipAmount = calculateScholarshipAmount(baseAmount, studentBenefitInfo, config);
-	const recursantAmount = calculateRecursantAmount(baseAmount, config);
+	// Determinar el monto según el tipo de alumno
+	let finalAmount: Decimal;
+	let benefitType: BenefitType;
+	let benefitReason: string;
+	let scholarshipApplied: Decimal;
+	let discountApplied: Decimal;
 
-	// Seleccionar el monto más favorable (menor monto final)
-	const amounts = [
-		{ type: 'NONE' as BenefitType, amount: normalAmount, reason: 'Sin beneficio' },
-		{ type: 'SCHOLARSHIP' as BenefitType, amount: scholarshipAmount, reason: 'Beca aplicada' },
-		{
-			type: 'RECURSANT' as BenefitType,
-			amount: recursantAmount,
-			reason: 'Beneficio recursante aplicado'
-		}
-	];
-
-	// Filtrar solo las opciones que aplican según el tipo de alumno
-	const applicableAmounts = amounts.filter((option) => {
-		if (option.type === 'SCHOLARSHIP' && !studentBenefitInfo.isBecado) return false;
-		if (option.type === 'RECURSANT' && !studentBenefitInfo.isRecursante) return false;
-		return true;
-	});
-
-	// Si no hay beneficios aplicables, usar monto normal
-	if (applicableAmounts.length === 0) {
-		return {
-			finalAmount: normalAmount,
-			discountApplied: DecimalHelpers.zero(),
-			scholarshipApplied: DecimalHelpers.zero(),
-			benefitType: 'NONE',
-			benefitReason: 'Alumno no tiene beneficios aplicables',
-			installmentNumber,
-			ruleSnapshot: createRuleSnapshot(
-				baseAmount,
-				installmentNumber,
-				config,
-				studentBenefitInfo,
-				'NONE'
-			)
-		};
+	if (studentBenefitInfo.isBecado) {
+		// Alumno becado: usa becadoFeeAmount
+		finalAmount = new Decimal(config.becadoFeeAmount);
+		benefitType = 'SCHOLARSHIP';
+		benefitReason = 'Cuota Becado';
+		scholarshipApplied = DecimalHelpers.subtract(
+			new Decimal(config.normalFeeAmount),
+			new Decimal(config.becadoFeeAmount)
+		);
+		discountApplied = DecimalHelpers.zero();
+	} else if (studentBenefitInfo.isRecursante) {
+		// Alumno recursante: usa recursantFeeAmount
+		finalAmount = new Decimal(config.recursantFeeAmount);
+		benefitType = 'RECURSANT';
+		benefitReason = 'Cuota Recursante';
+		scholarshipApplied = DecimalHelpers.zero();
+		discountApplied = DecimalHelpers.subtract(
+			new Decimal(config.normalFeeAmount),
+			new Decimal(config.recursantFeeAmount)
+		);
+	} else {
+		// Alumno normal: usa normalFeeAmount
+		finalAmount = new Decimal(config.normalFeeAmount);
+		benefitType = 'NONE';
+		benefitReason = 'Cuota Normal';
+		scholarshipApplied = DecimalHelpers.zero();
+		discountApplied = DecimalHelpers.zero();
 	}
 
-	// Elegir el monto más favorable (menor)
-	const bestOption = applicableAmounts.reduce((best, current) =>
-		DecimalHelpers.isLessThan(current.amount, best.amount) ? current : best
-	);
-
-	// Calcular descuento aplicado
-	const discountApplied = DecimalHelpers.subtract(baseAmount, bestOption.amount);
-	const scholarshipApplied =
-		bestOption.type === 'SCHOLARSHIP' ? discountApplied : DecimalHelpers.zero();
-
 	return {
-		finalAmount: bestOption.amount,
+		finalAmount,
 		discountApplied,
 		scholarshipApplied,
-		benefitType: bestOption.type,
-		benefitReason: `${bestOption.reason} (monto más favorable)`,
+		benefitType,
+		benefitReason,
 		installmentNumber,
 		ruleSnapshot: createRuleSnapshot(
 			baseAmount,
 			installmentNumber,
 			config,
 			studentBenefitInfo,
-			bestOption.type
+			benefitType
 		)
 	};
 }

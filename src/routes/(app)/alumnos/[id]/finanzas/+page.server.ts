@@ -17,6 +17,7 @@ import {
 	getChargeDueDate
 } from '$lib/server/financial/scholarship-expiration-service';
 import { studentFinancialSummaryService } from '$lib/server/financial/student-financial-summary-service';
+import { studentTypeService } from '$lib/server/financial/student-type-service';
 
 /**
  * Genera cuotas mensuales faltantes desde el inicio del ciclo lectivo hasta el mes actual
@@ -262,8 +263,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				}
 			}
 
-			// Calcular pendiente con el monto recalculado
-			const pending = finalAmount - Number(charge.paidAmount);
+			// Calcular pendiente correctamente: max(finalAmount - paidAmount, 0)
+			const pending = Math.max(finalAmount - Number(charge.paidAmount), 0);
 
 			// Determine charge type based on student type, benefit month, and scholarship status
 			let chargeType = 'Cuota Normal';
@@ -299,21 +300,30 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				isOverdue = now > dueDate && pending > 0;
 			}
 
+			// Desglose financiero detallado
+			const normalAmount = amount;
+			const scholarshipAppliedValue = Number(charge.scholarshipApplied);
+			const discountAppliedValue = Number(charge.discountApplied);
+			const lateFeeAppliedValue = Number(charge.lateFeeApplied);
+			const paidAmountValue = Number(charge.paidAmount);
+
 			return {
 				id: charge.id,
 				concept: charge.concept.name,
 				conceptCode: charge.concept.code,
 				period: charge.periodLabel,
-				amount,
+				normalAmount,
+				scholarshipApplied: scholarshipAppliedValue,
+				discountApplied: discountAppliedValue,
+				lateFeeApplied: lateFeeAppliedValue,
 				finalAmount,
-				paid: Number(charge.paidAmount),
+				paid: paidAmountValue,
 				pending,
 				status: charge.status,
 				benefitType: charge.benefitType,
 				benefitReason: charge.benefitReason,
 				chargeType,
 				scholarshipLost,
-				scholarshipApplied,
 				isOverdue,
 				dueDate: dueDate ? dueDate.toISOString() : null
 			};
@@ -356,6 +366,44 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 };
 
 export const actions: Actions = {
+	changeStudentType: async ({ params, locals, request }) => {
+		await requireFinancialAccess(locals.user, params.id);
+
+		if (!locals.user) {
+			return { error: 'No autenticado' };
+		}
+
+		const data = await request.formData();
+		const newType = data.get('newType')?.toString() as 'NORMAL' | 'BECADO' | 'RECURSANTE';
+		const reason = data.get('reason')?.toString();
+		const recalculateCharges = data.get('recalculateCharges')?.toString() === 'true';
+
+		if (!newType || !reason) {
+			return { error: 'Tipo de alumno y motivo son requeridos' };
+		}
+
+		const validTypes = ['NORMAL', 'BECADO', 'RECURSANTE'];
+		if (!validTypes.includes(newType)) {
+			return { error: 'Tipo de alumno inválido' };
+		}
+
+		try {
+			await studentTypeService.changeStudentType({
+				studentId: params.id,
+				newType,
+				reason,
+				userId: locals.user.id,
+				userName: `${locals.user.firstName} ${locals.user.lastName}`,
+				recalculateCharges
+			});
+
+			return { success: true, message: 'Tipo de alumno actualizado correctamente' };
+		} catch (error) {
+			console.error('Error al cambiar tipo de alumno:', error);
+			return { error: 'Error al cambiar tipo de alumno' };
+		}
+	},
+
 	recalculateCharges: async ({ params, locals }) => {
 		await requireFinancialAccess(locals.user, params.id);
 
@@ -445,6 +493,30 @@ export const actions: Actions = {
 					benefitType: benefitCalculation.benefitType,
 					benefitReason: benefitCalculation.benefitReason,
 					ruleSnapshot: benefitCalculation.ruleSnapshot as Prisma.InputJsonValue
+				}
+			});
+
+			// Log recalculation for audit
+			await prisma.financialMovement.create({
+				data: {
+					studentId: student.id,
+					movementType: 'ADJUSTMENT',
+					entityType: 'StudentCharge',
+					entityId: charge.id,
+					description: `Recálculo manual de cuota pendiente. Tipo actual: ${student.isBecado ? 'BECADO' : student.isRecursante ? 'RECURSANTE' : 'NORMAL'}`,
+					amount: 0,
+					balanceBefore: currentFinalAmount,
+					balanceAfter: correctFinalAmount,
+					metadata: {
+						previousAmount: currentAmount,
+						newAmount: correctBaseAmount,
+						previousFinalAmount: currentFinalAmount,
+						newFinalAmount: correctFinalAmount,
+						periodLabel: charge.periodLabel,
+						isBecado: student.isBecado,
+						isRecursante: student.isRecursante
+					},
+					userId: locals.user?.id || 'system'
 				}
 			});
 

@@ -5,71 +5,120 @@ import { getStudentBlockingMessage } from '$lib/server/financial/student-blockin
 import { getCurrentStudentForUser } from '$lib/server/students/current-student-service';
 import { checkAndExpireScholarshipsForStudent } from '$lib/server/financial/scholarship-expiration-service';
 import { studentFinancialSummaryService } from '$lib/server/financial/student-financial-summary-service';
+import {
+	getBenefitsConfig,
+	calculateChargeBenefit
+} from '$lib/server/financial/benefit-calculator';
+import { getChargeDueDate } from '$lib/server/financial/scholarship-expiration-service';
+import { Decimal } from '@prisma/client/runtime/library';
 
 /**
  * Mapper para convertir StudentCharge a POJO serializable
- * Convierte todos los campos Decimal a Number
+ * Convierte todos los campos Decimal a Number y calcula desglose financiero detallado
  */
-function serializeStudentCharge(charge: {
-	id: string;
-	studentId: string;
-	conceptId: string;
-	periodLabel: string;
-	amount: { toString: () => string };
-	paidAmount: { toString: () => string };
-	dueDate: Date | null;
-	status: string;
-	notes: string | null;
-	createdAt: Date;
-	updatedAt: Date;
-	userId: string | null;
-	academicTermId: string;
-	lateFeeApplied: { toString: () => string };
-	discountApplied: { toString: () => string };
-	scholarshipApplied: { toString: () => string };
-	finalAmount: { toString: () => string };
-	isOverdue: boolean;
-	overdueSince: Date | null;
-	installmentNumber: number | null;
-	benefitType: string | null;
-	benefitReason: string | null;
-	concept: {
+async function serializeStudentCharge(
+	charge: {
 		id: string;
-		name: string;
-		code: string;
-		description: string | null;
-	} | null;
-}) {
-	const amount = Number(charge.amount);
+		studentId: string;
+		conceptId: string;
+		periodLabel: string;
+		amount: { toString: () => string };
+		paidAmount: { toString: () => string };
+		dueDate: Date | null;
+		status: string;
+		notes: string | null;
+		createdAt: Date;
+		updatedAt: Date;
+		userId: string | null;
+		academicTermId: string;
+		lateFeeApplied: { toString: () => string };
+		discountApplied: { toString: () => string };
+		scholarshipApplied: { toString: () => string };
+		finalAmount: { toString: () => string };
+		isOverdue: boolean;
+		overdueSince: Date | null;
+		installmentNumber: number | null;
+		benefitType: string | null;
+		benefitReason: string | null;
+		concept: {
+			id: string;
+			name: string;
+			code: string;
+			description: string | null;
+		} | null;
+	},
+	student: { isBecado: boolean; isRecursante: boolean },
+	benefitsConfig: { benefitsMonths: number[] }
+) {
+	const normalAmount = Number(charge.amount);
 	const finalAmount = Number(charge.finalAmount);
-	const scholarshipApplied = Number(charge.scholarshipApplied);
+	const scholarshipAppliedValue = Number(charge.scholarshipApplied);
+	const discountAppliedValue = Number(charge.discountApplied);
+	const lateFeeAppliedValue = Number(charge.lateFeeApplied);
+	const paidAmountValue = Number(charge.paidAmount);
 
-	// Determinar si la beca fue perdida (tiene amount > finalAmount pero scholarshipApplied == 0)
-	const scholarshipLost = amount > finalAmount && scholarshipApplied === 0;
+	// Calcular pendiente correctamente: max(finalAmount - paidAmount, 0)
+	const pending = Math.max(finalAmount - paidAmountValue, 0);
+
+	// Determinar tipo de cuota y estado de beca
+	let chargeType = 'Cuota Normal';
+	let scholarshipLost = false;
+
+	if (charge.concept?.code === 'CUOTA_MENSUAL') {
+		const periodParts = charge.periodLabel.split('-');
+		if (periodParts.length === 2) {
+			const month = parseInt(periodParts[1], 10);
+			if (!isNaN(month) && benefitsConfig.benefitsMonths.includes(month)) {
+				if (student.isBecado) {
+					// Verificar si la beca se perdió
+					if (scholarshipAppliedValue === 0 && normalAmount > finalAmount) {
+						chargeType = 'Beca perdida';
+						scholarshipLost = true;
+					} else if (scholarshipAppliedValue > 0) {
+						chargeType = 'Cuota Becado';
+					}
+				} else if (student.isRecursante) {
+					chargeType = 'Cuota Recursante';
+				}
+			}
+		}
+	}
+
+	// Calcular estado de vencimiento
+	let isOverdue = false;
+	let dueDate: Date | null = null;
+
+	if (charge.concept?.code === 'CUOTA_MENSUAL' && charge.periodLabel) {
+		dueDate = await getChargeDueDate(charge.periodLabel);
+		const now = new Date();
+		isOverdue = now > dueDate && pending > 0;
+	}
 
 	return {
 		id: charge.id,
 		studentId: charge.studentId,
 		conceptId: charge.conceptId,
 		periodLabel: charge.periodLabel,
-		amount,
-		paidAmount: Number(charge.paidAmount),
-		dueDate: charge.dueDate ? charge.dueDate.toISOString() : null,
+		normalAmount,
+		scholarshipApplied: scholarshipAppliedValue,
+		discountApplied: discountAppliedValue,
+		lateFeeApplied: lateFeeAppliedValue,
+		finalAmount,
+		paid: paidAmountValue,
+		pending,
+		dueDate: dueDate ? dueDate.toISOString() : null,
 		status: charge.status,
 		notes: charge.notes,
 		createdAt: charge.createdAt.toISOString(),
 		updatedAt: charge.updatedAt.toISOString(),
 		userId: charge.userId,
 		academicTermId: charge.academicTermId,
-		lateFeeApplied: Number(charge.lateFeeApplied),
-		discountApplied: Number(charge.discountApplied),
-		scholarshipApplied,
-		finalAmount,
-		isOverdue: charge.isOverdue,
+		isOverdue,
 		overdueSince: charge.overdueSince ? charge.overdueSince.toISOString() : null,
 		installmentNumber: charge.installmentNumber,
 		benefitType: charge.benefitType,
 		benefitReason: charge.benefitReason,
+		chargeType,
 		scholarshipLost,
 		concept: charge.concept
 			? {
@@ -217,6 +266,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		studentWithRelations.id
 	);
 
+	// Obtener configuración de beneficios para cálculo de tipo de cuota
+	const benefitsConfig = await getBenefitsConfig(prisma);
+
 	// Agrupar cargos por concepto
 	const chargesByConcept = studentWithRelations.studentCharges.reduce(
 		(acc: Record<string, { count: number; total: number }>, charge) => {
@@ -229,6 +281,20 @@ export const load: PageServerLoad = async ({ locals }) => {
 			return acc;
 		},
 		{}
+	);
+
+	// Serializar cargos con desglose financiero detallado
+	const serializedCharges = await Promise.all(
+		studentWithRelations.studentCharges.map((charge) =>
+			serializeStudentCharge(
+				charge,
+				{
+					isBecado: studentWithRelations.isBecado,
+					isRecursante: studentWithRelations.isRecursante
+				},
+				benefitsConfig
+			)
+		)
 	);
 
 	return {
@@ -251,7 +317,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			totalPayments: financialSummary.totalPaid,
 			totalDebt: financialSummary.totalDebt,
 			overdueDebt: financialSummary.overdueDebt,
-			charges: studentWithRelations.studentCharges.map(serializeStudentCharge),
+			charges: serializedCharges,
 			payments: studentWithRelations.payments.map(serializePayment),
 			chargesByConcept
 		}

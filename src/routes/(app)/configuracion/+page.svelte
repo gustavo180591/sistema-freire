@@ -157,5 +157,28 @@
 				Configurar el dominio del portal externo de recibos de sueldo
 			</p>
 		</a>
+
+		<!-- Recibo -->
+		<a
+			href="/configuracion/recibo"
+			class="group rounded-3xl border border-slate-800 bg-slate-900/70 p-6 transition hover:border-indigo-500 hover:bg-slate-800/50 dark:border-slate-700 dark:hover:border-indigo-400"
+		>
+			<div
+				class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-sky-500/10 text-sky-500 transition group-hover:bg-sky-500 group-hover:text-white dark:bg-sky-500/20 dark:text-sky-400"
+			>
+				<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+					/>
+				</svg>
+			</div>
+			<h3 class="mb-2 text-xl font-bold text-white">Recibo</h3>
+			<p class="text-sm text-slate-400">
+				Configurar la información que se muestra en el recibo de pago
+			</p>
+		</a>
 	</div>
 </div>

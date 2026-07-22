@@ -297,7 +297,7 @@
 						<td class="px-4 py-4">
 							{#if charge.benefitType === 'SCHOLARSHIP'}
 								<span
-									class="inline-flex items-center rounded-full bg-emerald-950/50 px-2 py-1 text-xs font-medium text-emerald-400"
+									class="inline-flex items-center rounded-full border border-emerald-500 bg-white px-2 py-1 text-xs font-medium text-black"
 								>
 									Becado
 								</span>

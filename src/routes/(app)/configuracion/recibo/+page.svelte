@@ -25,36 +25,48 @@
 	let current = $derived(
 		selectedLocationId ? configs[selectedLocationId] : null
 	);
+
+	let selectedLocation = $derived(
+		locations.find((l) => l.id === selectedLocationId)
+	);
 </script>
 
 <svelte:head>
 	<title>Configurar Recibo | Sistema Freire</title>
 </svelte:head>
 
-<div class="mx-auto max-w-4xl space-y-8">
+<div class="mx-auto max-w-6xl space-y-8">
 	<div>
 		<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Configuración</p>
 		<h1 class="text-3xl font-bold">Recibo</h1>
 		<p class="mt-2 text-sm text-slate-400">
-			Selecciona una localidad para configurar el formato de recibo correspondiente.
+			Seleccioná una localidad del menú para ver y editar su formato de recibo completo.
 		</p>
 	</div>
 
 	{#if data.locations.length > 0}
-		<div class="flex flex-wrap gap-3">
-			{#each data.locations as location}
-				<button
-					type="button"
-					onclick={() => (selectedLocationId = location.id)}
-					class="rounded-xl border px-4 py-2 text-sm font-semibold transition {selectedLocationId === location.id ? 'border-sky-500 bg-sky-600 text-white' : 'border-slate-700 bg-slate-800 text-slate-300 hover:border-sky-500'}"
-				>
-					{location.name}
-				</button>
-			{/each}
-		</div>
+		<div class="grid gap-6 lg:grid-cols-4">
+			<aside class="space-y-3">
+				<p class="text-sm font-medium text-slate-400">Localidades</p>
+				<div class="space-y-2">
+					{#each data.locations as location}
+						<button
+							type="button"
+							onclick={() => (selectedLocationId = location.id)}
+							class="w-full rounded-xl border px-4 py-2 text-left text-sm font-semibold transition {selectedLocationId === location.id ? 'border-sky-500 bg-sky-600 text-white' : 'border-slate-700 bg-slate-800 text-slate-300 hover:border-sky-500'}"
+						>
+							{location.name}
+						</button>
+					{/each}
+				</div>
+			</aside>
 
-		{#if current}
-			<form class="space-y-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 dark:border-slate-700">
+			{#if current}
+				<div class="space-y-4 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 dark:border-slate-700 lg:col-span-3">
+					<h2 class="text-xl font-bold text-white">
+						{selectedLocation ? `Recibo - ${selectedLocation.name}` : 'Recibo'}
+					</h2>
+					<form class="space-y-6">
 				<div class="grid gap-6 md:grid-cols-2">
 					<div>
 						<label for="institutionName" class="mb-2 block text-sm font-medium text-slate-300">
@@ -145,17 +157,19 @@
 					></textarea>
 				</div>
 
-				<div class="flex justify-end">
-					<button
-						type="submit"
-						class="rounded-xl bg-indigo-600 px-6 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
-					>
-						Guardar configuración
-					</button>
-				</div>
-			</form>
+					<div class="flex justify-end">
+						<button
+							type="submit"
+							class="rounded-xl bg-indigo-600 px-6 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+						>
+							Guardar configuración
+						</button>
+					</div>
+				</form>
+			</div>
 		{/if}
-	{:else}
-		<p class="text-slate-400">No hay localidades cargadas.</p>
-	{/if}
+	</div>
+{:else}
+	<p class="text-slate-400">No hay localidades cargadas.</p>
+{/if}
 </div>

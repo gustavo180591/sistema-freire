@@ -781,12 +781,30 @@ model Location {
   academicTerms   AcademicTerm[]
   careers         CareerLocation[]
   commissions     SubjectCommission[]
-  userPermissions UserLocationPermission[]
-  students        Student[]
-  classSchedules  ClassSchedule[]
+  userPermissions      UserLocationPermission[]
+  students             Student[]
+  classSchedules       ClassSchedule[]
+  receiptConfig        ReceiptLocationConfig?
 
   @@index([active])
   @@map("locations")
+}
+
+model ReceiptLocationConfig {
+  id                String   @id @default(cuid())
+  locationId        String   @unique
+  institutionName   String?
+  institutionAddress String?
+  institutionCuit    String?
+  institutionPhone  String?
+  receiptHeader     String?  @db.Text
+  receiptFooter     String?  @db.Text
+  receiptLetter     String   @default("C")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  location          Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@map("receipt_location_configs")
 }
 
 model CareerLocation {

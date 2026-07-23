@@ -3,6 +3,7 @@
 
 	const receipt = $derived(data.receipt);
 	const institutional = $derived(data.institutional);
+	const receiptConfig = $derived(data.receiptConfig);
 
 	const currency = new Intl.NumberFormat('es-AR', {
 		style: 'currency',
@@ -87,6 +88,9 @@
 		<div class="mb-8 border-b-2 border-black pb-6">
 			<div class="flex items-start justify-between">
 				<div class="flex-1">
+					{#if receiptConfig?.receiptHeader}
+						<p class="mb-2 whitespace-pre-line text-sm font-semibold">{receiptConfig.receiptHeader}</p>
+					{/if}
 					<h1 class="text-xl font-bold uppercase">{institutional.name}</h1>
 					<p class="text-lg font-semibold">
 						{institutional.code} - Cod. {institutional.codeNumber}
@@ -94,6 +98,9 @@
 					<p class="text-sm">Entidad Propietaria: {institutional.owner}</p>
 					<p class="text-sm">{institutional.email}</p>
 					<p class="text-sm">{institutional.address}</p>
+					{#if institutional.phone}
+						<p class="text-sm">Tel: {institutional.phone}</p>
+					{/if}
 				</div>
 				<div class="text-right text-sm">
 					<p class="font-semibold">{institutional.taxStatus}</p>
@@ -108,7 +115,7 @@
 		<div class="mb-6 flex items-center justify-between border-b border-slate-300 pb-4">
 			<div>
 				<p class="text-sm font-semibold">Tipo de comprobante: Recibo</p>
-				<p class="text-sm">Letra: C</p>
+				<p class="text-sm">Letra: {receiptConfig?.receiptLetter || 'C'}</p>
 				<p class="text-sm">Número: {receipt.receiptNumber.toString().padStart(8, '0')}</p>
 			</div>
 			<div class="text-right">
@@ -271,6 +278,12 @@
 				<p class="text-xs">Aclaración: _______________________</p>
 			</div>
 		</div>
+
+		{#if receiptConfig?.receiptFooter}
+			<div class="mt-6 text-center text-xs">
+				<p class="whitespace-pre-line">{receiptConfig.receiptFooter}</p>
+			</div>
+		{/if}
 
 		<div class="mt-6 text-center">
 			<p class="text-sm font-bold">Original</p>

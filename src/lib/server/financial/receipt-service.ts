@@ -41,6 +41,7 @@ export const INSTITUTIONAL_DATA = {
 	owner: 'SIDEPP',
 	email: 'info@isfdpaulofreire.edu.ar',
 	address: 'Dirección Institucional',
+	phone: '',
 	taxStatus: 'IVA EXENTO',
 	cuit: 'CUIT-PENDIENTE',
 	grossIncome: 'Ingresos Brutos-PENDIENTE',

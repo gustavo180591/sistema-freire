@@ -2,6 +2,7 @@ import type { PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { getSchedulesGrouped } from '$lib/server/academic/schedule-service';
 import { redirect } from '@sveltejs/kit';
+import type { ScheduleFilters } from '$lib/server/academic/schedule-service';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
 	const user = locals.user;
@@ -40,7 +41,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	});
 
 	// Fetch schedules with filters
-	const filters: any = {};
+	const filters: ScheduleFilters = {};
 	if (locationId) filters.locationId = locationId;
 	if (careerId) filters.careerId = careerId;
 	if (yearLevel) filters.yearLevel = parseInt(yearLevel);

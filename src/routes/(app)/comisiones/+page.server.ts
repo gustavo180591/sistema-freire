@@ -2,18 +2,17 @@ import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { checkPermission } from '$lib/server/auth/permissions-granular';
+import type { Prisma } from '@prisma/client';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const user = locals.user;
 	if (!user) throw redirect(303, '/login');
 
-	// Verificar permiso de lectura
 	const canRead = await checkPermission(user, 'SUBJECT_COMMISSION', 'read');
 	if (!canRead) {
 		throw error(403, 'No tenés permiso para ver comisiones');
 	}
 
-	// Obtener filtros de la URL
 	const careerFilter = url.searchParams.get('career');
 	const subjectFilter = url.searchParams.get('subject');
 	const studyPlanFilter = url.searchParams.get('studyPlan');
@@ -22,8 +21,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const locationFilter = url.searchParams.get('location');
 	const activeFilter = url.searchParams.get('active');
 
-	// Construir where clause
-	const where: any = {};
+	const where: Prisma.SubjectCommissionWhereInput = {};
+
 	if (careerFilter) where.careerId = careerFilter;
 	if (subjectFilter) where.subjectId = subjectFilter;
 	if (studyPlanFilter) where.studyPlanId = studyPlanFilter;
@@ -32,16 +31,50 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	if (locationFilter) where.locationId = locationFilter;
 	if (activeFilter !== null && activeFilter !== '') where.active = activeFilter === 'true';
 
-	// Obtener comisiones
 	const commissions = await prisma.subjectCommission.findMany({
 		where,
 		include: {
-			subject: true,
-			career: true,
-			studyPlan: true,
-			teacher: true,
-			location: true,
-			academicTerm: true,
+			subject: {
+				select: {
+					id: true,
+					name: true,
+					code: true,
+					yearLevel: true
+				}
+			},
+			career: {
+				select: {
+					id: true,
+					name: true
+				}
+			},
+			studyPlan: {
+				select: {
+					id: true,
+					name: true,
+					version: true
+				}
+			},
+			teacher: {
+				select: {
+					id: true,
+					firstName: true,
+					lastName: true
+				}
+			},
+			location: {
+				select: {
+					id: true,
+					name: true
+				}
+			},
+			academicTerm: {
+				select: {
+					id: true,
+					name: true,
+					year: true
+				}
+			},
 			_count: {
 				select: { enrollments: true }
 			}
@@ -50,87 +83,101 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		take: 100
 	});
 
-	// Obtener datos para filtros
 	const careers = await prisma.career.findMany({
 		where: { active: true },
-		orderBy: { name: 'asc' }
+		orderBy: { name: 'asc' },
+		select: {
+			id: true,
+			name: true
+		}
 	});
 
 	const subjects = await prisma.subject.findMany({
 		where: { active: true },
-		orderBy: { name: 'asc' }
+		orderBy: [{ yearLevel: 'asc' }, { name: 'asc' }],
+		select: {
+			id: true,
+			code: true,
+			name: true,
+			yearLevel: true,
+			subjectType: true,
+			trainingField: true,
+			active: true
+		}
 	});
 
 	const studyPlans = await prisma.studyPlan.findMany({
 		where: { active: true },
-		include: { career: true },
-		orderBy: { version: 'desc' }
+		orderBy: { version: 'desc' },
+		select: {
+			id: true,
+			name: true,
+			version: true,
+			careerId: true,
+			career: {
+				select: {
+					id: true,
+					name: true
+				}
+			}
+		}
 	});
 
 	const terms = await prisma.academicTerm.findMany({
 		where: { active: true },
-		orderBy: { startDate: 'desc' }
+		orderBy: { startDate: 'desc' },
+		select: {
+			id: true,
+			name: true,
+			year: true,
+			active: true
+		}
 	});
 
 	const teachers = await prisma.teacher.findMany({
 		where: { status: 'ACTIVE' },
-		orderBy: { lastName: 'asc' }
+		orderBy: { lastName: 'asc' },
+		select: {
+			id: true,
+			firstName: true,
+			lastName: true,
+			dni: true,
+			status: true
+		}
 	});
 
 	const locations = await prisma.location.findMany({
 		where: { active: true },
-		orderBy: { name: 'asc' }
+		orderBy: { name: 'asc' },
+		select: {
+			id: true,
+			name: true,
+			active: true
+		}
 	});
 
 	return {
 		commissions: commissions.map((c) => ({
 			id: c.id,
 			code: c.code,
-			subject: {
-				id: c.subject.id,
-				name: c.subject.name,
-				code: c.subject.code,
-				yearLevel: c.subject.yearLevel
-			},
-			career: c.career
-				? {
-						id: c.career.id,
-						name: c.career.name
-					}
-				: null,
-			studyPlan: c.studyPlan
-				? {
-						id: c.studyPlan.id,
-						name: c.studyPlan.name,
-						version: c.studyPlan.version
-					}
-				: null,
+			subject: c.subject,
+			career: c.career,
+			studyPlan: c.studyPlan,
 			teacher: c.teacher
 				? {
 						id: c.teacher.id,
 						name: `${c.teacher.firstName} ${c.teacher.lastName}`
 					}
 				: null,
-			location: c.location
-				? {
-						id: c.location.id,
-						name: c.location.name
-					}
-				: null,
-			academicTerm: c.academicTerm
-				? {
-						id: c.academicTerm.id,
-						name: c.academicTerm.name,
-						year: c.academicTerm.year
-					}
-				: null,
+			location: c.location,
+			academicTerm: c.academicTerm,
 			maxCapacity: c.maxCapacity,
 			currentEnrolled: c.currentEnrolled,
 			enrollmentsCount: c._count.enrollments,
 			schedule: c.schedule,
 			active: c.active,
 			observations: c.observations,
-			createdAt: c.createdAt
+			createdAt: c.createdAt.toISOString()
 		})),
 		filters: {
 			career: careerFilter,
@@ -154,7 +201,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 export const actions: Actions = {
-	// Activar/Desactivar comisión
 	toggleActive: async ({ request, locals }) => {
 		const user = locals.user;
 		if (!user) return fail(401, { error: 'No autenticado' });
@@ -171,7 +217,6 @@ export const actions: Actions = {
 			return fail(400, { error: 'ID de comisión requerido' });
 		}
 
-		// Obtener comisión
 		const commission = await prisma.subjectCommission.findUnique({
 			where: { id: commissionId }
 		});
@@ -180,7 +225,6 @@ export const actions: Actions = {
 			return fail(404, { error: 'Comisión no encontrada' });
 		}
 
-		// Verificar si tiene inscripciones activas antes de desactivar
 		if (commission.active) {
 			const activeEnrollments = await prisma.subjectEnrollment.count({
 				where: {
@@ -196,7 +240,6 @@ export const actions: Actions = {
 			}
 		}
 
-		// Toggle estado
 		await prisma.subjectCommission.update({
 			where: { id: commissionId },
 			data: { active: !commission.active }
@@ -208,7 +251,6 @@ export const actions: Actions = {
 		};
 	},
 
-	// Eliminar comisión
 	delete: async ({ request, locals }) => {
 		const user = locals.user;
 		if (!user) return fail(401, { error: 'No autenticado' });
@@ -225,7 +267,6 @@ export const actions: Actions = {
 			return fail(400, { error: 'ID de comisión requerido' });
 		}
 
-		// Verificar si tiene inscripciones
 		const enrollmentsCount = await prisma.subjectEnrollment.count({
 			where: { commissionId }
 		});
@@ -236,7 +277,6 @@ export const actions: Actions = {
 			});
 		}
 
-		// Eliminar comisión
 		await prisma.subjectCommission.delete({
 			where: { id: commissionId }
 		});

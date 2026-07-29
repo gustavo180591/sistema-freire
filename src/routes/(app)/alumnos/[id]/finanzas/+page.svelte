@@ -411,9 +411,15 @@
 			<div class="space-y-3 text-sm">
 				<p><span class="text-slate-400">Concepto:</span> {selectedCharge.concept}</p>
 				<p><span class="text-slate-400">Período:</span> {selectedCharge.period}</p>
-				<p><span class="text-slate-400">Importe a cobrar:</span> {currency.format(selectedCharge.finalAmount)}</p>
+				<p>
+					<span class="text-slate-400">Importe a cobrar:</span>
+					{currency.format(selectedCharge.finalAmount)}
+				</p>
 				<p><span class="text-slate-400">Pagado:</span> {currency.format(selectedCharge.paid)}</p>
-				<p><span class="text-slate-400">Pendiente:</span> {currency.format(selectedCharge.pending)}</p>
+				<p>
+					<span class="text-slate-400">Pendiente:</span>
+					{currency.format(selectedCharge.pending)}
+				</p>
 				<p><span class="text-slate-400">Estado:</span> {translateStatus(selectedCharge.status)}</p>
 				<p><span class="text-slate-400">Tipo de cuota:</span> {selectedCharge.chargeType}</p>
 				{#if selectedCharge.benefitReason}
@@ -462,12 +468,7 @@
 					✕
 				</button>
 			</div>
-			<form
-				method="POST"
-				action="?/editCharge"
-				use:enhance
-				class="space-y-4"
-			>
+			<form method="POST" action="?/editCharge" use:enhance class="space-y-4">
 				<input type="hidden" name="chargeId" value={selectedCharge.id} />
 				<div>
 					<label for="chargeType" class="mb-2 block text-sm font-medium text-slate-300">
@@ -476,7 +477,11 @@
 					<select
 						id="chargeType"
 						name="chargeType"
-						value={selectedCharge.benefitType === 'SCHOLARSHIP' ? 'BECADO' : selectedCharge.benefitType === 'RECURSANT' ? 'RECURSANTE' : 'NORMAL'}
+						value={selectedCharge.benefitType === 'SCHOLARSHIP'
+							? 'BECADO'
+							: selectedCharge.benefitType === 'RECURSANT'
+								? 'RECURSANTE'
+								: 'NORMAL'}
 						class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
 						required
 					>

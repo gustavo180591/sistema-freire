@@ -21,7 +21,8 @@ export async function load() {
 	for (const location of locations) {
 		configs[location.id] = {
 			institutionName: location.receiptConfig?.institutionName ?? defaultConfig.institutionName,
-			institutionAddress: location.receiptConfig?.institutionAddress ?? defaultConfig.institutionAddress,
+			institutionAddress:
+				location.receiptConfig?.institutionAddress ?? defaultConfig.institutionAddress,
 			institutionCuit: location.receiptConfig?.institutionCuit ?? defaultConfig.institutionCuit,
 			institutionPhone: location.receiptConfig?.institutionPhone ?? defaultConfig.institutionPhone,
 			receiptHeader: location.receiptConfig?.receiptHeader ?? defaultConfig.receiptHeader,
@@ -46,7 +47,8 @@ export const actions = {
 
 		const data = {
 			institutionName: form.get('institutionName')?.toString() || defaultConfig.institutionName,
-			institutionAddress: form.get('institutionAddress')?.toString() || defaultConfig.institutionAddress,
+			institutionAddress:
+				form.get('institutionAddress')?.toString() || defaultConfig.institutionAddress,
 			institutionCuit: form.get('institutionCuit')?.toString() || defaultConfig.institutionCuit,
 			institutionPhone: form.get('institutionPhone')?.toString() || defaultConfig.institutionPhone,
 			receiptHeader: form.get('receiptHeader')?.toString() || defaultConfig.receiptHeader,

@@ -1,17 +1,17 @@
 <script lang="ts">
-	let { data }: { data: { locations: { id: string; name: string; code: string }[]; configs: Record<string, any> } } = $props();
+	let {
+		data
+	}: {
+		data: { locations: { id: string; name: string; code: string }[]; configs: Record<string, any> };
+	} = $props();
 
 	let selectedLocationId = $state<string | null>(
 		data.locations.length > 0 ? data.locations[0].id : null
 	);
 
-	let currentConfig = $derived(
-		selectedLocationId ? data.configs[selectedLocationId] : null
-	);
+	let currentConfig = $derived(selectedLocationId ? data.configs[selectedLocationId] : null);
 
-	let selectedLocation = $derived(
-		data.locations.find((l) => l.id === selectedLocationId)
-	);
+	let selectedLocation = $derived(data.locations.find((l) => l.id === selectedLocationId));
 </script>
 
 <svelte:head>
@@ -36,7 +36,10 @@
 						<button
 							type="button"
 							onclick={() => (selectedLocationId = location.id)}
-							class="w-full rounded-xl border px-4 py-2 text-left text-sm font-semibold transition {selectedLocationId === location.id ? 'border-sky-500 bg-sky-600 text-white' : 'border-slate-700 bg-slate-800 text-slate-300 hover:border-sky-500'}"
+							class="w-full rounded-xl border px-4 py-2 text-left text-sm font-semibold transition {selectedLocationId ===
+							location.id
+								? 'border-sky-500 bg-sky-600 text-white'
+								: 'border-slate-700 bg-slate-800 text-slate-300 hover:border-sky-500'}"
 						>
 							{location.name}
 						</button>
@@ -46,7 +49,9 @@
 
 			{#if currentConfig}
 				{#key selectedLocationId}
-					<div class="space-y-4 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 dark:border-slate-700 lg:col-span-3">
+					<div
+						class="space-y-4 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 lg:col-span-3 dark:border-slate-700"
+					>
 						<h2 class="text-xl font-bold text-white">
 							{selectedLocation ? `Recibo - ${selectedLocation.name}` : 'Recibo'}
 						</h2>
@@ -54,7 +59,10 @@
 							<input type="hidden" name="locationId" value={selectedLocationId} />
 							<div class="grid gap-6 md:grid-cols-2">
 								<div>
-									<label for="institutionName" class="mb-2 block text-sm font-medium text-slate-300">
+									<label
+										for="institutionName"
+										class="mb-2 block text-sm font-medium text-slate-300"
+									>
 										Nombre de la institución
 									</label>
 									<input
@@ -67,7 +75,10 @@
 								</div>
 
 								<div>
-									<label for="institutionCuit" class="mb-2 block text-sm font-medium text-slate-300">
+									<label
+										for="institutionCuit"
+										class="mb-2 block text-sm font-medium text-slate-300"
+									>
 										CUIT / CUIL
 									</label>
 									<input
@@ -80,7 +91,10 @@
 								</div>
 
 								<div>
-									<label for="institutionAddress" class="mb-2 block text-sm font-medium text-slate-300">
+									<label
+										for="institutionAddress"
+										class="mb-2 block text-sm font-medium text-slate-300"
+									>
 										Dirección
 									</label>
 									<input
@@ -93,7 +107,10 @@
 								</div>
 
 								<div>
-									<label for="institutionPhone" class="mb-2 block text-sm font-medium text-slate-300">
+									<label
+										for="institutionPhone"
+										class="mb-2 block text-sm font-medium text-slate-300"
+									>
 										Teléfono
 									</label>
 									<input

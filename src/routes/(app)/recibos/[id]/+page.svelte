@@ -89,7 +89,9 @@
 			<div class="flex items-start justify-between">
 				<div class="flex-1">
 					{#if receiptConfig?.receiptHeader}
-						<p class="mb-2 whitespace-pre-line text-sm font-semibold">{receiptConfig.receiptHeader}</p>
+						<p class="mb-2 text-sm font-semibold whitespace-pre-line">
+							{receiptConfig.receiptHeader}
+						</p>
 					{/if}
 					<h1 class="text-xl font-bold uppercase">{institutional.name}</h1>
 					<p class="text-lg font-semibold">

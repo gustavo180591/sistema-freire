@@ -70,6 +70,33 @@
 	const hasActiveFilters = $derived(
 		!!(selectedLocation || selectedCareer || selectedYear || selectedActive)
 	);
+
+	let viewMode = $state<'list' | 'calendar'>('list');
+
+	const weekDays = [
+		WeekDay.MONDAY,
+		WeekDay.TUESDAY,
+		WeekDay.WEDNESDAY,
+		WeekDay.THURSDAY,
+		WeekDay.FRIDAY
+	];
+
+	const timeSlots = $derived(() => {
+		const allTimes = new Set<string>();
+		for (const careerId in schedules) {
+			const careerData = schedules[careerId] as CareerData;
+			for (const yearLevel in careerData.years) {
+				const yearData = careerData.years[yearLevel] as YearData;
+				for (const dayOfWeek in yearData.days) {
+					const daySchedules = yearData.days[dayOfWeek] as Schedule[];
+					for (const schedule of daySchedules) {
+						allTimes.add(schedule.startTime);
+					}
+				}
+			}
+		}
+		return Array.from(allTimes).sort();
+	});
 </script>
 
 <svelte:head>
@@ -83,12 +110,34 @@
 			<h1 class="text-3xl font-bold">Horarios</h1>
 		</div>
 		<div class="flex gap-2">
-			<a
-				href="/configuracion/horarios/nuevo"
-				class="rounded-2xl bg-indigo-500 px-6 py-3 font-semibold text-white transition hover:bg-indigo-600"
-			>
-				Nuevo Horario
-			</a>
+			<div class="flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900/70 p-1">
+				<button
+					type="button"
+					onclick={() => (viewMode = 'list')}
+					class="rounded-xl px-4 py-2 text-sm font-semibold transition {viewMode === 'list'
+						? 'bg-indigo-600 text-white'
+						: 'text-slate-400 hover:bg-slate-800'}"
+				>
+					Vista listado
+				</button>
+				<button
+					type="button"
+					onclick={() => (viewMode = 'calendar')}
+					class="rounded-xl px-4 py-2 text-sm font-semibold transition {viewMode === 'calendar'
+						? 'bg-indigo-600 text-white'
+						: 'text-slate-400 hover:bg-slate-800'}"
+				>
+					Vista calendario
+				</button>
+			</div>
+			{#if viewMode === 'list'}
+				<a
+					href="/configuracion/horarios/nuevo"
+					class="rounded-2xl bg-indigo-500 px-6 py-3 font-semibold text-white transition hover:bg-indigo-600"
+				>
+					Nuevo Horario
+				</a>
+			{/if}
 			<a
 				href="/configuracion"
 				class="rounded-2xl border border-slate-700 px-6 py-3 font-semibold text-white transition hover:bg-slate-800"
@@ -182,95 +231,193 @@
 		</form>
 	</div>
 
-	<!-- Schedules Display -->
-	{#if Object.keys(schedules).length === 0}
-		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<p class="text-slate-400">
-				{selectedCareer
-					? 'No hay horarios configurados para esta carrera y año.'
-					: 'Seleccioná una carrera para ver sus horarios.'}
-			</p>
-		</div>
-	{:else}
-		{#each Object.entries(schedules) as [careerId, careerData]}
-			{@const career = careerData.career}
+	<!-- Calendar View -->
+	{#if viewMode === 'calendar'}
+		{#if Object.keys(schedules).length === 0}
 			<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-				<h2 class="mb-4 text-2xl font-bold text-white">{career.name}</h2>
+				<p class="text-slate-400">
+					{selectedCareer
+						? 'No hay horarios configurados para esta carrera y año.'
+						: 'Seleccioná una carrera para ver sus horarios.'}
+				</p>
+			</div>
+		{:else}
+			{#each Object.entries(schedules) as [careerId, careerData]}
+				{@const career = careerData.career}
+				<div class="mb-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+					<div class="mb-4 flex items-center justify-between">
+						<h2 class="text-2xl font-bold text-white">{career.name}</h2>
+						<button
+							type="button"
+							onclick={() => window.print()}
+							class="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-100"
+						>
+							Imprimir
+						</button>
+					</div>
 
-				{#each Object.entries(careerData.years) as [yearLevel, yearData]}
-					{@const yearTyped = yearData as YearData}
-					<div class="mb-6">
-						<h3 class="mb-3 text-xl font-semibold text-slate-300">Año {yearTyped.yearLevel}</h3>
+					{#each Object.entries(careerData.years) as [yearLevel, yearData]}
+						{@const yearTyped = yearData as YearData}
+						<div class="mb-6">
+							<h3 class="mb-4 text-xl font-semibold text-slate-300">Año {yearTyped.yearLevel}</h3>
 
-						{#each Object.entries(yearTyped.days) as [dayOfWeek, daySchedules]}
-							{@const schedulesTyped = daySchedules as Schedule[]}
-							<div class="mb-4 rounded-xl border border-slate-800 bg-slate-800/50 p-4">
-								<h4 class="mb-3 text-lg font-medium text-indigo-400">
-									{getDayName(dayOfWeek as WeekDay)}
-								</h4>
+							<div class="overflow-x-auto">
+								<table class="w-full border-collapse border border-slate-700 bg-white text-sm">
+									<thead>
+										<tr class="bg-slate-100">
+											<th
+												class="border border-slate-700 px-3 py-2 text-left font-semibold text-slate-900"
+											>
+												Horario
+											</th>
+											{#each weekDays as day}
+												<th
+													class="border border-slate-700 px-3 py-2 text-center font-semibold text-slate-900"
+												>
+													{getDayName(day)}
+												</th>
+											{/each}
+										</tr>
+									</thead>
+									<tbody>
+										{#each timeSlots() as time}
+											<tr>
+												<td class="border border-slate-700 px-3 py-2 font-medium text-slate-900">
+													{time}
+												</td>
+												{#each weekDays as day}
+													{@const daySchedules = yearTyped.days[day] as Schedule[]}
+													{@const scheduleAtTime = daySchedules?.find((s) => s.startTime === time)}
+													<td class="border border-slate-700 px-2 py-2 align-top">
+														{#if scheduleAtTime}
+															<div class="space-y-1">
+																<p class="font-medium text-slate-900">
+																	{scheduleAtTime.subject.name}
+																</p>
+																{#if scheduleAtTime.teacher}
+																	<p class="text-xs text-slate-600">
+																		{scheduleAtTime.teacher.firstName}
+																		{scheduleAtTime.teacher.lastName}
+																	</p>
+																{/if}
+																{#if scheduleAtTime.classroom}
+																	<p class="text-xs text-slate-600">
+																		Aula: {scheduleAtTime.classroom}
+																	</p>
+																{/if}
+																{#if scheduleAtTime.commission}
+																	<p class="text-xs text-slate-600">
+																		Comisión: {scheduleAtTime.commission.code}
+																	</p>
+																{/if}
+															</div>
+														{/if}
+													</td>
+												{/each}
+											</tr>
+										{/each}
+									</tbody>
+								</table>
+							</div>
+						</div>
+					{/each}
+				</div>
+			{/each}
+		{/if}
+	{/if}
 
-								<div class="space-y-2">
-									{#each schedulesTyped as schedule}
-										<div
-											class="flex items-center justify-between rounded-lg border border-slate-700 bg-slate-950/50 p-3"
-										>
-											<div class="flex flex-1 items-center gap-4">
-												<div class="min-w-[120px]">
-													<span class="text-sm font-medium text-white">
-														{schedule.startTime} - {schedule.endTime}
-													</span>
-												</div>
-												<div class="flex-1">
-													<p class="text-sm font-medium text-white">{schedule.subject.name}</p>
-													{#if schedule.teacher}
-														<p class="text-xs text-slate-400">
-															{schedule.teacher.firstName}
-															{schedule.teacher.lastName}
-														</p>
-													{/if}
-												</div>
-												{#if schedule.classroom}
-													<div class="min-w-[80px]">
-														<span class="text-xs text-slate-400">Aula: {schedule.classroom}</span>
-													</div>
-												{/if}
-												{#if schedule.commission}
-													<div class="min-w-[100px]">
-														<span class="text-xs text-slate-400">
-															Comisión: {schedule.commission.code}
+	<!-- List View -->
+	{#if viewMode === 'list'}
+		<!-- Schedules Display -->
+		{#if Object.keys(schedules).length === 0}
+			<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+				<p class="text-slate-400">
+					{selectedCareer
+						? 'No hay horarios configurados para esta carrera y año.'
+						: 'Seleccioná una carrera para ver sus horarios.'}
+				</p>
+			</div>
+		{:else}
+			{#each Object.entries(schedules) as [careerId, careerData]}
+				{@const career = careerData.career}
+				<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+					<h2 class="mb-4 text-2xl font-bold text-white">{career.name}</h2>
+
+					{#each Object.entries(careerData.years) as [yearLevel, yearData]}
+						{@const yearTyped = yearData as YearData}
+						<div class="mb-6">
+							<h3 class="mb-3 text-xl font-semibold text-slate-300">Año {yearTyped.yearLevel}</h3>
+
+							{#each Object.entries(yearTyped.days) as [dayOfWeek, daySchedules]}
+								{@const schedulesTyped = daySchedules as Schedule[]}
+								<div class="mb-4 rounded-xl border border-slate-800 bg-slate-800/50 p-4">
+									<h4 class="mb-3 text-lg font-medium text-indigo-400">
+										{getDayName(dayOfWeek as WeekDay)}
+									</h4>
+
+									<div class="space-y-2">
+										{#each schedulesTyped as schedule}
+											<div
+												class="flex items-center justify-between rounded-lg border border-slate-700 bg-slate-950/50 p-3"
+											>
+												<div class="flex flex-1 items-center gap-4">
+													<div class="min-w-[120px]">
+														<span class="text-sm font-medium text-white">
+															{schedule.startTime} - {schedule.endTime}
 														</span>
 													</div>
-												{/if}
-											</div>
-											<div class="flex gap-2">
-												<a
-													href="/configuracion/horarios/{schedule.id}/editar"
-													class="rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-1.5 text-sm text-indigo-400 hover:bg-indigo-500/20"
-												>
-													Editar
-												</a>
-												{#if schedule.active}
-													<span
-														class="rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-xs text-green-400"
+													<div class="flex-1">
+														<p class="text-sm font-medium text-white">{schedule.subject.name}</p>
+														{#if schedule.teacher}
+															<p class="text-xs text-slate-400">
+																{schedule.teacher.firstName}
+																{schedule.teacher.lastName}
+															</p>
+														{/if}
+													</div>
+													{#if schedule.classroom}
+														<div class="min-w-[80px]">
+															<span class="text-xs text-slate-400">Aula: {schedule.classroom}</span>
+														</div>
+													{/if}
+													{#if schedule.commission}
+														<div class="min-w-[100px]">
+															<span class="text-xs text-slate-400">
+																Comisión: {schedule.commission.code}
+															</span>
+														</div>
+													{/if}
+												</div>
+												<div class="flex gap-2">
+													<a
+														href="/configuracion/horarios/{schedule.id}/editar"
+														class="rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-1.5 text-sm text-indigo-400 hover:bg-indigo-500/20"
 													>
-														Activo
-													</span>
-												{:else}
-													<span
-														class="rounded-lg border border-slate-600 bg-slate-800 px-3 py-1.5 text-xs text-slate-400"
-													>
-														Inactivo
-													</span>
-												{/if}
+														Editar
+													</a>
+													{#if schedule.active}
+														<span
+															class="rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-xs text-green-400"
+														>
+															Activo
+														</span>
+													{:else}
+														<span
+															class="rounded-lg border border-slate-600 bg-slate-800 px-3 py-1.5 text-xs text-slate-400"
+														>
+															Inactivo
+														</span>
+													{/if}
+												</div>
 											</div>
-										</div>
-									{/each}
+										{/each}
+									</div>
 								</div>
-							</div>
-						{/each}
-					</div>
-				{/each}
-			</div>
-		{/each}
+							{/each}
+						</div>
+					{/each}
+				</div>
+			{/each}
+		{/if}
 	{/if}
 </div>

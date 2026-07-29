@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PAYSLLIP_PORTAL_URL } from '$lib/config';
+	import { DEFAULT_PAYSLLIP_PORTAL_URL } from '$lib/config';
 
 	let { data } = $props();
 
@@ -38,9 +38,9 @@
 				title: 'Recibos de sueldo',
 				description: 'Acceso al portal externo de recibos de sueldo generado por el liquidador.',
 				format: 'PDF',
-				href: PAYSLLIP_PORTAL_URL || '#',
-				status: (PAYSLLIP_PORTAL_URL ? 'external' : 'pending') as ReportStatus,
-				isExternal: Boolean(PAYSLLIP_PORTAL_URL)
+				href: DEFAULT_PAYSLLIP_PORTAL_URL || '#',
+				status: (DEFAULT_PAYSLLIP_PORTAL_URL ? 'external' : 'pending') as ReportStatus,
+				isExternal: Boolean(DEFAULT_PAYSLLIP_PORTAL_URL)
 			},
 			{
 				id: 'official-records',

@@ -18,7 +18,16 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	const subjects = await prisma.subject.findMany({
 		where: { active: true },
-		orderBy: { name: 'asc' }
+		orderBy: [{ yearLevel: 'asc' }, { name: 'asc' }],
+		select: {
+			id: true,
+			code: true,
+			name: true,
+			yearLevel: true,
+			subjectType: true,
+			trainingField: true,
+			active: true
+		}
 	});
 
 	const studyPlans = await prisma.studyPlan.findMany({

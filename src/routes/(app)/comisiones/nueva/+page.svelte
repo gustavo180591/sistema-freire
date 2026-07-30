@@ -79,12 +79,11 @@
 				<!-- Código -->
 				<div>
 					<label class="mb-2 block text-sm font-medium text-slate-300"
-						>Código <span class="text-red-400">*</span></label
+						>Código</label
 					>
 					<input
 						type="text"
 						name="code"
-						required
 						placeholder="Ej: A01, B02"
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
 					/>
@@ -93,11 +92,10 @@
 				<!-- Materia -->
 				<div>
 					<label class="mb-2 block text-sm font-medium text-slate-300"
-						>Materia <span class="text-red-400">*</span></label
+						>Materia</label
 					>
 					<select
 						name="subjectId"
-						required
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
 					>
 						<option value="">Seleccionar materia</option>
@@ -141,11 +139,10 @@
 				<!-- Período Lectivo -->
 				<div>
 					<label class="mb-2 block text-sm font-medium text-slate-300"
-						>Período Lectivo <span class="text-red-400">*</span></label
+						>Período Lectivo</label
 					>
 					<select
 						name="academicTermId"
-						required
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
 					>
 						<option value="">Seleccionar período</option>
@@ -186,12 +183,11 @@
 				<!-- Cupo Máximo -->
 				<div>
 					<label class="mb-2 block text-sm font-medium text-slate-300"
-						>Cupo Máximo <span class="text-red-400">*</span></label
+						>Cupo Máximo</label
 					>
 					<input
 						type="number"
 						name="maxCapacity"
-						required
 						min="1"
 						placeholder="Ej: 40"
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"

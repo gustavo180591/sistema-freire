@@ -1,7 +1,25 @@
 <script lang="ts">
+	type WeekDayValue =
+		| 'MONDAY'
+		| 'TUESDAY'
+		| 'WEDNESDAY'
+		| 'THURSDAY'
+		| 'FRIDAY'
+		| 'SATURDAY'
+		| 'SUNDAY';
+
+	const weekDayValues: WeekDayValue[] = [
+		'MONDAY',
+		'TUESDAY',
+		'WEDNESDAY',
+		'THURSDAY',
+		'FRIDAY',
+		'SATURDAY',
+		'SUNDAY'
+	];
+
 	import type { PageData, ActionData } from './$types';
 	import { enhance } from '$app/forms';
-	import { WeekDay } from '@prisma/client';
 
 	let { data, form }: { data: PageData; form?: ActionData } = $props();
 
@@ -24,13 +42,13 @@
 
 	const yearLevels = [1, 2, 3, 4, 5, 6, 7];
 	const days = [
-		{ value: WeekDay.MONDAY, label: 'Lunes' },
-		{ value: WeekDay.TUESDAY, label: 'Martes' },
-		{ value: WeekDay.WEDNESDAY, label: 'Miércoles' },
-		{ value: WeekDay.THURSDAY, label: 'Jueves' },
-		{ value: WeekDay.FRIDAY, label: 'Viernes' },
-		{ value: WeekDay.SATURDAY, label: 'Sábado' },
-		{ value: WeekDay.SUNDAY, label: 'Domingo' }
+		{ value: 'MONDAY', label: 'Lunes' },
+		{ value: 'TUESDAY', label: 'Martes' },
+		{ value: 'WEDNESDAY', label: 'Miércoles' },
+		{ value: 'THURSDAY', label: 'Jueves' },
+		{ value: 'FRIDAY', label: 'Viernes' },
+		{ value: 'SATURDAY', label: 'Sábado' },
+		{ value: 'SUNDAY', label: 'Domingo' }
 	];
 
 	// Fetch subjects when career is selected

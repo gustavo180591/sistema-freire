@@ -1,6 +1,24 @@
 <script lang="ts">
+	type WeekDayValue =
+		| 'MONDAY'
+		| 'TUESDAY'
+		| 'WEDNESDAY'
+		| 'THURSDAY'
+		| 'FRIDAY'
+		| 'SATURDAY'
+		| 'SUNDAY';
+
+	const weekDayValues: WeekDayValue[] = [
+		'MONDAY',
+		'TUESDAY',
+		'WEDNESDAY',
+		'THURSDAY',
+		'FRIDAY',
+		'SATURDAY',
+		'SUNDAY'
+	];
+
 	import type { PageData } from './$types';
-	import { WeekDay } from '@prisma/client';
 
 	interface Schedule {
 		id: string;
@@ -23,15 +41,15 @@
 		years: Record<number, YearData>;
 	}
 
-	function getDayName(dayOfWeek: WeekDay): string {
-		const names: Record<WeekDay, string> = {
-			[WeekDay.MONDAY]: 'Lunes',
-			[WeekDay.TUESDAY]: 'Martes',
-			[WeekDay.WEDNESDAY]: 'Miércoles',
-			[WeekDay.THURSDAY]: 'Jueves',
-			[WeekDay.FRIDAY]: 'Viernes',
-			[WeekDay.SATURDAY]: 'Sábado',
-			[WeekDay.SUNDAY]: 'Domingo'
+	function getDayName(dayOfWeek: WeekDayValue): string {
+		const names: Record<WeekDayValue, string> = {
+			['MONDAY']: 'Lunes',
+			['TUESDAY']: 'Martes',
+			['WEDNESDAY']: 'Miércoles',
+			['THURSDAY']: 'Jueves',
+			['FRIDAY']: 'Viernes',
+			['SATURDAY']: 'Sábado',
+			['SUNDAY']: 'Domingo'
 		};
 		return names[dayOfWeek];
 	}
@@ -74,11 +92,11 @@
 	let viewMode = $state<'list' | 'calendar'>('list');
 
 	const weekDays = [
-		WeekDay.MONDAY,
-		WeekDay.TUESDAY,
-		WeekDay.WEDNESDAY,
-		WeekDay.THURSDAY,
-		WeekDay.FRIDAY
+		'MONDAY',
+		'TUESDAY',
+		'WEDNESDAY',
+		'THURSDAY',
+		'FRIDAY'
 	];
 
 	const timeSlots = $derived(() => {
@@ -352,7 +370,7 @@
 								{@const schedulesTyped = daySchedules as Schedule[]}
 								<div class="mb-4 rounded-xl border border-slate-800 bg-slate-800/50 p-4">
 									<h4 class="mb-3 text-lg font-medium text-indigo-400">
-										{getDayName(dayOfWeek as WeekDay)}
+										{getDayName(dayOfWeek as WeekDayValue)}
 									</h4>
 
 									<div class="space-y-2">

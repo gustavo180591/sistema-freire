@@ -41,8 +41,8 @@
 		years: Record<number, YearData>;
 	}
 
-	function getDayName(dayOfWeek: WeekDayValue): string {
-		const names: Record<WeekDayValue, string> = {
+	function getDayName(dayOfWeek: string): string {
+		const names: Record<string, string> = {
 			['MONDAY']: 'Lunes',
 			['TUESDAY']: 'Martes',
 			['WEDNESDAY']: 'Miércoles',
@@ -51,7 +51,7 @@
 			['SATURDAY']: 'Sábado',
 			['SUNDAY']: 'Domingo'
 		};
-		return names[dayOfWeek];
+		return names[dayOfWeek] ?? dayOfWeek;
 	}
 
 	let { data }: { data: PageData } = $props();

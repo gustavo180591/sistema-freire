@@ -3,7 +3,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { requireCanAssignSubjects } from '$lib/server/auth/authorization';
 import { auditLog } from '$lib/server/audit';
-import { AuditAction } from '@prisma/client';
+import { AuditAction, TeacherAssignmentType } from '@prisma/client';
 
 type AssignedSubject = {
 	subjectId: string;
@@ -137,11 +137,13 @@ export const load: PageServerLoad = async ({
 
 	// Obtener la localidad del docente (usar la primera si tiene múltiples)
 	const teacherLocation = teacher.user.locationPermissions[0].location;
-	const teacherLocationId = teacherLocation.id;
+	const teacherLocationIds = teacher.user.locationPermissions.map(
+		(locationPermission) => locationPermission.location.id
+	);
 
-	// Obtener carreras disponibles en la localidad del docente
+	// Obtener carreras disponibles en las localidades del docente
 	const careerLocations = await prisma.careerLocation.findMany({
-		where: { locationId: teacherLocationId },
+		where: { locationId: { in: teacherLocationIds } },
 		include: {
 			career: true
 		}
@@ -149,34 +151,17 @@ export const load: PageServerLoad = async ({
 
 	const careerIds = careerLocations.filter((cl) => cl.career.active).map((cl) => cl.careerId);
 
-	// Obtener study plans activos de esas carreras
-	const studyPlans = await prisma.studyPlan.findMany({
+	// Obtener materias vinculadas a esas carreras via CareerSubject
+	const careerSubjects = await prisma.careerSubject.findMany({
 		where: {
-			careerId: { in: careerIds },
-			active: true
-		},
-		include: {
-			career: true
-		}
-	});
-
-	const studyPlanIds = studyPlans.map((sp) => sp.id);
-
-	// Obtener materias de esos planes via PlanSubject
-	const planSubjects = await prisma.planSubject.findMany({
-		where: {
-			planId: { in: studyPlanIds }
+			careerId: { in: careerIds }
 		},
 		include: {
 			subject: true,
-			plan: {
-				include: {
-					career: true
-				}
-			}
+			career: true
 		},
 		orderBy: [
-			{ sortOrder: 'asc' },
+			{ yearLevel: 'asc' },
 			{
 				subject: {
 					yearLevel: 'asc'
@@ -191,7 +176,7 @@ export const load: PageServerLoad = async ({
 	});
 
 	// Filtrar solo materias activas
-	const activePlanSubjects = planSubjects.filter((ps) => ps.subject.active);
+	const activeCareerSubjects = careerSubjects.filter((careerSubject) => careerSubject.subject.active);
 
 	// Obtener IDs de materias ya asignadas
 	const assignedSubjectIds = teacher.subjects.map((st) => st.subjectId);
@@ -211,23 +196,23 @@ export const load: PageServerLoad = async ({
 		}>
 	>();
 
-	for (const planSubject of activePlanSubjects) {
-		const careerId = planSubject.plan.careerId;
-		const careerName = planSubject.plan.career.name;
+	for (const careerSubject of activeCareerSubjects) {
+		const careerId = careerSubject.careerId;
+		const careerName = careerSubject.career.name;
 
 		if (!subjectsByCareer.has(careerId)) {
 			subjectsByCareer.set(careerId, []);
 		}
 
 		subjectsByCareer.get(careerId)?.push({
-			id: planSubject.subject.id,
-			code: planSubject.subject.code,
-			name: planSubject.subject.name,
-			yearLevel: planSubject.subject.yearLevel,
+			id: careerSubject.subject.id,
+			code: careerSubject.subject.code,
+			name: careerSubject.subject.name,
+			yearLevel: careerSubject.subject.yearLevel,
 			careerId,
 			careerName,
-			sortOrder: planSubject.sortOrder,
-			isAssigned: assignedSubjectIds.includes(planSubject.subject.id)
+			sortOrder: careerSubject.yearLevel,
+			isAssigned: assignedSubjectIds.includes(careerSubject.subject.id)
 		});
 	}
 
@@ -245,14 +230,14 @@ export const load: PageServerLoad = async ({
 		.sort((a, b) => a.careerName.localeCompare(b.careerName));
 
 	// Materias no asignadas (para compatibilidad con UI actual)
-	const availableSubjects = activePlanSubjects
-		.filter((ps) => !assignedSubjectIds.includes(ps.subject.id))
-		.map((ps) => ({
-			id: ps.subject.id,
-			code: ps.subject.code,
-			name: ps.subject.name,
-			yearLevel: ps.subject.yearLevel,
-			careers: [ps.plan.career]
+	const availableSubjects = activeCareerSubjects
+		.filter((careerSubject) => !assignedSubjectIds.includes(careerSubject.subject.id))
+		.map((careerSubject) => ({
+			id: careerSubject.subject.id,
+			code: careerSubject.subject.code,
+			name: careerSubject.subject.name,
+			yearLevel: careerSubject.subject.yearLevel,
+			careers: [careerSubject.career]
 		}));
 
 	return {
@@ -307,6 +292,9 @@ export const actions: Actions = {
 			return { error: 'Tipo de asignación inválido' };
 		}
 
+		const normalizedAssignmentType =
+			assignmentType === 'TITULAR' ? TeacherAssignmentType.TITULAR : TeacherAssignmentType.SUPLENTE;
+
 		try {
 			// Verificar que el docente existe y obtener su localidad
 			const teacher = await prisma.teacher.findUnique({
@@ -333,7 +321,9 @@ export const actions: Actions = {
 				return { error: 'La docente no tiene una localidad asignada' };
 			}
 
-			const teacherLocationId = teacher.user.locationPermissions[0].locationId;
+			const teacherLocationIds = teacher.user.locationPermissions.map(
+				(locationPermission) => locationPermission.location.id
+			);
 
 			// Verificar que la materia existe
 			const subject = await prisma.subject.findUnique({
@@ -344,9 +334,13 @@ export const actions: Actions = {
 				return { error: 'Materia no encontrada' };
 			}
 
-			// Verificar que la materia pertenezca a una carrera disponible en la localidad del docente
+			if (!subject.active) {
+				return { error: 'La materia no está activa' };
+			}
+
+			// Verificar que la materia pertenezca a una carrera disponible en las localidades del docente
 			const careerLocations = await prisma.careerLocation.findMany({
-				where: { locationId: teacherLocationId },
+				where: { locationId: { in: teacherLocationIds } },
 				include: {
 					career: true
 				}
@@ -354,26 +348,17 @@ export const actions: Actions = {
 
 			const careerIds = careerLocations.filter((cl) => cl.career.active).map((cl) => cl.careerId);
 
-			const studyPlans = await prisma.studyPlan.findMany({
-				where: {
-					careerId: { in: careerIds },
-					active: true
-				}
-			});
-
-			const studyPlanIds = studyPlans.map((sp) => sp.id);
-
-			const planSubject = await prisma.planSubject.findFirst({
+			const careerSubject = await prisma.careerSubject.findFirst({
 				where: {
 					subjectId,
-					planId: { in: studyPlanIds }
+					careerId: { in: careerIds }
 				}
 			});
 
-			if (!planSubject) {
+			if (!careerSubject) {
 				return {
 					error:
-						'La materia no pertenece a ninguna carrera disponible en la localidad de la docente'
+						'La materia no pertenece a ninguna carrera disponible en las localidades de la docente'
 				};
 			}
 
@@ -391,12 +376,13 @@ export const actions: Actions = {
 				return { error: 'La materia ya está asignada a este docente' };
 			}
 
-			// Crear asignación usando $executeRaw para evitar problemas con tipos de Prisma
-			await prisma.$executeRaw`
-				INSERT INTO "subject_teachers" ("subjectId", "teacherId", "assignmentType")
-				VALUES (${subjectId}, ${teacherId}, ${assignmentType}::"TeacherAssignmentType")
-				ON CONFLICT ("subjectId", "teacherId") DO NOTHING
-			`;
+			await prisma.subjectTeacher.create({
+				data: {
+					subjectId,
+					teacherId,
+					assignmentType: normalizedAssignmentType
+				}
+			});
 
 			// Registrar en auditoría
 			await auditLog({
@@ -435,6 +421,9 @@ export const actions: Actions = {
 			return { error: 'Tipo de asignación inválido' };
 		}
 
+		const normalizedAssignmentType =
+			assignmentType === 'TITULAR' ? TeacherAssignmentType.TITULAR : TeacherAssignmentType.SUPLENTE;
+
 		try {
 			// Verificar que la asignación existe
 			const assignment = await prisma.subjectTeacher.findUnique({
@@ -454,12 +443,17 @@ export const actions: Actions = {
 				return { error: 'Asignación no encontrada' };
 			}
 
-			// Actualizar tipo de asignación usando $executeRaw para evitar problemas con tipos de Prisma
-			await prisma.$executeRaw`
-				UPDATE "subject_teachers"
-				SET "assignmentType" = ${assignmentType}::"TeacherAssignmentType"
-				WHERE "subjectId" = ${subjectId} AND "teacherId" = ${teacherId}
-			`;
+			await prisma.subjectTeacher.update({
+				where: {
+					subjectId_teacherId: {
+						subjectId,
+						teacherId
+					}
+				},
+				data: {
+					assignmentType: normalizedAssignmentType
+				}
+			});
 
 			// Registrar en auditoría
 			await auditLog({

@@ -1,12 +1,10 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import type { ActionData, PageData } from './$types';
 
-	let { data, form } = $props();
+	let { data, form }: { data: PageData; form?: ActionData } = $props();
 
 	const subject = $derived(data.subject);
-	const subjectTypes = $derived(data.subjectTypes);
-	const trainingFields = $derived(data.trainingFields);
-	const accreditationModes = $derived(data.accreditationModes);
 
 	const errors = $derived(
 		(form?.errors as {
@@ -19,6 +17,7 @@
 			hoursPerWeek?: string;
 			approvalThreshold?: string;
 			promotionThreshold?: string;
+			careerIds?: string;
 			general?: string;
 		}) ?? {}
 	);
@@ -55,21 +54,26 @@
 				← Volver a materias
 			</a>
 		</div>
-		<div class="mb-6">
-			<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Editar Materia</p>
-			<h1 class="mt-2 text-3xl font-bold">{subject.name}</h1>
-			<p class="mt-1 font-mono text-sm text-slate-400">{subject.code}</p>
+
+		<div>
+			<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Gestión académica</p>
+			<h1 class="mt-2 text-4xl font-bold tracking-tight">Editar materia</h1>
+			<p class="mt-4 max-w-3xl text-sm text-slate-400">
+				Actualizar los datos de la materia y sus carreras asociadas.
+			</p>
+			<p class="mt-2 font-mono text-sm text-slate-500">{subject.code}</p>
 		</div>
+	</section>
 
-		{#if errors.general}
-			<div class="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-400">
-				{errors.general}
-			</div>
-		{/if}
+	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
+		<form method="POST" use:enhance class="space-y-6">
+			{#if errors.general}
+				<div class="rounded-2xl border border-red-900 bg-red-900/10 p-4 text-sm text-red-400">
+					{errors.general}
+				</div>
+			{/if}
 
-		<form method="POST" class="space-y-6">
-			<div class="grid gap-6 md:grid-cols-2">
-				<!-- Código -->
+			<div class="grid gap-4 md:grid-cols-2">
 				<div>
 					<label for="code" class="mb-2 block text-sm font-medium text-slate-300">
 						Código <span class="text-red-400">*</span>
@@ -78,16 +82,15 @@
 						id="code"
 						name="code"
 						type="text"
+						required
 						value={subject.code}
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-						required
 					/>
 					{#if errors.code}
 						<p class="mt-1 text-sm text-red-400">{errors.code}</p>
 					{/if}
 				</div>
 
-				<!-- Nombre -->
 				<div>
 					<label for="name" class="mb-2 block text-sm font-medium text-slate-300">
 						Nombre <span class="text-red-400">*</span>
@@ -96,16 +99,60 @@
 						id="name"
 						name="name"
 						type="text"
+						required
 						value={subject.name}
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-						required
 					/>
 					{#if errors.name}
 						<p class="mt-1 text-sm text-red-400">{errors.name}</p>
 					{/if}
 				</div>
 
-				<!-- Tipo de materia -->
+				<div class="md:col-span-2">
+					<label class="mb-2 block text-sm font-medium text-slate-300">
+						Carreras <span class="text-red-400">*</span>
+					</label>
+
+					<div class="rounded-2xl border border-slate-700 bg-slate-950 p-4">
+						{#if data.careers.length === 0}
+							<p class="text-sm text-amber-300">
+								No hay carreras activas disponibles. Primero cargá o activá una carrera.
+							</p>
+						{:else}
+							<div class="grid gap-3 md:grid-cols-2">
+								{#each data.careers as career}
+									<label
+										class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-800 bg-slate-900/60 p-3 transition hover:border-slate-600 hover:bg-slate-900"
+									>
+										<input
+											name="careerIds"
+											type="checkbox"
+											value={career.id}
+											checked={subject.careerIds.includes(career.id)}
+											class="mt-1 h-5 w-5 rounded border-slate-700 bg-slate-950 text-slate-400 focus:ring-slate-500"
+										/>
+
+										<span>
+											<span class="block text-sm font-medium text-slate-200">{career.name}</span>
+											<span class="mt-0.5 block text-xs text-slate-500">
+												{career.code} · {career.durationYears} años
+											</span>
+										</span>
+									</label>
+								{/each}
+							</div>
+						{/if}
+					</div>
+
+					<p class="mt-2 text-sm text-slate-500">
+						Podés seleccionar una o varias carreras para la misma materia.
+					</p>
+
+					{#if errors.careerIds}
+						<p class="mt-1 text-sm text-red-400">{errors.careerIds}</p>
+					{/if}
+				</div>
+
 				<div>
 					<label for="subjectType" class="mb-2 block text-sm font-medium text-slate-300">
 						Tipo de materia <span class="text-red-400">*</span>
@@ -113,12 +160,12 @@
 					<select
 						id="subjectType"
 						name="subjectType"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 						required
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 					>
-						{#each subjectTypeOptions as opt}
-							<option value={opt.value} selected={subject.subjectType === opt.value}>
-								{opt.label}
+						{#each subjectTypeOptions as option}
+							<option value={option.value} selected={subject.subjectType === option.value}>
+								{option.label}
 							</option>
 						{/each}
 					</select>
@@ -127,7 +174,6 @@
 					{/if}
 				</div>
 
-				<!-- Campo de formación -->
 				<div>
 					<label for="trainingField" class="mb-2 block text-sm font-medium text-slate-300">
 						Campo de formación <span class="text-red-400">*</span>
@@ -135,12 +181,12 @@
 					<select
 						id="trainingField"
 						name="trainingField"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 						required
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 					>
-						{#each trainingFieldOptions as opt}
-							<option value={opt.value} selected={subject.trainingField === opt.value}>
-								{opt.label}
+						{#each trainingFieldOptions as option}
+							<option value={option.value} selected={subject.trainingField === option.value}>
+								{option.label}
 							</option>
 						{/each}
 					</select>
@@ -149,29 +195,25 @@
 					{/if}
 				</div>
 
-				<!-- Año académico -->
 				<div>
 					<label for="yearLevel" class="mb-2 block text-sm font-medium text-slate-300">
 						Año académico <span class="text-red-400">*</span>
 					</label>
-					<select
+					<input
 						id="yearLevel"
 						name="yearLevel"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+						type="number"
+						min="1"
+						max="10"
 						required
-					>
-						{#each [1, 2, 3, 4, 5, 6, 7] as year}
-							<option value={year} selected={subject.yearLevel === year}>
-								Año {year}
-							</option>
-						{/each}
-					</select>
+						value={subject.yearLevel}
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+					/>
 					{#if errors.yearLevel}
 						<p class="mt-1 text-sm text-red-400">{errors.yearLevel}</p>
 					{/if}
 				</div>
 
-				<!-- Modalidad de acreditación -->
 				<div>
 					<label for="accreditationMode" class="mb-2 block text-sm font-medium text-slate-300">
 						Modalidad de acreditación <span class="text-red-400">*</span>
@@ -179,12 +221,12 @@
 					<select
 						id="accreditationMode"
 						name="accreditationMode"
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 						required
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 					>
-						{#each accreditationModeOptions as opt}
-							<option value={opt.value} selected={subject.accreditationMode === opt.value}>
-								{opt.label}
+						{#each accreditationModeOptions as option}
+							<option value={option.value} selected={subject.accreditationMode === option.value}>
+								{option.label}
 							</option>
 						{/each}
 					</select>
@@ -193,7 +235,6 @@
 					{/if}
 				</div>
 
-				<!-- Horas semanales -->
 				<div>
 					<label for="hoursPerWeek" class="mb-2 block text-sm font-medium text-slate-300">
 						Horas semanales
@@ -203,7 +244,7 @@
 						name="hoursPerWeek"
 						type="number"
 						min="0"
-						value={subject.hoursPerWeek || ''}
+						value={subject.hoursPerWeek ?? ''}
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 					/>
 					{#if errors.hoursPerWeek}
@@ -211,7 +252,6 @@
 					{/if}
 				</div>
 
-				<!-- Umbral de aprobación -->
 				<div>
 					<label for="approvalThreshold" class="mb-2 block text-sm font-medium text-slate-300">
 						Umbral de aprobación
@@ -231,7 +271,6 @@
 					{/if}
 				</div>
 
-				<!-- Umbral de promoción -->
 				<div>
 					<label for="promotionThreshold" class="mb-2 block text-sm font-medium text-slate-300">
 						Umbral de promoción
@@ -252,7 +291,6 @@
 				</div>
 			</div>
 
-			<!-- Descripción -->
 			<div>
 				<label for="description" class="mb-2 block text-sm font-medium text-slate-300">
 					Descripción
@@ -263,12 +301,10 @@
 					rows="3"
 					placeholder="Descripción opcional de la materia..."
 					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-				>
-					{subject.description || ''}
-				</textarea>
+				>{subject.description ?? ''}</textarea>
 			</div>
 
-			<div class="grid gap-4 md:grid-cols-4">
+			<div class="grid gap-4 md:grid-cols-3">
 				<label class="flex items-center gap-3">
 					<input
 						name="isAnnual"
@@ -301,7 +337,9 @@
 					/>
 					<span class="text-sm text-slate-300">Materia de recuperación</span>
 				</label>
+			</div>
 
+			<div>
 				<label class="flex items-center gap-3">
 					<input
 						name="active"
@@ -312,6 +350,9 @@
 					/>
 					<span class="text-sm text-slate-300">Materia activa</span>
 				</label>
+				<p class="mt-2 text-sm text-slate-500">
+					Las materias activas estarán disponibles para asignar a planes de estudio y docentes.
+				</p>
 			</div>
 
 			<div class="flex gap-4 pt-4">
@@ -321,6 +362,7 @@
 				>
 					Cancelar
 				</a>
+
 				<button
 					type="submit"
 					class="rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.01]"

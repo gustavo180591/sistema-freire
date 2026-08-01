@@ -19,7 +19,7 @@ export const load: PageServerLoad = async () => {
 	return {
 		preceptors: preceptors.map((u) => ({
 			id: u.id,
-			dni: u.id,
+			dni: u.dni ?? '',
 			firstName: u.firstName,
 			lastName: u.lastName,
 			email: u.email,

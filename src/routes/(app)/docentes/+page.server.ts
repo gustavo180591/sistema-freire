@@ -1,127 +1,227 @@
 import { prisma } from '$lib/server/db/prisma';
-import type { Prisma } from '@prisma/client';
 import type { PageServerLoad, Actions } from './$types';
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
+import { TeacherStatus } from '@prisma/client';
 
 export const load: PageServerLoad = async () => {
-	const teachers = await prisma.teacher.findMany({
-		include: {
-			user: {
-				include: {
-					locationPermissions: {
-						include: {
-							location: true
-						}
+	const teacherUsers = await prisma.user.findMany({
+		where: {
+			roles: {
+				some: {
+					role: {
+						code: 'DOCENTE'
 					}
 				}
-			},
-			subjects: {
+			}
+		},
+		include: {
+			roles: {
 				include: {
-					subject: true
+					role: true
+				}
+			},
+			locationPermissions: {
+				include: {
+					location: true
+				}
+			},
+			teacher: {
+				include: {
+					subjects: {
+						include: {
+							subject: true
+						}
+					}
 				}
 			}
 		},
 		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
 	});
 
-	type TeacherWithRelations = Prisma.TeacherGetPayload<{
-		include: {
-			user: {
-				include: {
-					locationPermissions: {
-						include: {
-							location: true;
-						};
-					};
-				};
-			};
-			subjects: {
-				include: {
-					subject: true;
-				};
-			};
-		};
-	}>;
-
 	return {
-		teachers: teachers.map((t: TeacherWithRelations) => {
-			// Obtener localidades únicas de las sedes asignadas al docente
+		teachers: teacherUsers.map((user) => {
 			const locations = new Set<string>();
-			t.user.locationPermissions.forEach((lp) => {
-				locations.add(lp.location.name);
+
+			user.locationPermissions.forEach((locationPermission) => {
+				locations.add(locationPermission.location.name);
 			});
 
+			const teacherProfile = user.teacher;
+
 			return {
-				id: t.id,
-				userId: t.userId,
-				dni: t.dni,
-				firstName: t.firstName,
-				lastName: t.lastName,
-				email: t.user.email,
-				createdAt: t.createdAt,
+				id: teacherProfile?.id ?? user.id,
+				teacherId: teacherProfile?.id ?? null,
+				userId: user.id,
+				dni: user.dni ?? teacherProfile?.dni ?? '',
+				firstName: user.firstName,
+				lastName: user.lastName,
+				email: user.email,
+				userStatus: String(user.status),
+				hasTeacherProfile: Boolean(teacherProfile),
+				createdAt: user.createdAt.toISOString(),
+				roles: user.roles
+					.map((userRole) => String(userRole.role.code))
+					.sort((a, b) => a.localeCompare(b)),
 				locations: Array.from(locations),
-				subjects: t.subjects.map((st) => ({
-					id: st.subject.id,
-					code: st.subject.code,
-					name: st.subject.name,
-					yearLevel: st.subject.yearLevel,
-					active: st.subject.active,
-					approvalThreshold: st.subject.approvalThreshold
-						? Number(st.subject.approvalThreshold)
-						: null,
-					promotionThreshold: st.subject.promotionThreshold
-						? Number(st.subject.promotionThreshold)
-						: null
-				}))
+				subjects:
+					teacherProfile?.subjects.map((subjectTeacher) => ({
+						id: subjectTeacher.subject.id,
+						code: subjectTeacher.subject.code,
+						name: subjectTeacher.subject.name,
+						yearLevel: subjectTeacher.subject.yearLevel,
+						active: subjectTeacher.subject.active,
+						approvalThreshold: subjectTeacher.subject.approvalThreshold
+							? Number(subjectTeacher.subject.approvalThreshold)
+							: null,
+						promotionThreshold: subjectTeacher.subject.promotionThreshold
+							? Number(subjectTeacher.subject.promotionThreshold)
+							: null
+					})) ?? []
 			};
 		})
 	};
 };
 
 export const actions: Actions = {
+	regularizeTeacher: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const userId = formData.get('userId')?.toString();
+
+		if (!locals.user) {
+			return fail(401, { error: 'No autenticado' });
+		}
+
+		if (!userId) {
+			return fail(400, { error: 'Usuario requerido' });
+		}
+
+		try {
+			const user = await prisma.user.findUnique({
+				where: { id: userId },
+				include: {
+					roles: {
+						include: {
+							role: true
+						}
+					},
+					teacher: true
+				}
+			});
+
+			if (!user) {
+				return fail(404, { error: 'Usuario no encontrado' });
+			}
+
+			const hasTeacherRole = user.roles.some((userRole) => userRole.role.code === 'DOCENTE');
+
+			if (!hasTeacherRole) {
+				return fail(400, { error: 'El usuario no tiene rol docente' });
+			}
+
+			if (user.teacher) {
+				throw redirect(303, `/docentes/${user.teacher.id}`);
+			}
+
+			const dni = user.dni?.trim();
+
+			if (!dni) {
+				return fail(400, {
+					error: 'El usuario docente debe tener DNI cargado antes de asignar materias'
+				});
+			}
+
+			const existingTeacherWithDni = await prisma.teacher.findFirst({
+				where: {
+					dni
+				},
+				select: {
+					id: true,
+					userId: true
+				}
+			});
+
+			if (existingTeacherWithDni) {
+				if (existingTeacherWithDni.userId === user.id) {
+					throw redirect(303, `/docentes/${existingTeacherWithDni.id}`);
+				}
+
+				return fail(400, {
+					error: 'Ya existe otro perfil docente con el mismo DNI'
+				});
+			}
+
+			const teacher = await prisma.teacher.create({
+				data: {
+					userId: user.id,
+					dni,
+					firstName: user.firstName,
+					lastName: user.lastName,
+					status: TeacherStatus.ACTIVE,
+					observations: 'Perfil docente creado automáticamente desde el listado de docentes'
+				}
+			});
+
+			const { auditLog } = await import('$lib/server/audit');
+			const { AuditAction } = await import('@prisma/client');
+
+			await auditLog({
+				userId: locals.user.id,
+				action: AuditAction.CREATE,
+				entityType: 'TEACHER',
+				entityId: teacher.id,
+				description: `Creación automática de perfil docente: ${teacher.lastName}, ${teacher.firstName} (DNI: ${teacher.dni})`
+			});
+
+			throw redirect(303, `/docentes/${teacher.id}`);
+		} catch (e) {
+			if (e && typeof e === 'object' && 'status' in e && 'location' in e) {
+				throw e;
+			}
+
+			console.error(e);
+			return fail(500, { error: 'Error al crear el perfil docente' });
+		}
+	},
+
 	deleteTeacher: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const id = formData.get('id')?.toString();
-		const userId = formData.get('userId')?.toString();
 
-		if (!id || !userId) {
+		if (!id) {
 			return fail(400, { error: 'Datos requeridos faltantes' });
 		}
 
 		try {
-			// Obtener datos del docente para auditoría
 			const teacher = await prisma.teacher.findUnique({
 				where: { id },
 				include: { user: true }
 			});
 
-			// Eliminar el registro de Teacher
+			if (!teacher) {
+				return fail(404, { error: 'El perfil docente no existe' });
+			}
+
 			await prisma.teacher.delete({
 				where: { id }
 			});
 
-			// Eliminar el usuario
-			await prisma.user.delete({
-				where: { id: userId }
-			});
-
-			// Registrar en auditoría
-			if (teacher && locals.user) {
+			if (locals.user) {
 				const { auditLog } = await import('$lib/server/audit');
 				const { AuditAction } = await import('@prisma/client');
+
 				await auditLog({
 					userId: locals.user.id,
 					action: AuditAction.DELETE,
 					entityType: 'TEACHER',
 					entityId: id,
-					description: `Eliminación de docente: ${teacher.lastName}, ${teacher.firstName} (DNI: ${teacher.dni})`
+					description: `Eliminación de perfil docente: ${teacher.lastName}, ${teacher.firstName} (DNI: ${teacher.dni})`
 				});
 			}
 
 			return { success: true };
 		} catch (e) {
 			console.error(e);
-			return fail(500, { error: 'Error al eliminar docente' });
+			return fail(500, { error: 'Error al eliminar perfil docente' });
 		}
 	}
 };

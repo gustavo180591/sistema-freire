@@ -1,18 +1,39 @@
-import { error, fail, redirect } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { SubjectType, TrainingField, AccreditationMode } from '@prisma/client';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const subject = await prisma.subject.findUnique({
-		where: { id: params.id }
+		where: { id: params.id },
+		include: {
+			careerSubjects: {
+				select: {
+					careerId: true
+				}
+			}
+		}
 	});
 
 	if (!subject) {
 		throw error(404, 'Materia no encontrada');
 	}
 
-	// Convert all fields to serializable types
+	const careers = await prisma.career.findMany({
+		where: {
+			active: true
+		},
+		orderBy: {
+			name: 'asc'
+		},
+		select: {
+			id: true,
+			code: true,
+			name: true,
+			durationYears: true
+		}
+	});
+
 	const normalizedSubject = {
 		id: subject.id,
 		code: subject.code,
@@ -29,6 +50,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		isRemedial: subject.isRemedial,
 		description: subject.description,
 		active: subject.active,
+		careerIds: subject.careerSubjects.map((careerSubject) => careerSubject.careerId),
 		createdAt: subject.createdAt.toISOString(),
 		updatedAt: subject.updatedAt.toISOString()
 	};
@@ -37,7 +59,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		subject: normalizedSubject,
 		subjectTypes: Object.values(SubjectType),
 		trainingFields: Object.values(TrainingField),
-		accreditationModes: Object.values(AccreditationMode)
+		accreditationModes: Object.values(AccreditationMode),
+		careers
 	};
 };
 
@@ -46,14 +69,14 @@ export const actions: Actions = {
 		try {
 			const formData = await request.formData();
 
-			const code = formData.get('code')?.toString();
-			const name = formData.get('name')?.toString();
+			const code = formData.get('code')?.toString().trim();
+			const name = formData.get('name')?.toString().trim();
 			const subjectType = formData.get('subjectType')?.toString();
 			const trainingField = formData.get('trainingField')?.toString();
 			const yearLevel = formData.get('yearLevel')?.toString();
 			const accreditationMode = formData.get('accreditationMode')?.toString();
 			const hoursPerWeek = formData.get('hoursPerWeek')?.toString();
-			const description = formData.get('description')?.toString();
+			const description = formData.get('description')?.toString().trim();
 			const approvalThreshold = formData.get('approvalThreshold')?.toString();
 			const promotionThreshold = formData.get('promotionThreshold')?.toString();
 			const isAnnual = formData.get('isAnnual') === 'true';
@@ -61,8 +84,24 @@ export const actions: Actions = {
 			const isRemedial = formData.get('isRemedial') === 'true';
 			const active = formData.get('active') === 'true';
 
-			// Validaciones
-			if (!code || !name || !subjectType || !trainingField || !yearLevel || !accreditationMode) {
+			const careerIds = Array.from(
+				new Set(
+					formData
+						.getAll('careerIds')
+						.map((value) => value.toString().trim())
+						.filter((value) => value.length > 0)
+				)
+			);
+
+			if (
+				!code ||
+				!name ||
+				!subjectType ||
+				!trainingField ||
+				!yearLevel ||
+				!accreditationMode ||
+				careerIds.length === 0
+			) {
 				return {
 					success: false,
 					errors: {
@@ -71,12 +110,14 @@ export const actions: Actions = {
 						subjectType: !subjectType ? 'El tipo es requerido' : '',
 						trainingField: !trainingField ? 'El campo es requerido' : '',
 						yearLevel: !yearLevel ? 'El año es requerido' : '',
-						accreditationMode: !accreditationMode ? 'La modalidad es requerida' : ''
+						accreditationMode: !accreditationMode ? 'La modalidad es requerida' : '',
+						careerIds: careerIds.length === 0 ? 'Seleccioná al menos una carrera' : ''
 					}
 				};
 			}
 
 			const yearLevelNum = parseInt(yearLevel, 10);
+
 			if (isNaN(yearLevelNum) || yearLevelNum < 1 || yearLevelNum > 10) {
 				return {
 					success: false,
@@ -87,6 +128,7 @@ export const actions: Actions = {
 			}
 
 			const hoursPerWeekNum = hoursPerWeek ? parseInt(hoursPerWeek, 10) : null;
+
 			if (hoursPerWeekNum !== null && (isNaN(hoursPerWeekNum) || hoursPerWeekNum < 0)) {
 				return {
 					success: false,
@@ -117,7 +159,37 @@ export const actions: Actions = {
 				};
 			}
 
-			// Validar código único (excluyendo la materia actual)
+			const validSubjectTypes = Object.values(SubjectType).map(String);
+			const validTrainingFields = Object.values(TrainingField).map(String);
+			const validAccreditationModes = Object.values(AccreditationMode).map(String);
+
+			if (!validSubjectTypes.includes(subjectType)) {
+				return {
+					success: false,
+					errors: {
+						subjectType: 'El tipo de materia no es válido'
+					}
+				};
+			}
+
+			if (!validTrainingFields.includes(trainingField)) {
+				return {
+					success: false,
+					errors: {
+						trainingField: 'El campo de formación no es válido'
+					}
+				};
+			}
+
+			if (!validAccreditationModes.includes(accreditationMode)) {
+				return {
+					success: false,
+					errors: {
+						accreditationMode: 'La modalidad de acreditación no es válida'
+					}
+				};
+			}
+
 			const existingSubject = await prisma.subject.findUnique({
 				where: { code }
 			});
@@ -131,24 +203,97 @@ export const actions: Actions = {
 				};
 			}
 
-			// Actualizar materia
-			await prisma.subject.update({
-				where: { id: params.id },
-				data: {
-					code,
-					name,
-					subjectType: subjectType as SubjectType,
-					trainingField: trainingField as TrainingField,
-					yearLevel: yearLevelNum,
-					accreditationMode: accreditationMode as AccreditationMode,
-					hoursPerWeek: hoursPerWeekNum,
-					description: description || null,
-					approvalThreshold: approvalThresholdNum,
-					promotionThreshold: promotionThresholdNum,
-					isAnnual,
-					isElective,
-					isRemedial,
-					active
+			const selectedCareers = await prisma.career.findMany({
+				where: {
+					id: {
+						in: careerIds
+					},
+					active: true
+				},
+				select: {
+					id: true
+				}
+			});
+
+			if (selectedCareers.length !== careerIds.length) {
+				return {
+					success: false,
+					errors: {
+						careerIds: 'Una o más carreras seleccionadas no existen o no están activas'
+					}
+				};
+			}
+
+			await prisma.$transaction(async (tx) => {
+				await tx.subject.update({
+					where: { id: params.id },
+					data: {
+						code,
+						name,
+						subjectType: subjectType as SubjectType,
+						trainingField: trainingField as TrainingField,
+						yearLevel: yearLevelNum,
+						accreditationMode: accreditationMode as AccreditationMode,
+						hoursPerWeek: hoursPerWeekNum,
+						description: description || null,
+						approvalThreshold: approvalThresholdNum,
+						promotionThreshold: promotionThresholdNum,
+						isAnnual,
+						isElective,
+						isRemedial,
+						active
+					}
+				});
+
+				await tx.careerSubject.deleteMany({
+					where: {
+						subjectId: params.id,
+						careerId: {
+							notIn: careerIds
+						}
+					}
+				});
+
+				await tx.careerSubject.updateMany({
+					where: {
+						subjectId: params.id,
+						careerId: {
+							in: careerIds
+						}
+					},
+					data: {
+						yearLevel: yearLevelNum,
+						isMandatory: true
+					}
+				});
+
+				const currentCareerSubjects = await tx.careerSubject.findMany({
+					where: {
+						subjectId: params.id
+					},
+					select: {
+						careerId: true
+					}
+				});
+
+				const currentCareerIds = new Set(
+					currentCareerSubjects.map((careerSubject) => careerSubject.careerId)
+				);
+
+				const missingCareerSubjects = selectedCareers
+					.filter((career) => !currentCareerIds.has(career.id))
+					.map((career) => ({
+						careerId: career.id,
+						subjectId: params.id,
+						yearLevel: yearLevelNum,
+						isMandatory: true
+					}));
+
+				if (missingCareerSubjects.length > 0) {
+					await tx.careerSubject.createMany({
+						data: missingCareerSubjects,
+						skipDuplicates: true
+					});
 				}
 			});
 
@@ -157,6 +302,7 @@ export const actions: Actions = {
 			if (e && typeof e === 'object' && 'status' in e && 'location' in e) {
 				throw e;
 			}
+
 			if (e instanceof Error) {
 				return {
 					success: false,
@@ -165,6 +311,7 @@ export const actions: Actions = {
 					}
 				};
 			}
+
 			return {
 				success: false,
 				errors: {

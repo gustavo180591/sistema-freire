@@ -377,7 +377,7 @@
 											>
 												{preceptor.lastName}, {preceptor.firstName}
 											</p>
-											<p class="text-xs text-slate-500">ID: {preceptor.dni}</p>
+											<p class="text-xs text-slate-500">DNI: {preceptor.dni || 'Sin DNI'}</p>
 										</div>
 									</div>
 								</td>

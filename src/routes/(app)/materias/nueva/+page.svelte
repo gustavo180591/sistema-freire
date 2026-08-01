@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	let { data, form } = $props();
+	import type { ActionData, PageData } from './$types';
+
+	let { data, form }: { data: PageData; form?: ActionData } = $props();
 
 	const errors = $derived(
 		(form?.errors as {
@@ -13,9 +15,11 @@
 			hoursPerWeek?: string;
 			approvalThreshold?: string;
 			promotionThreshold?: string;
+			careerIds?: string;
 			general?: string;
 		}) ?? {}
 	);
+
 	const success = $derived(form?.success ?? true);
 
 	const subjectTypeOptions = [
@@ -55,7 +59,7 @@
 			<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Gestión académica</p>
 			<h1 class="mt-2 text-4xl font-bold tracking-tight">Nueva materia</h1>
 			<p class="mt-4 max-w-3xl text-sm text-slate-400">
-				Crear una nueva materia en el sistema educativo.
+				Crear una nueva materia y vincularla a una o varias carreras.
 			</p>
 		</div>
 	</section>
@@ -98,6 +102,50 @@
 					/>
 					{#if errors.name}
 						<p class="mt-1 text-sm text-red-400">{errors.name}</p>
+					{/if}
+				</div>
+
+				<div class="md:col-span-2">
+					<label class="mb-2 block text-sm font-medium text-slate-300">
+						Carreras <span class="text-red-400">*</span>
+					</label>
+
+					<div class="rounded-2xl border border-slate-700 bg-slate-950 p-4">
+						{#if data.careers.length === 0}
+							<p class="text-sm text-amber-300">
+								No hay carreras activas disponibles. Primero cargá o activá una carrera.
+							</p>
+						{:else}
+							<div class="grid gap-3 md:grid-cols-2">
+								{#each data.careers as career}
+									<label
+										class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-800 bg-slate-900/60 p-3 transition hover:border-slate-600 hover:bg-slate-900"
+									>
+										<input
+											name="careerIds"
+											type="checkbox"
+											value={career.id}
+											class="mt-1 h-5 w-5 rounded border-slate-700 bg-slate-950 text-slate-400 focus:ring-slate-500"
+										/>
+
+										<span>
+											<span class="block text-sm font-medium text-slate-200">{career.name}</span>
+											<span class="mt-0.5 block text-xs text-slate-500">
+												{career.code} · {career.durationYears} años
+											</span>
+										</span>
+									</label>
+								{/each}
+							</div>
+						{/if}
+					</div>
+
+					<p class="mt-2 text-sm text-slate-500">
+						Podés seleccionar una o varias carreras para la misma materia.
+					</p>
+
+					{#if errors.careerIds}
+						<p class="mt-1 text-sm text-red-400">{errors.careerIds}</p>
 					{/if}
 				</div>
 
@@ -287,6 +335,7 @@
 				>
 					Cancelar
 				</a>
+
 				<button
 					type="submit"
 					class="rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.01]"

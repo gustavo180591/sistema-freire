@@ -377,7 +377,7 @@
 											>
 												{director.lastName}, {director.firstName}
 											</p>
-											<p class="text-xs text-slate-500">ID: {director.dni}</p>
+											<p class="text-xs text-slate-500">DNI: {director.dni || 'Sin DNI'}</p>
 										</div>
 									</div>
 								</td>

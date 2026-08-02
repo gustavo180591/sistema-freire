@@ -108,30 +108,6 @@
 					icon: 'user-shield',
 					roles: ['SUPERADMIN', 'DIRECTOR']
 				},
-				{
-					label: 'Carreras',
-					href: '/carreras',
-					icon: 'building-columns',
-					roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO']
-				},
-				{
-					label: 'Materias',
-					href: '/materias',
-					icon: 'book-open',
-					roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE']
-				},
-				{
-					label: 'Comisiones',
-					href: '/comisiones',
-					icon: 'users',
-					roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO']
-				},
-				{
-					label: 'Correlatividades',
-					href: '/correlatividades',
-					icon: 'diagram-project',
-					roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE']
-				}
 			]
 		},
 		{

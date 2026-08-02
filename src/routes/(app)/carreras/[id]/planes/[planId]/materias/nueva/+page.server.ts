@@ -1,7 +1,12 @@
 import { error, redirect } from '@sveltejs/kit';
-import type { PageServerLoad, Actions } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { requirePermission } from '$lib/server/auth/permissions-granular';
+
+function decimalToNumber(value: { toString(): string } | null): number | null {
+	if (value === null) return null;
+	return Number(value.toString());
+}
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const user = locals.user;
@@ -32,7 +37,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		throw error(404, 'Plan de estudio no pertenece a esta carrera');
 	}
 
-	// Get all active subjects
 	const subjects = await prisma.subject.findMany({
 		where: {
 			active: true
@@ -40,7 +44,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		orderBy: [{ yearLevel: 'asc' }, { name: 'asc' }]
 	});
 
-	// Get subjects already in this plan
 	const existingSubjectIds = await prisma.planSubject.findMany({
 		where: {
 			planId: params.planId
@@ -50,9 +53,17 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		}
 	});
 
-	const existingIds = new Set(existingSubjectIds.map((ps) => ps.subjectId));
+	const existingIds = new Set(existingSubjectIds.map((planSubject) => planSubject.subjectId));
 
-	const availableSubjects = subjects.filter((subject) => !existingIds.has(subject.id));
+	const availableSubjects = subjects
+		.filter((subject) => !existingIds.has(subject.id))
+		.map((subject) => ({
+			...subject,
+			approvalThreshold: decimalToNumber(subject.approvalThreshold),
+			promotionThreshold: decimalToNumber(subject.promotionThreshold),
+			createdAt: subject.createdAt.toISOString(),
+			updatedAt: subject.updatedAt.toISOString()
+		}));
 
 	return {
 		plan: {
@@ -74,8 +85,8 @@ export const actions: Actions = {
 		requirePermission(user, 'CAREER', 'update');
 
 		const formData = await request.formData();
-		const subjectId = formData.get('subjectId') as string;
-		const sortOrder = formData.get('sortOrder') as string;
+		const subjectId = formData.get('subjectId')?.toString() ?? '';
+		const sortOrder = formData.get('sortOrder')?.toString() ?? '';
 
 		if (!subjectId || !sortOrder) {
 			return {
@@ -87,8 +98,9 @@ export const actions: Actions = {
 			};
 		}
 
-		const sortOrderNum = parseInt(sortOrder, 10);
-		if (isNaN(sortOrderNum) || sortOrderNum < 1) {
+		const sortOrderNum = Number.parseInt(sortOrder, 10);
+
+		if (Number.isNaN(sortOrderNum) || sortOrderNum < 1) {
 			return {
 				success: false,
 				errors: {
@@ -97,23 +109,44 @@ export const actions: Actions = {
 			};
 		}
 
-		// Check if subject exists
-		const subject = await prisma.subject.findUnique({
+		const studyPlan = await prisma.studyPlan.findUnique({
 			where: {
-				id: subjectId
+				id: params.planId
+			},
+			select: {
+				id: true,
+				careerId: true
 			}
 		});
 
-		if (!subject) {
+		if (!studyPlan || studyPlan.careerId !== params.id) {
 			return {
 				success: false,
 				errors: {
-					subjectId: 'La materia no existe'
+					general: 'El plan de estudio no pertenece a esta carrera'
 				}
 			};
 		}
 
-		// Check if subject is already in the plan
+		const subject = await prisma.subject.findUnique({
+			where: {
+				id: subjectId
+			},
+			select: {
+				id: true,
+				active: true
+			}
+		});
+
+		if (!subject || !subject.active) {
+			return {
+				success: false,
+				errors: {
+					subjectId: 'La materia no existe o no está activa'
+				}
+			};
+		}
+
 		const existingRelation = await prisma.planSubject.findUnique({
 			where: {
 				planId_subjectId: {
@@ -140,27 +173,17 @@ export const actions: Actions = {
 					sortOrder: sortOrderNum
 				}
 			});
-
-			throw redirect(303, `/carreras/${params.id}/planes/${params.planId}`);
 		} catch (e) {
-			if (e instanceof Error) {
-				console.error('Error adding subject to plan:', e);
-				if (e.message.includes('redirect')) {
-					throw e;
-				}
-				return {
-					success: false,
-					errors: {
-						general: `Error: ${e.message}`
-					}
-				};
-			}
+			const message = e instanceof Error ? e.message : 'Error desconocido';
+
 			return {
 				success: false,
 				errors: {
-					general: 'Error al agregar la materia. Intente nuevamente.'
+					general: `Error al agregar la materia: ${message}`
 				}
 			};
 		}
+
+		throw redirect(303, `/carreras/${params.id}/planes/${params.planId}`);
 	}
 };

@@ -302,7 +302,6 @@
 							id="careerId"
 							name="careerId"
 							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-							required
 						>
 							<option value="">Seleccionar carrera</option>
 							{#each data.careers as career}

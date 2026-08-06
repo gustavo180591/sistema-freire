@@ -92,11 +92,17 @@ export const actions: Actions = {
 		}
 
 		const data = await request.formData();
-		const email = data.get('email')?.toString();
-		const firstName = data.get('firstName')?.toString();
-		const lastName = data.get('lastName')?.toString();
-		const type = data.get('type')?.toString();
-		const dni = data.get('dni')?.toString();
+		const submittedEmail = data.get('email')?.toString().trim() ?? '';
+		const email =
+			submittedEmail ||
+			`usuario-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@sistema.local`;
+		const firstName = data.get('firstName')?.toString().trim() || 'Sin nombre';
+		const lastName = data.get('lastName')?.toString().trim() || 'Sin apellido';
+		const rawType = data.get('type')?.toString();
+		const type = (
+			rawType && rawType in ROLE_MAP ? rawType : 'SIN_TIPO'
+		) as keyof typeof ROLE_MAP;
+		const dni = data.get('dni')?.toString().trim() ?? '';
 		const cuil = data.get('cuil')?.toString()?.trim();
 		const careerId = data.get('careerId')?.toString();
 		const alumnoType = data.get('alumnoType')?.toString() || 'normal';
@@ -140,11 +146,6 @@ export const actions: Actions = {
 		}
 		const isBecado = alumnoType === 'becado';
 		const isRecursante = alumnoType === 'recursante';
-
-		if (!email || !firstName || !lastName || !dni || !type) {
-			return fail(400, { error: 'Por favor completá los datos esenciales', missing: true });
-		}
-
 		try {
 			// Verificar si el email ya existe
 			const existingUser = await prisma.user.findUnique({
@@ -156,7 +157,7 @@ export const actions: Actions = {
 			}
 
 			// Verificar si el DNI ya existe (para alumnos y docentes)
-			if (type === 'ALUMNO' || type === 'DOCENTE') {
+			if ((type === 'ALUMNO' || type === 'DOCENTE') && dni) {
 				const existingDni =
 					(await prisma.student
 						.findUnique({
@@ -212,9 +213,9 @@ export const actions: Actions = {
 
 				// Si es ALUMNO, crear el registro de estudiante con campos extendidos
 				if (type === 'ALUMNO') {
-					if (!careerId) {
-						throw new Error('Debe seleccionar una carrera para el alumno');
-					}
+					if (!dni || !careerId) {
+							return user;
+						}
 
 					// Capturar campos adicionales del formulario
 					const birthDate = data.get('birthDate')?.toString();
@@ -237,10 +238,10 @@ export const actions: Actions = {
 					const familyContactPhone = data.get('familyContactPhone')?.toString();
 					const familyRelationship = data.get('familyRelationship')?.toString();
 
-					// Validar que se seleccione localidad
-					if (!locality) {
-						throw new Error('Debe seleccionar la localidad del alumno');
-					}
+					// Si no hay localidad, se crea solo el usuario con rol ALUMNO.
+						if (!locality) {
+							return user;
+						}
 
 					// Generar ID con prefijo según localidad
 					const studentId = generateStudentId(locality);
@@ -321,13 +322,17 @@ export const actions: Actions = {
 					});
 				}
 
-				// Si es DOCENTE, crear el registro de docente
+				// Si es DOCENTE, crear el registro de docente solo cuando haya DNI.
 				if (type === 'DOCENTE') {
 					const locality = data.get('locality')?.toString();
 					const hireDate = data.get('hireDate')?.toString();
 					const observations = data.get('observations')?.toString();
 
-					const teacher = await tx.teacher.create({
+					if (!dni) {
+							return user;
+						}
+
+						const teacher = await tx.teacher.create({
 						data: {
 							userId: user.id,
 							dni,

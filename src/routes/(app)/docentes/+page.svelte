@@ -118,7 +118,6 @@
 		</div>
 	{/if}
 
-
 	<div class="grid gap-4 sm:grid-cols-3">
 		<div
 			class="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:bg-slate-900/70"
@@ -261,19 +260,29 @@
 			<table class="w-full">
 				<thead class="border-b border-slate-800 bg-slate-800/30">
 					<tr>
-						<th class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase">
+						<th
+							class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+						>
 							Docente
 						</th>
-						<th class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase">
+						<th
+							class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+						>
 							Email
 						</th>
-						<th class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase">
+						<th
+							class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+						>
 							Localidad
 						</th>
-						<th class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase">
+						<th
+							class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+						>
 							Materias
 						</th>
-						<th class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-slate-400 uppercase">
+						<th
+							class="px-4 py-3 text-right text-xs font-semibold tracking-wider text-slate-400 uppercase"
+						>
 							Acciones
 						</th>
 					</tr>
@@ -498,7 +507,9 @@
 													aria-label="Eliminar docente"
 													title="Eliminar docente"
 													onclick={(event) => {
-														if (!confirm('¿Eliminar el perfil docente? El usuario no será eliminado.')) {
+														if (
+															!confirm('¿Eliminar el perfil docente? El usuario no será eliminado.')
+														) {
 															event.preventDefault();
 														}
 													}}

@@ -53,7 +53,8 @@ function inferSubjectCodePrefix(career: { code: string | null; name: string }): 
 	const source = `${career.code ?? ''} ${career.name}`.toUpperCase();
 
 	if (source.includes('MAT')) return 'MAT-';
-	if (source.includes('LENGUA') || source.includes('LITERATURA') || source.includes('LYL')) return 'LYL-';
+	if (source.includes('LENGUA') || source.includes('LITERATURA') || source.includes('LYL'))
+		return 'LYL-';
 
 	return null;
 }

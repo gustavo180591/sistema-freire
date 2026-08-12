@@ -301,7 +301,8 @@
 					rows="3"
 					placeholder="Descripción opcional de la materia..."
 					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-				>{subject.description ?? ''}</textarea>
+					>{subject.description ?? ''}</textarea
+				>
 			</div>
 
 			<div class="grid gap-4 md:grid-cols-3">

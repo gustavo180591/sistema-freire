@@ -107,7 +107,7 @@
 					href: '/directores',
 					icon: 'user-shield',
 					roles: ['SUPERADMIN', 'DIRECTOR']
-				},
+				}
 			]
 		},
 		{

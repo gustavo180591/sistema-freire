@@ -176,7 +176,9 @@ export const load: PageServerLoad = async ({
 	});
 
 	// Filtrar solo materias activas
-	const activeCareerSubjects = careerSubjects.filter((careerSubject) => careerSubject.subject.active);
+	const activeCareerSubjects = careerSubjects.filter(
+		(careerSubject) => careerSubject.subject.active
+	);
 
 	// Obtener IDs de materias ya asignadas
 	const assignedSubjectIds = teacher.subjects.map((st) => st.subjectId);

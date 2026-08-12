@@ -8,8 +8,8 @@
 			<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Sistema</p>
 			<h1 class="text-3xl font-bold">Configuración</h1>
 			<p class="mt-2 max-w-3xl text-sm text-slate-400">
-				Administrá desde un solo lugar la configuración académica, institucional y financiera
-				del sistema.
+				Administrá desde un solo lugar la configuración académica, institucional y financiera del
+				sistema.
 			</p>
 		</div>
 	</div>

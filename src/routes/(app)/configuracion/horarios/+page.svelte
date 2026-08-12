@@ -1,4 +1,7 @@
 <script lang="ts">
+	import type { PageData } from './$types';
+	import WeeklyScheduleGrid from '$lib/components/schedule/WeeklyScheduleGrid.svelte';
+
 	type WeekDayValue =
 		| 'MONDAY'
 		| 'TUESDAY'
@@ -8,26 +11,31 @@
 		| 'SATURDAY'
 		| 'SUNDAY';
 
-	const weekDayValues: WeekDayValue[] = [
-		'MONDAY',
-		'TUESDAY',
-		'WEDNESDAY',
-		'THURSDAY',
-		'FRIDAY',
-		'SATURDAY',
-		'SUNDAY'
-	];
-
-	import type { PageData } from './$types';
-
 	interface Schedule {
 		id: string;
+		dayOfWeek: WeekDayValue;
 		startTime: string;
 		endTime: string;
-		subject: { name: string };
-		teacher?: { firstName: string; lastName: string };
-		classroom?: string;
-		commission?: { code: string };
+		yearLevel?: number;
+		subject: {
+			id?: string;
+			name: string;
+			code?: string;
+		};
+		teacher?: {
+			firstName: string;
+			lastName: string;
+		} | null;
+		classroom?: string | null;
+		commission?: {
+			code: string;
+		} | null;
+		location?: {
+			name: string;
+		} | null;
+		career?: {
+			name: string;
+		} | null;
 		active: boolean;
 	}
 
@@ -37,20 +45,23 @@
 	}
 
 	interface CareerData {
-		career: { name: string };
+		career: {
+			name: string;
+		};
 		years: Record<number, YearData>;
 	}
 
 	function getDayName(dayOfWeek: string): string {
 		const names: Record<string, string> = {
-			['MONDAY']: 'Lunes',
-			['TUESDAY']: 'Martes',
-			['WEDNESDAY']: 'Miércoles',
-			['THURSDAY']: 'Jueves',
-			['FRIDAY']: 'Viernes',
-			['SATURDAY']: 'Sábado',
-			['SUNDAY']: 'Domingo'
+			MONDAY: 'Lunes',
+			TUESDAY: 'Martes',
+			WEDNESDAY: 'Miércoles',
+			THURSDAY: 'Jueves',
+			FRIDAY: 'Viernes',
+			SATURDAY: 'Sábado',
+			SUNDAY: 'Domingo'
 		};
+
 		return names[dayOfWeek] ?? dayOfWeek;
 	}
 
@@ -63,17 +74,32 @@
 
 	let selectedLocation = $state((filters.locationId as string) || '');
 	let selectedCareer = $state((filters.careerId as string) || '');
-	let selectedYear = $state((filters.yearLevel as string) || '');
+	let selectedYear = $state<string | number>((filters.yearLevel as string) || '');
 	let selectedActive = $state((filters.active as string) || '');
 
 	const yearLevels = [1, 2, 3, 4, 5, 6, 7];
 
+	let viewMode = $state<'list' | 'calendar'>('calendar');
+
 	function applyFilters() {
 		const params = new URLSearchParams();
-		if (selectedLocation) params.set('locationId', selectedLocation);
-		if (selectedCareer) params.set('careerId', selectedCareer);
-		if (selectedYear) params.set('yearLevel', selectedYear);
-		if (selectedActive) params.set('active', selectedActive);
+
+		if (selectedLocation) {
+			params.set('locationId', selectedLocation);
+		}
+
+		if (selectedCareer) {
+			params.set('careerId', selectedCareer);
+		}
+
+		if (selectedYear) {
+			params.set('yearLevel', String(selectedYear));
+		}
+
+		if (selectedActive) {
+			params.set('active', selectedActive);
+		}
+
 		window.location.search = params.toString();
 	}
 
@@ -82,6 +108,7 @@
 		selectedCareer = '';
 		selectedYear = '';
 		selectedActive = '';
+
 		window.location.search = '';
 	}
 
@@ -89,32 +116,29 @@
 		!!(selectedLocation || selectedCareer || selectedYear || selectedActive)
 	);
 
-	let viewMode = $state<'list' | 'calendar'>('list');
+	function getYearSchedules(yearData: YearData): Schedule[] {
+		return Object.values(yearData.days)
+			.flat()
+			.sort((a, b) => {
+				const dayOrder: Record<WeekDayValue, number> = {
+					MONDAY: 1,
+					TUESDAY: 2,
+					WEDNESDAY: 3,
+					THURSDAY: 4,
+					FRIDAY: 5,
+					SATURDAY: 6,
+					SUNDAY: 7
+				};
 
-	const weekDays = [
-		'MONDAY',
-		'TUESDAY',
-		'WEDNESDAY',
-		'THURSDAY',
-		'FRIDAY'
-	];
+				const dayDifference = dayOrder[a.dayOfWeek] - dayOrder[b.dayOfWeek];
 
-	const timeSlots = $derived(() => {
-		const allTimes = new Set<string>();
-		for (const careerId in schedules) {
-			const careerData = schedules[careerId] as CareerData;
-			for (const yearLevel in careerData.years) {
-				const yearData = careerData.years[yearLevel] as YearData;
-				for (const dayOfWeek in yearData.days) {
-					const daySchedules = yearData.days[dayOfWeek] as Schedule[];
-					for (const schedule of daySchedules) {
-						allTimes.add(schedule.startTime);
-					}
+				if (dayDifference !== 0) {
+					return dayDifference;
 				}
-			}
-		}
-		return Array.from(allTimes).sort();
-	});
+
+				return a.startTime.localeCompare(b.startTime);
+			});
+	}
 </script>
 
 <svelte:head>
@@ -148,14 +172,12 @@
 					Vista calendario
 				</button>
 			</div>
-			{#if viewMode === 'list'}
-				<a
-					href="/configuracion/horarios/nuevo"
-					class="rounded-2xl bg-indigo-500 px-6 py-3 font-semibold text-white transition hover:bg-indigo-600"
-				>
-					Nuevo Horario
-				</a>
-			{/if}
+			<a
+				href="/configuracion/horarios/nuevo"
+				class="rounded-2xl bg-indigo-500 px-6 py-3 font-semibold text-white transition hover:bg-indigo-600"
+			>
+				Nuevo Horario
+			</a>
 			<a
 				href="/configuracion"
 				class="rounded-2xl border border-slate-700 px-6 py-3 font-semibold text-white transition hover:bg-slate-800"
@@ -252,93 +274,74 @@
 	<!-- Calendar View -->
 	{#if viewMode === 'calendar'}
 		{#if Object.keys(schedules).length === 0}
-			<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-				<p class="text-slate-400">
-					{selectedCareer
-						? 'No hay horarios configurados para esta carrera y año.'
-						: 'Seleccioná una carrera para ver sus horarios.'}
+			<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8 text-center">
+				<div
+					class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-800 text-2xl"
+				>
+					🗓
+				</div>
+
+				<p class="font-semibold text-slate-300">No hay horarios para mostrar.</p>
+
+				<p class="mt-2 text-sm text-slate-500">
+					Usá los filtros superiores o cargá un nuevo horario.
 				</p>
 			</div>
 		{:else}
-			{#each Object.entries(schedules) as [careerId, careerData]}
-				{@const career = careerData.career}
-				<div class="mb-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-					<div class="mb-4 flex items-center justify-between">
-						<h2 class="text-2xl font-bold text-white">{career.name}</h2>
+			{#each Object.entries(schedules) as [, careerData]}
+				<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+					<div
+						class="mb-6 flex flex-col gap-4 border-b border-slate-800 pb-5 sm:flex-row sm:items-center sm:justify-between"
+					>
+						<div>
+							<p class="text-xs font-semibold tracking-[0.2em] text-indigo-400 uppercase">
+								Horario semanal
+							</p>
+
+							<h2 class="mt-1 text-2xl font-bold text-white">
+								{careerData.career.name}
+							</h2>
+						</div>
+
 						<button
 							type="button"
 							onclick={() => window.print()}
-							class="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-100"
+							class="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-slate-500 hover:text-white"
 						>
 							Imprimir
 						</button>
 					</div>
 
-					{#each Object.entries(careerData.years) as [yearLevel, yearData]}
-						{@const yearTyped = yearData as YearData}
-						<div class="mb-6">
-							<h3 class="mb-4 text-xl font-semibold text-slate-300">Año {yearTyped.yearLevel}</h3>
+					<div class="space-y-8">
+						{#each Object.entries(careerData.years) as [, yearData]}
+							{@const yearTyped = yearData as YearData}
 
-							<div class="overflow-x-auto">
-								<table class="w-full border-collapse border border-slate-700 bg-white text-sm">
-									<thead>
-										<tr class="bg-slate-100">
-											<th
-												class="border border-slate-700 px-3 py-2 text-left font-semibold text-slate-900"
-											>
-												Horario
-											</th>
-											{#each weekDays as day}
-												<th
-													class="border border-slate-700 px-3 py-2 text-center font-semibold text-slate-900"
-												>
-													{getDayName(day)}
-												</th>
-											{/each}
-										</tr>
-									</thead>
-									<tbody>
-										{#each timeSlots() as time}
-											<tr>
-												<td class="border border-slate-700 px-3 py-2 font-medium text-slate-900">
-													{time}
-												</td>
-												{#each weekDays as day}
-													{@const daySchedules = yearTyped.days[day] as Schedule[]}
-													{@const scheduleAtTime = daySchedules?.find((s) => s.startTime === time)}
-													<td class="border border-slate-700 px-2 py-2 align-top">
-														{#if scheduleAtTime}
-															<div class="space-y-1">
-																<p class="font-medium text-slate-900">
-																	{scheduleAtTime.subject.name}
-																</p>
-																{#if scheduleAtTime.teacher}
-																	<p class="text-xs text-slate-600">
-																		{scheduleAtTime.teacher.firstName}
-																		{scheduleAtTime.teacher.lastName}
-																	</p>
-																{/if}
-																{#if scheduleAtTime.classroom}
-																	<p class="text-xs text-slate-600">
-																		Aula: {scheduleAtTime.classroom}
-																	</p>
-																{/if}
-																{#if scheduleAtTime.commission}
-																	<p class="text-xs text-slate-600">
-																		Comisión: {scheduleAtTime.commission.code}
-																	</p>
-																{/if}
-															</div>
-														{/if}
-													</td>
-												{/each}
-											</tr>
-										{/each}
-									</tbody>
-								</table>
-							</div>
-						</div>
-					{/each}
+							<section>
+								<div class="mb-4 flex items-center gap-3">
+									<div
+										class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-sm font-black text-indigo-400"
+									>
+										{yearTyped.yearLevel}°
+									</div>
+
+									<div>
+										<h3 class="font-bold text-white">
+											{yearTyped.yearLevel}° año
+										</h3>
+
+										<p class="text-xs text-slate-500">Distribución semanal de clases</p>
+									</div>
+								</div>
+
+								<WeeklyScheduleGrid
+									schedules={getYearSchedules(yearTyped)}
+									showTeacher={true}
+									showLocation={true}
+									showCommission={true}
+								/>
+							</section>
+						{/each}
+					</div>
 				</div>
 			{/each}
 		{/if}

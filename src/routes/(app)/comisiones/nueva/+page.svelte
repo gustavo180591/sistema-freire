@@ -95,9 +95,7 @@
 				</div>
 
 				<div>
-					<label for="yearLevel" class="mb-2 block text-sm font-medium text-slate-300">
-						Año
-					</label>
+					<label for="yearLevel" class="mb-2 block text-sm font-medium text-slate-300"> Año </label>
 					<select
 						id="yearLevel"
 						name="yearLevel"
@@ -160,8 +158,8 @@
 			<div class="rounded-2xl border border-slate-800 bg-slate-950/40 p-6">
 				<h3 class="text-lg font-semibold text-white">Comisiones a crear</h3>
 				<p class="mt-1 text-sm text-slate-400">
-					Marcá una o varias letras. El sistema generará las comisiones para las materias del
-					año elegido.
+					Marcá una o varias letras. El sistema generará las comisiones para las materias del año
+					elegido.
 				</p>
 
 				<div class="mt-5 grid gap-3 sm:grid-cols-5">

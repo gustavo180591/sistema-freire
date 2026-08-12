@@ -99,9 +99,7 @@ export const actions: Actions = {
 		const firstName = data.get('firstName')?.toString().trim() || 'Sin nombre';
 		const lastName = data.get('lastName')?.toString().trim() || 'Sin apellido';
 		const rawType = data.get('type')?.toString();
-		const type = (
-			rawType && rawType in ROLE_MAP ? rawType : 'SIN_TIPO'
-		) as keyof typeof ROLE_MAP;
+		const type = (rawType && rawType in ROLE_MAP ? rawType : 'SIN_TIPO') as keyof typeof ROLE_MAP;
 		const dni = data.get('dni')?.toString().trim() ?? '';
 		const cuil = data.get('cuil')?.toString()?.trim();
 		const careerId = data.get('careerId')?.toString();
@@ -214,8 +212,8 @@ export const actions: Actions = {
 				// Si es ALUMNO, crear el registro de estudiante con campos extendidos
 				if (type === 'ALUMNO') {
 					if (!dni || !careerId) {
-							return user;
-						}
+						return user;
+					}
 
 					// Capturar campos adicionales del formulario
 					const birthDate = data.get('birthDate')?.toString();
@@ -239,9 +237,9 @@ export const actions: Actions = {
 					const familyRelationship = data.get('familyRelationship')?.toString();
 
 					// Si no hay localidad, se crea solo el usuario con rol ALUMNO.
-						if (!locality) {
-							return user;
-						}
+					if (!locality) {
+						return user;
+					}
 
 					// Generar ID con prefijo según localidad
 					const studentId = generateStudentId(locality);
@@ -329,10 +327,10 @@ export const actions: Actions = {
 					const observations = data.get('observations')?.toString();
 
 					if (!dni) {
-							return user;
-						}
+						return user;
+					}
 
-						const teacher = await tx.teacher.create({
+					const teacher = await tx.teacher.create({
 						data: {
 							userId: user.id,
 							dni,

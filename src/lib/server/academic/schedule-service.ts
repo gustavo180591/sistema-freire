@@ -214,6 +214,7 @@ export async function validateScheduleConflicts(input: ScheduleInput): Promise<S
 	// Check for career/year/day overlap
 	const careerOverlap = await prisma.classSchedule.findFirst({
 		where: {
+			locationId: input.locationId ?? null,
 			careerId: input.careerId,
 			yearLevel: input.yearLevel,
 			dayOfWeek: input.dayOfWeek,
@@ -235,7 +236,8 @@ export async function validateScheduleConflicts(input: ScheduleInput): Promise<S
 	if (careerOverlap) {
 		conflicts.push({
 			type: 'CAREER_YEAR_DAY',
-			message: 'Ya existe un horario para esta carrera, año y día en el mismo rango horario',
+			message:
+				'Ya existe un horario para esta localidad, carrera, año y día en el mismo rango horario',
 			existingSchedule: careerOverlap
 		});
 	}

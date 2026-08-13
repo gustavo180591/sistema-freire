@@ -89,7 +89,18 @@
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<p class="text-sm text-slate-400">Horas Semanales</p>
-			<h2 class="mt-3 text-2xl font-bold">{subject.hoursPerWeek || '-'}</h2>
+			<h2 class="mt-3 text-2xl font-bold">{data.weeklySchedule.label}</h2>
+
+			{#if data.weeklySchedule.occurrences > 0}
+				<p class="mt-2 text-xs text-slate-500">
+					{data.weeklySchedule.occurrences}
+					{data.weeklySchedule.occurrences === 1
+						? 'bloque semanal en el horario'
+						: 'bloques semanales en el horario'}
+				</p>
+			{:else}
+				<p class="mt-2 text-xs text-slate-500">Sin bloques asignados en el horario</p>
+			{/if}
 		</div>
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">

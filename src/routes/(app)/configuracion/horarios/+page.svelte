@@ -46,9 +46,18 @@
 
 	interface CareerData {
 		career: {
+			id: string;
 			name: string;
 		};
 		years: Record<number, YearData>;
+	}
+
+	interface CalendarLocationData {
+		location: {
+			id: string;
+			name: string;
+		};
+		careers: CareerData[];
 	}
 
 	function getDayName(dayOfWeek: string): string {
@@ -70,6 +79,9 @@
 	const locations = $derived(data?.locations ?? []);
 	const careers = $derived(data?.careers ?? []);
 	const schedules = $derived(data?.schedules ?? ({} as Record<string, CareerData>));
+
+	const calendarLocations = $derived(data?.calendarLocations ?? ([] as CalendarLocationData[]));
+
 	const filters = $derived(data?.filters ?? {});
 
 	let selectedLocation = $state((filters.locationId as string) || '');
@@ -77,7 +89,7 @@
 	let selectedYear = $state<string | number>((filters.yearLevel as string) || '');
 	let selectedActive = $state((filters.active as string) || '');
 
-	const yearLevels = [1, 2, 3, 4, 5, 6, 7];
+	const yearLevels = [1, 2, 3, 4];
 
 	let viewMode = $state<'list' | 'calendar'>('calendar');
 
@@ -273,7 +285,7 @@
 
 	<!-- Calendar View -->
 	{#if viewMode === 'calendar'}
-		{#if Object.keys(schedules).length === 0}
+		{#if calendarLocations.length === 0}
 			<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8 text-center">
 				<div
 					class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-800 text-2xl"
@@ -281,69 +293,118 @@
 					🗓
 				</div>
 
-				<p class="font-semibold text-slate-300">No hay horarios para mostrar.</p>
-
-				<p class="mt-2 text-sm text-slate-500">
-					Usá los filtros superiores o cargá un nuevo horario.
+				<p class="font-semibold text-slate-300">
+					No hay localidades o carreras disponibles para mostrar.
 				</p>
+
+				<p class="mt-2 text-sm text-slate-500">Revisá los filtros seleccionados.</p>
 			</div>
 		{:else}
-			{#each Object.entries(schedules) as [, careerData]}
-				<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-					<div
-						class="mb-6 flex flex-col gap-4 border-b border-slate-800 pb-5 sm:flex-row sm:items-center sm:justify-between"
-					>
-						<div>
-							<p class="text-xs font-semibold tracking-[0.2em] text-indigo-400 uppercase">
-								Horario semanal
-							</p>
+			<div class="space-y-12">
+				{#each calendarLocations as locationData}
+					<section class="space-y-6">
+						<!-- Localidad -->
+						<div
+							class="flex items-center gap-4 rounded-3xl border border-indigo-500/20 bg-indigo-500/5 px-6 py-5"
+						>
+							<div
+								class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-500/10 text-xl"
+							>
+								📍
+							</div>
 
-							<h2 class="mt-1 text-2xl font-bold text-white">
-								{careerData.career.name}
-							</h2>
+							<div>
+								<p class="text-xs font-semibold tracking-[0.2em] text-indigo-400 uppercase">
+									Localidad
+								</p>
+
+								<h2 class="mt-1 text-2xl font-black text-white">
+									{locationData.location.name}
+								</h2>
+							</div>
 						</div>
 
-						<button
-							type="button"
-							onclick={() => window.print()}
-							class="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-slate-500 hover:text-white"
-						>
-							Imprimir
-						</button>
-					</div>
-
-					<div class="space-y-8">
-						{#each Object.entries(careerData.years) as [, yearData]}
-							{@const yearTyped = yearData as YearData}
-
-							<section>
-								<div class="mb-4 flex items-center gap-3">
+						{#if locationData.careers.length === 0}
+							<div
+								class="rounded-3xl border border-dashed border-slate-800 bg-slate-900/50 p-8 text-center"
+							>
+								<p class="text-sm text-slate-500">
+									No hay carreras disponibles en esta localidad para los filtros seleccionados.
+								</p>
+							</div>
+						{:else}
+							{#each locationData.careers as careerData}
+								<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+									<!-- Carrera -->
 									<div
-										class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-sm font-black text-indigo-400"
+										class="mb-7 flex flex-col gap-4 border-b border-slate-800 pb-5 sm:flex-row sm:items-center sm:justify-between"
 									>
-										{yearTyped.yearLevel}°
+										<div>
+											<p class="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">
+												Horario semanal
+											</p>
+
+											<h3 class="mt-1 text-2xl font-bold text-white">
+												{careerData.career.name}
+											</h3>
+
+											<p class="mt-1 text-sm text-slate-500">
+												{locationData.location.name}
+											</p>
+										</div>
+
+										<button
+											type="button"
+											onclick={() => window.print()}
+											class="w-fit rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-slate-500 hover:text-white"
+										>
+											Imprimir
+										</button>
 									</div>
 
-									<div>
-										<h3 class="font-bold text-white">
-											{yearTyped.yearLevel}° año
-										</h3>
+									<!-- Años -->
+									<div class="space-y-10">
+										{#each Object.entries(careerData.years) as [, yearData]}
+											{@const yearTyped = yearData as YearData}
 
-										<p class="text-xs text-slate-500">Distribución semanal de clases</p>
+											<section>
+												<div class="mb-4 flex items-center gap-3">
+													<div
+														class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-sm font-black text-indigo-400"
+													>
+														{yearTyped.yearLevel}°
+													</div>
+
+													<div>
+														<h4 class="font-bold text-white">
+															{yearTyped.yearLevel}° año
+														</h4>
+
+														<p class="text-xs text-slate-500">Distribución semanal de clases</p>
+													</div>
+												</div>
+
+												<WeeklyScheduleGrid
+													schedules={getYearSchedules(yearTyped)}
+													showTeacher={true}
+													showLocation={false}
+													showCommission={true}
+													editable={true}
+													contextCareerId={careerData.career.id}
+													contextCareerName={careerData.career.name}
+													contextYearLevel={yearTyped.yearLevel}
+													contextLocationId={locationData.location.id}
+													contextLocationName={locationData.location.name}
+												/>
+											</section>
+										{/each}
 									</div>
 								</div>
-
-								<WeeklyScheduleGrid
-									schedules={getYearSchedules(yearTyped)}
-									showTeacher={true}
-									showLocation={true}
-									showCommission={true}
-								/>
-							</section>
-						{/each}
-					</div>
-				</div>
-			{/each}
+							{/each}
+						{/if}
+					</section>
+				{/each}
+			</div>
 		{/if}
 	{/if}
 

@@ -67,6 +67,12 @@ export const actions: Actions = {
 		const observations = formData.get('observations') as string | null;
 		const active = formData.get('active') === 'true';
 
+		const requestedReturnTo = String(formData.get('returnTo') ?? '/configuracion/horarios');
+
+		const safeReturnTo = requestedReturnTo.startsWith('/configuracion/horarios')
+			? requestedReturnTo
+			: '/configuracion/horarios';
+
 		// Validate required fields
 		if (!careerId) {
 			return fail(400, { error: 'La carrera es obligatoria' });
@@ -103,10 +109,12 @@ export const actions: Actions = {
 				active,
 				studyPlanId: undefined
 			});
-
-			redirect(302, '/configuracion/horarios');
 		} catch (error) {
-			return fail(400, { error: (error as Error).message });
+			return fail(400, {
+				error: (error as Error).message
+			});
 		}
+
+		throw redirect(303, safeReturnTo);
 	}
 };

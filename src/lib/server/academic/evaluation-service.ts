@@ -44,6 +44,23 @@ export interface CreateEvaluationData {
 	userId: string;
 }
 
+export interface UpdateEvaluationData {
+	evaluationId: string;
+	title: string;
+	description?: string;
+	evaluationDate: Date;
+	maxScore: number;
+	minPassingScore: number;
+	participatesInAverage: boolean;
+	mandatory: boolean;
+	userId: string;
+}
+
+export interface DeleteEvaluationData {
+	evaluationId: string;
+	userId: string;
+}
+
 export interface LoadGradesBatchData {
 	evaluationId: string;
 	grades: Array<{
@@ -525,6 +542,163 @@ export class EvaluationService {
 		});
 
 		return evaluation;
+	}
+
+	/**
+	 * Edita los datos configurables de una evaluación.
+	 * Con calificaciones cargadas solo admite cambios descriptivos.
+	 */
+	async updateEvaluation(
+		data: UpdateEvaluationData
+	): Promise<EvaluationValidationError | { id: string }> {
+		const evaluation = await this.prisma.evaluation.findUnique({
+			where: { id: data.evaluationId },
+			select: {
+				id: true,
+				title: true,
+				description: true,
+				evaluationDate: true,
+				maxScore: true,
+				minPassingScore: true,
+				gradingMode: true,
+				type: true,
+				participatesInAverage: true,
+				mandatory: true,
+				isClosed: true,
+				_count: { select: { grades: true } }
+			}
+		});
+
+		if (!evaluation) return { error: 'Evaluación no encontrada' };
+		if (!(await this.canUserModifyEvaluation(data.evaluationId, data.userId))) {
+			return { error: 'No tenés permiso para editar esta evaluación' };
+		}
+		if (evaluation.isClosed) {
+			return { error: 'La evaluación está cerrada. Reabrila antes de editarla' };
+		}
+
+		if (!data.title.trim()) return { error: 'El título es obligatorio' };
+		if (Number.isNaN(data.evaluationDate.getTime())) {
+			return { error: 'La fecha de evaluación no es válida' };
+		}
+		if (
+			!Number.isFinite(data.maxScore) ||
+			data.maxScore <= 0 ||
+			!Number.isFinite(data.minPassingScore) ||
+			data.minPassingScore < 0 ||
+			data.minPassingScore > data.maxScore
+		) {
+			return { error: 'Revisá el puntaje máximo y la nota mínima de aprobación' };
+		}
+
+		const averageTypes: EvaluationType[] = [
+			EvaluationType.PARCIAL,
+			EvaluationType.TRABAJO_PRACTICO,
+			EvaluationType.INTEGRADOR
+		];
+		const participatesInAverage =
+			evaluation.gradingMode === GradingMode.NUMERIC &&
+			averageTypes.includes(evaluation.type) &&
+			data.participatesInAverage;
+
+		const scoringChanged =
+			Number(evaluation.maxScore) !== data.maxScore ||
+			Number(evaluation.minPassingScore) !== data.minPassingScore ||
+			evaluation.participatesInAverage !== participatesInAverage;
+
+		if (evaluation._count.grades > 0 && scoringChanged) {
+			return {
+				error:
+					'La evaluación ya tiene calificaciones: solo podés editar título, descripción, fecha y obligatoriedad'
+			};
+		}
+
+		const updated = await this.prisma.evaluation.update({
+			where: { id: data.evaluationId },
+			data: {
+				title: data.title.trim(),
+				description: data.description?.trim() || null,
+				evaluationDate: data.evaluationDate,
+				maxScore: data.maxScore,
+				minPassingScore: data.minPassingScore,
+				participatesInAverage,
+				mandatory: data.mandatory
+			},
+			select: { id: true }
+		});
+
+		await auditLog({
+			action: AuditAction.UPDATE,
+			entityType: 'Evaluation',
+			entityId: data.evaluationId,
+			description: `Editó evaluación "${data.title.trim()}"`,
+			userId: data.userId,
+			metadata: {
+				before: {
+					title: evaluation.title,
+					description: evaluation.description,
+					evaluationDate: evaluation.evaluationDate,
+					maxScore: Number(evaluation.maxScore),
+					minPassingScore: Number(evaluation.minPassingScore),
+					participatesInAverage: evaluation.participatesInAverage,
+					mandatory: evaluation.mandatory
+				},
+				after: {
+					title: data.title.trim(),
+					description: data.description?.trim() || null,
+					evaluationDate: data.evaluationDate,
+					maxScore: data.maxScore,
+					minPassingScore: data.minPassingScore,
+					participatesInAverage,
+					mandatory: data.mandatory
+				}
+			}
+		});
+
+		return updated;
+	}
+
+	/**
+	 * Elimina una evaluación abierta que todavía no tenga información dependiente.
+	 */
+	async deleteEvaluation(
+		data: DeleteEvaluationData
+	): Promise<EvaluationValidationError | { id: string }> {
+		const evaluation = await this.prisma.evaluation.findUnique({
+			where: { id: data.evaluationId },
+			select: {
+				id: true,
+				title: true,
+				isClosed: true,
+				_count: { select: { grades: true, recoveryEvaluations: true } }
+			}
+		});
+
+		if (!evaluation) return { error: 'Evaluación no encontrada' };
+		if (!(await this.canUserModifyEvaluation(data.evaluationId, data.userId))) {
+			return { error: 'No tenés permiso para eliminar esta evaluación' };
+		}
+		if (evaluation.isClosed) {
+			return { error: 'La evaluación está cerrada. Reabrila antes de eliminarla' };
+		}
+		if (evaluation._count.grades > 0) {
+			return { error: 'No se puede eliminar porque ya tiene calificaciones cargadas' };
+		}
+		if (evaluation._count.recoveryEvaluations > 0) {
+			return { error: 'No se puede eliminar porque tiene un recuperatorio asociado' };
+		}
+
+		await this.prisma.evaluation.delete({ where: { id: data.evaluationId } });
+
+		await auditLog({
+			action: AuditAction.DELETE,
+			entityType: 'Evaluation',
+			entityId: data.evaluationId,
+			description: `Eliminó evaluación "${evaluation.title}"`,
+			userId: data.userId
+		});
+
+		return { id: evaluation.id };
 	}
 
 	/**

@@ -2,6 +2,7 @@
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData | null } = $props();
+	type Evaluation = PageData['evaluations'][number];
 
 	let selectedSubject = $state<string>('');
 	let selectedCommission = $state<string>('');
@@ -15,6 +16,8 @@
 	let participatesInAverage = $state(true);
 	let mandatory = $state(true);
 	let selectedParentEvaluation = $state<string>('');
+	let viewingEvaluation = $state<Evaluation | null>(null);
+	let editingEvaluation = $state<Evaluation | null>(null);
 
 	function resetForm() {
 		selectedSubject = '';
@@ -29,6 +32,17 @@
 		participatesInAverage = true;
 		mandatory = true;
 		selectedParentEvaluation = '';
+	}
+
+	function dateInputValue(value: string | Date): string {
+		return new Date(value).toISOString().slice(0, 10);
+	}
+
+	function deleteBlockedReason(evaluation: Evaluation): string {
+		if (evaluation.isClosed) return 'Reabrí la evaluación antes de eliminarla';
+		if (evaluation.gradeCount > 0) return 'No se puede eliminar porque tiene calificaciones';
+		if (evaluation.hasRecovery) return 'No se puede eliminar porque tiene un recuperatorio';
+		return 'Eliminar evaluación';
 	}
 
 	const courseTypes = ['PARCIAL', 'RECUPERATORIO', 'TRABAJO_PRACTICO', 'INTEGRADOR', 'OTRO'];
@@ -389,7 +403,71 @@
 								</p>
 							</div>
 						</div>
-						<p class="text-xs text-slate-500">Creado por {evaluation.creatorName}</p>
+						<div
+							class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4"
+						>
+							<p class="text-xs text-slate-500">
+								Creado por {evaluation.creatorName} · {evaluation.gradeCount}
+								{evaluation.gradeCount === 1 ? 'calificación' : 'calificaciones'}
+							</p>
+							<div class="flex flex-wrap gap-2">
+								<button
+									type="button"
+									onclick={() => (viewingEvaluation = evaluation)}
+									class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-slate-800"
+								>
+									Ver
+								</button>
+								<form
+									method="POST"
+									action={evaluation.isClosed ? '?/reopenEvaluation' : '?/closeEvaluation'}
+									onsubmit={(event) => {
+										const action = evaluation.isClosed ? 'reabrir' : 'cerrar';
+										if (!confirm(`¿Querés ${action} "${evaluation.title}"?`)) {
+											event.preventDefault();
+										}
+									}}
+								>
+									<input type="hidden" name="evaluationId" value={evaluation.id} />
+									<button
+										type="submit"
+										class="rounded-xl border border-amber-800 px-4 py-2 text-sm font-semibold text-amber-300 transition hover:bg-amber-950/40"
+									>
+										{evaluation.isClosed ? 'Reabrir' : 'Cerrar'}
+									</button>
+								</form>
+								<button
+									type="button"
+									onclick={() => (editingEvaluation = evaluation)}
+									disabled={evaluation.isClosed}
+									title={evaluation.isClosed
+										? 'Reabrí la evaluación antes de editarla'
+										: 'Editar evaluación'}
+									class="rounded-xl border border-blue-700 px-4 py-2 text-sm font-semibold text-blue-300 transition hover:bg-blue-950/40 disabled:cursor-not-allowed disabled:opacity-40"
+								>
+									Editar
+								</button>
+								<form
+									method="POST"
+									action="?/deleteEvaluation"
+									onsubmit={(event) => {
+										if (!confirm(`¿Eliminar definitivamente "${evaluation.title}"?`)) {
+											event.preventDefault();
+										}
+									}}
+								>
+									<input type="hidden" name="evaluationId" value={evaluation.id} />
+									<button
+										type="submit"
+										disabled={!evaluation.canDelete}
+										title={deleteBlockedReason(evaluation)}
+										class="rounded-xl border border-red-800 px-4 py-2 text-sm font-semibold text-red-300 transition hover:bg-red-950/40 disabled:cursor-not-allowed disabled:opacity-40"
+									>
+										Eliminar
+									</button>
+								</form>
+							</div>
+						</div>
 					</div>
 				{/each}
 				{#if data.evaluations.length === 0}
@@ -403,3 +481,313 @@
 		</div>
 	</div>
 </div>
+
+{#if viewingEvaluation}
+	<div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+		<button
+			type="button"
+			class="absolute inset-0 bg-black/75"
+			onclick={() => (viewingEvaluation = null)}
+			aria-label="Cerrar detalle"
+		></button>
+		<div
+			class="relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-6 shadow-2xl"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="evaluation-detail-title"
+		>
+			<div class="mb-6 flex items-start justify-between gap-4">
+				<div>
+					<p class="text-sm font-semibold tracking-wider text-blue-400 uppercase">
+						Detalle de la evaluación
+					</p>
+					<h2 id="evaluation-detail-title" class="mt-1 text-2xl font-bold text-white">
+						{viewingEvaluation.title}
+					</h2>
+				</div>
+				<button
+					type="button"
+					onclick={() => (viewingEvaluation = null)}
+					class="rounded-xl border border-slate-700 px-3 py-2 text-slate-300 hover:bg-slate-800"
+					aria-label="Cerrar"
+				>
+					✕
+				</button>
+			</div>
+
+			<div class="grid gap-4 sm:grid-cols-2">
+				<div class="rounded-2xl bg-slate-950 p-4">
+					<p class="text-xs text-slate-500 uppercase">Materia</p>
+					<p class="mt-1 font-medium text-white">{viewingEvaluation.subject}</p>
+				</div>
+				<div class="rounded-2xl bg-slate-950 p-4">
+					<p class="text-xs text-slate-500 uppercase">Comisión</p>
+					<p class="mt-1 font-medium text-white">
+						{viewingEvaluation.commission || 'Sin comisión'}
+					</p>
+				</div>
+				<div class="rounded-2xl bg-slate-950 p-4">
+					<p class="text-xs text-slate-500 uppercase">Tipo y modalidad</p>
+					<p class="mt-1 font-medium text-white">
+						{viewingEvaluation.type} · {viewingEvaluation.gradingMode === 'QUALITATIVE'
+							? 'Cualitativa'
+							: 'Numérica'}
+					</p>
+				</div>
+				<div class="rounded-2xl bg-slate-950 p-4">
+					<p class="text-xs text-slate-500 uppercase">Fecha</p>
+					<p class="mt-1 font-medium text-white">
+						{new Date(viewingEvaluation.evaluationDate).toLocaleDateString('es-AR')}
+					</p>
+				</div>
+				<div class="rounded-2xl bg-slate-950 p-4">
+					<p class="text-xs text-slate-500 uppercase">Escala</p>
+					<p class="mt-1 font-medium text-white">
+						Máximo {viewingEvaluation.maxScore} · Aprueba con {viewingEvaluation.minPassingScore}
+					</p>
+				</div>
+				<div class="rounded-2xl bg-slate-950 p-4">
+					<p class="text-xs text-slate-500 uppercase">Estado</p>
+					<p
+						class="mt-1 font-medium"
+						class:text-red-400={viewingEvaluation.isClosed}
+						class:text-green-400={!viewingEvaluation.isClosed}
+					>
+						{viewingEvaluation.isClosed ? 'Cerrada' : 'Abierta'}
+					</p>
+				</div>
+			</div>
+
+			{#if viewingEvaluation.description}
+				<div class="mt-4 rounded-2xl border border-slate-800 p-4">
+					<p class="text-xs text-slate-500 uppercase">Descripción</p>
+					<p class="mt-2 whitespace-pre-line text-slate-300">{viewingEvaluation.description}</p>
+				</div>
+			{/if}
+
+			<div class="mt-4 grid gap-2 text-sm text-slate-400 sm:grid-cols-2">
+				<p>{viewingEvaluation.mandatory ? 'Obligatoria' : 'No obligatoria'}</p>
+				<p>
+					{viewingEvaluation.participatesInAverage
+						? 'Integra el promedio'
+						: 'No integra el promedio'}
+				</p>
+				<p>
+					{viewingEvaluation.gradeCount}
+					{viewingEvaluation.gradeCount === 1 ? 'calificación' : 'calificaciones'}
+				</p>
+				<p>Creada por {viewingEvaluation.creatorName}</p>
+				{#if viewingEvaluation.parentEvaluationTitle}
+					<p class="sm:col-span-2">Recuperatorio de: {viewingEvaluation.parentEvaluationTitle}</p>
+				{/if}
+			</div>
+
+			<div class="mt-6 flex justify-end gap-3">
+				{#if !viewingEvaluation.isClosed}
+					<button
+						type="button"
+						onclick={() => {
+							editingEvaluation = viewingEvaluation;
+							viewingEvaluation = null;
+						}}
+						class="rounded-xl bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-500"
+					>
+						Editar
+					</button>
+				{/if}
+				<button
+					type="button"
+					onclick={() => (viewingEvaluation = null)}
+					class="rounded-xl border border-slate-700 px-5 py-2.5 font-semibold text-white hover:bg-slate-800"
+				>
+					Cerrar
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+{#if editingEvaluation}
+	<div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+		<button
+			type="button"
+			class="absolute inset-0 bg-black/75"
+			onclick={() => (editingEvaluation = null)}
+			aria-label="Cancelar edición"
+		></button>
+		<div
+			class="relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-6 shadow-2xl"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="evaluation-edit-title"
+		>
+			<div class="mb-6 flex items-start justify-between gap-4">
+				<div>
+					<p class="text-sm font-semibold tracking-wider text-blue-400 uppercase">
+						Editar evaluación
+					</p>
+					<h2 id="evaluation-edit-title" class="mt-1 text-2xl font-bold text-white">
+						{editingEvaluation.title}
+					</h2>
+				</div>
+				<button
+					type="button"
+					onclick={() => (editingEvaluation = null)}
+					class="rounded-xl border border-slate-700 px-3 py-2 text-slate-300 hover:bg-slate-800"
+					aria-label="Cerrar"
+				>
+					✕
+				</button>
+			</div>
+
+			<div class="mb-5 rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-400">
+				<p>{editingEvaluation.subject} · {editingEvaluation.commission || 'Sin comisión'}</p>
+				<p>
+					{editingEvaluation.type} · {editingEvaluation.gradingMode === 'QUALITATIVE'
+						? 'Cualitativa'
+						: 'Numérica'}
+				</p>
+				<p class="mt-2 text-xs text-slate-500">
+					La materia, comisión, tipo y modalidad identifican la evaluación y no se modifican aquí.
+				</p>
+			</div>
+
+			{#if editingEvaluation.gradeCount > 0}
+				<div
+					class="mb-5 rounded-2xl border border-amber-700/60 bg-amber-950/30 p-4 text-sm text-amber-300"
+				>
+					Ya tiene calificaciones. La escala y su participación en el promedio quedan protegidas.
+				</div>
+			{/if}
+
+			<form method="POST" action="?/updateEvaluation" class="space-y-5">
+				<input type="hidden" name="evaluationId" value={editingEvaluation.id} />
+				<div>
+					<label for="edit-title" class="mb-2 block text-sm font-medium text-slate-300"
+						>Título</label
+					>
+					<input
+						id="edit-title"
+						name="title"
+						type="text"
+						value={editingEvaluation.title}
+						required
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
+					/>
+				</div>
+				<div>
+					<label for="edit-description" class="mb-2 block text-sm font-medium text-slate-300"
+						>Descripción</label
+					>
+					<textarea
+						id="edit-description"
+						name="description"
+						rows="3"
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
+						>{editingEvaluation.description || ''}</textarea
+					>
+				</div>
+				<div>
+					<label for="edit-date" class="mb-2 block text-sm font-medium text-slate-300">Fecha</label>
+					<input
+						id="edit-date"
+						name="evaluationDate"
+						type="date"
+						value={dateInputValue(editingEvaluation.evaluationDate)}
+						required
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
+					/>
+				</div>
+
+				{#if editingEvaluation.gradingMode === 'NUMERIC'}
+					<div class="grid gap-5 sm:grid-cols-2">
+						<div>
+							<label for="edit-max-score" class="mb-2 block text-sm font-medium text-slate-300"
+								>Puntaje máximo</label
+							>
+							<input
+								id="edit-max-score"
+								name="maxScore"
+								type="number"
+								min="1"
+								step="0.01"
+								value={editingEvaluation.maxScore}
+								readonly={editingEvaluation.gradeCount > 0}
+								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none read-only:cursor-not-allowed read-only:opacity-60 focus:border-blue-500"
+							/>
+						</div>
+						<div>
+							<label for="edit-min-score" class="mb-2 block text-sm font-medium text-slate-300"
+								>Nota mínima</label
+							>
+							<input
+								id="edit-min-score"
+								name="minPassingScore"
+								type="number"
+								min="0"
+								step="0.01"
+								value={editingEvaluation.minPassingScore}
+								readonly={editingEvaluation.gradeCount > 0}
+								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none read-only:cursor-not-allowed read-only:opacity-60 focus:border-blue-500"
+							/>
+						</div>
+					</div>
+				{:else}
+					<input type="hidden" name="maxScore" value={editingEvaluation.maxScore} />
+					<input type="hidden" name="minPassingScore" value={editingEvaluation.minPassingScore} />
+				{/if}
+
+				<div class="grid gap-4 rounded-2xl border border-slate-800 bg-slate-950 p-4 sm:grid-cols-2">
+					<label class="flex items-start gap-3 text-sm text-slate-300">
+						<input
+							name="mandatory"
+							type="checkbox"
+							checked={editingEvaluation.mandatory}
+							class="mt-1"
+						/>
+						<span
+							><strong class="block text-white">Obligatoria</strong>Debe completarse para cerrar.</span
+						>
+					</label>
+					{#if editingEvaluation.gradingMode === 'NUMERIC' && averageTypes.includes(editingEvaluation.type)}
+						{#if editingEvaluation.gradeCount > 0 && editingEvaluation.participatesInAverage}
+							<input type="hidden" name="participatesInAverage" value="on" />
+						{/if}
+						<label
+							class="flex items-start gap-3 text-sm text-slate-300"
+							class:opacity-50={editingEvaluation.gradeCount > 0}
+						>
+							<input
+								name="participatesInAverage"
+								type="checkbox"
+								checked={editingEvaluation.participatesInAverage}
+								disabled={editingEvaluation.gradeCount > 0}
+								class="mt-1"
+							/>
+							<span
+								><strong class="block text-white">Integra el promedio</strong>Se incluye en la
+								cursada.</span
+							>
+						</label>
+					{/if}
+				</div>
+
+				<div class="flex justify-end gap-3">
+					<button
+						type="button"
+						onclick={() => (editingEvaluation = null)}
+						class="rounded-xl border border-slate-700 px-5 py-2.5 font-semibold text-white hover:bg-slate-800"
+					>
+						Cancelar
+					</button>
+					<button
+						type="submit"
+						class="rounded-xl bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-500"
+					>
+						Guardar cambios
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{/if}

@@ -75,6 +75,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			subject: true,
 			commission: true,
 			createdByUser: true,
+			_count: { select: { grades: true } },
 			parentEvaluation: {
 				include: {
 					subject: true
@@ -124,7 +125,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 			creatorName: `${e.createdByUser.firstName} ${e.createdByUser.lastName}`,
 			parentEvaluationId: e.parentEvaluationId,
 			parentEvaluationTitle: e.parentEvaluation?.title || null,
-			hasRecovery: e.recoveryEvaluations.length > 0
+			hasRecovery: e.recoveryEvaluations.length > 0,
+			gradeCount: e._count.grades,
+			canDelete: !e.isClosed && e._count.grades === 0 && e.recoveryEvaluations.length === 0
 		}))
 	};
 };
@@ -215,6 +218,72 @@ export const actions: Actions = {
 		} catch (error) {
 			console.error('Error al crear evaluación:', error);
 			return { error: 'Error al crear la evaluación' };
+		}
+	},
+
+	updateEvaluation: async ({ request, locals }) => {
+		requireRole(locals.user, ['DOCENTE']);
+
+		if (!locals.user) return { error: 'No autenticado' };
+
+		const data = await request.formData();
+		const evaluationId = data.get('evaluationId')?.toString();
+		const title = data.get('title')?.toString().trim();
+		const description = data.get('description')?.toString();
+		const evaluationDate = data.get('evaluationDate')?.toString();
+		const maxScore = Number(data.get('maxScore'));
+		const minPassingScore = Number(data.get('minPassingScore'));
+		const participatesInAverage = data.get('participatesInAverage') === 'on';
+		const mandatory = data.get('mandatory') === 'on';
+
+		if (!evaluationId || !title || !evaluationDate) {
+			return { error: 'Completá el título y la fecha de la evaluación' };
+		}
+
+		try {
+			const evaluationService = new EvaluationService(prisma);
+			const result = await evaluationService.updateEvaluation({
+				evaluationId,
+				title,
+				description: description || undefined,
+				evaluationDate: new Date(`${evaluationDate}T12:00:00`),
+				maxScore,
+				minPassingScore,
+				participatesInAverage,
+				mandatory,
+				userId: locals.user.id
+			});
+
+			if ('error' in result) return result;
+			return { success: 'Evaluación actualizada exitosamente' };
+		} catch (error) {
+			console.error('Error al actualizar evaluación:', error);
+			return { error: 'Error al actualizar la evaluación' };
+		}
+	},
+
+	deleteEvaluation: async ({ request, locals }) => {
+		requireRole(locals.user, ['DOCENTE']);
+
+		if (!locals.user) return { error: 'No autenticado' };
+
+		const data = await request.formData();
+		const evaluationId = data.get('evaluationId')?.toString();
+
+		if (!evaluationId) return { error: 'ID de evaluación requerido' };
+
+		try {
+			const evaluationService = new EvaluationService(prisma);
+			const result = await evaluationService.deleteEvaluation({
+				evaluationId,
+				userId: locals.user.id
+			});
+
+			if ('error' in result) return result;
+			return { success: 'Evaluación eliminada exitosamente' };
+		} catch (error) {
+			console.error('Error al eliminar evaluación:', error);
+			return { error: 'Error al eliminar la evaluación' };
 		}
 	},
 

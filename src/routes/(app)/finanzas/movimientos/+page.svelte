@@ -1,9 +1,10 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
 
 	let { data }: { data: PageData } = $props();
-	const { history, filters } = data;
+	const { history, filters } = untrack(() => data);
 </script>
 
 <div class="p-6">
@@ -14,8 +15,9 @@
 		<form method="POST" action="?/filterMovements" use:enhance>
 			<div class="grid grid-cols-1 gap-4 md:grid-cols-4">
 				<div>
-					<label class="mb-2 block text-sm font-medium">ID Alumno</label>
+					<label for="movement-student" class="mb-2 block text-sm font-medium">ID Alumno</label>
 					<input
+						id="movement-student"
 						type="text"
 						name="studentId"
 						value={filters.studentId || ''}
@@ -23,8 +25,10 @@
 					/>
 				</div>
 				<div>
-					<label class="mb-2 block text-sm font-medium">Tipo de Movimiento</label>
-					<select name="movementType" class="w-full rounded border p-2">
+					<label for="movement-type" class="mb-2 block text-sm font-medium"
+						>Tipo de Movimiento</label
+					>
+					<select id="movement-type" name="movementType" class="w-full rounded border p-2">
 						<option value="">Todos</option>
 						<option value="CHARGE" selected={filters.movementType === 'CHARGE'}>Cargo</option>
 						<option value="PAYMENT" selected={filters.movementType === 'PAYMENT'}>Pago</option>
@@ -38,8 +42,10 @@
 					</select>
 				</div>
 				<div>
-					<label class="mb-2 block text-sm font-medium">Fecha Desde</label>
+					<label for="movement-start-date" class="mb-2 block text-sm font-medium">Fecha Desde</label
+					>
 					<input
+						id="movement-start-date"
 						type="date"
 						name="startDate"
 						value={filters.startDate ? filters.startDate.toISOString().split('T')[0] : ''}
@@ -47,8 +53,9 @@
 					/>
 				</div>
 				<div>
-					<label class="mb-2 block text-sm font-medium">Fecha Hasta</label>
+					<label for="movement-end-date" class="mb-2 block text-sm font-medium">Fecha Hasta</label>
 					<input
+						id="movement-end-date"
 						type="date"
 						name="endDate"
 						value={filters.endDate ? filters.endDate.toISOString().split('T')[0] : ''}

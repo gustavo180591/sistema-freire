@@ -94,8 +94,11 @@
 	<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
 		<form method="GET" class="grid gap-4 md:grid-cols-4">
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Carrera</label>
+				<label for="commission-career" class="mb-2 block text-sm font-medium text-slate-300"
+					>Carrera</label
+				>
 				<select
+					id="commission-career"
 					name="career"
 					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-slate-300 focus:border-indigo-500 focus:outline-none"
 				>
@@ -108,8 +111,11 @@
 				</select>
 			</div>
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Materia</label>
+				<label for="commission-subject" class="mb-2 block text-sm font-medium text-slate-300"
+					>Materia</label
+				>
 				<select
+					id="commission-subject"
 					name="subject"
 					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-slate-300 focus:border-indigo-500 focus:outline-none"
 				>
@@ -122,8 +128,11 @@
 				</select>
 			</div>
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Período</label>
+				<label for="commission-term" class="mb-2 block text-sm font-medium text-slate-300"
+					>Período</label
+				>
 				<select
+					id="commission-term"
 					name="term"
 					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-slate-300 focus:border-indigo-500 focus:outline-none"
 				>
@@ -136,8 +145,11 @@
 				</select>
 			</div>
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Estado</label>
+				<label for="commission-active" class="mb-2 block text-sm font-medium text-slate-300"
+					>Estado</label
+				>
 				<select
+					id="commission-active"
 					name="active"
 					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-slate-300 focus:border-indigo-500 focus:outline-none"
 				>

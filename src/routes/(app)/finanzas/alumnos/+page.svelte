@@ -1,5 +1,8 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
+
 	let { data } = $props();
+	const initialFilters = untrack(() => data.filters);
 
 	const currency = new Intl.NumberFormat('es-AR', {
 		style: 'currency',
@@ -13,20 +16,20 @@
 	};
 
 	// Filter state - initialize from server data
-	let search = $state(data.filters.search || '');
-	let careerId = $state(data.filters.careerId || '');
-	let locationId = $state(data.filters.locationId || '');
-	let studentType = $state(data.filters.studentType || '');
-	let financialStatus = $state(data.filters.financialStatus || '');
-	let academicStatus = $state(data.filters.academicStatus || '');
-	let conceptCode = $state(data.filters.conceptCode || '');
-	let periodFrom = $state(data.filters.periodFrom || '');
-	let periodTo = $state(data.filters.periodTo || '');
-	let minDebt = $state(data.filters.minDebt?.toString() || '');
-	let maxDebt = $state(data.filters.maxDebt?.toString() || '');
-	let overdueCharges = $state(data.filters.overdueCharges || '');
-	let pageSize = $state(data.filters.pageSize || 25);
-	let sortBy = $state(data.filters.sortBy || '');
+	let search = $state(initialFilters.search || '');
+	let careerId = $state(initialFilters.careerId || '');
+	let locationId = $state(initialFilters.locationId || '');
+	let studentType = $state(initialFilters.studentType || '');
+	let financialStatus = $state(initialFilters.financialStatus || '');
+	let academicStatus = $state(initialFilters.academicStatus || '');
+	let conceptCode = $state(initialFilters.conceptCode || '');
+	let periodFrom = $state(initialFilters.periodFrom || '');
+	let periodTo = $state(initialFilters.periodTo || '');
+	let minDebt = $state(initialFilters.minDebt?.toString() || '');
+	let maxDebt = $state(initialFilters.maxDebt?.toString() || '');
+	let overdueCharges = $state(initialFilters.overdueCharges || '');
+	let pageSize = $state(initialFilters.pageSize || 25);
+	let sortBy = $state(initialFilters.sortBy || '');
 
 	function buildUrl() {
 		const params = new URLSearchParams();

@@ -1,12 +1,12 @@
 import {
 	PrismaClient,
 	CorrelativeType,
-	SubjectType,
 	CourseStatus,
 	FinalExamStatus,
 	AcademicStatus
 } from '@prisma/client';
-import type { StudentSubjectStatus, SubjectCorrelative, Subject, Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
+import { calculateCourseAverage } from './grade-calculation';
 
 const prisma = new PrismaClient();
 
@@ -153,16 +153,17 @@ export async function canStudentEnroll(
  * Calcula el estado final de un estudiante en una materia
  * Implementa el nuevo modelo Grade → Evaluation → Subject
  * - Distingue evaluaciones de cursada, recuperatorios y examen final
- * - Calcula promedio ponderado: sum(nota × peso) / sum(pesos)
- * - Maneja PRESENT (nota requerida), ABSENT (nota null), EXCUSED (nota null)
- * - Toma nota efectiva entre original y recuperatorio
+ * - Calcula promedio aritmético de las notas efectivas
+ * - Maneja PENDING, PRESENT, ABSENT y EXCUSED
+ * - El recuperatorio reemplaza siempre la nota original cuando tiene resultado
  * - Calcula courseStatus, finalExamStatus, academicStatus
  * - Sincroniza temporalmente approved, promoted, finalGrade
  */
 export async function calculateFinalStatus(
 	studentId: string,
 	subjectId: string,
-	tx?: Omit<Prisma.TransactionClient, '$transaction' | '$use' | '$on' | '$disconnect' | '$connect'>
+	tx?: Omit<Prisma.TransactionClient, '$transaction' | '$use' | '$on' | '$disconnect' | '$connect'>,
+	subjectEnrollmentId?: string
 ): Promise<{
 	regularityStatus: 'REGULAR' | 'LIBRE';
 	approved: boolean;
@@ -175,14 +176,39 @@ export async function calculateFinalStatus(
 	academicStatus: AcademicStatus;
 }> {
 	const client = tx || prisma;
+	const enrollment = subjectEnrollmentId
+		? await client.subjectEnrollment.findUnique({
+				where: { id: subjectEnrollmentId },
+				select: { commissionId: true, studentId: true, subjectId: true }
+			})
+		: null;
 
-	// Obtener calificaciones con sus evaluaciones (nuevo modelo)
+	if (
+		subjectEnrollmentId &&
+		(!enrollment || enrollment.studentId !== studentId || enrollment.subjectId !== subjectId)
+	) {
+		throw new Error('La inscripción no corresponde al alumno y la materia indicados');
+	}
+
+	// Cuando existe una inscripción, las notas quedan aisladas por cursada. Para
+	// registros históricos aún no vinculados se admite el contexto de comisión.
 	const grades = await client.grade.findMany({
 		where: {
-			studentId,
-			evaluation: {
-				subjectId
-			}
+			OR: subjectEnrollmentId
+				? [
+						{ subjectEnrollmentId },
+						{
+							subjectEnrollmentId: null,
+							studentId,
+							evaluation: {
+								subjectId,
+								commissionId: enrollment?.commissionId || undefined
+							}
+						}
+					]
+				: undefined,
+			studentId: subjectEnrollmentId ? undefined : studentId,
+			evaluation: subjectEnrollmentId ? undefined : { subjectId }
 		},
 		include: {
 			evaluation: {
@@ -194,9 +220,20 @@ export async function calculateFinalStatus(
 		}
 	});
 
+	const currentSubjectStatus = await client.studentSubjectStatus.findUnique({
+		where: {
+			studentId_subjectId: {
+				studentId,
+				subjectId
+			}
+		},
+		select: { regularityStatus: true }
+	});
+	const regularityStatus = currentSubjectStatus?.regularityStatus || 'LIBRE';
+
 	if (grades.length === 0) {
 		return {
-			regularityStatus: 'LIBRE',
+			regularityStatus,
 			approved: false,
 			promoted: false,
 			finalGrade: null,
@@ -215,86 +252,25 @@ export async function calculateFinalStatus(
 	const approvalThreshold = Number(subject?.approvalThreshold || 6);
 	const promotionThreshold = Number(subject?.promotionThreshold || 8);
 
-	// Separar evaluaciones por tipo
-	const courseEvaluations = grades.filter(
-		(g) =>
-			g.evaluation &&
-			['PARCIAL', 'TRABAJO_PRACTICO', 'INTEGRADOR'].includes(g.evaluation.type as any)
-	);
-	const recoveryEvaluations = grades.filter(
-		(g) => g.evaluation && g.evaluation.type === 'RECUPERATORIO'
-	);
-	const finalExamEvaluations = grades.filter(
-		(g) => g.evaluation && g.evaluation.type === 'EXAMEN_FINAL'
-	);
-
-	// Calcular promedio ponderado de cursada
-	// Regla: EXCUSED no participa del promedio, ABSENT no participa (nota null)
-	let weightedSum = 0;
-	let totalWeight = 0;
-	let presentCount = 0;
-	let absentCount = 0;
-	let excusedCount = 0;
-
-	// Mapa para rastrear evaluaciones originales y sus recuperatorios
-	const evaluationMap = new Map<
-		string,
-		{
-			original: any;
-			recovery: any;
-		}
-	>();
-
-	// Primero, mapear evaluaciones originales
-	for (const grade of courseEvaluations) {
-		if (!grade.evaluation) continue;
-
-		if (grade.status === 'PRESENT' && grade.value !== null) {
-			presentCount++;
-			const weight = Number(grade.evaluation.weight || 1);
-			weightedSum += Number(grade.value) * weight;
-			totalWeight += weight;
-		} else if (grade.status === 'ABSENT') {
-			absentCount++;
-		} else if (grade.status === 'EXCUSED') {
-			excusedCount++;
-		}
-
-		evaluationMap.set(grade.evaluation.id, {
-			original: grade,
-			recovery: null
-		});
-	}
-
-	// Luego, procesar recuperatorios y reemplazar notas originales si son mejores
-	for (const grade of recoveryEvaluations) {
-		if (!grade.evaluation || !grade.evaluation.parentEvaluationId) continue;
-
-		const parentId = grade.evaluation.parentEvaluationId;
-		const entry = evaluationMap.get(parentId);
-
-		if (entry) {
-			entry.recovery = grade;
-			// Si el recuperatorio tiene nota y es mejor que la original, reemplazar
-			if (grade.status === 'PRESENT' && grade.value !== null) {
-				const originalValue = entry.original.value !== null ? Number(entry.original.value) : 0;
-				const recoveryValue = Number(grade.value);
-
-				if (recoveryValue > originalValue) {
-					// Restar nota original del sumatorio
-					const originalWeight = Number(entry.original.evaluation?.weight || 1);
-					weightedSum -= originalValue * originalWeight;
-
-					// Agregar nota del recuperatorio
-					const recoveryWeight = Number(grade.evaluation?.weight || originalWeight);
-					weightedSum += recoveryValue * recoveryWeight;
-				}
+	const { average: courseAverage } = calculateCourseAverage(
+		grades.map((grade) => ({
+			value: grade.value === null ? null : Number(grade.value),
+			qualitativeValue: grade.qualitativeValue,
+			status: grade.status,
+			evaluation: {
+				id: grade.evaluation.id,
+				type: grade.evaluation.type,
+				gradingMode: grade.evaluation.gradingMode,
+				participatesInAverage: grade.evaluation.participatesInAverage,
+				parentEvaluationId: grade.evaluation.parentEvaluationId,
+				evaluationDate: grade.evaluation.evaluationDate
 			}
-		}
-	}
+		}))
+	);
 
-	// Calcular promedio ponderado
-	const courseAverage = totalWeight > 0 ? weightedSum / totalWeight : null;
+	const finalExamEvaluations = grades.filter(
+		(g) => g.evaluation && ['EXAMEN_FINAL', 'MESA_EXAMEN'].includes(g.evaluation.type)
+	);
 
 	// Determinar courseStatus
 	let courseStatus: CourseStatus;
@@ -315,9 +291,15 @@ export async function calculateFinalStatus(
 	} else if (finalExamEvaluations.length === 0) {
 		finalExamStatus = FinalExamStatus.PENDING;
 	} else {
-		// Verificar si aprobó el examen final
-		const finalExam = finalExamEvaluations[0]; // Asumimos un solo examen final
-		if (finalExam.status === 'PRESENT' && finalExam.value !== null) {
+		const completedFinals = finalExamEvaluations
+			.filter((grade) => grade.status === 'PRESENT' && grade.value !== null)
+			.sort(
+				(a, b) => b.evaluation.evaluationDate.getTime() - a.evaluation.evaluationDate.getTime()
+			);
+		const passedFinal = completedFinals.find((grade) => Number(grade.value) >= approvalThreshold);
+		const finalExam = passedFinal || completedFinals[0];
+
+		if (finalExam?.value !== null && finalExam?.value !== undefined) {
 			if (Number(finalExam.value) >= approvalThreshold) {
 				finalExamStatus = FinalExamStatus.PASSED;
 			} else {
@@ -343,18 +325,22 @@ export async function calculateFinalStatus(
 		academicStatus = AcademicStatus.EN_COURSE;
 	}
 
-	// Calcular regularityStatus (basado en asistencia, separado de notas)
-	// Por ahora, basado en ausencias excesivas (más del 25%)
-	const totalEvaluations = presentCount + absentCount + excusedCount;
-	const absenceRate = totalEvaluations > 0 ? absentCount / totalEvaluations : 0;
-	const regularityStatus = absenceRate > 0.25 ? 'LIBRE' : 'REGULAR';
+	// La regularidad se conserva desde el módulo de asistencia. Una ausencia a
+	// una evaluación no puede convertir por sí sola a un alumno en LIBRE.
 
 	// Calcular finalGrade (nota final efectiva)
 	let finalGrade: number | null;
 	if (courseStatus === CourseStatus.PROMOTED) {
 		finalGrade = courseAverage;
 	} else if (finalExamStatus === FinalExamStatus.PASSED) {
-		finalGrade = Number(finalExamEvaluations[0].value);
+		const passedFinal = finalExamEvaluations
+			.filter((grade) => grade.status === 'PRESENT' && grade.value !== null)
+			.sort((a, b) => b.evaluation.evaluationDate.getTime() - a.evaluation.evaluationDate.getTime())
+			.find((grade) => Number(grade.value) >= approvalThreshold);
+		finalGrade =
+			passedFinal?.value === null || passedFinal?.value === undefined
+				? null
+				: Number(passedFinal.value);
 	} else {
 		finalGrade = courseAverage; // Promedio de cursada como referencia
 	}
@@ -376,6 +362,55 @@ export async function calculateFinalStatus(
 		finalExamStatus,
 		academicStatus
 	};
+}
+
+/**
+ * Persiste el resultado histórico de una cursada sin depender del registro
+ * agregado StudentSubjectStatus, que se mantiene por compatibilidad.
+ */
+export async function updateCourseResult(
+	subjectEnrollmentId: string,
+	tx?: Omit<Prisma.TransactionClient, '$transaction' | '$use' | '$on' | '$disconnect' | '$connect'>
+): Promise<void> {
+	const client = tx || prisma;
+	const enrollment = await client.subjectEnrollment.findUnique({
+		where: { id: subjectEnrollmentId },
+		select: { studentId: true, subjectId: true }
+	});
+
+	if (!enrollment) {
+		throw new Error('Inscripción no encontrada al recalcular la cursada');
+	}
+
+	const status = await calculateFinalStatus(
+		enrollment.studentId,
+		enrollment.subjectId,
+		tx,
+		subjectEnrollmentId
+	);
+
+	await client.courseResult.upsert({
+		where: { subjectEnrollmentId },
+		create: {
+			subjectEnrollmentId,
+			courseAverage: status.courseAverage,
+			courseStatus: status.courseStatus,
+			academicStatus: status.academicStatus,
+			approved: status.approved,
+			promoted: status.promoted,
+			finalGrade: status.finalGrade,
+			calculatedAt: new Date()
+		},
+		update: {
+			courseAverage: status.courseAverage,
+			courseStatus: status.courseStatus,
+			academicStatus: status.academicStatus,
+			approved: status.approved,
+			promoted: status.promoted,
+			finalGrade: status.finalGrade,
+			calculatedAt: new Date()
+		}
+	});
 }
 
 /**
@@ -541,7 +576,7 @@ export async function canStudentPass(
  * Obtiene la malla curricular completa para una carrera
  */
 export async function getCurriculum(careerId: string, year?: number) {
-	const where: any = {
+	const where: Prisma.CareerSubjectWhereInput = {
 		careerId,
 		isMandatory: true
 	};
@@ -576,20 +611,18 @@ export async function getCurriculum(careerId: string, year?: number) {
 	});
 
 	// Agrupar por año
-	const byYear = careerSubjects.reduce(
-		(acc, cs) => {
-			const year = cs.yearLevel;
-			if (!acc[year]) {
-				acc[year] = [];
-			}
-			acc[year].push({
-				subject: cs.subject,
-				isMandatory: cs.isMandatory
-			});
-			return acc;
-		},
-		{} as Record<number, Array<{ subject: any; isMandatory: boolean }>>
-	);
+	const byYear: Record<
+		number,
+		Array<{ subject: (typeof careerSubjects)[number]['subject']; isMandatory: boolean }>
+	> = {};
+	for (const careerSubject of careerSubjects) {
+		const yearLevel = careerSubject.yearLevel;
+		byYear[yearLevel] ||= [];
+		byYear[yearLevel].push({
+			subject: careerSubject.subject,
+			isMandatory: careerSubject.isMandatory
+		});
+	}
 
 	return {
 		careerId,

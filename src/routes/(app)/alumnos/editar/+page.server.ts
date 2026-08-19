@@ -3,7 +3,8 @@ import type { Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import bcrypt from 'bcryptjs';
 import { auditLog } from '$lib/server/audit';
-import { AuditAction, StudentStatus } from '@prisma/client';
+import { AuditAction } from '@prisma/client';
+import type { StudentStatus } from '@prisma/client';
 import { checkPermission } from '$lib/server/auth/permissions-granular';
 
 export const actions: Actions = {

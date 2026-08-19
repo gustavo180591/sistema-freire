@@ -1,14 +1,13 @@
-import {
-	PrismaClient,
-	DocumentAccessAction,
-	DocumentStatus,
+import { PrismaClient, DocumentAccessAction, DocumentStatus } from '@prisma/client';
+import type {
 	DocumentVisibility,
 	DocumentCategory,
 	DocumentSubType,
-	DocumentOwnerType
+	DocumentOwnerType,
+	Document,
+	DocumentAccessLog,
+	Prisma
 } from '@prisma/client';
-import type { Document, DocumentAccessLog } from '@prisma/client';
-import type { Prisma } from '@prisma/client';
 import { documentStorageService } from './document-storage.service';
 import { validateDocumentFile, type SanitizedFileMetadata } from './document-file-validation';
 

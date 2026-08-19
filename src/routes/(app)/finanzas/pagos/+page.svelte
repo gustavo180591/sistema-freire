@@ -52,8 +52,11 @@
 				<input type="hidden" name="userId" value={form?.userId || ''} />
 
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Alumno</label>
+					<label for="payment-student" class="mb-2 block text-sm font-medium text-slate-300"
+						>Alumno</label
+					>
 					<select
+						id="payment-student"
 						name="studentId"
 						bind:value={selectedStudent}
 						class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2 text-slate-200 focus:border-indigo-500 focus:outline-none"
@@ -70,8 +73,11 @@
 				</div>
 
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Monto</label>
+					<label for="payment-amount" class="mb-2 block text-sm font-medium text-slate-300"
+						>Monto</label
+					>
 					<input
+						id="payment-amount"
 						type="number"
 						name="amount"
 						bind:value={amount}
@@ -83,8 +89,11 @@
 				</div>
 
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Método de Pago</label>
+					<label for="payment-method" class="mb-2 block text-sm font-medium text-slate-300"
+						>Método de Pago</label
+					>
 					<select
+						id="payment-method"
 						name="method"
 						bind:value={method}
 						class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2 text-slate-200 focus:border-indigo-500 focus:outline-none"
@@ -99,8 +108,11 @@
 				</div>
 
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Referencia (opcional)</label>
+					<label for="payment-reference" class="mb-2 block text-sm font-medium text-slate-300"
+						>Referencia (opcional)</label
+					>
 					<input
+						id="payment-reference"
 						type="text"
 						name="reference"
 						bind:value={reference}
@@ -109,10 +121,11 @@
 				</div>
 
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300"
+					<label for="payment-date" class="mb-2 block text-sm font-medium text-slate-300"
 						>Fecha de Pago (opcional)</label
 					>
 					<input
+						id="payment-date"
 						type="date"
 						name="paidAt"
 						bind:value={paidAt}
@@ -121,8 +134,11 @@
 				</div>
 
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Notas (opcional)</label>
+					<label for="payment-notes" class="mb-2 block text-sm font-medium text-slate-300"
+						>Notas (opcional)</label
+					>
 					<textarea
+						id="payment-notes"
 						name="notes"
 						bind:value={notes}
 						rows="3"
@@ -131,9 +147,7 @@
 				</div>
 
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300"
-						>Cuotas a aplicar (opcional)</label
-					>
+					<p class="mb-2 block text-sm font-medium text-slate-300">Cuotas a aplicar (opcional)</p>
 					<input type="hidden" name="chargeIds" value={selectedCharges.join(',')} />
 					<div class="text-sm text-slate-400">
 						{selectedCharges.length > 0

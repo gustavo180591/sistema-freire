@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { page } from '$app/stores';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
+	const initialData = untrack(() => data);
 
 	const reportTypes = [
 		{ value: 'payments', label: 'Pagos registrados' },
@@ -50,22 +52,22 @@
 	const pageSizes = [10, 25, 50, 100];
 
 	// Estado de filtros
-	let selectedReportType = $state(data.reportType);
-	let startDate = $state(data.currentFilters.startDate?.toISOString().split('T')[0] || '');
-	let endDate = $state(data.currentFilters.endDate?.toISOString().split('T')[0] || '');
-	let studentSearch = $state(data.currentFilters.studentSearch || '');
-	let careerId = $state(data.currentFilters.careerId || '');
-	let locationId = $state(data.currentFilters.locationId || '');
-	let studentType = $state(data.currentFilters.studentType || '');
-	let conceptCode = $state(data.currentFilters.conceptCode || '');
-	let chargeStatus = $state(data.currentFilters.chargeStatus || '');
-	let paymentMethod = $state(data.currentFilters.paymentMethod || '');
-	let movementType = $state(data.currentFilters.movementType || '');
-	let onlyOverdue = $state(data.currentFilters.onlyOverdue || false);
-	let onlyBlocked = $state(data.currentFilters.onlyBlocked || false);
-	let onlyCancelled = $state(data.currentFilters.onlyCancelled || false);
-	let currentPage = $state(data.currentFilters.page || 1);
-	let currentPageSize = $state(data.currentFilters.pageSize || 25);
+	let selectedReportType = $state(initialData.reportType);
+	let startDate = $state(initialData.currentFilters.startDate?.toISOString().split('T')[0] || '');
+	let endDate = $state(initialData.currentFilters.endDate?.toISOString().split('T')[0] || '');
+	let studentSearch = $state(initialData.currentFilters.studentSearch || '');
+	let careerId = $state(initialData.currentFilters.careerId || '');
+	let locationId = $state(initialData.currentFilters.locationId || '');
+	let studentType = $state(initialData.currentFilters.studentType || '');
+	let conceptCode = $state(initialData.currentFilters.conceptCode || '');
+	let chargeStatus = $state(initialData.currentFilters.chargeStatus || '');
+	let paymentMethod = $state(initialData.currentFilters.paymentMethod || '');
+	let movementType = $state(initialData.currentFilters.movementType || '');
+	let onlyOverdue = $state(initialData.currentFilters.onlyOverdue || false);
+	let onlyBlocked = $state(initialData.currentFilters.onlyBlocked || false);
+	let onlyCancelled = $state(initialData.currentFilters.onlyCancelled || false);
+	let currentPage = $state(initialData.currentFilters.page || 1);
+	let currentPageSize = $state(initialData.currentFilters.pageSize || 25);
 
 	// Estado de visibilidad de filtros
 	let showFilters = $state(false);
@@ -277,8 +279,11 @@
 	<!-- Selector de tipo de reporte -->
 	<div class="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
 		<div class="mb-4">
-			<label class="mb-2 block text-sm font-medium text-slate-300">Tipo de reporte</label>
+			<label for="report-type" class="mb-2 block text-sm font-medium text-slate-300"
+				>Tipo de reporte</label
+			>
 			<select
+				id="report-type"
 				bind:value={selectedReportType}
 				onchange={() => {
 					currentPage = 1;
@@ -312,24 +317,33 @@
 		{#if showFilters}
 			<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Fecha desde</label>
+					<label for="report-start-date" class="mb-2 block text-sm font-medium text-slate-300"
+						>Fecha desde</label
+					>
 					<input
+						id="report-start-date"
 						type="date"
 						bind:value={startDate}
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
 					/>
 				</div>
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Fecha hasta</label>
+					<label for="report-end-date" class="mb-2 block text-sm font-medium text-slate-300"
+						>Fecha hasta</label
+					>
 					<input
+						id="report-end-date"
 						type="date"
 						bind:value={endDate}
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
 					/>
 				</div>
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Buscar alumno</label>
+					<label for="report-student" class="mb-2 block text-sm font-medium text-slate-300"
+						>Buscar alumno</label
+					>
 					<input
+						id="report-student"
 						type="text"
 						bind:value={studentSearch}
 						placeholder="Nombre, apellido o DNI"
@@ -337,8 +351,11 @@
 					/>
 				</div>
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Carrera</label>
+					<label for="report-career" class="mb-2 block text-sm font-medium text-slate-300"
+						>Carrera</label
+					>
 					<select
+						id="report-career"
 						bind:value={careerId}
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
 					>
@@ -349,8 +366,11 @@
 					</select>
 				</div>
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Sede</label>
+					<label for="report-location" class="mb-2 block text-sm font-medium text-slate-300"
+						>Sede</label
+					>
 					<select
+						id="report-location"
 						bind:value={locationId}
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
 					>
@@ -361,8 +381,11 @@
 					</select>
 				</div>
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Tipo alumno</label>
+					<label for="report-student-type" class="mb-2 block text-sm font-medium text-slate-300"
+						>Tipo alumno</label
+					>
 					<select
+						id="report-student-type"
 						bind:value={studentType}
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
 					>
@@ -373,8 +396,11 @@
 					</select>
 				</div>
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">Concepto</label>
+					<label for="report-concept" class="mb-2 block text-sm font-medium text-slate-300"
+						>Concepto</label
+					>
 					<select
+						id="report-concept"
 						bind:value={conceptCode}
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
 					>
@@ -388,8 +414,11 @@
 				<!-- Filtros específicos por tipo de reporte -->
 				{#if selectedReportType === 'payments' || selectedReportType === 'receipts'}
 					<div>
-						<label class="mb-2 block text-sm font-medium text-slate-300">Método de pago</label>
+						<label for="report-payment-method" class="mb-2 block text-sm font-medium text-slate-300"
+							>Método de pago</label
+						>
 						<select
+							id="report-payment-method"
 							bind:value={paymentMethod}
 							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
 						>
@@ -403,9 +432,10 @@
 
 				{#if selectedReportType === 'payments'}
 					<div>
-						<label class="mb-2 block text-sm font-medium text-slate-300">Solo anulados</label>
+						<p class="mb-2 block text-sm font-medium text-slate-300">Solo anulados</p>
 						<div class="flex items-center gap-2">
 							<input
+								aria-label="Mostrar solo pagos anulados"
 								type="checkbox"
 								bind:checked={onlyCancelled}
 								class="h-5 w-5 rounded border-slate-700 bg-slate-950 text-indigo-500 focus:ring-indigo-500"
@@ -417,8 +447,11 @@
 
 				{#if selectedReportType === 'movements'}
 					<div>
-						<label class="mb-2 block text-sm font-medium text-slate-300">Tipo de movimiento</label>
+						<label for="report-movement-type" class="mb-2 block text-sm font-medium text-slate-300"
+							>Tipo de movimiento</label
+						>
 						<select
+							id="report-movement-type"
 							bind:value={movementType}
 							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
 						>
@@ -432,8 +465,11 @@
 
 				{#if selectedReportType === 'debt' || selectedReportType === 'overdue_debt'}
 					<div>
-						<label class="mb-2 block text-sm font-medium text-slate-300">Estado del cargo</label>
+						<label for="report-charge-status" class="mb-2 block text-sm font-medium text-slate-300"
+							>Estado del cargo</label
+						>
 						<select
+							id="report-charge-status"
 							bind:value={chargeStatus}
 							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-200 transition focus:border-indigo-500 focus:outline-none"
 						>
@@ -444,10 +480,11 @@
 						</select>
 					</div>
 					<div>
-						<label class="mb-2 block text-sm font-medium text-slate-300">Filtros adicionales</label>
+						<p class="mb-2 block text-sm font-medium text-slate-300">Filtros adicionales</p>
 						<div class="space-y-2">
 							<div class="flex items-center gap-2">
 								<input
+									aria-label="Solo deuda vencida"
 									type="checkbox"
 									bind:checked={onlyOverdue}
 									class="h-5 w-5 rounded border-slate-700 bg-slate-950 text-indigo-500 focus:ring-indigo-500"
@@ -456,6 +493,7 @@
 							</div>
 							<div class="flex items-center gap-2">
 								<input
+									aria-label="Solo alumnos bloqueados"
 									type="checkbox"
 									bind:checked={onlyBlocked}
 									class="h-5 w-5 rounded border-slate-700 bg-slate-950 text-indigo-500 focus:ring-indigo-500"

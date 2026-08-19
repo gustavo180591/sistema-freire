@@ -1,4 +1,5 @@
-import { Prisma, PaymentMethod, ChargeStatus, AuditAction, ReceiptStatus } from '@prisma/client';
+import { ChargeStatus, AuditAction } from '@prisma/client';
+import type { Prisma, PaymentMethod, ReceiptStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { prisma } from '../db/prisma';
 import { auditLog } from '../audit';

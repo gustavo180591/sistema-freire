@@ -5,7 +5,7 @@
 
 	let { form } = $props();
 
-	let email = $state('');
+	let identifier = $state('');
 	let password = $state('');
 	let showPassword = $state(false);
 
@@ -95,20 +95,21 @@
 
 				<form method="POST" class="mt-8 space-y-5">
 					<div>
-						<label for="email" class="mb-2 block text-sm font-medium text-slate-300">
-							Correo institucional
+						<label for="identifier" class="mb-2 block text-sm font-medium text-slate-300">
+							Correo institucional o DNI
 						</label>
 						<input
-							id="email"
-							bind:value={email}
-							name="email"
-							type="email"
-							autocomplete="email"
-							placeholder="nombre@instituto.edu.ar"
+							id="identifier"
+							bind:value={identifier}
+							name="identifier"
+							type="text"
+							autocomplete="username"
+							placeholder="nombre@instituto.edu.ar o 34449023"
 							class="w-full rounded-2xl border {form?.error
 								? 'border-red-600'
 								: 'border-slate-700'} bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 						/>
+						<p class="mt-2 text-xs text-slate-500">Podés ingresar el DNI con o sin puntos.</p>
 					</div>
 
 					<div>

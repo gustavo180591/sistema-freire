@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
 	import WeeklyScheduleGrid from '$lib/components/schedule/WeeklyScheduleGrid.svelte';
 
@@ -83,11 +84,12 @@
 	const calendarLocations = $derived(data?.calendarLocations ?? ([] as CalendarLocationData[]));
 
 	const filters = $derived(data?.filters ?? {});
+	const initialFilters = untrack(() => data?.filters ?? {});
 
-	let selectedLocation = $state((filters.locationId as string) || '');
-	let selectedCareer = $state((filters.careerId as string) || '');
-	let selectedYear = $state<string | number>((filters.yearLevel as string) || '');
-	let selectedActive = $state((filters.active as string) || '');
+	let selectedLocation = $state((initialFilters.locationId as string) || '');
+	let selectedCareer = $state((initialFilters.careerId as string) || '');
+	let selectedYear = $state<string | number>((initialFilters.yearLevel as string) || '');
+	let selectedActive = $state((initialFilters.active as string) || '');
 
 	const yearLevels = [1, 2, 3, 4];
 

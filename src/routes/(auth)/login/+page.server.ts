@@ -7,6 +7,57 @@ import bcrypt from 'bcryptjs';
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCK_DURATION_MINUTES = 30;
 
+const userWithRoles = {
+	roles: { include: { role: true } }
+} as const;
+
+function normalizeDni(value: string) {
+	return value.replace(/\D/g, '');
+}
+
+function formatDni(value: string) {
+	return value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+async function findUserByIdentifier(identifier: string) {
+	const normalizedIdentifier = identifier.trim();
+
+	if (normalizedIdentifier.includes('@')) {
+		return prisma.user.findFirst({
+			where: {
+				email: {
+					equals: normalizedIdentifier,
+					mode: 'insensitive'
+				}
+			},
+			include: userWithRoles
+		});
+	}
+
+	const normalizedDni = normalizeDni(normalizedIdentifier);
+
+	if (!/^\d{7,9}$/.test(normalizedDni)) {
+		return null;
+	}
+
+	const dniVariants = [...new Set([normalizedIdentifier, normalizedDni, formatDni(normalizedDni)])];
+
+	const users = await prisma.user.findMany({
+		where: {
+			OR: [
+				{ dni: { in: dniVariants } },
+				{ student: { is: { dni: { in: dniVariants } } } },
+				{ teacher: { is: { dni: { in: dniVariants } } } }
+			]
+		},
+		include: userWithRoles,
+		take: 2
+	});
+
+	// Evita elegir una cuenta al azar si existen DNI duplicados.
+	return users.length === 1 ? users[0] : null;
+}
+
 export const load: PageServerLoad = async () => {
 	return {};
 };
@@ -14,17 +65,14 @@ export const load: PageServerLoad = async () => {
 export const actions = {
 	default: async ({ request, cookies }) => {
 		const data = await request.formData();
-		const email = data.get('email')?.toString();
+		const identifier = (data.get('identifier') ?? data.get('email'))?.toString().trim();
 		const password = data.get('password')?.toString();
 
-		if (!email || !password) {
+		if (!identifier || !password) {
 			return fail(400, { error: 'Faltan credenciales', missing: true } satisfies ActionData);
 		}
 
-		const user = await prisma.user.findUnique({
-			where: { email },
-			include: { roles: { include: { role: true } } }
-		});
+		const user = await findUserByIdentifier(identifier);
 
 		if (!user) {
 			return fail(400, { error: 'Credenciales inválidas', incorrect: true } satisfies ActionData);

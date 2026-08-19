@@ -185,8 +185,8 @@
 			<div class="rounded-2xl border border-blue-900/50 bg-blue-950/20 p-5 text-sm text-blue-100">
 				<p class="font-semibold">Cómo funciona</p>
 				<p class="mt-1 text-blue-100/80">
-					Esta pantalla no asigna docentes ni horarios. Eso se gestiona después desde docentes,
-					materias y configuración de horarios.
+					Esta pantalla no asigna docentes ni horarios. Después podés vincular cada comisión desde
+					el perfil docente o desde la edición de la comisión.
 				</p>
 			</div>
 

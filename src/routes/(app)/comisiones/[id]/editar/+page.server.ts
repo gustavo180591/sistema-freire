@@ -51,6 +51,17 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
 	const teachers = await prisma.teacher.findMany({
 		where: { status: 'ACTIVE' },
+		select: {
+			id: true,
+			firstName: true,
+			lastName: true,
+			subjects: { select: { subjectId: true } },
+			user: {
+				select: {
+					locationPermissions: { select: { locationId: true } }
+				}
+			}
+		},
 		orderBy: { lastName: 'asc' }
 	});
 
@@ -75,10 +86,20 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			active: commission.active
 		},
 		careers,
-		subjects,
+		subjects: subjects.map((subject) => ({
+			...subject,
+			approvalThreshold: Number(subject.approvalThreshold),
+			promotionThreshold: Number(subject.promotionThreshold)
+		})),
 		studyPlans,
 		terms,
-		teachers,
+		teachers: teachers.map((teacher) => ({
+			id: teacher.id,
+			firstName: teacher.firstName,
+			lastName: teacher.lastName,
+			subjectIds: teacher.subjects.map((assignment) => assignment.subjectId),
+			locationIds: teacher.user.locationPermissions.map((permission) => permission.locationId)
+		})),
 		locations
 	};
 };
@@ -191,14 +212,27 @@ export const actions: Actions = {
 			}
 		}
 
-		// Si se especifica docente, verificar que existe
+		// Si se especifica docente, verificar materia y localidad habilitadas.
 		if (teacherId) {
-			const teacher = await prisma.teacher.findUnique({
-				where: { id: teacherId }
+			if (!locationId) {
+				return fail(400, { error: 'Seleccioná una localidad antes de asignar docente' });
+			}
+
+			const teacher = await prisma.teacher.findFirst({
+				where: {
+					id: teacherId,
+					status: 'ACTIVE',
+					subjects: { some: { subjectId } },
+					user: {
+						locationPermissions: { some: { locationId } }
+					}
+				}
 			});
 
 			if (!teacher) {
-				return fail(400, { error: 'Docente no encontrado' });
+				return fail(400, {
+					error: 'El docente no está habilitado para la materia o la localidad seleccionada'
+				});
 			}
 		}
 

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
+
 	let {
 		data
 	}: {
@@ -6,7 +8,7 @@
 	} = $props();
 
 	let selectedLocationId = $state<string | null>(
-		data.locations.length > 0 ? data.locations[0].id : null
+		untrack(() => (data.locations.length > 0 ? data.locations[0].id : null))
 	);
 
 	let currentConfig = $derived(selectedLocationId ? data.configs[selectedLocationId] : null);

@@ -102,8 +102,11 @@
 	<form method="POST" use:enhance>
 		<div class="space-y-6 rounded-lg border border-slate-700 bg-slate-800/50 p-6">
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Alumno</label>
+				<label for="agreement-student" class="mb-2 block text-sm font-medium text-slate-300"
+					>Alumno</label
+				>
 				<select
+					id="agreement-student"
 					bind:value={selectedStudent}
 					name="studentId"
 					required
@@ -123,7 +126,7 @@
 				{@const student = data.students.find((s: Student) => s.id === selectedStudent)}
 				{#if student}
 					<div>
-						<label class="mb-2 block text-sm font-medium text-slate-300">Cargos a incluir</label>
+						<p class="mb-2 block text-sm font-medium text-slate-300">Cargos a incluir</p>
 						<div class="space-y-2">
 							{#each student.studentCharges as charge}
 								{@const isSelected = selectedCharges.includes(charge.id)}
@@ -150,8 +153,11 @@
 					</div>
 
 					<div>
-						<label class="mb-2 block text-sm font-medium text-slate-300">Monto Acordado</label>
+						<label for="agreement-amount" class="mb-2 block text-sm font-medium text-slate-300"
+							>Monto Acordado</label
+						>
 						<input
+							id="agreement-amount"
 							type="number"
 							bind:value={agreedAmount}
 							name="agreedAmount"
@@ -163,8 +169,11 @@
 					</div>
 
 					<div>
-						<label class="mb-2 block text-sm font-medium text-slate-300">Motivo</label>
+						<label for="agreement-reason" class="mb-2 block text-sm font-medium text-slate-300"
+							>Motivo</label
+						>
 						<input
+							id="agreement-reason"
 							type="text"
 							bind:value={reason}
 							name="reason"
@@ -174,8 +183,12 @@
 					</div>
 
 					<div>
-						<label class="mb-2 block text-sm font-medium text-slate-300">Observaciones</label>
+						<label
+							for="agreement-observations"
+							class="mb-2 block text-sm font-medium text-slate-300">Observaciones</label
+						>
 						<textarea
+							id="agreement-observations"
 							bind:value={observations}
 							name="observations"
 							class="w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-white focus:border-indigo-500 focus:outline-none"
@@ -184,8 +197,12 @@
 					</div>
 
 					<div>
-						<label class="mb-2 block text-sm font-medium text-slate-300">Cantidad de Cuotas</label>
+						<label
+							for="agreement-installment-count"
+							class="mb-2 block text-sm font-medium text-slate-300">Cantidad de Cuotas</label
+						>
 						<input
+							id="agreement-installment-count"
 							type="number"
 							bind:value={installmentCount}
 							required
@@ -195,10 +212,12 @@
 					</div>
 
 					<div>
-						<label class="mb-2 block text-sm font-medium text-slate-300"
-							>Fecha de Primera Cuota</label
+						<label
+							for="agreement-first-due-date"
+							class="mb-2 block text-sm font-medium text-slate-300">Fecha de Primera Cuota</label
 						>
 						<input
+							id="agreement-first-due-date"
 							type="date"
 							bind:value={firstDueDate}
 							required
@@ -208,7 +227,7 @@
 
 					{#if installmentsData.length > 0}
 						<div>
-							<label class="mb-2 block text-sm font-medium text-slate-300">Cuotas</label>
+							<p class="mb-2 block text-sm font-medium text-slate-300">Cuotas</p>
 							<div class="space-y-2 rounded-lg border border-slate-700 bg-slate-900 p-4">
 								{#each installmentsData as installment}
 									<div class="flex justify-between text-sm">

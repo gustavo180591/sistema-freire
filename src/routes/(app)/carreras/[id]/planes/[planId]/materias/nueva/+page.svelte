@@ -55,9 +55,9 @@
 			{/if}
 
 			<div>
-				<label class="mb-4 block text-sm font-medium text-slate-300">
+				<p class="mb-4 block text-sm font-medium text-slate-300">
 					Seleccionar materia <span class="text-red-400">*</span>
-				</label>
+				</p>
 
 				{#if Object.keys(groupedSubjects).length === 0}
 					<div class="rounded-2xl border border-slate-700 bg-slate-950 p-6 text-center">
@@ -101,10 +101,11 @@
 			</div>
 
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">
+				<label for="sortOrder" class="mb-2 block text-sm font-medium text-slate-300">
 					Orden en el plan <span class="text-red-400">*</span>
 				</label>
 				<input
+					id="sortOrder"
 					name="sortOrder"
 					type="number"
 					min="1"

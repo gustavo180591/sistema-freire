@@ -3,7 +3,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { requireRole, getUserAllowedLocationIds } from '$lib/server/auth/authorization';
 import { EvaluationService } from '$lib/server/academic/evaluation-service';
-import { GradeStatus } from '@prisma/client';
+import { GradeStatus, QualitativeGrade } from '@prisma/client';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	requireRole(locals.user, ['DOCENTE']);
@@ -55,22 +55,24 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const commissions = await prisma.subjectCommission.findMany({
 		where: {
 			teacherId: teacher.id,
-			active: true
+			active: true,
+			locationId: { in: allowedLocationIds }
 		},
 		include: {
 			subject: true,
-			academicTerm: true
+			academicTerm: true,
+			career: true,
+			location: true
 		}
 	});
 
-	// Obtener evaluaciones abiertas del docente
+	const commissionIds = commissions.map((commission) => commission.id);
+
+	// Obtener evaluaciones de las comisiones asignadas. Las cerradas se envían
+	// para consulta, pero la pantalla solo permite editar las abiertas.
 	const evaluations = await prisma.evaluation.findMany({
 		where: {
-			createdByUserId: locals.user.id,
-			isClosed: false,
-			subjectId: {
-				in: subjects.map((s) => s.id)
-			}
+			commissionId: { in: commissionIds }
 		},
 		include: {
 			subject: true,
@@ -80,11 +82,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 		take: 50
 	});
 
-	// Obtener alumnos inscriptos en las comisiones del docente
-	const commissionIds = commissions.map((c) => c.id);
+	// Obtener únicamente inscripciones activas.
 	const enrollments = await prisma.subjectEnrollment.findMany({
 		where: {
-			commissionId: { in: commissionIds }
+			commissionId: { in: commissionIds },
+			status: 'ACTIVE'
 		},
 		include: {
 			student: {
@@ -124,7 +126,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			code: c.code,
 			name: c.code,
 			subject: c.subject.name,
-			career: c.careerId,
+			career: c.career?.name || 'Sin carrera',
+			location: c.location?.name || 'Sin sede',
 			academicTerm: c.academicTerm?.name || 'Sin período'
 		})),
 		evaluations: evaluations.map((e) => ({
@@ -132,15 +135,19 @@ export const load: PageServerLoad = async ({ locals }) => {
 			title: e.title,
 			type: e.type,
 			evaluationDate: e.evaluationDate,
-			maxScore: e.maxScore,
-			minPassingScore: e.minPassingScore,
-			weight: e.weight,
+			maxScore: Number(e.maxScore),
+			minPassingScore: Number(e.minPassingScore),
+			gradingMode: e.gradingMode,
+			participatesInAverage: e.participatesInAverage,
+			mandatory: e.mandatory,
 			subject: e.subject.name,
 			commissionId: e.commissionId,
 			isClosed: e.isClosed
 		})),
 		students: enrollments.map((en) => ({
-			id: en.student.id,
+			id: en.id,
+			enrollmentId: en.id,
+			studentId: en.student.id,
 			dni: en.student.dni,
 			firstName: en.student.firstName,
 			lastName: en.student.lastName,
@@ -150,9 +157,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 			id: g.id,
 			studentId: g.studentId,
 			evaluationId: g.evaluationId,
-			value: g.value,
+			value: g.value === null ? null : Number(g.value),
+			qualitativeValue: g.qualitativeValue,
 			status: g.status,
-			observations: g.observations
+			observations: g.observations,
+			subjectEnrollmentId: g.subjectEnrollmentId
 		}))
 	};
 };
@@ -182,12 +191,14 @@ export const actions: Actions = {
 				return validation;
 			}
 
-			// Obtener evaluación para validaciones adicionales
+			// Verificar el contexto institucional actual de la evaluación.
 			const evaluation = await prisma.evaluation.findUnique({
 				where: { id: evaluationId },
-				include: {
-					subject: true,
-					commission: true
+				select: {
+					maxScore: true,
+					gradingMode: true,
+					commissionId: true,
+					commission: { select: { locationId: true } }
 				}
 			});
 
@@ -195,54 +206,56 @@ export const actions: Actions = {
 				return { error: 'Evaluación no encontrada' };
 			}
 
-			// Obtener alumnos inscriptos en la comisión de la evaluación
-			let enrolledStudents;
-			if (evaluation.commissionId) {
-				enrolledStudents = await prisma.subjectEnrollment.findMany({
-					where: {
-						commissionId: evaluation.commissionId,
-						status: 'ACTIVE'
-					},
-					include: {
-						student: {
-							include: { user: true }
-						}
-					}
-				});
-			} else {
-				// Si no hay comisión, obtener todos los alumnos de la materia
-				enrolledStudents = await prisma.subjectEnrollment.findMany({
-					where: {
-						subjectId: evaluation.subjectId,
-						status: 'ACTIVE'
-					},
-					include: {
-						student: {
-							include: { user: true }
-						}
-					}
-				});
+			if (!evaluation.commissionId) {
+				return { error: 'La evaluación no tiene una comisión asociada' };
 			}
 
-			// Parsear datos de calificaciones del formulario
+			const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+			if (
+				evaluation.commission?.locationId &&
+				!allowedLocationIds.includes(evaluation.commission.locationId)
+			) {
+				return { error: 'No tenés permiso para cargar notas en esta sede' };
+			}
+
+			// Parsear únicamente filas modificadas. El identificador del formulario
+			// es la inscripción, no el alumno aislado.
 			const gradesMap = new Map<
 				string,
-				{ status: string; value: string | null; observations: string }
+				{
+					dirty: boolean;
+					status: string;
+					value: string | null;
+					qualitativeValue: string | null;
+					observations: string;
+				}
 			>();
 			for (const [key, value] of data.entries()) {
 				if (key.startsWith('grades[')) {
-					const match = key.match(/grades\[([^\]]+)\]\.(status|value|observations)/);
+					const match = key.match(
+						/grades\[([^\]]+)\]\.(dirty|status|value|qualitativeValue|observations)/
+					);
 					if (match) {
-						const studentId = match[1];
+						const enrollmentId = match[1];
 						const field = match[2];
-						if (!gradesMap.has(studentId)) {
-							gradesMap.set(studentId, { status: 'PRESENT', value: null, observations: '' });
+						if (!gradesMap.has(enrollmentId)) {
+							gradesMap.set(enrollmentId, {
+								dirty: false,
+								status: 'PENDING',
+								value: null,
+								qualitativeValue: null,
+								observations: ''
+							});
 						}
-						const current = gradesMap.get(studentId)!;
-						if (field === 'status') {
+						const current = gradesMap.get(enrollmentId)!;
+						if (field === 'dirty') {
+							current.dirty = value.toString() === 'true';
+						} else if (field === 'status') {
 							current.status = value.toString();
 						} else if (field === 'value') {
 							current.value = value.toString() === '' ? null : value.toString();
+						} else if (field === 'qualitativeValue') {
+							current.qualitativeValue = value.toString() === '' ? null : value.toString();
 						} else if (field === 'observations') {
 							current.observations = value.toString();
 						}
@@ -251,72 +264,44 @@ export const actions: Actions = {
 			}
 
 			// Validación del lote completo
-			const validationErrors: Array<{ studentId: string; error: string }> = [];
+			const validationErrors: Array<{ enrollmentId: string; error: string }> = [];
 			const validGrades: Array<{
-				studentId: string;
+				subjectEnrollmentId: string;
 				status: GradeStatus;
 				value: number | null;
+				qualitativeValue: QualitativeGrade | null;
 				observations: string | undefined;
 			}> = [];
 
-			for (const [studentId, gradeData] of gradesMap.entries()) {
-				// Validar que el alumno esté inscripto
-				const enrollment = enrolledStudents.find((e) => e.studentId === studentId);
-				if (!enrollment) {
-					validationErrors.push({
-						studentId,
-						error: 'Alumno no inscripto en esta materia/comisión'
-					});
-					continue;
-				}
+			for (const [enrollmentId, gradeData] of gradesMap.entries()) {
+				if (!gradeData.dirty) continue;
 
-				// Validar reglas de estado
-				if (gradeData.status === 'PRESENT' && gradeData.value === null) {
+				if (!['PENDING', 'PRESENT', 'ABSENT', 'EXCUSED'].includes(gradeData.status)) {
 					validationErrors.push({
-						studentId,
-						error: 'PRESENT requiere una nota'
-					});
-					continue;
-				}
-
-				if (
-					(gradeData.status === 'ABSENT' || gradeData.status === 'EXCUSED') &&
-					gradeData.value !== null
-				) {
-					validationErrors.push({
-						studentId,
-						error: 'ABSENT y EXCUSED requieren nota null'
-					});
-					continue;
-				}
-
-				// Validar rango de nota
-				if (gradeData.value !== null) {
-					const valueNum = Number(gradeData.value);
-					const maxScoreNum = Number(evaluation.maxScore);
-					if (isNaN(valueNum) || valueNum < 0 || valueNum > maxScoreNum) {
-						validationErrors.push({
-							studentId,
-							error: `Nota debe estar entre 0 y ${maxScoreNum}`
-						});
-						continue;
-					}
-				}
-
-				// Validar estado válido
-				if (!['PRESENT', 'ABSENT', 'EXCUSED'].includes(gradeData.status)) {
-					validationErrors.push({
-						studentId,
+						enrollmentId,
 						error: 'Estado inválido'
 					});
 					continue;
 				}
 
-				// Si pasa todas las validaciones, agregar a la lista de válidos
+				const numericValue = gradeData.value === null ? null : Number(gradeData.value);
+				if (numericValue !== null && !Number.isFinite(numericValue)) {
+					validationErrors.push({ enrollmentId, error: 'La nota ingresada no es válida' });
+					continue;
+				}
+				if (
+					gradeData.qualitativeValue !== null &&
+					!Object.values(QualitativeGrade).includes(gradeData.qualitativeValue as QualitativeGrade)
+				) {
+					validationErrors.push({ enrollmentId, error: 'El resultado cualitativo no es válido' });
+					continue;
+				}
+
 				validGrades.push({
-					studentId,
+					subjectEnrollmentId: enrollmentId,
 					status: gradeData.status as GradeStatus,
-					value: gradeData.value !== null ? Number(gradeData.value) : null,
+					value: numericValue,
+					qualitativeValue: gradeData.qualitativeValue as QualitativeGrade | null,
 					observations: gradeData.observations || undefined
 				});
 			}
@@ -328,14 +313,14 @@ export const actions: Actions = {
 					errors: validationErrors
 				};
 			}
+			if (validGrades.length === 0) {
+				return { error: 'No hay cambios para guardar' };
+			}
 
 			// Delegar al servicio
 			const result = await evaluationService.loadGradesBatch({
 				evaluationId,
-				grades: validGrades.map((g) => ({
-					...g,
-					observations: g.observations || undefined
-				})),
+				grades: validGrades,
 				userId: locals.user.id
 			});
 
@@ -345,7 +330,11 @@ export const actions: Actions = {
 
 			return {
 				success: `Cargadas exitosamente ${result.length} calificaciones`,
-				results: result.map((g) => ({ studentId: g.studentId, status: 'success', gradeId: g.id }))
+				results: result.map((g) => ({
+					subjectEnrollmentId: g.subjectEnrollmentId,
+					status: 'success',
+					gradeId: g.id
+				}))
 			};
 		} catch (error) {
 			console.error('Error en carga masiva:', error);
@@ -365,10 +354,11 @@ export const actions: Actions = {
 		const gradeId = data.get('gradeId')?.toString();
 		const status = data.get('status')?.toString();
 		const value = data.get('value')?.toString();
+		const qualitativeValue = data.get('qualitativeValue')?.toString();
 		const observations = data.get('observations')?.toString();
 
-		if (!gradeId) {
-			return { error: 'ID de calificación requerido' };
+		if (!gradeId || !status || !['PENDING', 'PRESENT', 'ABSENT', 'EXCUSED'].includes(status)) {
+			return { error: 'Calificación o estado inválido' };
 		}
 
 		try {
@@ -380,20 +370,15 @@ export const actions: Actions = {
 				return validation;
 			}
 
-			// Validar reglas de estado
-			if (status === 'PRESENT' && (!value || value === 'null')) {
-				return { error: 'PRESENT requiere una nota' };
-			}
-
-			if ((status === 'ABSENT' || status === 'EXCUSED') && value && value !== 'null') {
-				return { error: 'ABSENT y EXCUSED requieren nota null' };
-			}
-
 			// Delegar al servicio
 			const result = await evaluationService.editGrade({
 				gradeId,
 				status: status as GradeStatus,
 				value: value && value !== 'null' ? parseFloat(value) : null,
+				qualitativeValue:
+					qualitativeValue && qualitativeValue !== 'null'
+						? (qualitativeValue as QualitativeGrade)
+						: null,
 				observations: observations || undefined,
 				userId: locals.user.id
 			});

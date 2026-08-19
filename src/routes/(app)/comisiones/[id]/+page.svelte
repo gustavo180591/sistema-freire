@@ -33,6 +33,7 @@
 			<div class="flex items-center gap-4">
 				<a
 					href="/comisiones"
+					aria-label="Volver a comisiones"
 					class="rounded-xl border border-slate-700 p-2 text-slate-400 transition hover:bg-slate-800"
 				>
 					<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

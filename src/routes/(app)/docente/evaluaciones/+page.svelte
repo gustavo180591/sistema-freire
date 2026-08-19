@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import type { ActionData, PageData } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData | null } = $props();
 
 	let selectedSubject = $state<string>('');
 	let selectedCommission = $state<string>('');
@@ -11,10 +11,10 @@
 	let evaluationDate = $state<string>('');
 	let maxScore = $state<string>('10');
 	let minPassingScore = $state<string>('6');
-	let weight = $state<string>('1');
+	let gradingMode = $state<string>('NUMERIC');
+	let participatesInAverage = $state(true);
+	let mandatory = $state(true);
 	let selectedParentEvaluation = $state<string>('');
-	let formError = $state<string>('');
-	let formSuccess = $state<string>('');
 
 	function resetForm() {
 		selectedSubject = '';
@@ -25,15 +25,16 @@
 		evaluationDate = '';
 		maxScore = '10';
 		minPassingScore = '6';
-		weight = '1';
+		gradingMode = 'NUMERIC';
+		participatesInAverage = true;
+		mandatory = true;
 		selectedParentEvaluation = '';
-		formError = '';
-		formSuccess = '';
 	}
 
-	// Comisiones filtradas por materia seleccionada
-	let filteredCommissions = $state<any[]>([]);
-	let parentEvaluations = $state<any[]>([]);
+	const courseTypes = ['PARCIAL', 'RECUPERATORIO', 'TRABAJO_PRACTICO', 'INTEGRADOR', 'OTRO'];
+	const averageTypes = ['PARCIAL', 'TRABAJO_PRACTICO', 'INTEGRADOR'];
+	let filteredCommissions = $state<PageData['commissions']>([]);
+	let parentEvaluations = $state<PageData['evaluations']>([]);
 
 	// Actualizar listas filtradas cuando cambia la materia
 	$effect(() => {
@@ -42,8 +43,22 @@
 		);
 		parentEvaluations = data.evaluations.filter(
 			(e) =>
-				!selectedSubject || e.subject === data.subjects.find((s) => s.id === selectedSubject)?.name
+				e.subjectId === selectedSubject &&
+				e.commissionId === selectedCommission &&
+				['PARCIAL', 'TRABAJO_PRACTICO', 'INTEGRADOR'].includes(e.type) &&
+				!e.hasRecovery
 		);
+	});
+
+	$effect(() => {
+		if (!courseTypes.includes(selectedType)) selectedCommission = '';
+		if (!averageTypes.includes(selectedType) || gradingMode !== 'NUMERIC') {
+			participatesInAverage = false;
+		}
+		if (averageTypes.includes(selectedType) && gradingMode === 'NUMERIC') {
+			participatesInAverage = true;
+		}
+		if (selectedType !== 'RECUPERATORIO') selectedParentEvaluation = '';
 	});
 </script>
 
@@ -52,7 +67,7 @@
 		<!-- Header -->
 		<div class="mb-8">
 			<h1 class="mb-2 text-3xl font-bold text-white">Evaluaciones</h1>
-			<p class="text-slate-400">Crear y gestionar exámenes y evaluaciones</p>
+			<p class="text-slate-400">Definí cómo se califica cada instancia antes de cargar notas.</p>
 		</div>
 
 		<!-- Formulario de Evaluación -->
@@ -60,21 +75,21 @@
 			<div class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
 				<h2 class="mb-6 text-xl font-semibold text-white">Nueva Evaluación</h2>
 
-				{#if formError}
+				{#if form && 'error' in form && form.error}
 					<div class="mb-4 rounded-xl border border-red-500/50 bg-red-500/20 p-4 text-red-400">
-						{formError}
+						{form.error}
 					</div>
 				{/if}
 
-				{#if formSuccess}
+				{#if form && 'success' in form && form.success}
 					<div
 						class="mb-4 rounded-xl border border-green-500/50 bg-green-500/20 p-4 text-green-400"
 					>
-						{formSuccess}
+						{form.success}
 					</div>
 				{/if}
 
-				<form method="POST" class="space-y-6">
+				<form method="POST" action="?/createEvaluation" class="space-y-6">
 					<div class="grid gap-6 md:grid-cols-2">
 						<div>
 							<label for="subject" class="mb-2 block text-sm font-medium text-slate-300"
@@ -83,11 +98,16 @@
 							<select
 								id="subject"
 								name="subjectId"
-								bind:value={selectedSubject}
+								value={selectedSubject}
+								onchange={(event) => {
+									selectedSubject = event.currentTarget.value;
+									selectedCommission = '';
+									selectedParentEvaluation = '';
+								}}
 								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 							>
 								<option value="">Seleccionar materia...</option>
-								{#each data.subjects as subject}
+								{#each data.subjects as subject (subject.id)}
 									<option value={subject.id}>
 										{subject.code} - {subject.name} ({subject.careers.join(', ')})
 									</option>
@@ -102,12 +122,6 @@
 								name="type"
 								bind:value={selectedType}
 								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-								onchange={() => {
-									// Resetear comisión si cambia tipo
-									if (!['PARCIAL', 'TRABAJO_PRACTICO', 'INTEGRADOR'].includes(selectedType)) {
-										selectedCommission = '';
-									}
-								}}
 							>
 								<option value="PARCIAL">Parcial</option>
 								<option value="RECUPERATORIO">Recuperatorio</option>
@@ -147,6 +161,21 @@
 
 					<div class="grid gap-6 md:grid-cols-2">
 						<div>
+							<label for="gradingMode" class="mb-2 block text-sm font-medium text-slate-300">
+								Modalidad de calificación
+							</label>
+							<select
+								id="gradingMode"
+								name="gradingMode"
+								bind:value={gradingMode}
+								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+							>
+								<option value="NUMERIC">Numérica</option>
+								<option value="QUALITATIVE">Cualitativa (AP/DES)</option>
+							</select>
+						</div>
+
+						<div>
 							<label for="date" class="mb-2 block text-sm font-medium text-slate-300"
 								>Fecha de Evaluación</label
 							>
@@ -159,55 +188,72 @@
 							/>
 						</div>
 
-						<div>
-							<label for="maxScore" class="mb-2 block text-sm font-medium text-slate-300"
-								>Puntaje Máximo</label
-							>
-							<input
-								id="maxScore"
-								name="maxScore"
-								type="number"
-								min="1"
-								step="0.01"
-								bind:value={maxScore}
-								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-							/>
-						</div>
+						{#if gradingMode === 'NUMERIC'}
+							<div>
+								<label for="maxScore" class="mb-2 block text-sm font-medium text-slate-300"
+									>Puntaje Máximo</label
+								>
+								<input
+									id="maxScore"
+									name="maxScore"
+									type="number"
+									min="1"
+									step="0.01"
+									bind:value={maxScore}
+									class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+								/>
+							</div>
+						{/if}
 					</div>
 
-					<div class="grid gap-6 md:grid-cols-2">
+					{#if gradingMode === 'NUMERIC'}
 						<div>
-							<label for="minPassingScore" class="mb-2 block text-sm font-medium text-slate-300"
-								>Nota Mínima de Aprobación</label
-							>
-							<input
-								id="minPassingScore"
-								name="minPassingScore"
-								type="number"
-								min="0"
-								step="0.01"
-								bind:value={minPassingScore}
-								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-							/>
+							<div>
+								<label for="minPassingScore" class="mb-2 block text-sm font-medium text-slate-300"
+									>Nota Mínima de Aprobación</label
+								>
+								<input
+									id="minPassingScore"
+									name="minPassingScore"
+									type="number"
+									min="0"
+									step="0.01"
+									bind:value={minPassingScore}
+									class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+								/>
+							</div>
 						</div>
+					{/if}
 
-						<div>
-							<label for="weight" class="mb-2 block text-sm font-medium text-slate-300"
-								>Peso en Promedio</label
+					<div
+						class="grid gap-4 rounded-2xl border border-slate-800 bg-slate-950 p-4 md:grid-cols-2"
+					>
+						<label class="flex items-start gap-3 text-sm text-slate-300">
+							<input name="mandatory" type="checkbox" bind:checked={mandatory} class="mt-1" />
+							<span
+								><strong class="block text-white">Instancia obligatoria</strong>Debe completarse
+								para cerrar la cursada.</span
 							>
+						</label>
+						<label
+							class="flex items-start gap-3 text-sm text-slate-300"
+							class:opacity-50={!averageTypes.includes(selectedType) || gradingMode !== 'NUMERIC'}
+						>
 							<input
-								id="weight"
-								name="weight"
-								type="number"
-								min="0.01"
-								step="0.01"
-								bind:value={weight}
-								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
+								name="participatesInAverage"
+								type="checkbox"
+								bind:checked={participatesInAverage}
+								disabled={!averageTypes.includes(selectedType) || gradingMode !== 'NUMERIC'}
+								class="mt-1"
 							/>
-						</div>
+							<span
+								><strong class="block text-white">Integra el promedio</strong>El promedio de cursada
+								es aritmético, sin pesos.</span
+							>
+						</label>
 					</div>
 
-					{#if ['PARCIAL', 'TRABAJO_PRACTICO', 'INTEGRADOR'].includes(selectedType)}
+					{#if courseTypes.includes(selectedType)}
 						<div>
 							<label for="commission" class="mb-2 block text-sm font-medium text-slate-300"
 								>Comisión <span class="text-red-400">*</span></label
@@ -215,14 +261,18 @@
 							<select
 								id="commission"
 								name="commissionId"
-								bind:value={selectedCommission}
+								value={selectedCommission}
+								onchange={(event) => {
+									selectedCommission = event.currentTarget.value;
+									selectedParentEvaluation = '';
+								}}
 								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 								required
 							>
 								<option value="">Seleccionar comisión...</option>
-								{#each filteredCommissions as commission}
+								{#each filteredCommissions as commission (commission.id)}
 									<option value={commission.id}>
-										{commission.code} - {commission.subjectName} ({commission.academicTerm})
+										{commission.code} · {commission.career} · {commission.location} ({commission.academicTerm})
 									</option>
 								{/each}
 							</select>
@@ -237,12 +287,19 @@
 							<select
 								id="parentEvaluation"
 								name="parentEvaluationId"
-								bind:value={selectedParentEvaluation}
+								value={selectedParentEvaluation}
+								onchange={(event) => {
+									selectedParentEvaluation = event.currentTarget.value;
+									const parent = parentEvaluations.find(
+										(evaluation) => evaluation.id === selectedParentEvaluation
+									);
+									if (parent) gradingMode = parent.gradingMode;
+								}}
 								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 								required
 							>
 								<option value="">Seleccionar evaluación original...</option>
-								{#each parentEvaluations as parent}
+								{#each parentEvaluations as parent (parent.id)}
 									<option value={parent.id}>
 										{parent.title} ({parent.type}) - {new Date(
 											parent.evaluationDate
@@ -276,7 +333,7 @@
 		<div>
 			<h2 class="mb-4 text-xl font-semibold text-white">Evaluaciones Creadas</h2>
 			<div class="space-y-4">
-				{#each data.evaluations as evaluation}
+				{#each data.evaluations as evaluation (evaluation.id)}
 					<div class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
 						<div class="mb-4 flex items-start justify-between">
 							<div class="flex-1">
@@ -313,7 +370,10 @@
 								<p class="text-sm text-slate-400">
 									Puntaje: {evaluation.maxScore} (mín: {evaluation.minPassingScore})
 								</p>
-								<p class="text-sm text-slate-400">Peso: {evaluation.weight}</p>
+								<p class="text-sm text-slate-400">
+									{evaluation.gradingMode === 'QUALITATIVE' ? 'AP/DES' : 'Numérica'} ·
+									{evaluation.participatesInAverage ? 'Integra promedio' : 'No integra promedio'}
+								</p>
 								{#if evaluation.evaluationDate}
 									<p class="text-sm text-slate-400">
 										{new Date(evaluation.evaluationDate).toLocaleDateString()}

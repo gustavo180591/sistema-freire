@@ -5,6 +5,7 @@
 
 	let { data, form }: { data: PageData; form?: ActionData } = $props();
 	let assigningSubject = $state(false);
+	let processingCommissionId = $state<string | null>(null);
 	let removingSubject = $state<{ subjectId: string; subjectName: string } | null>(null);
 	let selectedSubjectId = $state('');
 	let editingAssignmentType = $state<{
@@ -239,6 +240,123 @@
 				{/each}
 			</div>
 		{/if}
+	</div>
+
+	<!-- Comisiones -->
+	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+		<div class="mb-6 flex flex-wrap items-start justify-between gap-3">
+			<div>
+				<h2 class="text-xl font-bold text-white">
+					Comisiones Asignadas ({data.assignedCommissions.length})
+				</h2>
+				<p class="mt-1 text-sm text-slate-400">
+					La comisión concreta habilita asistencia, evaluaciones y carga de calificaciones.
+				</p>
+			</div>
+			<span class="rounded-full bg-indigo-500/10 px-3 py-1 text-sm text-indigo-300">
+				{data.availableCommissions.length} disponibles
+			</span>
+		</div>
+
+		{#if data.assignedCommissions.length === 0}
+			<div class="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-300">
+				Este docente todavía no tiene comisiones asignadas.
+			</div>
+		{:else}
+			<div class="grid gap-3 lg:grid-cols-2">
+				{#each data.assignedCommissions as commission}
+					<div class="rounded-2xl border border-slate-700 bg-slate-800/50 p-4">
+						<div class="flex items-start justify-between gap-4">
+							<div class="min-w-0">
+								<a
+									href="/comisiones/{commission.id}"
+									class="font-semibold text-white hover:text-indigo-300"
+								>
+									{commission.code}
+								</a>
+								<p class="mt-1 text-sm text-slate-300">
+									{commission.subjectCode} · {commission.subjectName}
+								</p>
+								<p class="mt-1 text-xs text-slate-400">
+									{commission.careerName} · {commission.locationName} · {commission.academicTermName}
+								</p>
+							</div>
+							<form
+								method="POST"
+								action="?/removeCommission"
+								use:enhance={() => {
+									processingCommissionId = commission.id;
+									return async ({ update }) => {
+										await update();
+										processingCommissionId = null;
+									};
+								}}
+							>
+								<input type="hidden" name="teacherId" value={data.teacher.id} />
+								<input type="hidden" name="commissionId" value={commission.id} />
+								<button
+									type="submit"
+									disabled={processingCommissionId !== null}
+									class="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
+								>
+									{processingCommissionId === commission.id ? 'Quitando...' : 'Desasignar'}
+								</button>
+							</form>
+						</div>
+					</div>
+				{/each}
+			</div>
+		{/if}
+
+		<div class="mt-8 border-t border-slate-800 pt-6">
+			<h3 class="text-lg font-semibold text-white">Comisiones compatibles disponibles</h3>
+			<p class="mt-1 text-sm text-slate-400">
+				Se muestran únicamente las que coinciden con sus materias y localidades habilitadas.
+			</p>
+
+			{#if data.availableCommissions.length === 0}
+				<p class="mt-4 text-sm text-slate-500">No hay comisiones pendientes compatibles.</p>
+			{:else}
+				<div class="mt-4 grid gap-3 lg:grid-cols-2">
+					{#each data.availableCommissions as commission}
+						<div
+							class="flex items-start justify-between gap-4 rounded-2xl border border-slate-700 bg-slate-950/50 p-4"
+						>
+							<div class="min-w-0">
+								<p class="font-semibold text-white">{commission.code}</p>
+								<p class="mt-1 text-sm text-slate-300">
+									{commission.subjectCode} · {commission.subjectName}
+								</p>
+								<p class="mt-1 text-xs text-slate-400">
+									{commission.careerName} · {commission.locationName} · {commission.academicTermName}
+								</p>
+							</div>
+							<form
+								method="POST"
+								action="?/assignCommission"
+								use:enhance={() => {
+									processingCommissionId = commission.id;
+									return async ({ update }) => {
+										await update();
+										processingCommissionId = null;
+									};
+								}}
+							>
+								<input type="hidden" name="teacherId" value={data.teacher.id} />
+								<input type="hidden" name="commissionId" value={commission.id} />
+								<button
+									type="submit"
+									disabled={processingCommissionId !== null}
+									class="rounded-xl bg-indigo-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-indigo-600 disabled:opacity-50"
+								>
+									{processingCommissionId === commission.id ? 'Asignando...' : 'Asignar'}
+								</button>
+							</form>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</div>
 	</div>
 
 	<!-- Asignar Nueva Materia -->

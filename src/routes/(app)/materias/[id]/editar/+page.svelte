@@ -109,9 +109,9 @@
 				</div>
 
 				<div class="md:col-span-2">
-					<label class="mb-2 block text-sm font-medium text-slate-300">
+					<p class="mb-2 block text-sm font-medium text-slate-300">
 						Carreras <span class="text-red-400">*</span>
-					</label>
+					</p>
 
 					<div class="rounded-2xl border border-slate-700 bg-slate-950 p-4">
 						{#if data.careers.length === 0}

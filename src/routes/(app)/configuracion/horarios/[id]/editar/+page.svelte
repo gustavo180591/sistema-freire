@@ -1,25 +1,27 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form?: ActionData } = $props();
+	const initialData = untrack(() => data);
 
-	let selectedLocation = $state(data.schedule.locationId);
-	let selectedCareer = $state(data.schedule.careerId);
-	let selectedYear = $state(data.schedule.yearLevel);
-	let selectedSubject = $state(data.schedule.subjectId);
-	let selectedCommission = $state(data.schedule.commissionId);
-	let selectedTeacher = $state(data.schedule.teacherId);
-	let selectedDay = $state(data.schedule.dayOfWeek);
-	let startTime = $state(data.schedule.startTime);
-	let endTime = $state(data.schedule.endTime);
-	let classroom = $state(data.schedule.classroom);
-	let observations = $state(data.schedule.observations);
-	let active = $state(data.schedule.active);
+	let selectedLocation = $state(initialData.schedule.locationId);
+	let selectedCareer = $state(initialData.schedule.careerId);
+	let selectedYear = $state(initialData.schedule.yearLevel);
+	let selectedSubject = $state(initialData.schedule.subjectId);
+	let selectedCommission = $state(initialData.schedule.commissionId);
+	let selectedTeacher = $state(initialData.schedule.teacherId);
+	let selectedDay = $state(initialData.schedule.dayOfWeek);
+	let startTime = $state(initialData.schedule.startTime);
+	let endTime = $state(initialData.schedule.endTime);
+	let classroom = $state(initialData.schedule.classroom);
+	let observations = $state(initialData.schedule.observations);
+	let active = $state(initialData.schedule.active);
 
-	let subjects = $state([...data.subjects]);
-	let commissions = $state([...data.commissions]);
+	let subjects = $state([...initialData.subjects]);
+	let commissions = $state([...initialData.commissions]);
 
 	let subjectsRequest = 0;
 	let commissionsRequest = 0;
@@ -111,9 +113,9 @@
 		}
 	}
 
-	let previousCareer = selectedCareer;
-	let previousYear = selectedYear;
-	let previousSubject = selectedSubject;
+	let previousCareer = initialData.schedule.careerId;
+	let previousYear = initialData.schedule.yearLevel;
+	let previousSubject = initialData.schedule.subjectId;
 
 	$effect(() => {
 		const career = selectedCareer;

@@ -72,10 +72,13 @@
 					<h3 class="mb-6 text-lg font-semibold">Profesorado de Lengua</h3>
 					<div class="space-y-4">
 						<div>
-							<label class="mb-2 block text-sm text-slate-400">Alumno Normal</label>
+							<label for="alem_lengua_normal" class="mb-2 block text-sm text-slate-400"
+								>Alumno Normal</label
+							>
 							<div class="relative">
 								<span class="absolute top-1/2 left-4 -translate-y-1/2 text-slate-500">$</span>
 								<input
+									id="alem_lengua_normal"
 									type="number"
 									name="alem_lengua_normal"
 									value={defaultConfig.alem.lengua.normal}
@@ -84,10 +87,13 @@
 							</div>
 						</div>
 						<div>
-							<label class="mb-2 block text-sm text-slate-400">Alumno Becado</label>
+							<label for="alem_lengua_becado" class="mb-2 block text-sm text-slate-400"
+								>Alumno Becado</label
+							>
 							<div class="relative">
 								<span class="absolute top-1/2 left-4 -translate-y-1/2 text-slate-500">$</span>
 								<input
+									id="alem_lengua_becado"
 									type="number"
 									name="alem_lengua_becado"
 									value={defaultConfig.alem.lengua.becado}
@@ -97,10 +103,13 @@
 							<p class="mt-1 text-xs text-slate-500">Exento de pago (beca completa)</p>
 						</div>
 						<div>
-							<label class="mb-2 block text-sm text-slate-400">Alumno Recursante</label>
+							<label for="alem_lengua_recursante" class="mb-2 block text-sm text-slate-400"
+								>Alumno Recursante</label
+							>
 							<div class="relative">
 								<span class="absolute top-1/2 left-4 -translate-y-1/2 text-slate-500">$</span>
 								<input
+									id="alem_lengua_recursante"
 									type="number"
 									name="alem_lengua_recursante"
 									value={defaultConfig.alem.lengua.recursante}
@@ -118,10 +127,13 @@
 					</h3>
 					<div class="space-y-4">
 						<div>
-							<label class="mb-2 block text-sm text-slate-400">Alumno Normal</label>
+							<label for="alem_matematicas_normal" class="mb-2 block text-sm text-slate-400"
+								>Alumno Normal</label
+							>
 							<div class="relative">
 								<span class="absolute top-1/2 left-4 -translate-y-1/2 text-slate-500">$</span>
 								<input
+									id="alem_matematicas_normal"
 									type="number"
 									name="alem_matematicas_normal"
 									value={defaultConfig.alem.matematicas.normal}
@@ -130,10 +142,13 @@
 							</div>
 						</div>
 						<div>
-							<label class="mb-2 block text-sm text-slate-400">Alumno Becado</label>
+							<label for="alem_matematicas_becado" class="mb-2 block text-sm text-slate-400"
+								>Alumno Becado</label
+							>
 							<div class="relative">
 								<span class="absolute top-1/2 left-4 -translate-y-1/2 text-slate-500">$</span>
 								<input
+									id="alem_matematicas_becado"
 									type="number"
 									name="alem_matematicas_becado"
 									value={defaultConfig.alem.matematicas.becado}
@@ -143,10 +158,13 @@
 							<p class="mt-1 text-xs text-slate-500">Exento de pago (beca completa)</p>
 						</div>
 						<div>
-							<label class="mb-2 block text-sm text-slate-400">Alumno Recursante</label>
+							<label for="alem_matematicas_recursante" class="mb-2 block text-sm text-slate-400"
+								>Alumno Recursante</label
+							>
 							<div class="relative">
 								<span class="absolute top-1/2 left-4 -translate-y-1/2 text-slate-500">$</span>
 								<input
+									id="alem_matematicas_recursante"
 									type="number"
 									name="alem_matematicas_recursante"
 									value={defaultConfig.alem.matematicas.recursante}
@@ -162,10 +180,13 @@
 					<h3 class="mb-6 text-lg font-semibold">Profesorado de Lengua</h3>
 					<div class="grid gap-4 md:grid-cols-3">
 						<div>
-							<label class="mb-2 block text-sm text-slate-400">Alumno Normal</label>
+							<label for="capiovi_lengua_normal" class="mb-2 block text-sm text-slate-400"
+								>Alumno Normal</label
+							>
 							<div class="relative">
 								<span class="absolute top-1/2 left-4 -translate-y-1/2 text-slate-500">$</span>
 								<input
+									id="capiovi_lengua_normal"
 									type="number"
 									name="capiovi_lengua_normal"
 									value={defaultConfig.capiovi.lengua.normal}
@@ -174,10 +195,13 @@
 							</div>
 						</div>
 						<div>
-							<label class="mb-2 block text-sm text-slate-400">Alumno Becado</label>
+							<label for="capiovi_lengua_becado" class="mb-2 block text-sm text-slate-400"
+								>Alumno Becado</label
+							>
 							<div class="relative">
 								<span class="absolute top-1/2 left-4 -translate-y-1/2 text-slate-500">$</span>
 								<input
+									id="capiovi_lengua_becado"
 									type="number"
 									name="capiovi_lengua_becado"
 									value={defaultConfig.capiovi.lengua.becado}
@@ -187,10 +211,13 @@
 							<p class="mt-1 text-xs text-slate-500">Exento de pago</p>
 						</div>
 						<div>
-							<label class="mb-2 block text-sm text-slate-400">Alumno Recursante</label>
+							<label for="capiovi_lengua_recursante" class="mb-2 block text-sm text-slate-400"
+								>Alumno Recursante</label
+							>
 							<div class="relative">
 								<span class="absolute top-1/2 left-4 -translate-y-1/2 text-slate-500">$</span>
 								<input
+									id="capiovi_lengua_recursante"
 									type="number"
 									name="capiovi_lengua_recursante"
 									value={defaultConfig.capiovi.lengua.recursante}
@@ -208,9 +235,10 @@
 			<h3 class="mb-6 text-lg font-semibold">Fechas de Vencimiento y Recargos</h3>
 			<div class="grid gap-6 md:grid-cols-3">
 				<div>
-					<label class="mb-2 block text-sm text-slate-400">Día de Vencimiento</label>
+					<label for="dueDay" class="mb-2 block text-sm text-slate-400">Día de Vencimiento</label>
 					<div class="relative">
 						<input
+							id="dueDay"
 							type="number"
 							name="dueDay"
 							value={dueDay}
@@ -224,9 +252,12 @@
 					<p class="mt-1 text-xs text-slate-500">Fecha límite de pago sin recargo</p>
 				</div>
 				<div>
-					<label class="mb-2 block text-sm text-slate-400">Recargo por Pago Tardío</label>
+					<label for="lateFeePercent" class="mb-2 block text-sm text-slate-400"
+						>Recargo por Pago Tardío</label
+					>
 					<div class="relative">
 						<input
+							id="lateFeePercent"
 							type="number"
 							name="lateFeePercent"
 							value={lateFeePercent}
@@ -239,9 +270,12 @@
 					<p class="mt-1 text-xs text-slate-500">Después del día de vencimiento</p>
 				</div>
 				<div>
-					<label class="mb-2 block text-sm text-slate-400">Recargo por Mes Vencido</label>
+					<label for="overdueFeePercent" class="mb-2 block text-sm text-slate-400"
+						>Recargo por Mes Vencido</label
+					>
 					<div class="relative">
 						<input
+							id="overdueFeePercent"
 							type="number"
 							name="overdueFeePercent"
 							value={overdueFeePercent}

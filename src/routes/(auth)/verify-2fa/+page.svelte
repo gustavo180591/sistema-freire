@@ -72,7 +72,6 @@
 						class="w-full rounded-2xl border {form?.error
 							? 'border-red-600'
 							: 'border-slate-700'} bg-slate-950 px-4 py-4 text-center font-mono text-3xl tracking-[0.5em] transition outline-none focus:border-indigo-500"
-						autofocus
 					/>
 				</div>
 

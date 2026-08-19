@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { PageData, ActionData } from './$types';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/stores';
@@ -6,10 +7,11 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const payslip = $derived(data.payslip);
+	const initialPayslip = untrack(() => data.payslip);
 
-	let amount = $state(String(payslip.amount));
-	let status = $state(payslip.status);
-	let notes = $state(payslip.notes || '');
+	let amount = $state(String(initialPayslip.amount));
+	let status = $state(initialPayslip.status);
+	let notes = $state(initialPayslip.notes || '');
 	let selectedFile = $state<File | null>(null);
 	let isDragging = $state(false);
 
@@ -106,10 +108,11 @@
 
 		<div class="grid gap-6 md:grid-cols-2">
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">
+				<label for="payslip-amount" class="mb-2 block text-sm font-medium text-slate-300">
 					Importe (ARS) <span class="text-red-400">*</span>
 				</label>
 				<input
+					id="payslip-amount"
 					type="number"
 					name="amount"
 					bind:value={amount}
@@ -122,10 +125,11 @@
 			</div>
 
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">
+				<label for="payslip-status" class="mb-2 block text-sm font-medium text-slate-300">
 					Estado <span class="text-red-400">*</span>
 				</label>
 				<select
+					id="payslip-status"
 					name="status"
 					bind:value={status}
 					required
@@ -139,8 +143,11 @@
 		</div>
 
 		<div>
-			<label class="mb-2 block text-sm font-medium text-slate-300">Notas (opcional)</label>
+			<label for="payslip-notes" class="mb-2 block text-sm font-medium text-slate-300"
+				>Notas (opcional)</label
+			>
 			<textarea
+				id="payslip-notes"
 				name="notes"
 				bind:value={notes}
 				rows="3"
@@ -180,10 +187,12 @@
 		</p>
 
 		<div>
-			<label class="mb-2 block text-sm font-medium text-slate-300">
+			<p class="mb-2 block text-sm font-medium text-slate-300">
 				Nuevo archivo PDF <span class="text-red-400">*</span>
-			</label>
+			</p>
 			<div
+				role="region"
+				aria-label="Carga del nuevo archivo PDF"
 				class="relative rounded-2xl border-2 border-dashed transition {isDragging
 					? 'border-indigo-500 bg-indigo-950/20'
 					: 'border-slate-700 bg-slate-950/50 hover:border-slate-600'}"

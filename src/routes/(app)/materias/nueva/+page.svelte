@@ -74,10 +74,11 @@
 
 			<div class="grid gap-4 md:grid-cols-2">
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">
+					<label for="subject-code" class="mb-2 block text-sm font-medium text-slate-300">
 						Código <span class="text-red-400">*</span>
 					</label>
 					<input
+						id="subject-code"
 						name="code"
 						type="text"
 						required
@@ -90,10 +91,11 @@
 				</div>
 
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">
+					<label for="subject-name" class="mb-2 block text-sm font-medium text-slate-300">
 						Nombre <span class="text-red-400">*</span>
 					</label>
 					<input
+						id="subject-name"
 						name="name"
 						type="text"
 						required
@@ -106,9 +108,9 @@
 				</div>
 
 				<div class="md:col-span-2">
-					<label class="mb-2 block text-sm font-medium text-slate-300">
+					<p class="mb-2 block text-sm font-medium text-slate-300">
 						Carreras <span class="text-red-400">*</span>
-					</label>
+					</p>
 
 					<div class="rounded-2xl border border-slate-700 bg-slate-950 p-4">
 						{#if data.careers.length === 0}
@@ -150,10 +152,11 @@
 				</div>
 
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">
+					<label for="subject-type" class="mb-2 block text-sm font-medium text-slate-300">
 						Tipo de materia <span class="text-red-400">*</span>
 					</label>
 					<select
+						id="subject-type"
 						name="subjectType"
 						required
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
@@ -168,10 +171,11 @@
 				</div>
 
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">
+					<label for="training-field" class="mb-2 block text-sm font-medium text-slate-300">
 						Campo de formación <span class="text-red-400">*</span>
 					</label>
 					<select
+						id="training-field"
 						name="trainingField"
 						required
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
@@ -186,10 +190,11 @@
 				</div>
 
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">
+					<label for="year-level" class="mb-2 block text-sm font-medium text-slate-300">
 						Año académico <span class="text-red-400">*</span>
 					</label>
 					<input
+						id="year-level"
 						name="yearLevel"
 						type="number"
 						min="1"
@@ -204,10 +209,11 @@
 				</div>
 
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">
+					<label for="accreditation-mode" class="mb-2 block text-sm font-medium text-slate-300">
 						Modalidad de acreditación <span class="text-red-400">*</span>
 					</label>
 					<select
+						id="accreditation-mode"
 						name="accreditationMode"
 						required
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
@@ -222,8 +228,11 @@
 				</div>
 
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300"> Horas semanales </label>
+					<label for="hours-per-week" class="mb-2 block text-sm font-medium text-slate-300">
+						Horas semanales
+					</label>
 					<input
+						id="hours-per-week"
 						name="hoursPerWeek"
 						type="number"
 						min="0"
@@ -236,10 +245,11 @@
 				</div>
 
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300">
+					<label for="approval-threshold" class="mb-2 block text-sm font-medium text-slate-300">
 						Umbral de aprobación
 					</label>
 					<input
+						id="approval-threshold"
 						name="approvalThreshold"
 						type="number"
 						min="1"
@@ -254,8 +264,11 @@
 				</div>
 
 				<div>
-					<label class="mb-2 block text-sm font-medium text-slate-300"> Umbral de promoción </label>
+					<label for="promotion-threshold" class="mb-2 block text-sm font-medium text-slate-300">
+						Umbral de promoción
+					</label>
 					<input
+						id="promotion-threshold"
 						name="promotionThreshold"
 						type="number"
 						min="1"
@@ -271,8 +284,11 @@
 			</div>
 
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300"> Descripción </label>
+				<label for="subject-description" class="mb-2 block text-sm font-medium text-slate-300">
+					Descripción
+				</label>
 				<textarea
+					id="subject-description"
 					name="description"
 					rows="3"
 					placeholder="Descripción opcional de la materia..."

@@ -1,9 +1,9 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
-import { requireRole } from '$lib/server/auth/authorization';
+import { getUserAllowedLocationIds, requireRole } from '$lib/server/auth/authorization';
 import { EvaluationService } from '$lib/server/academic/evaluation-service';
-import { EvaluationType } from '@prisma/client';
+import { EvaluationType, GradingMode } from '@prisma/client';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	requireRole(locals.user, ['DOCENTE']);
@@ -11,6 +11,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) {
 		throw redirect(303, '/login');
 	}
+	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
 
 	// Obtener el docente asociado al usuario
 	const teacher = await prisma.teacher.findUnique({
@@ -28,6 +29,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 			subject: {
 				include: {
 					careerSubjects: {
+						where: {
+							career: {
+								locations: { some: { locationId: { in: allowedLocationIds } } }
+							}
+						},
 						include: {
 							career: true
 						}
@@ -38,14 +44,32 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	const subjects = subjectTeachers.map((st) => st.subject);
+	const commissions = await prisma.subjectCommission.findMany({
+		where: {
+			teacherId: teacher.id,
+			active: true,
+			locationId: { in: allowedLocationIds }
+		},
+		include: {
+			subject: true,
+			academicTerm: true,
+			career: true,
+			location: true
+		}
+	});
+	const commissionIds = commissions.map((commission) => commission.id);
 
 	// Obtener evaluaciones del docente
 	const evaluations = await prisma.evaluation.findMany({
 		where: {
-			createdByUserId: locals.user.id,
-			subjectId: {
-				in: subjects.map((s) => s.id)
-			}
+			OR: [
+				{ commissionId: { in: commissionIds } },
+				{
+					commissionId: null,
+					createdByUserId: locals.user.id,
+					subjectId: { in: subjects.map((subject) => subject.id) }
+				}
+			]
 		},
 		include: {
 			subject: true,
@@ -55,22 +79,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 				include: {
 					subject: true
 				}
-			}
+			},
+			recoveryEvaluations: { select: { id: true } }
 		},
 		orderBy: { evaluationDate: 'desc' },
 		take: 50
-	});
-
-	// Obtener comisiones del docente para validación
-	const commissions = await prisma.subjectCommission.findMany({
-		where: {
-			teacherId: teacher.id,
-			active: true
-		},
-		include: {
-			subject: true,
-			academicTerm: true
-		}
 	});
 
 	return {
@@ -86,7 +99,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 			code: c.code,
 			subjectId: c.subjectId,
 			subjectName: c.subject.name,
-			academicTerm: c.academicTerm?.name || 'Sin período'
+			academicTerm: c.academicTerm?.name || 'Sin período',
+			career: c.career?.name || 'Sin carrera',
+			location: c.location?.name || 'Sin sede'
 		})),
 		evaluations: evaluations.map((e) => ({
 			id: e.id,
@@ -94,23 +109,28 @@ export const load: PageServerLoad = async ({ locals }) => {
 			description: e.description,
 			type: e.type,
 			evaluationDate: e.evaluationDate,
-			maxScore: e.maxScore,
-			minPassingScore: e.minPassingScore,
-			weight: e.weight,
+			maxScore: Number(e.maxScore),
+			minPassingScore: Number(e.minPassingScore),
+			gradingMode: e.gradingMode,
+			participatesInAverage: e.participatesInAverage,
+			mandatory: e.mandatory,
 			subject: e.subject.name,
+			subjectId: e.subjectId,
+			commissionId: e.commissionId,
 			commission: e.commission?.code || null,
 			isClosed: e.isClosed,
 			closedAt: e.closedAt,
 			createdAt: e.createdAt,
 			creatorName: `${e.createdByUser.firstName} ${e.createdByUser.lastName}`,
 			parentEvaluationId: e.parentEvaluationId,
-			parentEvaluationTitle: e.parentEvaluation?.title || null
+			parentEvaluationTitle: e.parentEvaluation?.title || null,
+			hasRecovery: e.recoveryEvaluations.length > 0
 		}))
 	};
 };
 
 export const actions: Actions = {
-	default: async ({ request, locals }) => {
+	createEvaluation: async ({ request, locals }) => {
 		requireRole(locals.user, ['DOCENTE']);
 
 		if (!locals.user) {
@@ -126,11 +146,16 @@ export const actions: Actions = {
 		const evaluationDate = data.get('evaluationDate')?.toString();
 		const maxScore = data.get('maxScore')?.toString();
 		const minPassingScore = data.get('minPassingScore')?.toString();
-		const weight = data.get('weight')?.toString();
+		const gradingMode = data.get('gradingMode')?.toString() || GradingMode.NUMERIC;
+		const participatesInAverage = data.get('participatesInAverage') === 'on';
+		const mandatory = data.get('mandatory') === 'on';
 		const parentEvaluationId = data.get('parentEvaluationId')?.toString() || null;
 
-		if (!subjectId || !title || !type) {
+		if (!subjectId || !title || !Object.values(EvaluationType).includes(type as EvaluationType)) {
 			return { error: 'Por favor completá todos los campos requeridos' };
+		}
+		if (!Object.values(GradingMode).includes(gradingMode as GradingMode)) {
+			return { error: 'La modalidad de calificación no es válida' };
 		}
 
 		// Bloquear MESA_EXAMEN temporalmente
@@ -140,10 +165,31 @@ export const actions: Actions = {
 
 		try {
 			const evaluationService = new EvaluationService(prisma);
+			if (commissionId) {
+				const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+				const commission = await prisma.subjectCommission.findUnique({
+					where: { id: commissionId },
+					select: { locationId: true }
+				});
+				if (
+					!commission ||
+					(commission.locationId && !allowedLocationIds.includes(commission.locationId))
+				) {
+					return { error: 'No tenés permiso para crear evaluaciones en esta sede' };
+				}
+			}
 
 			const maxScoreValue = maxScore ? parseFloat(maxScore) : 10;
 			const minPassingScoreValue = minPassingScore ? parseFloat(minPassingScore) : 6;
-			const weightValue = weight ? parseFloat(weight) : 1;
+			if (
+				!Number.isFinite(maxScoreValue) ||
+				maxScoreValue <= 0 ||
+				!Number.isFinite(minPassingScoreValue) ||
+				minPassingScoreValue < 0 ||
+				minPassingScoreValue > maxScoreValue
+			) {
+				return { error: 'Revisá el puntaje máximo y la nota mínima de aprobación' };
+			}
 
 			const evaluation = await evaluationService.createEvaluation({
 				subjectId,
@@ -154,7 +200,9 @@ export const actions: Actions = {
 				evaluationDate: evaluationDate ? new Date(evaluationDate) : new Date(),
 				maxScore: maxScoreValue,
 				minPassingScore: minPassingScoreValue,
-				weight: weightValue,
+				gradingMode: gradingMode as GradingMode,
+				participatesInAverage,
+				mandatory,
 				parentEvaluationId: parentEvaluationId || undefined,
 				userId: locals.user.id
 			});

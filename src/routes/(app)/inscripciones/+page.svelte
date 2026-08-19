@@ -96,8 +96,11 @@
 	<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
 		<form method="GET" class="grid gap-4 md:grid-cols-4">
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Estado</label>
+				<label for="enrollment-status" class="mb-2 block text-sm font-medium text-slate-300"
+					>Estado</label
+				>
 				<select
+					id="enrollment-status"
 					name="status"
 					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-slate-300 focus:border-indigo-500 focus:outline-none"
 				>
@@ -110,8 +113,11 @@
 				</select>
 			</div>
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Carrera</label>
+				<label for="enrollment-career" class="mb-2 block text-sm font-medium text-slate-300"
+					>Carrera</label
+				>
 				<select
+					id="enrollment-career"
 					name="career"
 					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-slate-300 focus:border-indigo-500 focus:outline-none"
 				>
@@ -124,8 +130,11 @@
 				</select>
 			</div>
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Período</label>
+				<label for="enrollment-term" class="mb-2 block text-sm font-medium text-slate-300"
+					>Período</label
+				>
 				<select
+					id="enrollment-term"
 					name="term"
 					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-slate-300 focus:border-indigo-500 focus:outline-none"
 				>
@@ -138,8 +147,11 @@
 				</select>
 			</div>
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Alumno</label>
+				<label for="enrollment-student" class="mb-2 block text-sm font-medium text-slate-300"
+					>Alumno</label
+				>
 				<input
+					id="enrollment-student"
 					type="text"
 					name="student"
 					value={data.filters.student || ''}

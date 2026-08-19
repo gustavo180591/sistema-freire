@@ -3,7 +3,7 @@ import { prisma } from '$lib/server/db/prisma';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { auditLog } from '$lib/server/audit';
 import { checkPermission } from '$lib/server/auth/permissions-granular';
-import { AcademicYearStatus } from '@prisma/client';
+import type { AcademicYearStatus } from '@prisma/client';
 
 const ACADEMIC_YEAR_STATUS_LABELS: Record<string, string> = {
 	ENROLLED: 'Inscripto',

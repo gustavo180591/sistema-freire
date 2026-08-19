@@ -7,12 +7,25 @@
 
 	let selectedCareer = $state(untrack(() => data.commission.careerId || ''));
 	let selectedStudyPlan = $state(untrack(() => data.commission.studyPlanId || ''));
+	let selectedSubject = $state(untrack(() => data.commission.subjectId));
+	let selectedLocation = $state(untrack(() => data.commission.locationId || ''));
+	let selectedTeacher = $state(untrack(() => data.commission.teacherId || ''));
 
 	// Filtrar planes por carrera seleccionada
 	const filteredStudyPlans = $derived(
 		selectedCareer
 			? data.studyPlans.filter((sp) => sp.careerId === selectedCareer)
 			: data.studyPlans
+	);
+
+	const eligibleTeachers = $derived(
+		selectedSubject && selectedLocation
+			? data.teachers.filter(
+					(teacher) =>
+						teacher.subjectIds.includes(selectedSubject) &&
+						teacher.locationIds.includes(selectedLocation)
+				)
+			: []
 	);
 
 	// Actualizar plan si la carrera cambia
@@ -22,6 +35,12 @@
 			if (!planStillValid) {
 				selectedStudyPlan = '';
 			}
+		}
+	});
+
+	$effect(() => {
+		if (selectedTeacher && !eligibleTeachers.some((teacher) => teacher.id === selectedTeacher)) {
+			selectedTeacher = '';
 		}
 	});
 </script>
@@ -102,12 +121,13 @@
 					<select
 						id="subjectId"
 						name="subjectId"
+						bind:value={selectedSubject}
 						required
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
 					>
 						<option value="">Seleccionar materia</option>
 						{#each data.subjects as subject}
-							<option value={subject.id} selected={data.commission.subjectId === subject.id}>
+							<option value={subject.id}>
 								{subject.name} ({subject.code})
 							</option>
 						{/each}
@@ -182,16 +202,23 @@
 					<select
 						id="teacherId"
 						name="teacherId"
+						bind:value={selectedTeacher}
+						disabled={!selectedSubject || !selectedLocation}
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
 					>
 						<option value="">Sin asignar</option>
-						{#each data.teachers as teacher}
-							<option value={teacher.id} selected={data.commission.teacherId === teacher.id}>
+						{#each eligibleTeachers as teacher}
+							<option value={teacher.id}>
 								{teacher.lastName}
 								{teacher.firstName}
 							</option>
 						{/each}
 					</select>
+					{#if selectedSubject && selectedLocation && eligibleTeachers.length === 0}
+						<p class="mt-2 text-xs text-amber-400">
+							No hay docentes habilitados para esta materia y localidad.
+						</p>
+					{/if}
 				</div>
 
 				<!-- Localidad -->
@@ -202,11 +229,12 @@
 					<select
 						id="locationId"
 						name="locationId"
+						bind:value={selectedLocation}
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
 					>
 						<option value="">Sin asignar</option>
 						{#each data.locations as location}
-							<option value={location.id} selected={data.commission.locationId === location.id}>
+							<option value={location.id}>
 								{location.name}
 							</option>
 						{/each}

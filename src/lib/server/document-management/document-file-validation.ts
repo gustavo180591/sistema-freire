@@ -1,5 +1,3 @@
-import { DocumentCategory } from '@prisma/client';
-
 /**
  * Allowed MIME types for document uploads
  */

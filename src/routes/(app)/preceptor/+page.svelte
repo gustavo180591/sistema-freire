@@ -42,8 +42,11 @@
 	<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
 		<div class="grid gap-4 md:grid-cols-2">
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Buscar estudiante</label>
+				<label for="preceptor-search" class="mb-2 block text-sm font-medium text-slate-300"
+					>Buscar estudiante</label
+				>
 				<input
+					id="preceptor-search"
 					type="text"
 					bind:value={searchQuery}
 					placeholder="Nombre, apellido o DNI..."
@@ -51,8 +54,11 @@
 				/>
 			</div>
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">Filtrar por carrera</label>
+				<label for="preceptor-career" class="mb-2 block text-sm font-medium text-slate-300"
+					>Filtrar por carrera</label
+				>
 				<select
+					id="preceptor-career"
 					bind:value={selectedCareer}
 					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 				>

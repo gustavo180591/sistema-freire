@@ -20,6 +20,38 @@ type AssignedSubject = {
 	}>;
 };
 
+type CommissionSummary = {
+	id: string;
+	code: string;
+	subjectId: string;
+	subjectCode: string;
+	subjectName: string;
+	careerName: string;
+	locationName: string;
+	academicTermName: string;
+};
+
+function toCommissionSummary(commission: {
+	id: string;
+	code: string;
+	subjectId: string;
+	subject: { code: string; name: string };
+	career: { name: string } | null;
+	location: { name: string } | null;
+	academicTerm: { name: string } | null;
+}): CommissionSummary {
+	return {
+		id: commission.id,
+		code: commission.code,
+		subjectId: commission.subjectId,
+		subjectCode: commission.subject.code,
+		subjectName: commission.subject.name,
+		careerName: commission.career?.name || 'Sin carrera',
+		locationName: commission.location?.name || 'Sin localidad',
+		academicTermName: commission.academicTerm?.name || 'Sin período'
+	};
+}
+
 export const load: PageServerLoad = async ({
 	params,
 	locals
@@ -33,6 +65,8 @@ export const load: PageServerLoad = async ({
 		email: string;
 	};
 	assignedSubjects: AssignedSubject[];
+	assignedCommissions: CommissionSummary[];
+	availableCommissions: CommissionSummary[];
 	availableSubjects: Array<{
 		id: string;
 		code: string;
@@ -105,6 +139,22 @@ export const load: PageServerLoad = async ({
 		throw redirect(303, '/docentes');
 	}
 
+	const assignedCommissions = (
+		await prisma.subjectCommission.findMany({
+			where: {
+				teacherId,
+				active: true
+			},
+			include: {
+				subject: true,
+				career: true,
+				location: true,
+				academicTerm: true
+			},
+			orderBy: { code: 'asc' }
+		})
+	).map(toCommissionSummary);
+
 	// Verificar si el docente tiene localidad asignada
 	if (teacher.user.locationPermissions.length === 0) {
 		return {
@@ -127,6 +177,8 @@ export const load: PageServerLoad = async ({
 				active: st.subject.active,
 				careers: st.subject.careerSubjects.map((cs) => cs.career)
 			})),
+			assignedCommissions,
+			availableCommissions: [],
 			availableSubjects: [],
 			availableSubjectsByCareer: [],
 			teacherLocation: null,
@@ -182,6 +234,24 @@ export const load: PageServerLoad = async ({
 
 	// Obtener IDs de materias ya asignadas
 	const assignedSubjectIds = teacher.subjects.map((st) => st.subjectId);
+
+	const availableCommissions = (
+		await prisma.subjectCommission.findMany({
+			where: {
+				active: true,
+				teacherId: null,
+				subjectId: { in: assignedSubjectIds },
+				locationId: { in: teacherLocationIds }
+			},
+			include: {
+				subject: true,
+				career: true,
+				location: true,
+				academicTerm: true
+			},
+			orderBy: { code: 'asc' }
+		})
+	).map(toCommissionSummary);
 
 	// Agrupar materias por carrera
 	const subjectsByCareer = new Map<
@@ -262,6 +332,8 @@ export const load: PageServerLoad = async ({
 			active: st.subject.active,
 			careers: st.subject.careerSubjects.map((cs) => cs.career)
 		})) satisfies AssignedSubject[],
+		assignedCommissions,
+		availableCommissions,
 		availableSubjects,
 		availableSubjectsByCareer,
 		teacherLocation: {
@@ -402,6 +474,136 @@ export const actions: Actions = {
 		}
 	},
 
+	assignCommission: async ({ request, locals }) => {
+		requireCanAssignSubjects(locals.user);
+
+		if (!locals.user) {
+			return { error: 'No autenticado' };
+		}
+
+		const data = await request.formData();
+		const teacherId = data.get('teacherId')?.toString();
+		const commissionId = data.get('commissionId')?.toString();
+
+		if (!teacherId || !commissionId) {
+			return { error: 'Docente y comisión son requeridos' };
+		}
+
+		try {
+			const commission = await prisma.subjectCommission.findUnique({
+				where: { id: commissionId },
+				include: {
+					subject: true,
+					location: true
+				}
+			});
+
+			if (!commission || !commission.active) {
+				return { error: 'La comisión no existe o no está activa' };
+			}
+
+			if (!commission.locationId) {
+				return { error: 'La comisión debe tener una localidad antes de asignar docente' };
+			}
+
+			if (commission.teacherId) {
+				return { error: 'La comisión ya tiene un docente asignado' };
+			}
+
+			const eligibleTeacher = await prisma.teacher.findFirst({
+				where: {
+					id: teacherId,
+					status: 'ACTIVE',
+					subjects: { some: { subjectId: commission.subjectId } },
+					user: {
+						locationPermissions: { some: { locationId: commission.locationId } }
+					}
+				}
+			});
+
+			if (!eligibleTeacher) {
+				return { error: 'El docente no está habilitado para la materia o la localidad' };
+			}
+
+			const updated = await prisma.subjectCommission.updateMany({
+				where: {
+					id: commissionId,
+					teacherId: null,
+					active: true
+				},
+				data: { teacherId }
+			});
+
+			if (updated.count !== 1) {
+				return { error: 'La comisión fue modificada por otro usuario. Volvé a intentar.' };
+			}
+
+			await auditLog({
+				userId: locals.user.id,
+				action: AuditAction.UPDATE,
+				entityType: 'SubjectCommission',
+				entityId: commissionId,
+				description: `Asignó la comisión ${commission.code} de ${commission.subject.name} al docente ${eligibleTeacher.lastName}, ${eligibleTeacher.firstName}`
+			});
+
+			return { success: 'Comisión asignada exitosamente' };
+		} catch (error) {
+			console.error('Error al asignar comisión:', error);
+			return { error: 'Error al asignar la comisión' };
+		}
+	},
+
+	removeCommission: async ({ request, locals }) => {
+		requireCanAssignSubjects(locals.user);
+
+		if (!locals.user) {
+			return { error: 'No autenticado' };
+		}
+
+		const data = await request.formData();
+		const teacherId = data.get('teacherId')?.toString();
+		const commissionId = data.get('commissionId')?.toString();
+
+		if (!teacherId || !commissionId) {
+			return { error: 'Docente y comisión son requeridos' };
+		}
+
+		try {
+			const commission = await prisma.subjectCommission.findFirst({
+				where: {
+					id: commissionId,
+					teacherId
+				},
+				include: {
+					subject: true,
+					teacher: true
+				}
+			});
+
+			if (!commission || !commission.teacher) {
+				return { error: 'La comisión no está asignada a este docente' };
+			}
+
+			await prisma.subjectCommission.update({
+				where: { id: commissionId },
+				data: { teacherId: null }
+			});
+
+			await auditLog({
+				userId: locals.user.id,
+				action: AuditAction.UPDATE,
+				entityType: 'SubjectCommission',
+				entityId: commissionId,
+				description: `Desasignó la comisión ${commission.code} de ${commission.subject.name} del docente ${commission.teacher.lastName}, ${commission.teacher.firstName}`
+			});
+
+			return { success: 'Comisión desasignada exitosamente' };
+		} catch (error) {
+			console.error('Error al desasignar comisión:', error);
+			return { error: 'Error al desasignar la comisión' };
+		}
+	},
+
 	updateAssignmentType: async ({ request, locals }) => {
 		requireCanAssignSubjects(locals.user);
 
@@ -505,6 +707,20 @@ export const actions: Actions = {
 
 			if (!assignment) {
 				return { error: 'Asignación no encontrada' };
+			}
+
+			const linkedCommissionCount = await prisma.subjectCommission.count({
+				where: {
+					teacherId,
+					subjectId,
+					active: true
+				}
+			});
+
+			if (linkedCommissionCount > 0) {
+				return {
+					error: `Desasigná primero las ${linkedCommissionCount} comisiones activas vinculadas a esta materia`
+				};
 			}
 
 			// Eliminar asignación

@@ -112,10 +112,11 @@
 	>
 		<div class="grid gap-6 md:grid-cols-2">
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">
+				<label for="new-payslip-teacher" class="mb-2 block text-sm font-medium text-slate-300">
 					Docente <span class="text-red-400">*</span>
 				</label>
 				<select
+					id="new-payslip-teacher"
 					name="teacherId"
 					bind:value={selectedTeacher}
 					required
@@ -131,10 +132,11 @@
 			</div>
 
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">
+				<label for="new-payslip-status" class="mb-2 block text-sm font-medium text-slate-300">
 					Estado <span class="text-red-400">*</span>
 				</label>
 				<select
+					id="new-payslip-status"
 					name="status"
 					bind:value={status}
 					required
@@ -147,10 +149,11 @@
 			</div>
 
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">
+				<label for="new-payslip-month" class="mb-2 block text-sm font-medium text-slate-300">
 					Mes <span class="text-red-400">*</span>
 				</label>
 				<select
+					id="new-payslip-month"
 					name="periodMonth"
 					bind:value={selectedMonth}
 					required
@@ -164,10 +167,11 @@
 			</div>
 
 			<div>
-				<label class="mb-2 block text-sm font-medium text-slate-300">
+				<label for="new-payslip-year" class="mb-2 block text-sm font-medium text-slate-300">
 					Año <span class="text-red-400">*</span>
 				</label>
 				<select
+					id="new-payslip-year"
 					name="periodYear"
 					bind:value={selectedYear}
 					required
@@ -181,10 +185,11 @@
 			</div>
 
 			<div class="md:col-span-2">
-				<label class="mb-2 block text-sm font-medium text-slate-300">
+				<label for="new-payslip-amount" class="mb-2 block text-sm font-medium text-slate-300">
 					Importe (ARS) <span class="text-red-400">*</span>
 				</label>
 				<input
+					id="new-payslip-amount"
 					type="number"
 					name="amount"
 					bind:value={amount}
@@ -198,10 +203,12 @@
 		</div>
 
 		<div>
-			<label class="mb-2 block text-sm font-medium text-slate-300">
+			<p class="mb-2 block text-sm font-medium text-slate-300">
 				Archivo PDF <span class="text-red-400">*</span>
-			</label>
+			</p>
 			<div
+				role="region"
+				aria-label="Carga del archivo PDF"
 				class="relative rounded-2xl border-2 border-dashed transition {isDragging
 					? 'border-indigo-500 bg-indigo-950/20'
 					: 'border-slate-700 bg-slate-950/50 hover:border-slate-600'}"
@@ -286,8 +293,11 @@
 		</div>
 
 		<div>
-			<label class="mb-2 block text-sm font-medium text-slate-300">Notas (opcional)</label>
+			<label for="new-payslip-notes" class="mb-2 block text-sm font-medium text-slate-300"
+				>Notas (opcional)</label
+			>
 			<textarea
+				id="new-payslip-notes"
 				name="notes"
 				bind:value={notes}
 				rows="3"

@@ -1,8 +1,9 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
-	const { report } = data;
+	const { report } = untrack(() => data);
 
 	const statusTranslations: Record<string, string> = {
 		PENDING: 'Pendiente',

@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import { createHash } from 'crypto';
 import { join, resolve } from 'path';
-import { DocumentCategory, DocumentOwnerType } from '@prisma/client';
+import type { DocumentCategory, DocumentOwnerType } from '@prisma/client';
 import {
 	validateDocumentFile,
 	validateStorageKey,

@@ -14,6 +14,7 @@
 		href: string;
 		icon: string;
 		roles: string[];
+		exact?: boolean;
 		children?: NavItem[];
 	}
 
@@ -40,6 +41,67 @@
 					roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO']
 				},
 				{ label: 'Inicio', href: '/', icon: 'home', roles: [] }
+			]
+		},
+		{
+			category: 'Docencia',
+			collapsible: true,
+			items: [
+				{
+					label: 'Panel docente',
+					href: '/docente',
+					icon: 'chalkboard-teacher',
+					roles: ['DOCENTE'],
+					exact: true
+				},
+				{
+					label: 'Evaluaciones',
+					href: '/docente/evaluaciones',
+					icon: 'clipboard-list',
+					roles: ['DOCENTE']
+				},
+				{
+					label: 'Calificaciones',
+					href: '/docente/calificaciones',
+					icon: 'book-open',
+					roles: ['DOCENTE']
+				},
+				{
+					label: 'Asistencia',
+					href: '/docente/asistencia',
+					icon: 'clipboard-user',
+					roles: ['DOCENTE']
+				},
+				{
+					label: 'Horarios',
+					href: '/docente/horarios',
+					icon: 'calendar',
+					roles: ['DOCENTE']
+				},
+				{
+					label: 'Materiales',
+					href: '/docente/materiales',
+					icon: 'folder-open',
+					roles: ['DOCENTE']
+				},
+				{
+					label: 'Comunicados',
+					href: '/docente/comunicados',
+					icon: 'megaphone',
+					roles: ['DOCENTE']
+				},
+				{
+					label: 'Observaciones',
+					href: '/docente/observaciones',
+					icon: 'chat-bubble',
+					roles: ['DOCENTE']
+				},
+				{
+					label: 'Reportes',
+					href: '/docente/reportes',
+					icon: 'chart-line',
+					roles: ['DOCENTE']
+				}
 			]
 		},
 		{
@@ -178,8 +240,9 @@
 		return item.roles.some((role) => user.roles.includes(role));
 	}
 
-	function isActive(href: string): boolean {
-		return page.url.pathname === href || page.url.pathname.startsWith(href + '/');
+	function isActive(item: NavItem): boolean {
+		if (item.exact) return page.url.pathname === item.href;
+		return page.url.pathname === item.href || page.url.pathname.startsWith(item.href + '/');
 	}
 
 	function toggleSection(category: string) {
@@ -220,6 +283,12 @@
 		'chart-line': 'M3 3v18h18 M3 18l6-6 4 4 8-8',
 		'clipboard-list':
 			'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
+		calendar:
+			'M8 2v4m8-4v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z',
+		'folder-open':
+			'M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v2M3 7v11a2 2 0 002 2h12a2 2 0 001.789-1.106L22 12H7l-4 8',
+		megaphone: 'M11 5L6 9H3v6h3l5 4V5zm0 4c4 0 7-2 9-4v14c-2-2-5-4-9-4V9zM6 15l2 6h3l-2-5',
+		'chat-bubble': 'M8 10h8m-8 4h5M21 12a8 8 0 01-8 8H7l-4 2 1.5-4A9 9 0 1121 12z',
 		key: 'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z',
 		envelope:
 			'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
@@ -268,11 +337,11 @@
 										<a
 											href={item.href}
 											class="light-hover-contrast group/link relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200 {isActive(
-												item.href
+												item
 											)
 												? 'border-l-2 border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-600/20 dark:text-indigo-400'
 												: 'border-l-2 border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white'}"
-											aria-current={isActive(item.href) ? 'page' : undefined}
+											aria-current={isActive(item) ? 'page' : undefined}
 										>
 											<svg
 												class="h-5 w-5 shrink-0"
@@ -303,11 +372,11 @@
 									<a
 										href={item.href}
 										class="light-hover-contrast group/link relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200 {isActive(
-											item.href
+											item
 										)
 											? 'border-l-2 border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-600/20 dark:text-indigo-400'
 											: 'border-l-2 border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white'}"
-										aria-current={isActive(item.href) ? 'page' : undefined}
+										aria-current={isActive(item) ? 'page' : undefined}
 									>
 										<svg
 											class="h-5 w-5 shrink-0"
@@ -393,11 +462,11 @@
 													href={item.href}
 													onclick={() => (isOpen = false)}
 													class="light-hover-contrast group/link relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200 {isActive(
-														item.href
+														item
 													)
 														? 'border-l-2 border-indigo-500 bg-indigo-600/20 text-indigo-400'
 														: 'border-l-2 border-transparent text-slate-400 hover:bg-slate-800 hover:text-white'}"
-													aria-current={isActive(item.href) ? 'page' : undefined}
+													aria-current={isActive(item) ? 'page' : undefined}
 												>
 													<svg
 														class="h-5 w-5 shrink-0"
@@ -431,11 +500,11 @@
 												href={item.href}
 												onclick={() => (isOpen = false)}
 												class="light-hover-contrast group/link relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200 {isActive(
-													item.href
+													item
 												)
 													? 'border-l-2 border-indigo-500 bg-indigo-600/20 text-indigo-400'
 													: 'border-l-2 border-transparent text-slate-400 hover:bg-slate-800 hover:text-white'}"
-												aria-current={isActive(item.href) ? 'page' : undefined}
+												aria-current={isActive(item) ? 'page' : undefined}
 											>
 												<svg
 													class="h-5 w-5 shrink-0"

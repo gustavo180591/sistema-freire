@@ -19,9 +19,6 @@
 		"db:seed:alumnos-tipos": "tsx prisma/seed-alumnos-tipos.ts",
 		"db:seed:recibos": "tsx prisma/seed-recibos.ts"
 	},
-	"prisma": {
-		"seed": "tsx prisma/seed.ts"
-	},
 	"devDependencies": {
 		"@commitlint/cli": "^20.5.0",
 		"@commitlint/config-conventional": "^20.5.0",

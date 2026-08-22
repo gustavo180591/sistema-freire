@@ -355,13 +355,17 @@ export const actions: Actions = {
 	addSubject: async ({ request, params }) => {
 		const formData = await request.formData();
 		const subjectId = formData.get('subjectId')?.toString();
+		const assignmentType = formData.get('assignmentType')?.toString() ?? 'TITULAR';
 
 		if (!subjectId) {
 			return fail(400, { error: 'Materia requerida' });
 		}
 
+		if (!['TITULAR', 'SUPLENTE'].includes(assignmentType)) {
+			return fail(400, { error: 'Condición docente inválida' });
+		}
+
 		try {
-			// Verificar que el usuario sea docente
 			const teacher = await prisma.teacher.findUnique({
 				where: { userId: params.id }
 			});
@@ -370,17 +374,85 @@ export const actions: Actions = {
 				return fail(400, { error: 'El usuario no es docente' });
 			}
 
-			await prisma.subjectTeacher.create({
-				data: {
+			const existingAssignment = await prisma.subjectTeacher.findFirst({
+				where: {
 					subjectId,
 					teacherId: teacher.id
 				}
 			});
 
-			return { success: true };
+			if (existingAssignment) {
+				return fail(400, {
+					error: 'La materia ya está asignada a este docente'
+				});
+			}
+
+			await prisma.subjectTeacher.create({
+				data: {
+					subjectId,
+					teacherId: teacher.id,
+					assignmentType: assignmentType as 'TITULAR' | 'SUPLENTE'
+				}
+			});
+
+			return {
+				success: true,
+				message: `Materia asignada como ${assignmentType === 'SUPLENTE' ? 'suplente' : 'titular'}`
+			};
 		} catch (e) {
 			console.error(e);
 			return fail(500, { error: 'Error al agregar materia' });
+		}
+	},
+
+	updateSubjectAssignment: async ({ request, params }) => {
+		const formData = await request.formData();
+
+		const subjectId = formData.get('subjectId')?.toString();
+		const assignmentType = formData.get('assignmentType')?.toString();
+
+		if (!subjectId) {
+			return fail(400, { error: 'Materia requerida' });
+		}
+
+		if (!assignmentType || !['TITULAR', 'SUPLENTE'].includes(assignmentType)) {
+			return fail(400, { error: 'Condición docente inválida' });
+		}
+
+		try {
+			const teacher = await prisma.teacher.findUnique({
+				where: { userId: params.id }
+			});
+
+			if (!teacher) {
+				return fail(400, { error: 'El usuario no es docente' });
+			}
+
+			const result = await prisma.subjectTeacher.updateMany({
+				where: {
+					subjectId,
+					teacherId: teacher.id
+				},
+				data: {
+					assignmentType: assignmentType as 'TITULAR' | 'SUPLENTE'
+				}
+			});
+
+			if (result.count === 0) {
+				return fail(404, {
+					error: 'La materia no está asignada a este docente'
+				});
+			}
+
+			return {
+				success: true,
+				message: `Condición actualizada a ${assignmentType === 'SUPLENTE' ? 'Suplente' : 'Titular'}`
+			};
+		} catch (e) {
+			console.error(e);
+			return fail(500, {
+				error: 'Error al actualizar la condición docente'
+			});
 		}
 	},
 

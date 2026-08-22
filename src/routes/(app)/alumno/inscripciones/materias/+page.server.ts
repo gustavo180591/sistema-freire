@@ -182,7 +182,7 @@ export const actions: Actions = {
 
 		for (let i = 0; i < subjectIds.length; i++) {
 			const subjectId = subjectIds[i];
-			const commissionId = commissionIds[i] || null;
+			const commissionId = commissionIds[i]?.trim() || '';
 
 			try {
 				// Validar correlativas
@@ -230,19 +230,41 @@ export const actions: Actions = {
 					continue;
 				}
 
-				// Verificar cupo si hay comisión
-				if (commissionId) {
-					const commission = await prisma.subjectCommission.findUnique({
-						where: { id: commissionId }
+				// Toda inscripción activa debe pertenecer a una comisión.
+				if (!commissionId) {
+					errors.push({
+						subjectId,
+						reason: 'Debés seleccionar una comisión para esta materia'
 					});
+					continue;
+				}
 
-					if (commission && commission.currentEnrolled >= commission.maxCapacity) {
-						errors.push({
-							subjectId,
-							reason: 'No hay cupo disponible en la comisión'
-						});
-						continue;
+				// Validar que la comisión corresponda a la materia,
+				// carrera y período lectivo del alumno.
+				const commission = await prisma.subjectCommission.findFirst({
+					where: {
+						id: commissionId,
+						subjectId,
+						careerId: student.careerId,
+						academicTermId: activeTerm.id,
+						active: true
 					}
+				});
+
+				if (!commission) {
+					errors.push({
+						subjectId,
+						reason: 'La comisión seleccionada no es válida para esta materia'
+					});
+					continue;
+				}
+
+				if (commission.currentEnrolled >= commission.maxCapacity) {
+					errors.push({
+						subjectId,
+						reason: 'No hay cupo disponible en la comisión seleccionada'
+					});
+					continue;
 				}
 
 				// Crear inscripción
@@ -250,7 +272,7 @@ export const actions: Actions = {
 					data: {
 						studentId: student.id,
 						subjectId,
-						commissionId,
+						commissionId: commission.id,
 						careerId: student.careerId,
 						studyPlanId: studyPlan?.id,
 						academicTermId: activeTerm.id,
@@ -260,17 +282,15 @@ export const actions: Actions = {
 					}
 				});
 
-				// Actualizar cupo de comisión si corresponde
-				if (commissionId) {
-					await prisma.subjectCommission.update({
-						where: { id: commissionId },
-						data: {
-							currentEnrolled: {
-								increment: 1
-							}
+				// Actualizar cupo de la comisión asignada
+				await prisma.subjectCommission.update({
+					where: { id: commission.id },
+					data: {
+						currentEnrolled: {
+							increment: 1
 						}
-					});
-				}
+					}
+				});
 
 				// Crear o actualizar StudentSubjectStatus
 				const existingSubjectStatus = await prisma.studentSubjectStatus.findUnique({

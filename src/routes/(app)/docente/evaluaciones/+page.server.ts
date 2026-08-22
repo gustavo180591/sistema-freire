@@ -122,6 +122,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			isClosed: e.isClosed,
 			closedAt: e.closedAt,
 			createdAt: e.createdAt,
+			registrationOpensAt: e.registrationOpensAt,
+			registrationClosesAt: e.registrationClosesAt,
 			creatorName: `${e.createdByUser.firstName} ${e.createdByUser.lastName}`,
 			parentEvaluationId: e.parentEvaluationId,
 			parentEvaluationTitle: e.parentEvaluation?.title || null,
@@ -161,9 +163,22 @@ export const actions: Actions = {
 			return { error: 'La modalidad de calificación no es válida' };
 		}
 
-		// Bloquear MESA_EXAMEN temporalmente
-		if (type === 'MESA_EXAMEN') {
-			return { error: 'Las mesas de examen no están habilitadas en esta versión' };
+		/*
+		 * EXAMEN_FINAL queda reservado para compatibilidad académica/legado.
+		 * Desde la interfaz docente, todo examen final con inscripción
+		 * debe crearse como MESA_EXAMEN.
+		 */
+		if (type === 'EXAMEN_FINAL') {
+			return {
+				error: 'Para crear un examen final seleccioná "Mesa de examen final".'
+			};
+		}
+
+		if (!evaluationDate) {
+			return {
+				error:
+					'La fecha y hora de la evaluación son obligatorias porque los alumnos disponen de 72 horas para inscribirse'
+			};
 		}
 
 		try {
@@ -184,6 +199,18 @@ export const actions: Actions = {
 
 			const maxScoreValue = maxScore ? parseFloat(maxScore) : 10;
 			const minPassingScoreValue = minPassingScore ? parseFloat(minPassingScore) : 6;
+
+			const parsedEvaluationDate = evaluationDate
+				? new Date(
+						type === 'MESA_EXAMEN' || evaluationDate.includes('T')
+							? evaluationDate
+							: `${evaluationDate}T12:00:00`
+					)
+				: new Date();
+
+			if (Number.isNaN(parsedEvaluationDate.getTime())) {
+				return { error: 'La fecha y hora de la evaluación no son válidas' };
+			}
 			if (
 				!Number.isFinite(maxScoreValue) ||
 				maxScoreValue <= 0 ||
@@ -194,13 +221,22 @@ export const actions: Actions = {
 				return { error: 'Revisá el puntaje máximo y la nota mínima de aprobación' };
 			}
 
+			console.log('[MESA/EVALUACION] solicitud de creación', {
+				subjectId,
+				commissionId,
+				title,
+				type,
+				evaluationDate: parsedEvaluationDate.toISOString(),
+				userId: locals.user.id
+			});
+
 			const evaluation = await evaluationService.createEvaluation({
 				subjectId,
 				commissionId: commissionId || undefined,
 				title,
 				description: description || undefined,
 				type: type as EvaluationType,
-				evaluationDate: evaluationDate ? new Date(evaluationDate) : new Date(),
+				evaluationDate: parsedEvaluationDate,
 				maxScore: maxScoreValue,
 				minPassingScore: minPassingScoreValue,
 				gradingMode: gradingMode as GradingMode,
@@ -211,10 +247,23 @@ export const actions: Actions = {
 			});
 
 			if ('error' in evaluation) {
+				console.error('[MESA/EVALUACION] rechazada', evaluation.error);
 				return { error: evaluation.error };
 			}
 
-			return { success: 'Evaluación creada exitosamente' };
+			console.log('[MESA/EVALUACION] creada correctamente', {
+				id: evaluation.id,
+				type: evaluation.type,
+				title: evaluation.title,
+				evaluationDate: evaluation.evaluationDate,
+				registrationOpensAt: evaluation.registrationOpensAt,
+				registrationClosesAt: evaluation.registrationClosesAt
+			});
+
+			return {
+				success:
+					'Evaluación creada correctamente. La inscripción de alumnos quedó abierta durante 72 horas.'
+			};
 		} catch (error) {
 			console.error('Error al crear evaluación:', error);
 			return { error: 'Error al crear la evaluación' };

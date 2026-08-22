@@ -164,7 +164,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 		},
 		finances: {
 			totalDebt,
-			charges: studentWithRelations.studentCharges.slice(0, 5) // Últimos 5 cargos
+			charges: studentWithRelations.studentCharges.slice(0, 5).map((charge) => ({
+				...charge,
+				amount: Number(charge.amount),
+				paidAmount: Number(charge.paidAmount),
+				lateFeeApplied: Number(charge.lateFeeApplied),
+				discountApplied: Number(charge.discountApplied),
+				scholarshipApplied: Number(charge.scholarshipApplied),
+				finalAmount: Number(charge.finalAmount)
+			}))
 		},
 		evaluations: evaluations.map((e) => ({
 			id: e.id,

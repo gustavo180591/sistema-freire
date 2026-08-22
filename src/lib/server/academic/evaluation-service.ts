@@ -492,6 +492,22 @@ export class EvaluationService {
 			}
 		}
 
+		/*
+		 * Toda instancia evaluativa requiere inscripción del alumno.
+		 *
+		 * La inscripción abre en el momento de crear la evaluación
+		 * y permanece disponible exactamente durante 72 horas.
+		 */
+		const registrationOpensAt = new Date();
+		const registrationClosesAt = new Date(registrationOpensAt.getTime() + 72 * 60 * 60 * 1000);
+
+		if (data.evaluationDate <= registrationClosesAt) {
+			return {
+				error:
+					'La fecha de la evaluación debe ser posterior al cierre de las 72 horas de inscripción'
+			};
+		}
+
 		const averageTypes: EvaluationType[] = [
 			EvaluationType.PARCIAL,
 			EvaluationType.TRABAJO_PRACTICO,
@@ -510,6 +526,8 @@ export class EvaluationService {
 				description: data.description,
 				type: data.type,
 				evaluationDate: data.evaluationDate,
+				registrationOpensAt,
+				registrationClosesAt,
 				maxScore: data.maxScore,
 				minPassingScore: data.minPassingScore,
 				weight: 1,

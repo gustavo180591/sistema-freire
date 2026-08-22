@@ -102,18 +102,40 @@ export async function autoEnrollStudentInYearSubjects({
 			continue; // Ya está inscripto, saltar
 		}
 
-		// Buscar comisión activa para la materia, carrera y sede
-		const commission = await tx.subjectCommission.findFirst({
+		// Buscar comisiones activas para la materia, carrera, período
+		// y sede cuando la sede esté explícitamente definida.
+		const commissions = await tx.subjectCommission.findMany({
 			where: {
 				subjectId: subject.id,
 				careerId,
-				locationId: locationId || null,
 				academicTermId: activeAcademicTerm.id,
-				active: true
+				active: true,
+				...(locationId ? { locationId } : {})
+			},
+			orderBy: {
+				currentEnrolled: 'asc'
 			}
 		});
 
-		// Crear inscripción
+		const availableCommissions = commissions.filter(
+			(commission) => commission.currentEnrolled < commission.maxCapacity
+		);
+
+		if (availableCommissions.length === 0) {
+			throw new Error(`No hay una comisión activa con cupo disponible para ${subject.name}`);
+		}
+
+		// Si no conocemos la sede y existen varias comisiones posibles,
+		// no asignamos una arbitrariamente.
+		if (!locationId && availableCommissions.length > 1) {
+			throw new Error(
+				`Hay más de una comisión disponible para ${subject.name}; se debe definir la sede o comisión`
+			);
+		}
+
+		const commission = availableCommissions[0];
+
+		// Crear inscripción siempre asociada a una comisión válida.
 		await tx.subjectEnrollment.create({
 			data: {
 				studentId,
@@ -121,9 +143,20 @@ export async function autoEnrollStudentInYearSubjects({
 				careerId,
 				studyPlanId: activeStudyPlan.id,
 				academicTermId: activeAcademicTerm.id,
-				commissionId: commission?.id || null,
+				commissionId: commission.id,
 				status: EnrollmentStatus.ACTIVE,
 				confirmedAt: new Date()
+			}
+		});
+
+		await tx.subjectCommission.update({
+			where: {
+				id: commission.id
+			},
+			data: {
+				currentEnrolled: {
+					increment: 1
+				}
 			}
 		});
 

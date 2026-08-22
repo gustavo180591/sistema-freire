@@ -8,6 +8,20 @@
 	let showCancelModal = $state(false);
 	let enrollmentToCancel = $state<string | null>(null);
 
+	const getEvaluationTypeLabel = (type: string) => {
+		const labels: Record<string, string> = {
+			PARCIAL: 'Parcial',
+			RECUPERATORIO: 'Recuperatorio',
+			TRABAJO_PRACTICO: 'Trabajo práctico',
+			INTEGRADOR: 'Integrador',
+			EXAMEN_FINAL: 'Examen final',
+			MESA_EXAMEN: 'Mesa de examen',
+			OTRO: 'Otra instancia'
+		};
+
+		return labels[type] ?? type;
+	};
+
 	const getStatusLabel = (status: string) => {
 		const labels: Record<string, { label: string; color: string }> = {
 			PENDING: { label: 'Pendiente', color: 'bg-amber-950/50 text-amber-400' },
@@ -26,6 +40,15 @@
 	const handleCancel = () => {
 		showCancelModal = false;
 		enrollmentToCancel = null;
+	};
+
+	const formatDateTime = (value: string | Date | null) => {
+		if (!value) return '-';
+
+		return new Intl.DateTimeFormat('es-AR', {
+			dateStyle: 'medium',
+			timeStyle: 'short'
+		}).format(new Date(value));
 	};
 
 	// Watch for form submission result
@@ -68,6 +91,12 @@
 		</div>
 	</div>
 
+	{#if form?.error}
+		<div class="rounded-2xl border border-red-800 bg-red-950/30 p-5 text-red-300">
+			{form.error}
+		</div>
+	{/if}
+
 	<!-- Success Message -->
 	{#if form?.success}
 		<div class="rounded-2xl border border-emerald-800 bg-emerald-950/30 p-6">
@@ -91,6 +120,136 @@
 			</div>
 		</div>
 	{/if}
+
+	<!-- Mesas de examen -->
+	<section class="space-y-4">
+		<div class="flex items-end justify-between gap-4">
+			<div>
+				<p class="text-sm tracking-[0.2em] text-indigo-400 uppercase">Evaluaciones</p>
+				<h2 class="mt-1 text-2xl font-bold">Inscripciones a evaluaciones</h2>
+				<p class="mt-1 text-sm text-slate-400">
+					Podés inscribirte durante las 72 horas habilitadas para cada instancia evaluativa.
+				</p>
+			</div>
+		</div>
+
+		{#if data.examTables.length === 0}
+			<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+				<p class="text-sm text-slate-400">
+					No hay evaluaciones con inscripción disponible para tus materias.
+				</p>
+			</div>
+		{:else}
+			<div class="grid gap-4">
+				{#each data.examTables as exam}
+					<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+						<div class="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+							<div class="min-w-0">
+								<div class="flex flex-wrap items-center gap-2">
+									<span
+										class="rounded-full bg-indigo-950 px-3 py-1 text-xs font-medium text-indigo-300"
+									>
+										{getEvaluationTypeLabel(exam.type)}
+									</span>
+
+									{#if exam.registration?.status === 'REGISTERED'}
+										<span
+											class="rounded-full bg-emerald-950 px-3 py-1 text-xs font-medium text-emerald-300"
+										>
+											Inscripto
+										</span>
+									{:else if exam.registrationOpen}
+										<span
+											class="rounded-full bg-amber-950 px-3 py-1 text-xs font-medium text-amber-300"
+										>
+											Inscripción abierta
+										</span>
+									{:else}
+										<span
+											class="rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-400"
+										>
+											Inscripción cerrada
+										</span>
+									{/if}
+								</div>
+
+								<h3 class="mt-3 text-xl font-semibold text-white">
+									{exam.subject.name}
+								</h3>
+
+								<p class="mt-1 text-sm text-slate-400">
+									{exam.subject.code} · Año {exam.subject.yearLevel}
+								</p>
+
+								<p class="mt-3 font-medium text-slate-200">
+									{exam.title}
+								</p>
+
+								{#if exam.description}
+									<p class="mt-1 text-sm text-slate-400">
+										{exam.description}
+									</p>
+								{/if}
+
+								<div class="mt-5 grid gap-4 text-sm sm:grid-cols-3">
+									<div>
+										<p class="text-xs text-slate-500">Fecha del examen</p>
+										<p class="mt-1 font-medium">
+											{formatDateTime(exam.evaluationDate)}
+										</p>
+									</div>
+
+									<div>
+										<p class="text-xs text-slate-500">Inscripción hasta</p>
+										<p class="mt-1 font-medium">
+											{formatDateTime(exam.registrationClosesAt)}
+										</p>
+									</div>
+
+									<div>
+										<p class="text-xs text-slate-500">Docente</p>
+										<p class="mt-1 font-medium">{exam.teacher}</p>
+									</div>
+								</div>
+							</div>
+
+							<div class="shrink-0">
+								{#if exam.registration?.status === 'REGISTERED'}
+									{#if exam.registrationOpen}
+										<form method="POST" action="?/cancelExam" use:enhance>
+											<input type="hidden" name="registrationId" value={exam.registration.id} />
+
+											<button
+												type="submit"
+												class="rounded-xl border border-red-900/60 px-4 py-3 text-sm font-semibold text-red-400 transition hover:bg-red-950/40"
+											>
+												Cancelar inscripción
+											</button>
+										</form>
+									{:else}
+										<p class="text-sm font-medium text-emerald-400">Inscripción confirmada</p>
+									{/if}
+								{:else if exam.registrationOpen}
+									<form method="POST" action="?/registerExam" use:enhance>
+										<input type="hidden" name="evaluationId" value={exam.id} />
+
+										<button
+											type="submit"
+											class="rounded-xl bg-indigo-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-600"
+										>
+											Inscribirme
+										</button>
+									</form>
+								{:else}
+									<p class="text-sm text-slate-500">La ventana de inscripción finalizó</p>
+								{/if}
+							</div>
+						</div>
+					</div>
+				{/each}
+			</div>
+		{/if}
+	</section>
 
 	<!-- Enrollments List -->
 	{#if data.enrollments.length === 0}

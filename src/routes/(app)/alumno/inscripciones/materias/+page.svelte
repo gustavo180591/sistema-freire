@@ -12,17 +12,30 @@
 
 	const toggleSubject = (subjectId: string) => {
 		const newSet = new Set(selectedSubjects);
+		const newCommissions = new Map(selectedCommissions);
+
 		if (newSet.has(subjectId)) {
 			newSet.delete(subjectId);
-			selectedCommissions.delete(subjectId);
+			newCommissions.delete(subjectId);
 		} else {
 			newSet.add(subjectId);
 		}
+
 		selectedSubjects = newSet;
+		selectedCommissions = newCommissions;
 	};
 
 	const selectCommission = (subjectId: string, commissionId: string) => {
-		selectedCommissions.set(subjectId, commissionId);
+		const newCommissions = new Map(selectedCommissions);
+		newCommissions.set(subjectId, commissionId);
+		selectedCommissions = newCommissions;
+	};
+
+	const allSelectedSubjectsHaveCommission = () => {
+		return (
+			selectedSubjects.size > 0 &&
+			[...selectedSubjects].every((subjectId) => selectedCommissions.has(subjectId))
+		);
 	};
 
 	const canEnroll = (subject: any) => {
@@ -39,6 +52,7 @@
 	};
 
 	const handleEnroll = () => {
+		if (!allSelectedSubjectsHaveCommission()) return;
 		showConfirmation = true;
 	};
 
@@ -262,7 +276,8 @@
 						<button
 							type="button"
 							onclick={handleEnroll}
-							class="rounded-xl bg-indigo-500 px-6 py-3 font-medium text-white transition hover:bg-indigo-600"
+							disabled={!allSelectedSubjectsHaveCommission()}
+							class="rounded-xl bg-indigo-500 px-6 py-3 font-medium text-white transition hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-indigo-500"
 						>
 							Confirmar Inscripción
 						</button>

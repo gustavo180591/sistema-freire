@@ -167,6 +167,7 @@ model Student {
   academicHistory         AcademicYearHistory[]
   attendanceEntries       AttendanceEntry[]
   grades                  Grade[]
+  examRegistrations       ExamRegistration[]
   payments                Payment[]
   scholarships            Scholarship[]
   scholarshipHistory      ScholarshipHistory[]
@@ -1033,6 +1034,8 @@ model Evaluation {
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
   closedAt              DateTime?
+  registrationOpensAt   DateTime?
+  registrationClosesAt  DateTime?
   closedByUserId        String?
   closedReason          String?
   commissionId          String?
@@ -1059,6 +1062,7 @@ model Evaluation {
   reopenedByUser        User?              @relation("EvaluationReopener", fields: [reopenedByUserId], references: [id])
   subject               Subject            @relation(fields: [subjectId], references: [id])
   grades                Grade[]
+  examRegistrations     ExamRegistration[]
 
   @@index([subjectId])
   @@index([commissionId])
@@ -1067,6 +1071,25 @@ model Evaluation {
   @@index([isClosed])
   @@index([parentEvaluationId])
   @@map("evaluations")
+}
+
+model ExamRegistration {
+  id           String                 @id @default(cuid())
+  evaluationId String
+  studentId    String
+  status       ExamRegistrationStatus @default(REGISTERED)
+  registeredAt DateTime               @default(now())
+  cancelledAt  DateTime?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  evaluation Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([evaluationId, studentId])
+  @@index([evaluationId, status])
+  @@index([studentId, status])
+  @@map("exam_registrations")
 }
 
 model SubjectCommission {
@@ -1243,6 +1266,11 @@ enum EnrollmentStatus {
 enum RegularityStatus {
   REGULAR
   LIBRE
+}
+
+enum ExamRegistrationStatus {
+  REGISTERED
+  CANCELLED
 }
 
 enum EvaluationType {

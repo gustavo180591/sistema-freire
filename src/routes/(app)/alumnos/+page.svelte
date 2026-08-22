@@ -23,7 +23,8 @@
 			return (
 				fullName.includes(query) ||
 				student.email.toLowerCase().includes(query) ||
-				student.dni.toLowerCase().includes(query)
+				student.dni.toLowerCase().includes(query) ||
+				student.academicLocation.toLowerCase().includes(query)
 			);
 		})
 	);
@@ -50,6 +51,8 @@
 		email: string;
 		career: string;
 		careerId: string;
+		academicLocation: string;
+		academicLocationId: string;
 		status: string;
 		isBecado: boolean;
 		isRecursante: boolean;
@@ -333,7 +336,7 @@
 					</svg>
 					<input
 						type="text"
-						placeholder="Buscar por nombre, email o DNI"
+						placeholder="Buscar por nombre, email, DNI o localidad"
 						bind:value={searchQuery}
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 py-2 pr-4 pl-10 text-sm text-slate-300 placeholder-slate-500 transition outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
 					/>
@@ -374,6 +377,11 @@
 							class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
 						>
 							Carrera
+						</th>
+						<th
+							class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
+						>
+							Localidad
 						</th>
 						<th
 							class="px-4 py-3 text-left text-xs font-semibold tracking-wider text-slate-400 uppercase"
@@ -485,6 +493,12 @@
 									title={student.career}
 								>
 									<div class="max-w-[200px] truncate">{student.career}</div>
+								</td>
+								<td
+									class="px-4 py-3 text-sm whitespace-nowrap text-slate-300"
+									title={student.academicLocation}
+								>
+									<div class="max-w-[200px] truncate">{student.academicLocation}</div>
 								</td>
 								<td class="px-4 py-3 text-sm whitespace-nowrap text-slate-300">
 									{student.currentYear || 'En curso'}

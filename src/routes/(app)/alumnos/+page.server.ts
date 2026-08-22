@@ -59,20 +59,24 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			},
 			student: {
 				include: {
-					career: true
+					career: true,
+					location: true
 				}
 			}
 		},
 		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
 	});
 
-	// Filtrar por localidades si el usuario no tiene acceso global
+	// Filtrar alumnos por su localidad/sede académica.
+	// - Usuarios con acceso limitado: solo ven sus localidades permitidas.
+	// - Usuarios globales: se filtra únicamente cuando seleccionan una localidad.
 	let filteredUsers = usersWithAlumnoRole;
-	if (!hasGlobalAccess && effectiveLocationIds.length > 0) {
+
+	if (effectiveLocationIds.length > 0 && (!hasGlobalAccess || selectedLocationId !== null)) {
 		filteredUsers = usersWithAlumnoRole.filter((user) => {
-			if (!user.student) return false;
-			// Verificar si la carrera del alumno está en las localidades permitidas
-			return effectiveLocationIds.includes(user.student.careerId);
+			if (!user.student?.locationId) return false;
+
+			return effectiveLocationIds.includes(user.student.locationId);
 		});
 	}
 
@@ -115,6 +119,8 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			email: user.email,
 			career: user.student?.career?.name || 'Sin carrera',
 			careerId: user.student?.careerId || '',
+			academicLocation: user.student?.location?.name || 'Sin asignar',
+			academicLocationId: user.student?.locationId || '',
 			status: user.student?.status || 'ACTIVE',
 			isBecado: user.student?.isBecado || false,
 			isRecursante: user.student?.isRecursante || false,

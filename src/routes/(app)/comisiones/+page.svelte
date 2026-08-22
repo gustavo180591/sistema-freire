@@ -66,6 +66,26 @@
 		</div>
 	</div>
 
+	<!-- Error Message -->
+	{#if form?.error}
+		<div class="rounded-2xl border border-red-800 bg-red-950/30 p-6">
+			<div class="flex items-center gap-3">
+				<div class="rounded-full bg-red-500/20 p-2">
+					<svg class="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M6 18L18 6M6 6l12 12"
+						/>
+					</svg>
+				</div>
+
+				<p class="font-semibold text-red-400">{form.error}</p>
+			</div>
+		</div>
+	{/if}
+
 	<!-- Success Message -->
 	{#if form?.success}
 		<div class="rounded-2xl border border-emerald-800 bg-emerald-950/30 p-6">
@@ -188,6 +208,7 @@
 						<th class="px-6 py-4 text-sm font-semibold">Código</th>
 						<th class="px-6 py-4 text-sm font-semibold">Materia</th>
 						<th class="px-6 py-4 text-sm font-semibold">Carrera</th>
+						<th class="px-6 py-4 text-sm font-semibold">Localidad</th>
 						<th class="px-6 py-4 text-sm font-semibold">Docente</th>
 						<th class="px-6 py-4 text-sm font-semibold">Cupo</th>
 						<th class="px-6 py-4 text-sm font-semibold">Estado</th>
@@ -212,6 +233,13 @@
 									<p class="font-medium">{commission.career.name}</p>
 								{:else}
 									<p class="text-slate-500">General</p>
+								{/if}
+							</td>
+							<td class="px-6 py-4">
+								{#if commission.location}
+									<p class="font-medium">{commission.location.name}</p>
+								{:else}
+									<p class="text-slate-500">Sin localidad</p>
 								{/if}
 							</td>
 							<td class="px-6 py-4">
@@ -259,6 +287,7 @@
 									{/if}
 									{#if data.canDelete && commission.enrollmentsCount === 0}
 										<button
+											type="button"
 											onclick={() => initiateDelete(commission.id)}
 											class="rounded-lg border border-red-900/50 px-3 py-1.5 text-sm text-red-400 transition hover:bg-red-950/30"
 										>
@@ -290,7 +319,7 @@
 						Cancelar
 					</button>
 					{#if selectedCommission}
-						<form method="POST" action="?/delete" use:enhance onsubmit={handleDelete}>
+						<form method="POST" action="?/delete">
 							<input type="hidden" name="commissionId" value={selectedCommission} />
 							<button
 								type="submit"

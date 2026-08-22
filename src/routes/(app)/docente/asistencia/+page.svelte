@@ -1,447 +1,522 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import type { ActionData, PageData } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let {
+		data,
+		form
+	}: {
+		data: PageData;
+		form: ActionData;
+	} = $props();
 
-	let selectedSubject = $state<string>('');
-	let selectedCommission = $state<string>('');
-	let selectedDate = $state<string>(new Date().toISOString().split('T')[0]);
-	let attendanceMap = $state<Map<string, boolean>>(new Map());
-	let notesMap = $state<Map<string, string>>(new Map());
-	let formError = $state<string>('');
-	let formSuccess = $state<string>('');
+	type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'JUSTIFIED';
+
+	let selectedSubject = $state('');
+	let selectedCommission = $state('');
+	let selectedSchedule = $state('');
+
+	let selectedDate = $state(
+		new Intl.DateTimeFormat('en-CA', {
+			timeZone: 'America/Argentina/Buenos_Aires'
+		}).format(new Date())
+	);
+
+	let statuses = $state<Record<string, AttendanceStatus>>({});
+	let notes = $state<Record<string, string>>({});
+
 	let editingAttendance = $state<any>(null);
-	let editAttendanceMap = $state<Map<string, boolean>>(new Map());
-	let editNotesMap = $state<Map<string, string>>(new Map());
-	let editFormError = $state<string>('');
-	let editFormSuccess = $state<string>('');
+	let editStatuses = $state<Record<string, AttendanceStatus>>({});
+	let editNotes = $state<Record<string, string>>({});
 
-	// Set default subject when data is available
-	$effect(() => {
-		if (data.subjects.length > 0 && !selectedSubject) {
-			selectedSubject = data.subjects[0].id;
-		}
+	const dayLabels: Record<string, string> = {
+		MONDAY: 'Lunes',
+		TUESDAY: 'Martes',
+		WEDNESDAY: 'Miércoles',
+		THURSDAY: 'Jueves',
+		FRIDAY: 'Viernes',
+		SATURDAY: 'Sábado',
+		SUNDAY: 'Domingo'
+	};
+
+	const statusLabels: Record<AttendanceStatus, string> = {
+		PRESENT: 'Presente',
+		ABSENT: 'Ausente',
+		LATE: 'Tarde',
+		JUSTIFIED: 'Justificada'
+	};
+
+	let availableCommissions = $derived.by(() => {
+		return data.commissions.filter((commission) => commission.subjectId === selectedSubject);
 	});
 
-	// Reset commission when subject changes
-	$effect(() => {
+	let availableSchedules = $derived.by(() => {
+		return data.schedules.filter(
+			(schedule) =>
+				schedule.subjectId === selectedSubject && schedule.commissionId === selectedCommission
+		);
+	});
+
+	let currentStudents = $derived.by(() => {
+		if (!selectedCommission) return [];
+
+		return (
+			data.studentsByCommission[selectedCommission as keyof typeof data.studentsByCommission] ?? []
+		);
+	});
+
+	let presentCount = $derived.by(
+		() =>
+			currentStudents.filter((student: any) => (statuses[student.id] ?? 'PRESENT') === 'PRESENT')
+				.length
+	);
+
+	let lateCount = $derived.by(
+		() => currentStudents.filter((student: any) => statuses[student.id] === 'LATE').length
+	);
+
+	let absentCount = $derived.by(
+		() => currentStudents.filter((student: any) => statuses[student.id] === 'ABSENT').length
+	);
+
+	let justifiedCount = $derived.by(
+		() => currentStudents.filter((student: any) => statuses[student.id] === 'JUSTIFIED').length
+	);
+
+	function changeSubject() {
 		selectedCommission = '';
-	});
+		selectedSchedule = '';
+		statuses = {};
+		notes = {};
+	}
 
-	// Initialize attendance map with all students present by default
-	$effect(() => {
-		if (data.students.length > 0) {
-			const newMap = new Map<string, boolean>();
-			data.students.forEach((student: any) => {
-				newMap.set(student.id, true);
-			});
-			attendanceMap = newMap;
+	function changeCommission() {
+		selectedSchedule = '';
+
+		const students =
+			data.studentsByCommission[selectedCommission as keyof typeof data.studentsByCommission] ?? [];
+
+		statuses = Object.fromEntries(students.map((student: any) => [student.id, 'PRESENT']));
+
+		notes = Object.fromEntries(students.map((student: any) => [student.id, '']));
+	}
+
+	function setAll(status: AttendanceStatus) {
+		const next = { ...statuses };
+
+		for (const student of currentStudents) {
+			next[student.id] = status;
 		}
-	});
 
-	function toggleAttendance(studentId: string) {
-		attendanceMap.set(studentId, !attendanceMap.get(studentId));
+		statuses = next;
 	}
 
-	function resetForm() {
-		selectedDate = new Date().toISOString().split('T')[0];
-		selectedCommission = '';
-		attendanceMap = new Map();
-		notesMap = new Map();
-		data.students.forEach((student: any) => {
-			attendanceMap.set(student.id, true);
-		});
-		formError = '';
-		formSuccess = '';
+	function attendanceData() {
+		return JSON.stringify(
+			currentStudents.map((student: any) => ({
+				studentId: student.id,
+				status: statuses[student.id] ?? 'PRESENT',
+				notes: notes[student.id] ?? ''
+			}))
+		);
 	}
 
-	function startEditAttendance(attendance: any) {
-		editingAttendance = attendance;
-		editAttendanceMap = new Map();
-		editNotesMap = new Map();
-		attendance.entries.forEach((entry: any) => {
-			editAttendanceMap.set(entry.studentId, entry.present);
-			editNotesMap.set(entry.studentId, entry.notes || '');
-		});
-		editFormError = '';
-		editFormSuccess = '';
+	function startEdit(record: any) {
+		editingAttendance = record;
+
+		editStatuses = Object.fromEntries(
+			record.entries.map((entry: any) => [entry.studentId, entry.status])
+		);
+
+		editNotes = Object.fromEntries(
+			record.entries.map((entry: any) => [entry.studentId, entry.notes ?? ''])
+		);
 	}
 
-	function cancelEditAttendance() {
-		editingAttendance = null;
-		editAttendanceMap = new Map();
-		editNotesMap = new Map();
-		editFormError = '';
-		editFormSuccess = '';
-	}
+	function editAttendanceData() {
+		if (!editingAttendance) return '[]';
 
-	function toggleEditAttendance(studentId: string) {
-		editAttendanceMap.set(studentId, !editAttendanceMap.get(studentId));
-	}
-
-	function getEditAttendanceData() {
 		return JSON.stringify(
 			editingAttendance.entries.map((entry: any) => ({
 				studentId: entry.studentId,
-				present: editAttendanceMap.get(entry.studentId) ?? true,
-				notes: editNotesMap.get(entry.studentId) || ''
+				status: editStatuses[entry.studentId] ?? entry.status,
+				notes: editNotes[entry.studentId] ?? entry.notes ?? ''
 			}))
 		);
 	}
-
-	function getAttendanceData() {
-		return JSON.stringify(
-			data.students.map((student: any) => ({
-				studentId: student.id,
-				present: attendanceMap.get(student.id) ?? true,
-				notes: notesMap.get(student.id) || ''
-			}))
-		);
-	}
-
-	let presentCount = $derived.by(() => {
-		return Array.from(attendanceMap.values()).filter((v) => v).length;
-	});
-
-	let absentCount = $derived.by(() => {
-		return data.students.length - presentCount;
-	});
-
-	// Commissions filtered by selected subject
-	let availableCommissions = $derived.by(() => {
-		return data.commissions?.filter((c: any) => c.subjectId === selectedSubject) || [];
-	});
 </script>
 
-<div class="min-h-screen bg-slate-950 text-white">
-	<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-		<!-- Header -->
-		<div class="mb-8">
-			<h1 class="mb-2 text-3xl font-bold text-white">Registrar Asistencia</h1>
-			<p class="text-slate-400">Control de presencia en tus clases</p>
+<svelte:head>
+	<title>Asistencia | Docente</title>
+</svelte:head>
+
+<div class="mx-auto max-w-7xl space-y-8 p-6">
+	<header class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
+		<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Docente</p>
+		<h1 class="mt-2 text-3xl font-bold">Asistencia por materia</h1>
+		<p class="mt-2 text-slate-400">Seleccioná la materia, comisión y clase programada.</p>
+	</header>
+
+	{#if form?.error}
+		<div class="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-red-300">
+			{form.error}
 		</div>
+	{/if}
 
-		<!-- Formulario de Asistencia -->
-		<div class="mb-8">
-			<div class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-				<h2 class="mb-6 text-xl font-semibold text-white">Nueva Asistencia</h2>
-
-				{#if formError}
-					<div class="mb-4 rounded-xl border border-red-500/50 bg-red-500/20 p-4 text-red-400">
-						{formError}
-					</div>
-				{/if}
-
-				{#if formSuccess}
-					<div
-						class="mb-4 rounded-xl border border-green-500/50 bg-green-500/20 p-4 text-green-400"
-					>
-						{formSuccess}
-					</div>
-				{/if}
-
-				<form method="POST" class="space-y-6">
-					<div class="grid gap-6 md:grid-cols-2">
-						<div>
-							<label for="subject" class="mb-2 block text-sm font-medium text-slate-300"
-								>Materia</label
-							>
-							<select
-								id="subject"
-								name="subjectId"
-								bind:value={selectedSubject}
-								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-							>
-								{#each data.subjects as subject}
-									<option value={subject.id}>
-										{subject.code} - {subject.name} ({subject.careers.join(', ')})
-									</option>
-								{/each}
-							</select>
-						</div>
-
-						<div>
-							<label for="date" class="mb-2 block text-sm font-medium text-slate-300">Fecha</label>
-							<input
-								id="date"
-								name="date"
-								type="date"
-								bind:value={selectedDate}
-								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-							/>
-						</div>
-					</div>
-
-					{#if availableCommissions.length > 0}
-						<div>
-							<label for="commission" class="mb-2 block text-sm font-medium text-slate-300"
-								>Comisión (opcional)</label
-							>
-							<select
-								id="commission"
-								name="commissionId"
-								bind:value={selectedCommission}
-								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-							>
-								<option value="">Sin comisión</option>
-								{#each availableCommissions as commission}
-									<option value={commission.id}>
-										{commission.code} - {commission.locationName || 'Sin localidad'}
-										{commission.schedule ? `(${commission.schedule})` : ''}
-									</option>
-								{/each}
-							</select>
-						</div>
-					{/if}
-
-					<!-- Resumen de asistencia -->
-					<div class="grid gap-4 md:grid-cols-2">
-						<div class="rounded-xl border border-green-500/30 bg-green-500/10 p-4">
-							<p class="text-sm text-green-400">Presentes</p>
-							<p class="text-2xl font-bold text-green-400">{presentCount}</p>
-						</div>
-						<div class="rounded-xl border border-red-500/30 bg-red-500/10 p-4">
-							<p class="text-sm text-red-400">Ausentes</p>
-							<p class="text-2xl font-bold text-red-400">{absentCount}</p>
-						</div>
-					</div>
-
-					<!-- Lista de estudiantes -->
-					<div>
-						<h3 class="mb-4 text-lg font-semibold text-white">Estudiantes</h3>
-						<div class="space-y-3">
-							{#each data.students as student (student.id)}
-								<div
-									class="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-950 p-4"
-								>
-									<div class="flex-1">
-										<p class="font-medium text-white">{student.lastName}, {student.firstName}</p>
-										<p class="text-sm text-slate-400">
-											{student.dni} - {student.career}
-											{student.currentYear}°
-										</p>
-									</div>
-									<div class="flex items-center gap-4">
-										<label class="flex cursor-pointer items-center gap-2">
-											<input
-												type="checkbox"
-												checked={attendanceMap.get(student.id)}
-												onchange={() => toggleAttendance(student.id)}
-												class="h-5 w-5 rounded border-slate-600 bg-slate-950 text-green-500 focus:ring-green-500"
-											/>
-											<span class="text-sm text-slate-300">Presente</span>
-										</label>
-										<input
-											type="text"
-											placeholder="Notas..."
-											value={notesMap.get(student.id) || ''}
-											oninput={(e) => {
-												const target = e.target as HTMLInputElement;
-												notesMap.set(student.id, target.value);
-											}}
-											class="w-48 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white transition outline-none focus:border-slate-500"
-										/>
-									</div>
-								</div>
-							{/each}
-						</div>
-					</div>
-
-					<input type="hidden" name="attendanceData" value={getAttendanceData()} />
-
-					<div class="flex justify-end space-x-4">
-						<button
-							type="button"
-							onclick={resetForm}
-							class="rounded-2xl border border-slate-700 px-6 py-3 font-semibold text-white transition hover:bg-slate-800"
-						>
-							Limpiar
-						</button>
-						<button
-							type="submit"
-							class="rounded-2xl bg-white px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.02]"
-						>
-							Guardar Asistencia
-						</button>
-					</div>
-				</form>
-			</div>
+	{#if form?.success}
+		<div class="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-300">
+			{form.success}
 		</div>
+	{/if}
 
-		<!-- Asistencia Reciente -->
-		<div>
-			<h2 class="mb-4 text-xl font-semibold text-white">Asistencia Reciente</h2>
-			<div class="space-y-4">
-				{#each data.recentAttendance as attendance}
-					<div class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-						<div class="mb-4 flex items-center justify-between">
-							<div>
-								<p class="font-semibold text-white">{attendance.subject}</p>
-								<p class="text-sm text-slate-400">
-									{new Date(attendance.date).toLocaleDateString()}
-								</p>
-							</div>
-							<div class="flex items-center gap-4">
-								<div class="flex gap-4">
-									<div class="text-center">
-										<p class="text-sm text-green-400">Presentes</p>
-										<p class="text-xl font-bold text-green-400">{attendance.presentStudents}</p>
-									</div>
-									<div class="text-center">
-										<p class="text-sm text-red-400">Ausentes</p>
-										<p class="text-xl font-bold text-red-400">
-											{attendance.totalStudents - attendance.presentStudents}
-										</p>
-									</div>
-								</div>
-								<button
-									onclick={() => startEditAttendance(attendance)}
-									class="rounded-xl bg-blue-500/20 px-4 py-2 text-blue-400 transition-colors hover:bg-blue-500/30"
-								>
-									Editar
-								</button>
-							</div>
-						</div>
-						<div class="max-h-48 overflow-y-auto">
-							<table class="w-full">
-								<thead class="bg-slate-800">
-									<tr>
-										<th class="px-4 py-2 text-left text-xs font-medium text-slate-300 uppercase"
-											>Alumno</th
-										>
-										<th class="px-4 py-2 text-left text-xs font-medium text-slate-300 uppercase"
-											>Estado</th
-										>
-										<th class="px-4 py-2 text-left text-xs font-medium text-slate-300 uppercase"
-											>Notas</th
-										>
-									</tr>
-								</thead>
-								<tbody class="divide-y divide-slate-800">
-									{#each attendance.entries as entry}
-										<tr class="hover:bg-slate-800/50">
-											<td class="px-4 py-2 text-sm text-white">{entry.studentName}</td>
-											<td class="px-4 py-2 text-sm">
-												{#if entry.present}
-													<span
-														class="rounded-full bg-green-500/20 px-2 py-1 text-xs font-semibold text-green-400"
-														>Presente</span
-													>
-												{:else}
-													<span
-														class="rounded-full bg-red-500/20 px-2 py-1 text-xs font-semibold text-red-400"
-														>Ausente</span
-													>
-												{/if}
-											</td>
-											<td class="px-4 py-2 text-sm text-slate-300">{entry.notes || '-'}</td>
-										</tr>
-									{/each}
-								</tbody>
-							</table>
-						</div>
-					</div>
-				{/each}
-				{#if data.recentAttendance.length === 0}
-					<div
-						class="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-400"
-					>
-						No hay registros de asistencia aún
-					</div>
-				{/if}
-			</div>
-		</div>
-	</div>
-</div>
-
-<!-- Modal de Edición de Asistencia -->
-{#if editingAttendance}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-		<div
-			class="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-slate-800 bg-slate-900 p-8"
-		>
-			<div class="mb-6 flex items-center justify-between">
+	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+		<form method="POST" class="space-y-6">
+			<div class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
 				<div>
-					<h2 class="text-2xl font-bold text-white">Editar Asistencia</h2>
-					<p class="text-sm text-slate-400">
-						{editingAttendance.subject} - {new Date(editingAttendance.date).toLocaleDateString()}
-					</p>
+					<label for="subjectId" class="mb-2 block text-sm font-medium text-slate-300">
+						Materia
+					</label>
+
+					<select
+						id="subjectId"
+						name="subjectId"
+						bind:value={selectedSubject}
+						onchange={changeSubject}
+						required
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-indigo-500"
+					>
+						<option value=""> Seleccionar materia... </option>
+
+						{#each data.subjects as subject}
+							<option value={subject.id}>
+								{subject.code} - {subject.name}
+							</option>
+						{/each}
+					</select>
 				</div>
-				<button
-					onclick={cancelEditAttendance}
-					class="rounded-xl bg-slate-800 px-4 py-2 text-slate-400 transition-colors hover:bg-slate-700"
-				>
-					Cancelar
-				</button>
+
+				<div>
+					<label for="commissionId" class="mb-2 block text-sm font-medium text-slate-300">
+						Comisión
+					</label>
+
+					<select
+						id="commissionId"
+						name="commissionId"
+						bind:value={selectedCommission}
+						onchange={changeCommission}
+						disabled={!selectedSubject}
+						required
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-indigo-500 disabled:opacity-50"
+					>
+						<option value=""> Seleccionar comisión... </option>
+
+						{#each availableCommissions as commission}
+							<option value={commission.id}>
+								{commission.code}
+								{commission.career ? ` · ${commission.career}` : ''}
+								{commission.location ? ` · ${commission.location}` : ''}
+							</option>
+						{/each}
+					</select>
+				</div>
+
+				<div>
+					<label for="classScheduleId" class="mb-2 block text-sm font-medium text-slate-300">
+						Clase programada
+					</label>
+
+					<select
+						id="classScheduleId"
+						name="classScheduleId"
+						bind:value={selectedSchedule}
+						disabled={!selectedCommission}
+						required
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-indigo-500 disabled:opacity-50"
+					>
+						<option value=""> Seleccionar horario... </option>
+
+						{#each availableSchedules as schedule}
+							<option value={schedule.id}>
+								{dayLabels[schedule.dayOfWeek]}
+								· {schedule.startTime} - {schedule.endTime}
+								{schedule.classroom ? ` · ${schedule.classroom}` : ''}
+							</option>
+						{/each}
+					</select>
+				</div>
+
+				<div>
+					<label for="date" class="mb-2 block text-sm font-medium text-slate-300"> Fecha </label>
+
+					<input
+						id="date"
+						name="date"
+						type="date"
+						bind:value={selectedDate}
+						required
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-indigo-500"
+					/>
+				</div>
 			</div>
 
-			{#if editFormError}
-				<div class="mb-4 rounded-xl border border-red-500/50 bg-red-500/20 p-4 text-red-400">
-					{editFormError}
+			{#if selectedCommission && currentStudents.length > 0}
+				<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+					<div class="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+						<p class="text-sm text-emerald-300">Presentes</p>
+						<p class="mt-1 text-2xl font-bold">
+							{presentCount}
+						</p>
+					</div>
+
+					<div class="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4">
+						<p class="text-sm text-amber-300">Tarde</p>
+						<p class="mt-1 text-2xl font-bold">
+							{lateCount}
+						</p>
+					</div>
+
+					<div class="rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
+						<p class="text-sm text-red-300">Ausentes</p>
+						<p class="mt-1 text-2xl font-bold">
+							{absentCount}
+						</p>
+					</div>
+
+					<div class="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4">
+						<p class="text-sm text-blue-300">Justificadas</p>
+						<p class="mt-1 text-2xl font-bold">
+							{justifiedCount}
+						</p>
+					</div>
 				</div>
-			{/if}
 
-			{#if editFormSuccess}
-				<div class="mb-4 rounded-xl border border-green-500/50 bg-green-500/20 p-4 text-green-400">
-					{editFormSuccess}
+				<div class="flex flex-wrap gap-2">
+					<button
+						type="button"
+						onclick={() => setAll('PRESENT')}
+						class="rounded-xl border border-emerald-500/30 px-4 py-2 text-sm text-emerald-300"
+					>
+						Todos presentes
+					</button>
+
+					<button
+						type="button"
+						onclick={() => setAll('ABSENT')}
+						class="rounded-xl border border-red-500/30 px-4 py-2 text-sm text-red-300"
+					>
+						Todos ausentes
+					</button>
 				</div>
-			{/if}
 
-			<form method="POST" action="?/editAttendance" class="space-y-6">
-				<input type="hidden" name="attendanceId" value={editingAttendance.id} />
-				<input type="hidden" name="attendanceData" value={getEditAttendanceData()} />
+				<div class="overflow-hidden rounded-2xl border border-slate-800">
+					<div class="border-b border-slate-800 bg-slate-950 px-5 py-4">
+						<h2 class="font-semibold">Alumnos de la comisión</h2>
+						<p class="mt-1 text-sm text-slate-400">
+							{currentStudents.length} alumnos activos
+						</p>
+					</div>
 
-				<!-- Lista de estudiantes para editar -->
-				<div>
-					<h3 class="mb-4 text-lg font-semibold text-white">Estudiantes</h3>
-					<div class="space-y-3">
-						{#each editingAttendance.entries as entry (entry.studentId)}
-							<div
-								class="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-950 p-4"
-							>
-								<div class="flex-1">
-									<p class="font-medium text-white">{entry.studentName}</p>
-									<p class="text-sm text-slate-400">{entry.studentDni}</p>
+					<div class="divide-y divide-slate-800">
+						{#each currentStudents as student}
+							<div class="grid gap-4 p-4 lg:grid-cols-[1fr_220px_1fr] lg:items-center">
+								<div>
+									<p class="font-medium">
+										{student.lastName},
+										{student.firstName}
+									</p>
+									<p class="mt-1 text-sm text-slate-500">
+										DNI {student.dni} · {student.career}
+									</p>
 								</div>
-								<div class="flex items-center gap-4">
-									<label class="flex cursor-pointer items-center gap-2">
-										<input
-											type="checkbox"
-											checked={editAttendanceMap.get(entry.studentId)}
-											onchange={() => toggleEditAttendance(entry.studentId)}
-											class="h-5 w-5 rounded border-slate-600 bg-slate-950 text-green-500 focus:ring-green-500"
-										/>
-										<span class="text-sm text-slate-300">Presente</span>
-									</label>
-									<input
-										type="text"
-										placeholder="Notas..."
-										value={editNotesMap.get(entry.studentId) || ''}
-										oninput={(e) => {
-											const target = e.target as HTMLInputElement;
-											editNotesMap.set(entry.studentId, target.value);
-										}}
-										class="w-48 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white transition outline-none focus:border-slate-500"
-									/>
-								</div>
+
+								<select
+									value={statuses[student.id] ?? 'PRESENT'}
+									onchange={(event) => {
+										statuses = {
+											...statuses,
+											[student.id]: (event.currentTarget as HTMLSelectElement)
+												.value as AttendanceStatus
+										};
+									}}
+									class="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-indigo-500"
+								>
+									<option value="PRESENT"> Presente </option>
+									<option value="ABSENT"> Ausente </option>
+									<option value="LATE"> Tarde </option>
+									<option value="JUSTIFIED"> Justificada </option>
+								</select>
+
+								<input
+									type="text"
+									placeholder="Observación opcional..."
+									value={notes[student.id] ?? ''}
+									oninput={(event) => {
+										notes = {
+											...notes,
+											[student.id]: (event.currentTarget as HTMLInputElement).value
+										};
+									}}
+									class="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-indigo-500"
+								/>
 							</div>
 						{/each}
 					</div>
 				</div>
 
-				<div class="flex justify-end space-x-4">
-					<button
-						type="button"
-						onclick={cancelEditAttendance}
-						class="rounded-2xl border border-slate-700 px-6 py-3 font-semibold text-white transition hover:bg-slate-800"
-					>
-						Cancelar
-					</button>
+				<input type="hidden" name="attendanceData" value={attendanceData()} />
+
+				<div class="flex justify-end">
 					<button
 						type="submit"
-						class="rounded-2xl bg-blue-500 px-6 py-3 font-semibold text-white transition hover:bg-blue-600"
+						disabled={!selectedSchedule}
+						class="rounded-2xl bg-white px-7 py-3 font-semibold text-slate-950 transition hover:scale-[1.02] disabled:opacity-40"
 					>
-						Guardar Cambios
+						Guardar asistencia
+					</button>
+				</div>
+			{:else if selectedCommission}
+				<div class="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-6 text-amber-200">
+					Esta comisión no tiene alumnos con inscripción activa.
+				</div>
+			{/if}
+		</form>
+	</section>
+
+	<section class="space-y-4">
+		<div>
+			<h2 class="text-xl font-semibold">Asistencias recientes</h2>
+			<p class="text-sm text-slate-400">Historial registrado por este docente.</p>
+		</div>
+
+		{#each data.recentAttendance as record}
+			<article class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+				<div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+					<div>
+						<p class="font-semibold">
+							{record.subject}
+						</p>
+						<p class="mt-1 text-sm text-slate-400">
+							{record.commission ? `Comisión ${record.commission} · ` : ''}
+							{new Date(record.date).toLocaleDateString('es-AR')}
+							{record.startTime ? ` · ${record.startTime} - ${record.endTime}` : ''}
+						</p>
+					</div>
+
+					<div class="flex flex-wrap gap-2 text-xs">
+						<span class="rounded-lg bg-emerald-500/10 px-3 py-2 text-emerald-300">
+							{record.presentStudents} presentes
+						</span>
+						<span class="rounded-lg bg-amber-500/10 px-3 py-2 text-amber-300">
+							{record.lateStudents} tarde
+						</span>
+						<span class="rounded-lg bg-red-500/10 px-3 py-2 text-red-300">
+							{record.absentStudents} ausentes
+						</span>
+						<span class="rounded-lg bg-blue-500/10 px-3 py-2 text-blue-300">
+							{record.justifiedStudents} justificadas
+						</span>
+					</div>
+				</div>
+
+				<div class="mt-4 flex justify-end">
+					<button
+						type="button"
+						onclick={() => startEdit(record)}
+						class="rounded-xl border border-slate-700 px-4 py-2 text-sm transition hover:bg-slate-800"
+					>
+						Editar
+					</button>
+				</div>
+			</article>
+		{/each}
+
+		{#if data.recentAttendance.length === 0}
+			<div
+				class="rounded-2xl border border-slate-800 bg-slate-900/60 p-8 text-center text-slate-400"
+			>
+				No hay asistencias registradas todavía.
+			</div>
+		{/if}
+	</section>
+</div>
+
+{#if editingAttendance}
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+		<div
+			class="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 p-6"
+		>
+			<div class="mb-6 flex items-start justify-between gap-4">
+				<div>
+					<h2 class="text-2xl font-bold">Editar asistencia</h2>
+					<p class="mt-1 text-sm text-slate-400">
+						{editingAttendance.subject} ·
+						{new Date(editingAttendance.date).toLocaleDateString('es-AR')}
+					</p>
+				</div>
+
+				<button
+					type="button"
+					onclick={() => (editingAttendance = null)}
+					class="rounded-xl border border-slate-700 px-4 py-2"
+				>
+					Cerrar
+				</button>
+			</div>
+
+			<form method="POST" action="?/editAttendance" class="space-y-5">
+				<input type="hidden" name="attendanceId" value={editingAttendance.id} />
+
+				<input type="hidden" name="attendanceData" value={editAttendanceData()} />
+
+				<div class="divide-y divide-slate-800 rounded-2xl border border-slate-800">
+					{#each editingAttendance.entries as entry}
+						<div class="grid gap-4 p-4 lg:grid-cols-[1fr_220px_1fr] lg:items-center">
+							<div>
+								<p class="font-medium">
+									{entry.studentName}
+								</p>
+								<p class="text-sm text-slate-500">
+									DNI {entry.studentDni}
+								</p>
+							</div>
+
+							<select
+								value={editStatuses[entry.studentId]}
+								onchange={(event) => {
+									editStatuses = {
+										...editStatuses,
+										[entry.studentId]: (event.currentTarget as HTMLSelectElement)
+											.value as AttendanceStatus
+									};
+								}}
+								class="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+							>
+								{#each Object.entries(statusLabels) as [value, label]}
+									<option {value}>
+										{label}
+									</option>
+								{/each}
+							</select>
+
+							<input
+								type="text"
+								value={editNotes[entry.studentId] ?? ''}
+								oninput={(event) => {
+									editNotes = {
+										...editNotes,
+										[entry.studentId]: (event.currentTarget as HTMLInputElement).value
+									};
+								}}
+								placeholder="Observación..."
+								class="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
+							/>
+						</div>
+					{/each}
+				</div>
+
+				<div class="flex justify-end">
+					<button type="submit" class="rounded-xl bg-blue-500 px-6 py-3 font-semibold">
+						Guardar cambios
 					</button>
 				</div>
 			</form>

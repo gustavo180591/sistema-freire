@@ -55,14 +55,14 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			id: true,
 			firstName: true,
 			lastName: true,
-			subjects: { select: { subjectId: true } },
-			user: {
+			subjects: {
 				select: {
-					locationPermissions: { select: { locationId: true } }
+					subjectId: true,
+					assignmentType: true
 				}
 			}
 		},
-		orderBy: { lastName: 'asc' }
+		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
 	});
 
 	const locations = await prisma.location.findMany({
@@ -97,8 +97,10 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			id: teacher.id,
 			firstName: teacher.firstName,
 			lastName: teacher.lastName,
-			subjectIds: teacher.subjects.map((assignment) => assignment.subjectId),
-			locationIds: teacher.user.locationPermissions.map((permission) => permission.locationId)
+			subjectAssignments: teacher.subjects.map((assignment) => ({
+				subjectId: assignment.subjectId,
+				assignmentType: assignment.assignmentType
+			}))
 		})),
 		locations
 	};
@@ -212,26 +214,27 @@ export const actions: Actions = {
 			}
 		}
 
-		// Si se especifica docente, verificar materia y localidad habilitadas.
+		// Si se especifica docente, verificar que esté asignado académicamente a la materia.
 		if (teacherId) {
-			if (!locationId) {
-				return fail(400, { error: 'Seleccioná una localidad antes de asignar docente' });
-			}
-
-			const teacher = await prisma.teacher.findFirst({
+			const teacherAssignment = await prisma.subjectTeacher.findUnique({
 				where: {
-					id: teacherId,
-					status: 'ACTIVE',
-					subjects: { some: { subjectId } },
-					user: {
-						locationPermissions: { some: { locationId } }
+					subjectId_teacherId: {
+						subjectId,
+						teacherId
+					}
+				},
+				include: {
+					teacher: {
+						select: {
+							status: true
+						}
 					}
 				}
 			});
 
-			if (!teacher) {
+			if (!teacherAssignment || teacherAssignment.teacher.status !== 'ACTIVE') {
 				return fail(400, {
-					error: 'El docente no está habilitado para la materia o la localidad seleccionada'
+					error: 'El docente seleccionado no está asignado a esta materia'
 				});
 			}
 		}
@@ -255,6 +258,7 @@ export const actions: Actions = {
 				studyPlanId: studyPlanId || null,
 				teacherId: teacherId || null,
 				academicTermId,
+				locationId: locationId || null,
 				id: { not: params.id }
 			}
 		});

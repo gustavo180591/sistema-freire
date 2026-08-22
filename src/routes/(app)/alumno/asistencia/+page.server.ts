@@ -1,7 +1,39 @@
 import type { PageServerLoad } from './$types';
+import { error, redirect } from '@sveltejs/kit';
+
 import { prisma } from '$lib/server/db/prisma';
-import { redirect, error } from '@sveltejs/kit';
 import { getCurrentStudentForUser } from '$lib/server/students/current-student-service';
+
+type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'JUSTIFIED';
+
+function normalizeStatus(entry: { status: string | null; present: boolean }): AttendanceStatus {
+	if (
+		entry.status === 'PRESENT' ||
+		entry.status === 'ABSENT' ||
+		entry.status === 'LATE' ||
+		entry.status === 'JUSTIFIED'
+	) {
+		return entry.status;
+	}
+
+	return entry.present ? 'PRESENT' : 'ABSENT';
+}
+
+function calculatePercentage(statuses: AttendanceStatus[]) {
+	if (statuses.length === 0) {
+		return 0;
+	}
+
+	const computable = statuses.filter((status) => status !== 'JUSTIFIED');
+
+	if (computable.length === 0) {
+		return 100;
+	}
+
+	const attended = computable.filter((status) => status === 'PRESENT' || status === 'LATE').length;
+
+	return Math.round((attended / computable.length) * 10000) / 100;
+}
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
@@ -10,144 +42,108 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/login');
 	}
 
-	// Obtener el estudiante asociado al usuario (por userId o DNI)
 	const student = await getCurrentStudentForUser(user.id);
 
-	// Cargar datos adicionales del estudiante
-	const studentWithRelations = await prisma.student.findUnique({
-		where: { id: student.id },
-		include: {
-			career: true
+	const studentData = await prisma.student.findUnique({
+		where: {
+			id: student.id
 		}
 	});
 
-	if (!studentWithRelations) {
+	if (!studentData) {
 		throw error(404, 'No se encontraron datos del estudiante');
 	}
 
-	// Obtener estados de materia del estudiante (incluye attendancePercent y regularityStatus calculados)
-	const subjectStatuses = await prisma.studentSubjectStatus.findMany({
-		where: {
-			studentId: studentWithRelations.id
-		},
-		include: {
-			subject: true
-		}
-	});
-
-	// Obtener entradas de asistencia del estudiante (historial completo)
-	const attendanceEntries = await prisma.attendanceEntry.findMany({
-		where: {
-			studentId: studentWithRelations.id
-		},
-		include: {
-			attendance: {
-				include: {
-					subject: true
+	const [subjectStatuses, attendanceEntries] = await Promise.all([
+		prisma.studentSubjectStatus.findMany({
+			where: {
+				studentId: student.id
+			},
+			include: {
+				subject: true
+			}
+		}),
+		prisma.attendanceEntry.findMany({
+			where: {
+				studentId: student.id
+			},
+			include: {
+				attendance: {
+					include: {
+						subject: true,
+						commission: true,
+						classSchedule: true
+					}
+				}
+			},
+			orderBy: {
+				attendance: {
+					classDate: 'desc'
 				}
 			}
-		},
-		orderBy: {
-			attendance: {
-				classDate: 'desc'
-			}
-		}
-	});
+		})
+	]);
 
-	// Agrupar asistencias por materia con datos reales de StudentSubjectStatus
-	const attendanceBySubject = new Map();
+	const statusBySubject = new Map(subjectStatuses.map((status) => [status.subjectId, status]));
 
-	// Inicializar mapa con datos de StudentSubjectStatus
-	for (const status of subjectStatuses) {
-		const subjectId = status.subjectId;
-		attendanceBySubject.set(subjectId, {
-			subjectId: status.subjectId,
-			subjectName: status.subject.name,
-			subjectCode: status.subject.code,
-			attendancePercent: Number(status.attendancePercent),
-			regularityStatus: status.regularityStatus,
-			entries: [],
-			present: 0,
-			absent: 0,
-			total: 0
-		});
-	}
+	const grouped = new Map<string, any>();
 
-	// Agregar entradas de asistencia
 	for (const entry of attendanceEntries) {
-		const subjectId = entry.attendance.subjectId;
+		const subject = entry.attendance.subject;
 
-		if (!attendanceBySubject.has(subjectId)) {
-			// Si no hay StudentSubjectStatus, crear entrada temporal
-			attendanceBySubject.set(subjectId, {
-				subjectId: entry.attendance.subjectId,
-				subjectName: entry.attendance.subject?.name || 'Sin materia',
-				subjectCode: entry.attendance.subject?.code || '',
-				attendancePercent: 0,
-				regularityStatus: 'LIBRE',
-				entries: [],
-				present: 0,
-				absent: 0,
-				total: 0
+		const status = normalizeStatus(entry);
+
+		if (!grouped.has(subject.id)) {
+			grouped.set(subject.id, {
+				subjectId: subject.id,
+				subjectCode: subject.code,
+				subjectName: subject.name,
+				entries: []
 			});
 		}
 
-		const data = attendanceBySubject.get(subjectId);
-		data.entries.push({
+		grouped.get(subject.id).entries.push({
+			id: entry.id,
 			date: entry.attendance.classDate,
-			present: entry.present,
+			commission: entry.attendance.commission?.code ?? null,
+			startTime: entry.attendance.classSchedule?.startTime ?? null,
+			endTime: entry.attendance.classSchedule?.endTime ?? null,
+			status,
 			notes: entry.notes
 		});
-		data.total++;
-		if (entry.present) {
-			data.present++;
-		} else {
-			data.absent++;
-		}
 	}
 
-	// Convertir a array y agregar alertas de asistencia crítica
-	const subjects = Array.from(attendanceBySubject.values()).map((s) => {
-		const isCritical = s.attendancePercent < 75 && s.total > 0;
+	const subjects = [...grouped.values()].map((subject) => {
+		const statuses: AttendanceStatus[] = subject.entries.map(
+			(entry: { status: AttendanceStatus }) => entry.status
+		);
+
+		const subjectStatus = statusBySubject.get(subject.subjectId);
+
 		return {
-			...s,
-			isCritical,
-			percentage:
-				s.attendancePercent > 0
-					? s.attendancePercent
-					: s.total > 0
-						? Math.round((s.present / s.total) * 100)
-						: 0
+			...subject,
+			percentage: subjectStatus
+				? Number(subjectStatus.attendancePercent)
+				: calculatePercentage(statuses),
+			regularityStatus: subjectStatus?.regularityStatus ?? 'LIBRE',
+			total: statuses.length,
+			present: statuses.filter((status) => status === 'PRESENT').length,
+			late: statuses.filter((status) => status === 'LATE').length,
+			absent: statuses.filter((status) => status === 'ABSENT').length,
+			justified: statuses.filter((status) => status === 'JUSTIFIED').length
 		};
 	});
 
-	// Calcular estadísticas generales
-	const totalClasses = attendanceEntries.length;
-	const overallAttendance =
-		subjectStatuses.length > 0
-			? Math.round(
-					subjectStatuses.reduce((sum, s) => sum + Number(s.attendancePercent), 0) /
-						subjectStatuses.length
-				)
-			: totalClasses > 0
-				? Math.round((attendanceEntries.filter((e) => e.present).length / totalClasses) * 100)
-				: 0;
+	const allStatuses = attendanceEntries.map(normalizeStatus);
 
 	return {
 		student: {
-			id: studentWithRelations.id,
-			firstName: studentWithRelations.firstName,
-			lastName: studentWithRelations.lastName
+			id: studentData.id,
+			firstName: studentData.firstName,
+			lastName: studentData.lastName
 		},
 		subjects,
-		totalClasses,
-		overallAttendance,
-		recentEntries: attendanceEntries.slice(0, 10).map((e) => ({
-			date: e.attendance.classDate,
-			subject: e.attendance.subject?.name || 'Sin materia',
-			subjectCode: e.attendance.subject?.code || '',
-			present: e.present,
-			notes: e.notes
-		}))
+		totalClasses: attendanceEntries.length,
+		overallAttendance: calculatePercentage(allStatuses)
 	};
 };

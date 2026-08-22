@@ -18,6 +18,13 @@ import {
 } from '$lib/server/financial/scholarship-expiration-service';
 import { studentFinancialSummaryService } from '$lib/server/financial/student-financial-summary-service';
 import { studentTypeService } from '$lib/server/financial/student-type-service';
+import {
+	getScholarshipLifecycle,
+	reinstateScholarshipManually,
+	startScholarshipNegotiation,
+	resolveScholarshipNegotiation
+} from '$lib/server/financial/scholarship-lifecycle-service';
+import { checkPermission, requirePermission } from '$lib/server/auth/permissions-granular';
 
 /**
  * Genera cuotas mensuales faltantes desde el inicio del ciclo lectivo hasta el mes actual
@@ -356,6 +363,62 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	// Obtener estado de bloqueo financiero
 	const blockingStatus = await shouldBlockStudent(student.id);
 
+	// ---------------------------------------------------------
+	// Ciclo de vida de la beca
+	// ---------------------------------------------------------
+
+	const lifecycle = await getScholarshipLifecycle(student.id);
+
+	const canManageScholarship = await checkPermission(locals.user, 'SCHOLARSHIP', 'update');
+
+	const scholarshipLifecycle = {
+		isBecado: lifecycle.isBecado,
+		status: lifecycle.status,
+		scholarship: lifecycle.scholarship
+			? {
+					id: lifecycle.scholarship.id,
+					name: lifecycle.scholarship.name,
+					percentage: Number(lifecycle.scholarship.percentage),
+					active: lifecycle.scholarship.active,
+					status: lifecycle.scholarship.status,
+					startDate: lifecycle.scholarship.startDate.toISOString(),
+					endDate: lifecycle.scholarship.endDate?.toISOString() ?? null,
+					suspendedAt: lifecycle.scholarship.suspendedAt?.toISOString() ?? null,
+					suspensionReason: lifecycle.scholarship.suspensionReason,
+					reinstatedAt: lifecycle.scholarship.reinstatedAt?.toISOString() ?? null,
+
+					history: lifecycle.scholarship.history.map((item) => ({
+						id: item.id,
+						previousStatus: item.previousStatus,
+						newStatus: item.newStatus,
+						previousPercentage:
+							item.previousPercentage !== null ? Number(item.previousPercentage) : null,
+						newPercentage: item.newPercentage !== null ? Number(item.newPercentage) : null,
+						reason: item.reason,
+						notes: item.notes,
+						changedByName: item.changedByName,
+						createdAt: item.createdAt.toISOString()
+					})),
+
+					negotiations: lifecycle.scholarship.negotiations.map((item) => ({
+						id: item.id,
+						status: item.status,
+						previousPercentage: Number(item.previousPercentage),
+						requestedPercentage:
+							item.requestedPercentage !== null ? Number(item.requestedPercentage) : null,
+						approvedPercentage:
+							item.approvedPercentage !== null ? Number(item.approvedPercentage) : null,
+						debtAtRequest: Number(item.debtAtRequest),
+						reason: item.reason,
+						conditions: item.conditions,
+						resolutionNotes: item.resolutionNotes,
+						requestedAt: item.requestedAt.toISOString(),
+						resolvedAt: item.resolvedAt?.toISOString() ?? null
+					}))
+				}
+			: null
+	};
+
 	return {
 		student: {
 			id: student.id,
@@ -373,16 +436,197 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			financialLabel,
 			financialAmount,
 			pendingCharges: charges.filter((c) => c.pending > 0).length,
-			hasScholarship: student.isBecado,
+			hasScholarship:
+				lifecycle.status !== null && !['CANCELLED', 'EXPIRED'].includes(lifecycle.status),
 			blocked: blockingStatus.isBlocked,
 			blockingThreshold: blockingStatus.blockingThreshold,
 			blockingReason: blockingStatus.reason
 		},
-		charges
+		charges,
+		scholarshipLifecycle,
+		canManageScholarship
 	};
 };
 
 export const actions: Actions = {
+	startScholarshipNegotiation: async ({ params, locals, request }) => {
+		await requireFinancialAccess(locals.user, params.id);
+
+		if (!locals.user) {
+			return { error: 'No autenticado' };
+		}
+
+		await requirePermission(locals.user, 'SCHOLARSHIP', 'update');
+
+		const data = await request.formData();
+
+		const reason = data.get('reason')?.toString().trim() ?? '';
+		const conditions = data.get('conditions')?.toString().trim() ?? '';
+
+		if (!reason) {
+			return {
+				error: 'Ingresá el motivo de la negociación'
+			};
+		}
+
+		try {
+			await startScholarshipNegotiation(
+				params.id,
+				{
+					reason,
+					conditions: conditions || null
+				},
+				{
+					userId: locals.user.id,
+					userName: `${locals.user.firstName} ${locals.user.lastName}`
+				}
+			);
+
+			return {
+				success: true,
+				message: 'Negociación de beca iniciada correctamente'
+			};
+		} catch (error) {
+			console.error('Error al iniciar negociación de beca:', error);
+
+			return {
+				error: error instanceof Error ? error.message : 'No se pudo iniciar la negociación'
+			};
+		}
+	},
+
+	approveScholarshipNegotiation: async ({ params, locals, request }) => {
+		await requireFinancialAccess(locals.user, params.id);
+
+		if (!locals.user) {
+			return { error: 'No autenticado' };
+		}
+
+		await requirePermission(locals.user, 'SCHOLARSHIP', 'update');
+
+		const data = await request.formData();
+
+		const negotiationId = data.get('negotiationId')?.toString();
+
+		const resolutionNotes = data.get('resolutionNotes')?.toString().trim() ?? '';
+
+		if (!negotiationId) {
+			return {
+				error: 'Negociación no identificada'
+			};
+		}
+
+		const negotiation = await prisma.scholarshipNegotiation.findFirst({
+			where: {
+				id: negotiationId,
+				studentId: params.id
+			},
+			select: {
+				id: true
+			}
+		});
+
+		if (!negotiation) {
+			return {
+				error: 'La negociación no pertenece a este alumno'
+			};
+		}
+
+		try {
+			await resolveScholarshipNegotiation(
+				negotiationId,
+				{
+					approved: true,
+					resolutionNotes: resolutionNotes || null
+				},
+				{
+					userId: locals.user.id,
+					userName: `${locals.user.firstName} ${locals.user.lastName}`
+				}
+			);
+
+			return {
+				success: true,
+				message: 'Beca recuperada correctamente mediante negociación'
+			};
+		} catch (error) {
+			console.error('Error al aprobar negociación de beca:', error);
+
+			return {
+				error: error instanceof Error ? error.message : 'No se pudo aprobar la negociación'
+			};
+		}
+	},
+
+	rejectScholarshipNegotiation: async ({ params, locals, request }) => {
+		await requireFinancialAccess(locals.user, params.id);
+
+		if (!locals.user) {
+			return { error: 'No autenticado' };
+		}
+
+		await requirePermission(locals.user, 'SCHOLARSHIP', 'update');
+
+		const data = await request.formData();
+
+		const negotiationId = data.get('negotiationId')?.toString();
+
+		const resolutionNotes = data.get('resolutionNotes')?.toString().trim() ?? '';
+
+		if (!negotiationId) {
+			return {
+				error: 'Negociación no identificada'
+			};
+		}
+
+		if (!resolutionNotes) {
+			return {
+				error: 'Indicá el motivo por el cual se rechaza la recuperación'
+			};
+		}
+
+		const negotiation = await prisma.scholarshipNegotiation.findFirst({
+			where: {
+				id: negotiationId,
+				studentId: params.id
+			},
+			select: {
+				id: true
+			}
+		});
+
+		if (!negotiation) {
+			return {
+				error: 'La negociación no pertenece a este alumno'
+			};
+		}
+
+		try {
+			await resolveScholarshipNegotiation(
+				negotiationId,
+				{
+					approved: false,
+					resolutionNotes
+				},
+				{
+					userId: locals.user.id,
+					userName: `${locals.user.firstName} ${locals.user.lastName}`
+				}
+			);
+
+			return {
+				success: true,
+				message: 'Negociación rechazada. La beca continúa suspendida'
+			};
+		} catch (error) {
+			console.error('Error al rechazar negociación de beca:', error);
+
+			return {
+				error: error instanceof Error ? error.message : 'No se pudo rechazar la negociación'
+			};
+		}
+	},
+
 	changeStudentType: async ({ params, locals, request }) => {
 		await requireFinancialAccess(locals.user, params.id);
 
@@ -405,6 +649,31 @@ export const actions: Actions = {
 		}
 
 		try {
+			/*
+			 * Si estaba suspendido por mora y Secretaría/Finanzas
+			 * vuelve a seleccionar BECADO, se reactiva formalmente
+			 * la beca y el motivo queda auditado.
+			 *
+			 * No se recalculan cargos ya emitidos.
+			 */
+			if (newType === 'BECADO') {
+				const lifecycle = await getScholarshipLifecycle(params.id);
+
+				if (lifecycle.status === 'SUSPENDED_DEBT' || lifecycle.status === 'NEGOTIATION') {
+					await requirePermission(locals.user, 'SCHOLARSHIP', 'update');
+
+					await reinstateScholarshipManually(params.id, reason, {
+						userId: locals.user.id,
+						userName: `${locals.user.firstName} ${locals.user.lastName}`
+					});
+
+					return {
+						success: true,
+						message: 'La beca fue reactivada correctamente'
+					};
+				}
+			}
+
 			await studentTypeService.changeStudentType({
 				studentId: params.id,
 				newType,

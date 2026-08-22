@@ -730,7 +730,6 @@ export async function calculateAttendancePercent(
 	studentId: string,
 	subjectId: string
 ): Promise<number> {
-	// Obtener todos los registros de asistencia del estudiante en la materia
 	const attendanceEntries = await prisma.attendanceEntry.findMany({
 		where: {
 			studentId,
@@ -738,8 +737,9 @@ export async function calculateAttendancePercent(
 				subjectId
 			}
 		},
-		include: {
-			attendance: true
+		select: {
+			status: true,
+			present: true
 		}
 	});
 
@@ -747,13 +747,29 @@ export async function calculateAttendancePercent(
 		return 0;
 	}
 
-	// Contar presentes
-	const presentCount = attendanceEntries.filter((entry) => entry.present).length;
-	const totalCount = attendanceEntries.length;
+	// Durante la transición, registros sin status utilizan el booleano histórico.
+	const statuses = attendanceEntries.map(
+		(entry) => entry.status ?? (entry.present ? 'PRESENT' : 'ABSENT')
+	);
 
-	// Calcular porcentaje
-	const percent = (presentCount / totalCount) * 100;
-	return Math.round(percent * 100) / 100; // Redondear a 2 decimales
+	// JUSTIFIED no perjudica al alumno:
+	// no participa ni del numerador ni del denominador.
+	const computableStatuses = statuses.filter((status) => status !== 'JUSTIFIED');
+
+	if (computableStatuses.length === 0) {
+		// Si todas las clases registradas están justificadas,
+		// no debe perder regularidad por asistencia.
+		return 100;
+	}
+
+	// PRESENT y LATE cuentan como asistencia efectiva.
+	const attendedCount = computableStatuses.filter(
+		(status) => status === 'PRESENT' || status === 'LATE'
+	).length;
+
+	const percent = (attendedCount / computableStatuses.length) * 100;
+
+	return Math.round(percent * 100) / 100;
 }
 
 /**

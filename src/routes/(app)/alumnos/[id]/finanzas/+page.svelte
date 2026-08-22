@@ -5,7 +5,60 @@
 
 	const student = $derived(data.student);
 	const metrics = $derived(data.metrics);
-	const charges = $derived(data.charges);
+	const charges = $derived.by(() => {
+		return [...data.charges].sort((a, b) => {
+			const aConcept = String(a.concept ?? '').toUpperCase();
+			const bConcept = String(b.concept ?? '').toUpperCase();
+
+			const aPeriod = String(a.period ?? '').toUpperCase();
+			const bPeriod = String(b.period ?? '').toUpperCase();
+
+			// La inscripción siempre debe quedar al final.
+			const aIsEnrollment = aConcept.includes('INSCRIP') || aPeriod.includes('INSCRIPCION');
+
+			const bIsEnrollment = bConcept.includes('INSCRIP') || bPeriod.includes('INSCRIPCION');
+
+			if (aIsEnrollment !== bIsEnrollment) {
+				return aIsEnrollment ? 1 : -1;
+			}
+
+			// Para períodos mensuales YYYY-MM:
+			// el más reciente debe mostrarse primero.
+			const periodValue = (period: string) => {
+				const match = period.match(/^(\d{4})-(\d{2})$/);
+
+				if (!match) {
+					return 0;
+				}
+
+				const year = Number(match[1]);
+				const month = Number(match[2]);
+
+				return year * 100 + month;
+			};
+
+			const monthlyDifference = periodValue(bPeriod) - periodValue(aPeriod);
+
+			if (monthlyDifference !== 0) {
+				return monthlyDifference;
+			}
+
+			// Para otros cargos, si poseen fecha, mostrar
+			// también el más reciente primero.
+			const aDate = new Date(a.dueDate ?? 0).getTime();
+
+			const bDate = new Date(b.dueDate ?? 0).getTime();
+
+			return bDate - aDate;
+		});
+	});
+
+	const scholarshipLifecycle = $derived(data.scholarshipLifecycle);
+	const scholarship = $derived(scholarshipLifecycle.scholarship);
+
+	const openNegotiation = $derived(
+		scholarship?.negotiations?.find((negotiation) => negotiation.status === 'OPEN') ?? null
+	);
 
 	let showSuccess = $state(false);
 	let successOpacity = $state(1);
@@ -80,6 +133,30 @@
 	};
 
 	const translateStatus = (status: string) => statusTranslations[status] || status;
+
+	function getScholarshipStatusLabel(status: string | null): string {
+		const labels: Record<string, string> = {
+			ACTIVE: 'Activa',
+			SUSPENDED_DEBT: 'Suspendida por mora',
+			NEGOTIATION: 'En negociación',
+			CANCELLED: 'Cancelada',
+			EXPIRED: 'Vencida'
+		};
+
+		return status ? labels[status] || status : 'Sin beca';
+	}
+
+	function formatDate(value: string | null | undefined): string {
+		if (!value) return '—';
+
+		return new Intl.DateTimeFormat('es-AR', {
+			day: '2-digit',
+			month: '2-digit',
+			year: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
+		}).format(new Date(value));
+	}
 </script>
 
 <svelte:head>
@@ -133,10 +210,125 @@
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<p class="text-sm text-slate-400">Estado de beca</p>
-			<h2 class="mt-3 text-4xl font-bold">
-				{student.isBecado ? 'Becado' : 'Sin beca'}
+			<h2 class="mt-3 text-2xl font-bold">
+				{getScholarshipStatusLabel(scholarshipLifecycle.status)}
 			</h2>
+
+			{#if scholarship}
+				<p class="mt-2 text-sm text-slate-500">
+					{scholarship.percentage}% registrado
+				</p>
+			{/if}
 		</div>
+	</section>
+
+	<!-- Gestión de beca -->
+	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+		<div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+			<div>
+				<p class="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">
+					Beneficio financiero
+				</p>
+
+				<h2 class="mt-1 text-2xl font-bold text-white">Estado de la beca</h2>
+			</div>
+
+			<div class="rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3">
+				<p class="text-xs text-slate-500">Estado actual</p>
+				<p class="mt-1 font-bold text-white">
+					{getScholarshipStatusLabel(scholarshipLifecycle.status)}
+				</p>
+			</div>
+		</div>
+
+		{#if scholarship}
+			<div class="mt-6 grid gap-4 md:grid-cols-3">
+				<div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+					<p class="text-xs text-slate-500">Beca</p>
+					<p class="mt-2 font-semibold text-white">
+						{scholarship.name}
+					</p>
+				</div>
+
+				<div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+					<p class="text-xs text-slate-500">Porcentaje registrado</p>
+					<p class="mt-2 font-semibold text-white">
+						{scholarship.percentage}%
+					</p>
+				</div>
+
+				<div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+					<p class="text-xs text-slate-500">Última reactivación</p>
+					<p class="mt-2 font-semibold text-white">
+						{formatDate(scholarship.reinstatedAt)}
+					</p>
+				</div>
+			</div>
+
+			{#if scholarship.status === 'SUSPENDED_DEBT'}
+				<div class="mt-5 rounded-2xl border border-amber-700/60 bg-amber-950/20 p-5">
+					<p class="font-semibold text-amber-300">Beca suspendida por mora</p>
+
+					{#if scholarship.suspensionReason}
+						<p class="mt-2 text-sm text-slate-300">
+							{scholarship.suspensionReason}
+						</p>
+					{/if}
+
+					<p class="mt-3 text-sm text-slate-400">
+						Para devolverle la beca al alumno utilizá
+						<strong class="text-slate-200">Cambiar tipo de alumno</strong>, seleccioná
+						<strong class="text-slate-200">Becado</strong>
+						y registrá obligatoriamente el motivo de la reactivación.
+					</p>
+				</div>
+			{/if}
+
+			{#if scholarship.history.length > 0}
+				<div class="mt-8 border-t border-slate-800 pt-6">
+					<h3 class="text-lg font-bold text-white">Historial de la beca</h3>
+
+					<div class="mt-4 space-y-3">
+						{#each scholarship.history as history}
+							<div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+								<div class="flex flex-col gap-2 sm:flex-row sm:justify-between">
+									<div>
+										<p class="font-medium text-slate-200">
+											{history.reason}
+										</p>
+
+										<p class="mt-1 text-xs text-slate-500">
+											{history.previousStatus
+												? `${getScholarshipStatusLabel(history.previousStatus)} → `
+												: ''}
+											{getScholarshipStatusLabel(history.newStatus)}
+										</p>
+
+										{#if history.notes}
+											<p class="mt-2 text-sm text-slate-400">
+												{history.notes}
+											</p>
+										{/if}
+
+										{#if history.changedByName}
+											<p class="mt-2 text-xs text-slate-600">
+												Responsable: {history.changedByName}
+											</p>
+										{/if}
+									</div>
+
+									<p class="shrink-0 text-xs text-slate-500">
+										{formatDate(history.createdAt)}
+									</p>
+								</div>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
+		{:else}
+			<p class="mt-5 text-sm text-slate-500">El alumno no posee una beca registrada.</p>
+		{/if}
 	</section>
 
 	<!-- CTA -->

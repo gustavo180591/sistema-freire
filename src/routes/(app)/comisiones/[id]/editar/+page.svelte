@@ -19,14 +19,38 @@
 	);
 
 	const eligibleTeachers = $derived(
-		selectedSubject && selectedLocation
-			? data.teachers.filter(
-					(teacher) =>
-						teacher.subjectIds.includes(selectedSubject) &&
-						teacher.locationIds.includes(selectedLocation)
+		selectedSubject
+			? data.teachers.filter((teacher) =>
+					teacher.subjectAssignments.some((assignment) => assignment.subjectId === selectedSubject)
 				)
 			: []
 	);
+
+	const selectedSubjectData = $derived(
+		data.subjects.find((subject) => subject.id === selectedSubject)
+	);
+
+	const scheduleConfigurationHref = $derived.by(() => {
+		const params = new URLSearchParams();
+
+		if (selectedLocation) {
+			params.set('locationId', selectedLocation);
+		}
+
+		if (selectedCareer) {
+			params.set('careerId', selectedCareer);
+		}
+
+		if (selectedSubjectData?.yearLevel) {
+			params.set('yearLevel', String(selectedSubjectData.yearLevel));
+		}
+
+		params.set('active', 'true');
+
+		const query = params.toString();
+
+		return `/configuracion/horarios${query ? `?${query}` : ''}`;
+	});
 
 	// Actualizar plan si la carrera cambia
 	$effect(() => {
@@ -95,7 +119,7 @@
 
 	<!-- Form -->
 	<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-8">
-		<form method="POST" use:enhance class="space-y-6">
+		<form method="POST" action="?/update" use:enhance class="space-y-6">
 			<div class="grid gap-6 md:grid-cols-2">
 				<!-- Código -->
 				<div>
@@ -203,21 +227,29 @@
 						id="teacherId"
 						name="teacherId"
 						bind:value={selectedTeacher}
-						disabled={!selectedSubject || !selectedLocation}
-						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
+						disabled={!selectedSubject}
+						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none disabled:opacity-50"
 					>
 						<option value="">Sin asignar</option>
+
 						{#each eligibleTeachers as teacher}
+							{@const assignment = teacher.subjectAssignments.find(
+								(item) => item.subjectId === selectedSubject
+							)}
+
 							<option value={teacher.id}>
-								{teacher.lastName}
-								{teacher.firstName}
+								{teacher.lastName}, {teacher.firstName}
+								{assignment?.assignmentType === 'TITULAR'
+									? ' (Titular)'
+									: assignment?.assignmentType === 'SUPLENTE'
+										? ' (Suplente)'
+										: ''}
 							</option>
 						{/each}
 					</select>
-					{#if selectedSubject && selectedLocation && eligibleTeachers.length === 0}
-						<p class="mt-2 text-xs text-amber-400">
-							No hay docentes habilitados para esta materia y localidad.
-						</p>
+
+					{#if selectedSubject && eligibleTeachers.length === 0}
+						<p class="mt-2 text-xs text-amber-400">No hay docentes asignados a esta materia.</p>
 					{/if}
 				</div>
 
@@ -274,15 +306,37 @@
 
 			<!-- Horario -->
 			<div>
-				<label for="schedule" class="mb-2 block text-sm font-medium text-slate-300">Horario</label>
-				<input
-					id="schedule"
-					type="text"
-					name="schedule"
-					value={data.commission.schedule || ''}
-					placeholder="Ej: Lunes 14:00-18:00, Miércoles 14:00-18:00"
-					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
-				/>
+				<p id="schedule-label" class="mb-2 block text-sm font-medium text-slate-300">Horario</p>
+
+				<!-- Conservamos el valor histórico mientras ClassSchedule es la fuente operativa -->
+				<input type="hidden" name="schedule" value={data.commission.schedule || ''} />
+
+				<a
+					href={scheduleConfigurationHref}
+					aria-labelledby="schedule-label"
+					class="group flex w-full items-center justify-between rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 transition hover:border-indigo-500 hover:bg-slate-900"
+				>
+					<div>
+						<p class="font-medium">
+							{data.commission.schedule || 'Ver / configurar horarios'}
+						</p>
+
+						<p class="mt-1 text-xs text-slate-500">
+							Abrir horario de
+							{selectedSubjectData?.yearLevel
+								? ` ${selectedSubjectData.yearLevel}° año`
+								: ' la materia'}
+							{selectedLocation ? ' en la localidad seleccionada' : ''}
+						</p>
+					</div>
+
+					<span
+						class="text-xl text-slate-500 transition group-hover:translate-x-1 group-hover:text-indigo-400"
+						aria-hidden="true"
+					>
+						→
+					</span>
+				</a>
 			</div>
 
 			<!-- Observaciones -->

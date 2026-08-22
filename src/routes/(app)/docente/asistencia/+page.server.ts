@@ -1,10 +1,78 @@
-import { redirect } from '@sveltejs/kit';
-import type { PageServerLoad, Actions } from './$types';
-import { prisma } from '$lib/server/db/prisma';
-import { requireRole, getUserAllowedLocationIds } from '$lib/server/auth/authorization';
-import { auditLog } from '$lib/server/audit';
+import { fail, redirect } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
+
 import { AuditAction } from '@prisma/client';
+
+import { prisma } from '$lib/server/db/prisma';
+import { getUserAllowedLocationIds, requireRole } from '$lib/server/auth/authorization';
+import { auditLog } from '$lib/server/audit';
 import { updateAttendanceStatus } from '$lib/server/academic/plan-logic';
+
+type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'JUSTIFIED';
+
+const VALID_STATUSES = new Set<AttendanceStatus>(['PRESENT', 'ABSENT', 'LATE', 'JUSTIFIED']);
+
+function legacyPresent(status: AttendanceStatus): boolean {
+	return status === 'PRESENT' || status === 'LATE';
+}
+
+function normalizeStatus(entry: { status: string | null; present: boolean }): AttendanceStatus {
+	if (
+		entry.status === 'PRESENT' ||
+		entry.status === 'ABSENT' ||
+		entry.status === 'LATE' ||
+		entry.status === 'JUSTIFIED'
+	) {
+		return entry.status;
+	}
+
+	return entry.present ? 'PRESENT' : 'ABSENT';
+}
+
+function parseClassDate(value: string): Date {
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+		throw new Error('Fecha inválida');
+	}
+
+	const date = new Date(`${value}T12:00:00.000Z`);
+
+	if (Number.isNaN(date.getTime())) {
+		throw new Error('Fecha inválida');
+	}
+
+	return date;
+}
+
+function getWeekDay(value: string) {
+	const date = parseClassDate(value);
+
+	const days = [
+		'SUNDAY',
+		'MONDAY',
+		'TUESDAY',
+		'WEDNESDAY',
+		'THURSDAY',
+		'FRIDAY',
+		'SATURDAY'
+	] as const;
+
+	return days[date.getUTCDay()];
+}
+
+function todayInArgentina(): string {
+	const parts = new Intl.DateTimeFormat('en-CA', {
+		timeZone: 'America/Argentina/Buenos_Aires',
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit'
+	}).formatToParts(new Date());
+
+	const year = parts.find((part) => part.type === 'year')?.value;
+	const month = parts.find((part) => part.type === 'month')?.value;
+	const day = parts.find((part) => part.type === 'day')?.value;
+
+	return `${year}-${month}-${day}`;
+}
 
 export const load: PageServerLoad = async ({ locals }) => {
 	requireRole(locals.user, ['DOCENTE']);
@@ -13,140 +81,230 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/login');
 	}
 
-	// Obtener localidades permitidas para el docente
-	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
-
-	// Obtener el docente asociado al usuario
 	const teacher = await prisma.teacher.findUnique({
-		where: { userId: locals.user.id }
+		where: {
+			userId: locals.user.id
+		},
+		select: {
+			id: true,
+			firstName: true,
+			lastName: true
+		}
 	});
 
 	if (!teacher) {
 		throw redirect(303, '/dashboard');
 	}
 
-	// Obtener las materias asignadas al docente, filtrando por localidades permitidas
-	const subjectTeachers = await prisma.subjectTeacher.findMany({
-		where: { teacherId: teacher.id },
+	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+
+	// Obtener TODAS las materias asignadas al docente mediante SubjectTeacher.
+	// Esto permite mostrarlas aunque todavía no tengan horario cargado.
+	const subjectAssignments = await prisma.subjectTeacher.findMany({
+		where: {
+			teacherId: teacher.id
+		},
 		include: {
+			subject: true
+		},
+		orderBy: {
 			subject: {
+				name: 'asc'
+			}
+		}
+	});
+
+	const schedules = await prisma.classSchedule.findMany({
+		where: {
+			teacherId: teacher.id,
+			active: true,
+			commissionId: {
+				not: null
+			},
+			OR: [
+				{
+					locationId: null
+				},
+				{
+					locationId: {
+						in: allowedLocationIds
+					}
+				}
+			]
+		},
+		include: {
+			subject: true,
+			commission: {
 				include: {
-					careerSubjects: {
-						where: {
-							career: {
-								locations: {
-									some: {
-										locationId: { in: allowedLocationIds }
-									}
-								}
-							}
-						},
+					career: true,
+					location: true,
+					academicTerm: true
+				}
+			},
+			career: true,
+			location: true
+		},
+		orderBy: [
+			{
+				subject: {
+					name: 'asc'
+				}
+			},
+			{
+				dayOfWeek: 'asc'
+			},
+			{
+				startTime: 'asc'
+			}
+		]
+	});
+
+	const commissionIds = [
+		...new Set(
+			schedules.map((schedule) => schedule.commissionId).filter((id): id is string => Boolean(id))
+		)
+	];
+
+	const enrollments = commissionIds.length
+		? await prisma.subjectEnrollment.findMany({
+				where: {
+					commissionId: {
+						in: commissionIds
+					},
+					status: 'ACTIVE',
+					student: {
+						status: 'ACTIVE'
+					}
+				},
+				include: {
+					student: {
 						include: {
 							career: true
 						}
 					}
-				}
-			}
-		}
-	});
-
-	const subjects = subjectTeachers.map((st) => st.subject);
-
-	// Obtener comisiones para las materias del docente, filtrando por localidades permitidas
-	const commissions = await prisma.subjectCommission.findMany({
-		where: {
-			subjectId: { in: subjects.map((s) => s.id) },
-			active: true,
-			locationId: { in: allowedLocationIds }
-		},
-		include: {
-			subject: true,
-			teacher: true,
-			location: true
-		}
-	});
-
-	// Obtener estudiantes de las carreras de las materias del docente
-	const careerIds = subjects.flatMap((s) => s.careerSubjects.map((cs) => cs.career.id));
-	const students = await prisma.student.findMany({
-		where: {
-			status: 'ACTIVE',
-			careerId: {
-				in: careerIds
-			}
-		},
-		include: {
-			user: true,
-			career: true
-		},
-		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
-	});
-
-	// Obtener registros de asistencia recientes del docente
-	const recentAttendance = await prisma.attendanceRecord.findMany({
-		where: {
-			createdByUserId: locals.user.id,
-			subjectId: {
-				in: subjects.map((s) => s.id)
-			}
-		},
-		include: {
-			subject: true,
-			entries: {
-				include: {
-					student: {
-						include: {
-							user: true
+				},
+				orderBy: [
+					{
+						student: {
+							lastName: 'asc'
+						}
+					},
+					{
+						student: {
+							firstName: 'asc'
 						}
 					}
+				]
+			})
+		: [];
+
+	const studentsByCommission: Record<string, any[]> = {};
+
+	for (const enrollment of enrollments) {
+		if (!enrollment.commissionId) continue;
+
+		studentsByCommission[enrollment.commissionId] ??= [];
+
+		studentsByCommission[enrollment.commissionId].push({
+			id: enrollment.student.id,
+			enrollmentId: enrollment.id,
+			dni: enrollment.student.dni,
+			firstName: enrollment.student.firstName,
+			lastName: enrollment.student.lastName,
+			career: enrollment.student.career.name,
+			currentYear: enrollment.student.currentYear
+		});
+	}
+
+	const commissionsMap = new Map<
+		string,
+		{
+			id: string;
+			code: string;
+			subjectId: string;
+			career: string | null;
+			location: string | null;
+			academicTerm: string | null;
+		}
+	>();
+
+	for (const schedule of schedules) {
+		if (schedule.commission) {
+			commissionsMap.set(schedule.commission.id, {
+				id: schedule.commission.id,
+				code: schedule.commission.code,
+				subjectId: schedule.subjectId,
+				career: schedule.commission.career?.name ?? null,
+				location: schedule.commission.location?.name ?? null,
+				academicTerm: schedule.commission.academicTerm?.name ?? null
+			});
+		}
+	}
+
+	const recentAttendance = await prisma.attendanceRecord.findMany({
+		where: {
+			createdByUserId: locals.user.id
+		},
+		include: {
+			subject: true,
+			commission: true,
+			classSchedule: true,
+			entries: {
+				include: {
+					student: true
 				}
 			}
 		},
-		orderBy: { classDate: 'desc' },
+		orderBy: {
+			classDate: 'desc'
+		},
 		take: 20
 	});
 
 	return {
-		subjects: subjects.map((s) => ({
-			id: s.id,
-			code: s.code,
-			name: s.name,
-			yearLevel: s.yearLevel,
-			careers: s.careerSubjects.map((cs) => cs.career.name)
+		teacher,
+		subjects: subjectAssignments.map((assignment) => ({
+			id: assignment.subject.id,
+			code: assignment.subject.code,
+			name: assignment.subject.name
 		})),
-		commissions: commissions.map((c) => ({
-			id: c.id,
-			code: c.code,
-			subjectId: c.subjectId,
-			subjectName: c.subject.name,
-			teacherId: c.teacherId,
-			teacherName: c.teacher ? `${c.teacher.lastName}, ${c.teacher.firstName}` : null,
-			locationId: c.locationId,
-			locationName: c.location?.name || null,
-			schedule: c.schedule
+		commissions: [...commissionsMap.values()],
+		schedules: schedules.map((schedule) => ({
+			id: schedule.id,
+			subjectId: schedule.subjectId,
+			commissionId: schedule.commissionId,
+			dayOfWeek: schedule.dayOfWeek,
+			startTime: schedule.startTime,
+			endTime: schedule.endTime,
+			classroom: schedule.classroom,
+			location: schedule.location?.name ?? null,
+			career: schedule.career.name
 		})),
-		students: students.map((s) => ({
-			id: s.id,
-			dni: s.dni,
-			firstName: s.firstName,
-			lastName: s.lastName,
-			career: s.career.name,
-			currentYear: s.currentYear
-		})),
-		recentAttendance: recentAttendance.map((a) => ({
-			id: a.id,
-			date: a.classDate,
-			subject: a.subject.name,
-			totalStudents: a.entries.length,
-			presentStudents: a.entries.filter((e: any) => e.present).length,
-			entries: a.entries.map((e: any) => ({
-				studentId: e.studentId,
-				studentName: `${e.student.lastName}, ${e.student.firstName}`,
-				studentDni: e.student.dni,
-				present: e.present,
-				notes: e.notes
-			}))
-		}))
+		studentsByCommission,
+		recentAttendance: recentAttendance.map((record) => {
+			const entries = record.entries.map((entry) => ({
+				studentId: entry.studentId,
+				studentName: `${entry.student.lastName}, ${entry.student.firstName}`,
+				studentDni: entry.student.dni,
+				status: normalizeStatus(entry),
+				notes: entry.notes
+			}));
+
+			return {
+				id: record.id,
+				date: record.classDate,
+				subject: record.subject.name,
+				commission: record.commission?.code ?? null,
+				startTime: record.classSchedule?.startTime ?? null,
+				endTime: record.classSchedule?.endTime ?? null,
+				totalStudents: entries.length,
+				presentStudents: entries.filter((entry) => entry.status === 'PRESENT').length,
+				lateStudents: entries.filter((entry) => entry.status === 'LATE').length,
+				absentStudents: entries.filter((entry) => entry.status === 'ABSENT').length,
+				justifiedStudents: entries.filter((entry) => entry.status === 'JUSTIFIED').length,
+				entries
+			};
+		})
 	};
 };
 
@@ -155,134 +313,204 @@ export const actions: Actions = {
 		requireRole(locals.user, ['DOCENTE']);
 
 		if (!locals.user) {
-			return { error: 'No autenticado' };
+			return fail(401, {
+				error: 'No autenticado'
+			});
 		}
 
-		const data = await request.formData();
-		const subjectId = data.get('subjectId')?.toString();
-		const date = data.get('date')?.toString();
-		const commissionId = data.get('commissionId')?.toString();
-		const attendanceData = data.get('attendanceData')?.toString();
+		const formData = await request.formData();
 
-		if (!subjectId || !date || !attendanceData) {
-			return { error: 'Por favor completá todos los campos requeridos' };
+		const subjectId = formData.get('subjectId')?.toString();
+
+		const commissionId = formData.get('commissionId')?.toString();
+
+		const classScheduleId = formData.get('classScheduleId')?.toString();
+
+		const date = formData.get('date')?.toString();
+
+		const rawAttendance = formData.get('attendanceData')?.toString();
+
+		if (!subjectId || !commissionId || !classScheduleId || !date || !rawAttendance) {
+			return fail(400, {
+				error: 'Completá materia, comisión, clase y fecha'
+			});
 		}
 
 		try {
-			// Verificar que la materia pertenezca al docente
 			const teacher = await prisma.teacher.findUnique({
-				where: { userId: locals.user.id }
-			});
-
-			if (!teacher) {
-				return { error: 'Docente no encontrado' };
-			}
-
-			const subjectTeacher = await prisma.subjectTeacher.findUnique({
 				where: {
-					subjectId_teacherId: {
-						subjectId,
-						teacherId: teacher.id
-					}
+					userId: locals.user.id
 				}
 			});
 
-			if (!subjectTeacher) {
-				return { error: 'No tenés permiso para registrar asistencia en esta materia' };
+			if (!teacher) {
+				return fail(404, {
+					error: 'Docente no encontrado'
+				});
 			}
 
-			// Obtener datos de la materia para auditoría
-			const subject = await prisma.subject.findUnique({
-				where: { id: subjectId }
+			const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+
+			const schedule = await prisma.classSchedule.findUnique({
+				where: {
+					id: classScheduleId
+				},
+				include: {
+					subject: true,
+					commission: true
+				}
 			});
 
-			// Parsear datos de asistencia
-			const attendance = JSON.parse(attendanceData) as Array<{
+			if (
+				!schedule ||
+				!schedule.active ||
+				!schedule.commission ||
+				schedule.teacherId !== teacher.id ||
+				schedule.subjectId !== subjectId ||
+				schedule.commissionId !== commissionId
+			) {
+				return fail(403, {
+					error: 'La clase seleccionada no corresponde al docente, materia o comisión'
+				});
+			}
+
+			if (schedule.locationId && !allowedLocationIds.includes(schedule.locationId)) {
+				return fail(403, {
+					error: 'No tenés permiso para registrar asistencia en esa sede'
+				});
+			}
+
+			if (date > todayInArgentina()) {
+				return fail(400, {
+					error: 'No se puede registrar asistencia para una fecha futura'
+				});
+			}
+
+			if (getWeekDay(date) !== schedule.dayOfWeek) {
+				return fail(400, {
+					error: 'La fecha seleccionada no coincide con el día programado de esta clase'
+				});
+			}
+
+			const attendance = JSON.parse(rawAttendance) as Array<{
 				studentId: string;
-				present: boolean;
+				status: AttendanceStatus;
 				notes?: string;
 			}>;
 
-			// Verificar si ya existe un registro de asistencia para esta materia, fecha y comisión
+			if (!Array.isArray(attendance)) {
+				return fail(400, {
+					error: 'Datos de asistencia inválidos'
+				});
+			}
+
+			if (attendance.some((entry) => !entry.studentId || !VALID_STATUSES.has(entry.status))) {
+				return fail(400, {
+					error: 'Hay estados de asistencia inválidos'
+				});
+			}
+
+			const activeEnrollments = await prisma.subjectEnrollment.findMany({
+				where: {
+					commissionId,
+					status: 'ACTIVE',
+					student: {
+						status: 'ACTIVE'
+					}
+				},
+				select: {
+					studentId: true
+				}
+			});
+
+			const validStudentIds = new Set(activeEnrollments.map((enrollment) => enrollment.studentId));
+
+			const submittedStudentIds = new Set(attendance.map((entry) => entry.studentId));
+
+			if (
+				attendance.length !== validStudentIds.size ||
+				submittedStudentIds.size !== validStudentIds.size ||
+				attendance.some((entry) => !validStudentIds.has(entry.studentId))
+			) {
+				return fail(400, {
+					error: 'La nómina enviada no coincide con los alumnos activos de la comisión'
+				});
+			}
+
+			const classDate = parseClassDate(date);
+
 			const existingRecord = await prisma.attendanceRecord.findFirst({
 				where: {
-					subjectId,
-					classDate: new Date(date),
-					commissionId: commissionId || null
+					classScheduleId,
+					classDate
 				}
 			});
 
 			if (existingRecord) {
-				return {
-					error:
-						'Ya existe un registro de asistencia para esta materia en esta fecha' +
-						(commissionId ? ' y comisión' : '')
-				};
+				return fail(400, {
+					error: 'Ya existe asistencia registrada para esta clase y fecha'
+				});
 			}
 
-			// Crear registro de asistencia
-			const attendanceRecord = await prisma.attendanceRecord.create({
-				data: {
-					subjectId,
-					classDate: new Date(date),
-					commissionId: commissionId || null,
-					createdByUserId: locals.user.id
-				}
+			const record = await prisma.$transaction(async (tx) => {
+				const attendanceRecord = await tx.attendanceRecord.create({
+					data: {
+						subjectId,
+						commissionId,
+						classScheduleId,
+						classDate,
+						createdByUserId: locals.user!.id
+					}
+				});
+
+				await tx.attendanceEntry.createMany({
+					data: attendance.map((entry) => ({
+						attendanceId: attendanceRecord.id,
+						studentId: entry.studentId,
+						status: entry.status,
+						present: legacyPresent(entry.status),
+						notes: entry.notes?.trim() || null
+					}))
+				});
+
+				return attendanceRecord;
 			});
 
-			// Crear entradas de asistencia para cada estudiante
-			const presentCount = attendance.filter((a) => a.present).length;
-			const absentCount = attendance.length - presentCount;
-
-			await prisma.attendanceEntry.createMany({
-				data: attendance.map((a) => ({
-					attendanceId: attendanceRecord.id,
-					studentId: a.studentId,
-					present: a.present,
-					notes: a.notes || null
-				}))
-			});
-
-			// Actualizar estado de regularidad para cada estudiante
-			const regularityUpdates = [];
-			for (const a of attendance) {
-				const statusUpdate = await updateAttendanceStatus(a.studentId, subjectId);
-				if (statusUpdate.statusChanged) {
-					regularityUpdates.push({
-						studentId: a.studentId,
-						previousStatus: statusUpdate.previousStatus,
-						newStatus: statusUpdate.regularityStatus,
-						attendancePercent: statusUpdate.attendancePercent
-					});
-				}
+			for (const entry of attendance) {
+				await updateAttendanceStatus(entry.studentId, subjectId);
 			}
 
-			// Registrar en auditoría
+			const presentCount = attendance.filter((entry) => entry.status === 'PRESENT').length;
+
+			const lateCount = attendance.filter((entry) => entry.status === 'LATE').length;
+
+			const absentCount = attendance.filter((entry) => entry.status === 'ABSENT').length;
+
+			const justifiedCount = attendance.filter((entry) => entry.status === 'JUSTIFIED').length;
+
 			await auditLog({
 				userId: locals.user.id,
 				action: AuditAction.CREATE,
 				entityType: 'ATTENDANCE_RECORD',
-				entityId: attendanceRecord.id,
-				description: `Registro de asistencia: ${presentCount} presentes, ${absentCount} ausentes en ${subject?.name} el ${date}`
+				entityId: record.id,
+				description:
+					`Asistencia ${schedule.subject.name} - ` +
+					`${schedule.commission.code}: ` +
+					`${presentCount} presentes, ` +
+					`${lateCount} tarde, ` +
+					`${absentCount} ausentes, ` +
+					`${justifiedCount} justificadas`
 			});
 
-			// Registrar cambios de regularidad en auditoría si hubo
-			if (regularityUpdates.length > 0) {
-				for (const update of regularityUpdates) {
-					await auditLog({
-						userId: locals.user.id,
-						action: AuditAction.UPDATE,
-						entityType: 'STUDENT_SUBJECT_STATUS',
-						entityId: `${update.studentId}_${subjectId}`,
-						description: `Cambio de regularidad por asistencia: ${update.previousStatus} → ${update.newStatus} (${update.attendancePercent}%) en ${subject?.name}`
-					});
-				}
-			}
-
-			return { success: 'Asistencia registrada exitosamente' };
+			return {
+				success: 'Asistencia registrada correctamente'
+			};
 		} catch (error) {
 			console.error('Error al registrar asistencia:', error);
-			return { error: 'Error al registrar la asistencia' };
+
+			return fail(500, {
+				error: 'No se pudo registrar la asistencia'
+			});
 		}
 	},
 
@@ -290,115 +518,111 @@ export const actions: Actions = {
 		requireRole(locals.user, ['DOCENTE']);
 
 		if (!locals.user) {
-			return { error: 'No autenticado' };
+			return fail(401, {
+				error: 'No autenticado'
+			});
 		}
 
-		const data = await request.formData();
-		const attendanceId = data.get('attendanceId')?.toString();
-		const attendanceData = data.get('attendanceData')?.toString();
+		const formData = await request.formData();
 
-		if (!attendanceId || !attendanceData) {
-			return { error: 'Datos requeridos faltantes' };
+		const attendanceId = formData.get('attendanceId')?.toString();
+
+		const rawAttendance = formData.get('attendanceData')?.toString();
+
+		if (!attendanceId || !rawAttendance) {
+			return fail(400, {
+				error: 'Faltan datos para actualizar la asistencia'
+			});
 		}
 
 		try {
-			// Verificar que el registro de asistencia pertenezca al docente
-			const attendanceRecord = await prisma.attendanceRecord.findUnique({
-				where: { id: attendanceId },
+			const record = await prisma.attendanceRecord.findUnique({
+				where: {
+					id: attendanceId
+				},
 				include: {
-					subject: true
+					subject: true,
+					entries: true
 				}
 			});
 
-			if (!attendanceRecord) {
-				return { error: 'Registro de asistencia no encontrado' };
+			if (!record) {
+				return fail(404, {
+					error: 'Registro de asistencia no encontrado'
+				});
 			}
 
-			if (attendanceRecord.createdByUserId !== locals.user.id) {
-				return { error: 'No tenés permiso para editar este registro de asistencia' };
+			if (record.createdByUserId !== locals.user.id) {
+				return fail(403, {
+					error: 'No tenés permiso para editar este registro'
+				});
 			}
 
-			// Parsear datos de asistencia
-			const attendance = JSON.parse(attendanceData) as Array<{
+			const attendance = JSON.parse(rawAttendance) as Array<{
 				studentId: string;
-				present: boolean;
+				status: AttendanceStatus;
 				notes?: string;
 			}>;
 
-			// Actualizar o crear entradas de asistencia
-			for (const a of attendance) {
-				const existingEntry = await prisma.attendanceEntry.findUnique({
-					where: {
-						attendanceId_studentId: {
-							attendanceId,
-							studentId: a.studentId
-						}
-					}
+			if (
+				!Array.isArray(attendance) ||
+				attendance.some((entry) => !VALID_STATUSES.has(entry.status))
+			) {
+				return fail(400, {
+					error: 'Datos de asistencia inválidos'
 				});
+			}
 
-				if (existingEntry) {
-					await prisma.attendanceEntry.update({
-						where: { id: existingEntry.id },
+			const existingIds = new Set(record.entries.map((entry) => entry.studentId));
+
+			if (
+				attendance.length !== existingIds.size ||
+				attendance.some((entry) => !existingIds.has(entry.studentId))
+			) {
+				return fail(400, {
+					error: 'No se puede alterar la nómina original del registro'
+				});
+			}
+
+			await prisma.$transaction(async (tx) => {
+				for (const entry of attendance) {
+					await tx.attendanceEntry.update({
+						where: {
+							attendanceId_studentId: {
+								attendanceId,
+								studentId: entry.studentId
+							}
+						},
 						data: {
-							present: a.present,
-							notes: a.notes || null
-						}
-					});
-				} else {
-					await prisma.attendanceEntry.create({
-						data: {
-							attendanceId,
-							studentId: a.studentId,
-							present: a.present,
-							notes: a.notes || null
+							status: entry.status,
+							present: legacyPresent(entry.status),
+							notes: entry.notes?.trim() || null
 						}
 					});
 				}
+			});
+
+			for (const entry of attendance) {
+				await updateAttendanceStatus(entry.studentId, record.subjectId);
 			}
 
-			const presentCount = attendance.filter((a) => a.present).length;
-			const absentCount = attendance.length - presentCount;
-
-			// Actualizar estado de regularidad para cada estudiante
-			const regularityUpdates = [];
-			for (const a of attendance) {
-				const statusUpdate = await updateAttendanceStatus(a.studentId, attendanceRecord.subjectId);
-				if (statusUpdate.statusChanged) {
-					regularityUpdates.push({
-						studentId: a.studentId,
-						previousStatus: statusUpdate.previousStatus,
-						newStatus: statusUpdate.regularityStatus,
-						attendancePercent: statusUpdate.attendancePercent
-					});
-				}
-			}
-
-			// Registrar en auditoría
 			await auditLog({
 				userId: locals.user.id,
 				action: AuditAction.UPDATE,
 				entityType: 'ATTENDANCE_RECORD',
 				entityId: attendanceId,
-				description: `Edición de asistencia: ${presentCount} presentes, ${absentCount} ausentes en ${attendanceRecord.subject.name} el ${attendanceRecord.classDate.toLocaleDateString('es-AR')}`
+				description: `Asistencia corregida en ${record.subject.name}`
 			});
 
-			// Registrar cambios de regularidad en auditoría si hubo
-			if (regularityUpdates.length > 0) {
-				for (const update of regularityUpdates) {
-					await auditLog({
-						userId: locals.user.id,
-						action: AuditAction.UPDATE,
-						entityType: 'STUDENT_SUBJECT_STATUS',
-						entityId: `${update.studentId}_${attendanceRecord.subjectId}`,
-						description: `Cambio de regularidad por asistencia: ${update.previousStatus} → ${update.newStatus} (${update.attendancePercent}%) en ${attendanceRecord.subject.name}`
-					});
-				}
-			}
-
-			return { success: 'Asistencia actualizada exitosamente' };
+			return {
+				success: 'Asistencia actualizada correctamente'
+			};
 		} catch (error) {
 			console.error('Error al editar asistencia:', error);
-			return { error: 'Error al editar la asistencia' };
+
+			return fail(500, {
+				error: 'No se pudo actualizar la asistencia'
+			});
 		}
 	}
 };

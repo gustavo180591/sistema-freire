@@ -1,4 +1,5 @@
 import type { Actions, PageServerLoad } from './$types';
+import { Prisma } from '@prisma/client';
 import { prisma } from '$lib/server/db/prisma';
 import { fail, redirect } from '@sveltejs/kit';
 import { requirePermission } from '$lib/server/auth/permissions-granular';
@@ -169,15 +170,19 @@ export const actions: Actions = {
 			return fail(404, { error: 'El período lectivo seleccionado no existe.' });
 		}
 
-		if (locationId) {
-			const location = await prisma.location.findUnique({
-				where: { id: locationId },
-				select: { id: true }
-			});
+		const location = locationId
+			? await prisma.location.findUnique({
+					where: { id: locationId },
+					select: {
+						id: true,
+						code: true,
+						name: true
+					}
+				})
+			: null;
 
-			if (!location) {
-				return fail(404, { error: 'La localidad seleccionada no existe.' });
-			}
+		if (locationId && !location) {
+			return fail(404, { error: 'La localidad seleccionada no existe.' });
 		}
 
 		const subjectCodePrefix = inferSubjectCodePrefix(career);
@@ -209,16 +214,12 @@ export const actions: Actions = {
 		for (const letter of selectedLetters) {
 			for (const subject of subjects) {
 				const generatedCode = normalizeCodePart(
-					`${career.code ?? career.name}-${yearLevel}-${letter}-${subject.code}-${academicTerm.year}`
+					`${career.code ?? career.name}-${yearLevel}-${letter}-${subject.code}-${location?.code ?? 'SIN-SEDE'}-${academicTerm.year}-${academicTerm.name}`
 				);
 
-				const existing = await prisma.subjectCommission.findFirst({
+				const existing = await prisma.subjectCommission.findUnique({
 					where: {
-						code: generatedCode,
-						subjectId: subject.id,
-						careerId,
-						academicTermId,
-						locationId
+						code: generatedCode
 					},
 					select: {
 						id: true
@@ -230,21 +231,30 @@ export const actions: Actions = {
 					continue;
 				}
 
-				await prisma.subjectCommission.create({
-					data: {
-						code: generatedCode,
-						subjectId: subject.id,
-						careerId,
-						studyPlanId: studyPlan?.id ?? null,
-						academicTermId,
-						locationId,
-						maxCapacity: maxCapacity ?? undefined,
-						active: true,
-						observations: `Comisión ${letter} generada automáticamente para ${career.name} - ${yearLevel}° año.`
-					}
-				});
+				try {
+					await prisma.subjectCommission.create({
+						data: {
+							code: generatedCode,
+							subjectId: subject.id,
+							careerId,
+							studyPlanId: studyPlan?.id ?? null,
+							academicTermId,
+							locationId,
+							maxCapacity: maxCapacity ?? undefined,
+							active: true,
+							observations: `Comisión ${letter} generada automáticamente para ${career.name} - ${yearLevel}° año.`
+						}
+					});
 
-				createdCount += 1;
+					createdCount += 1;
+				} catch (error) {
+					if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+						existingCount += 1;
+						continue;
+					}
+
+					throw error;
+				}
 			}
 		}
 

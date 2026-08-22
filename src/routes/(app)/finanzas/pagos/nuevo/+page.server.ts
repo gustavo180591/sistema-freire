@@ -126,7 +126,7 @@ export const actions: Actions = {
 				amount: Number(charge.amount),
 				paidAmount: Number(charge.paidAmount),
 				finalAmount: Number(charge.finalAmount),
-				pending: Number(charge.amount) - Number(charge.paidAmount),
+				pending: Number(charge.finalAmount) - Number(charge.paidAmount),
 				scholarshipApplied: Number(charge.scholarshipApplied),
 				lateFeeApplied: Number(charge.lateFeeApplied),
 				discountApplied: Number(charge.discountApplied)
@@ -262,6 +262,27 @@ export const actions: Actions = {
 						},
 						orderBy: [{ dueDate: 'asc' }, { createdAt: 'asc' }]
 					});
+
+		// El importe recibido puede ser menor al total a cobrar
+		// cuando se registra un pago parcial, pero nunca puede superarlo.
+		const totalPayableForSelectedCharges = chargesToAllocate.reduce((sum, charge) => {
+			const pending = Number(charge.finalAmount) - Number(charge.paidAmount);
+			const adjustment = chargeForgivenessData[charge.id];
+
+			return sum + (adjustment?.amountToPay ?? pending);
+		}, 0);
+
+		if (!Number.isFinite(amount) || amount < 0) {
+			return fail(400, {
+				message: 'El importe recibido debe ser mayor o igual a cero'
+			});
+		}
+
+		if (amount > totalPayableForSelectedCharges + 0.01) {
+			return fail(400, {
+				message: `El importe recibido no puede superar el total a cobrar (${totalPayableForSelectedCharges})`
+			});
+		}
 
 		const payment = await prisma.$transaction(async (tx) => {
 			let createdPayment = null;

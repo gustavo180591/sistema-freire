@@ -36,6 +36,12 @@
 		Record<string, { amountToPay: number; forgivenAmount: number; forgivenessReason: string }>
 	>({});
 	let editingChargeId = $state<string | null>(null);
+	let editingChargeSnapshot = $state<{
+		amountToPay: number;
+		forgivenAmount: number;
+		forgivenessReason: string;
+	} | null>(null);
+	let validationError = $state('');
 
 	const currency = new Intl.NumberFormat('es-AR', {
 		style: 'currency',
@@ -154,22 +160,47 @@
 		amount = totalSelected();
 	}
 
+	function shouldIgnoreChargeToggle(event: Event): boolean {
+		const target = event.target;
+
+		if (!(target instanceof Element)) {
+			return false;
+		}
+
+		return Boolean(target.closest('button, input, textarea, select, a, [data-charge-editor]'));
+	}
+
 	function updateChargeAmount(chargeId: string, value: string) {
 		const charge = charges.find((c) => c.id === chargeId);
 		if (!charge) return;
 
-		const numValue = Number(value);
-		if (!isNaN(numValue) && numValue >= 0) {
-			const pending = charge.pending;
-			const forgivenAmount = Math.max(0, pending - numValue);
+		if (value.trim() === '') return;
 
-			chargeForgiveness[chargeId] = {
+		const numValue = Number(value);
+
+		if (!Number.isFinite(numValue) || numValue < 0) {
+			validationError = 'El importe a cobrar debe ser un número mayor o igual a cero.';
+			return;
+		}
+
+		if (numValue > charge.pending) {
+			validationError = `El importe a cobrar no puede superar ${currency.format(charge.pending)}.`;
+			return;
+		}
+
+		const forgivenAmount = Math.max(0, charge.pending - numValue);
+
+		chargeForgiveness = {
+			...chargeForgiveness,
+			[chargeId]: {
 				amountToPay: numValue,
 				forgivenAmount,
 				forgivenessReason: chargeForgiveness[chargeId]?.forgivenessReason || ''
-			};
-			amount = totalSelected();
-		}
+			}
+		};
+
+		validationError = '';
+		amount = totalSelected();
 	}
 
 	function getChargeAmount(chargeId: string, originalAmount: number): number {
@@ -183,45 +214,81 @@
 	}
 
 	function startEditing(chargeId: string) {
+		validationError = '';
 		editingChargeId = chargeId;
+
+		const current = chargeForgiveness[chargeId];
+		editingChargeSnapshot = current ? { ...current } : null;
 	}
 
 	function saveEditing(chargeId: string) {
+		const adjustment = chargeForgiveness[chargeId];
+
+		if (
+			adjustment?.forgivenAmount > 0 &&
+			(!adjustment.forgivenessReason || adjustment.forgivenessReason.trim().length === 0)
+		) {
+			validationError = 'Ingresá el motivo de la condonación antes de aplicar el nuevo importe.';
+			return;
+		}
+
+		validationError = '';
 		editingChargeId = null;
+		editingChargeSnapshot = null;
 	}
 
 	function cancelEditing(chargeId: string) {
+		const next = { ...chargeForgiveness };
+
+		if (editingChargeSnapshot) {
+			next[chargeId] = { ...editingChargeSnapshot };
+		} else {
+			delete next[chargeId];
+		}
+
+		chargeForgiveness = next;
 		editingChargeId = null;
-		delete chargeForgiveness[chargeId];
+		editingChargeSnapshot = null;
+		validationError = '';
 		amount = totalSelected();
 	}
 
 	function validateForm(): { valid: boolean; error?: string } {
-		// Validar que haya alumno seleccionado
 		if (!studentId) {
-			return { valid: false, error: 'Debes seleccionar un alumno' };
+			return { valid: false, error: 'Debés seleccionar un alumno.' };
 		}
 
-		// Validar que haya cargos seleccionados
 		if (selectedChargeIds.size === 0) {
-			return { valid: false, error: 'Debes seleccionar al menos un cargo' };
+			return { valid: false, error: 'Debés seleccionar al menos un cargo.' };
 		}
 
-		// Validar condonaciones
-		for (const [chargeId, data] of Object.entries(chargeForgiveness)) {
-			if (data.forgivenAmount > 0) {
-				if (!data.forgivenessReason || data.forgivenessReason.trim().length === 0) {
-					return {
-						valid: false,
-						error: 'El motivo de condonación es obligatorio cuando hay monto condonado'
-					};
-				}
+		for (const chargeId of selectedChargeIds) {
+			const data = chargeForgiveness[chargeId];
+			if (!data) continue;
+
+			if (
+				data.forgivenAmount > 0 &&
+				(!data.forgivenessReason || data.forgivenessReason.trim().length === 0)
+			) {
+				return {
+					valid: false,
+					error: 'Completá el motivo de todas las condonaciones antes de registrar el pago.'
+				};
 			}
 		}
 
-		// Validar que el monto a pagar sea correcto
-		if (amount === '' || amount < 0) {
-			return { valid: false, error: 'El monto a pagar debe ser mayor o igual a 0' };
+		if (amount === '' || !Number.isFinite(Number(amount)) || Number(amount) < 0) {
+			return {
+				valid: false,
+				error: 'El importe recibido debe ser mayor o igual a cero.'
+			};
+		}
+
+		if (Number(amount) > totalSelected() + 0.01) {
+			return {
+				valid: false,
+				error: `El importe recibido no puede superar el total a cobrar (${currency.format(totalSelected())}).`
+			};
 		}
 
 		return { valid: true };
@@ -229,10 +296,20 @@
 
 	function handleSubmit(e: Event) {
 		const validation = validateForm();
+
 		if (!validation.valid) {
 			e.preventDefault();
-			alert(validation.error);
+			validationError = validation.error ?? 'Revisá los datos ingresados.';
+
+			window.scrollTo({
+				top: 0,
+				behavior: 'smooth'
+			});
+
+			return;
 		}
+
+		validationError = '';
 	}
 </script>
 
@@ -257,6 +334,16 @@
 		onsubmit={handleSubmit}
 		class="space-y-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-8"
 	>
+		{#if validationError || form?.message}
+			<div
+				role="alert"
+				class="rounded-2xl border border-red-800 bg-red-950/30 px-5 py-4 text-sm text-red-300"
+			>
+				<p class="font-semibold">Revisá los datos del pago</p>
+				<p class="mt-1 text-red-300/90">{validationError || form?.message}</p>
+			</div>
+		{/if}
+
 		<div class="grid gap-6 md:grid-cols-2">
 			<div>
 				<label for="studentId" class="mb-2 block text-sm font-medium text-slate-300">Alumno</label>
@@ -280,7 +367,7 @@
 					bind:value={amount}
 					name="amount"
 					type="number"
-					min="1"
+					min="0"
 					step="0.01"
 					placeholder="15000"
 					class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-slate-500"
@@ -353,8 +440,13 @@
 							tabindex="0"
 							class="flex w-full cursor-pointer items-center justify-between rounded-xl border border-slate-800 px-4 py-3 transition hover:border-slate-600"
 							class:border-indigo-600={selectedChargeIds.has(charge.id)}
-							onclick={() => toggleCharge(charge.id)}
+							onclick={(e) => {
+								if (shouldIgnoreChargeToggle(e)) return;
+								toggleCharge(charge.id);
+							}}
 							onkeydown={(e) => {
+								if (shouldIgnoreChargeToggle(e)) return;
+
 								if (e.key === 'Enter' || e.key === ' ') {
 									e.preventDefault();
 									toggleCharge(charge.id);
@@ -388,71 +480,131 @@
 							</div>
 							<div class="text-right">
 								{#if editingChargeId === charge.id}
-									<div class="flex flex-col items-end gap-2">
-										<div class="flex items-center justify-end gap-2">
-											<input
-												type="number"
-												min="0"
-												step="0.01"
-												max={charge.pending}
-												value={getChargeAmount(charge.id, charge.pending)}
-												oninput={(e) => {
-													const target = e.target as HTMLInputElement;
-													if (target) {
-														updateChargeAmount(charge.id, target.value);
-													}
-												}}
-												onclick={(e) => e.stopPropagation()}
-												class="w-24 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-right text-sm font-semibold text-slate-200 outline-none focus:border-indigo-500"
-											/>
-											<button
-												type="button"
-												onclick={(e) => {
-													e.stopPropagation();
-													saveEditing(charge.id);
-												}}
-												class="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-500"
+									<div
+										class="w-72 rounded-xl border border-indigo-800/70 bg-slate-900 p-4 text-left shadow-lg"
+										data-charge-editor
+									>
+										<div class="mb-3 flex items-start justify-between gap-3">
+											<div>
+												<p class="text-sm font-semibold text-slate-100">Editar importe</p>
+												<p class="mt-0.5 text-xs text-slate-500">
+													{charge.conceptCode} · {charge.periodLabel}
+												</p>
+											</div>
+											<p class="text-xs text-slate-400">
+												Pendiente {currency.format(charge.pending)}
+											</p>
+										</div>
+
+										<label
+											for={`charge-amount-${charge.id}`}
+											class="mb-1 block text-xs font-medium text-slate-300"
+										>
+											Importe a cobrar
+										</label>
+
+										<input
+											id={`charge-amount-${charge.id}`}
+											type="number"
+											min="0"
+											step="0.01"
+											max={charge.pending}
+											value={getChargeAmount(charge.id, charge.pending)}
+											oninput={(e) => {
+												const target = e.target as HTMLInputElement;
+												updateChargeAmount(charge.id, target.value);
+											}}
+											onclick={(e) => e.stopPropagation()}
+											class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-right text-sm font-semibold text-slate-100 outline-none focus:border-indigo-500"
+										/>
+
+										{#if getForgivenAmount(charge.id) > 0}
+											<div
+												class="mt-3 rounded-lg border border-emerald-900/70 bg-emerald-950/20 p-3"
 											>
-												✓
-											</button>
+												<div class="flex items-center justify-between gap-3">
+													<span class="text-xs text-slate-400">Monto condonado</span>
+													<span class="text-sm font-semibold text-emerald-400">
+														-{currency.format(getForgivenAmount(charge.id))}
+													</span>
+												</div>
+
+												<p class="mt-2 text-xs leading-5 text-slate-500">
+													La diferencia se registrará como una condonación permanente de la deuda.
+												</p>
+											</div>
+
+											<label
+												for={`forgiveness-reason-${charge.id}`}
+												class="mt-3 mb-1 block text-xs font-medium text-slate-300"
+											>
+												Motivo de condonación
+												<span class="text-red-400">*</span>
+											</label>
+
+											<textarea
+												id={`forgiveness-reason-${charge.id}`}
+												rows="3"
+												placeholder="Ej.: descuento autorizado por Dirección"
+												bind:value={chargeForgiveness[charge.id].forgivenessReason}
+												oninput={() => (validationError = '')}
+												onclick={(e) => e.stopPropagation()}
+												class="w-full resize-none rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-200 outline-none focus:border-indigo-500"
+											></textarea>
+
+											{#if !chargeForgiveness[charge.id]?.forgivenessReason?.trim()}
+												<p class="mt-1.5 text-xs text-red-400">
+													Ingresá el motivo para poder aplicar este importe.
+												</p>
+											{/if}
+										{/if}
+
+										<div class="mt-4 flex justify-end gap-2">
 											<button
 												type="button"
 												onclick={(e) => {
 													e.stopPropagation();
 													cancelEditing(charge.id);
 												}}
-												class="rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white hover:bg-red-500"
+												class="rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 transition hover:border-slate-500"
 											>
-												✕
+												Cancelar
+											</button>
+
+											<button
+												type="button"
+												onclick={(e) => {
+													e.stopPropagation();
+													saveEditing(charge.id);
+												}}
+												disabled={getForgivenAmount(charge.id) > 0 &&
+													!chargeForgiveness[charge.id]?.forgivenessReason?.trim()}
+												class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+											>
+												Aplicar
 											</button>
 										</div>
-										{#if getForgivenAmount(charge.id) > 0}
-											<div class="flex flex-col items-end gap-1">
-												<p class="text-xs text-emerald-400">
-													Condonado: {currency.format(getForgivenAmount(charge.id))}
-												</p>
-												<input
-													type="text"
-													placeholder="Motivo de condonación (obligatorio)"
-													bind:value={chargeForgiveness[charge.id].forgivenessReason}
-													onclick={(e) => e.stopPropagation()}
-													class="w-48 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-200 outline-none focus:border-indigo-500"
-												/>
-											</div>
-										{/if}
 									</div>
 								{:else}
-									<div class="flex items-center justify-end gap-2">
-										<div class="text-right">
+									<div class="flex items-start justify-end gap-2">
+										<div class="max-w-56 text-right">
 											<p class="font-semibold text-slate-200">
 												{currency.format(getChargeAmount(charge.id, charge.pending))}
 											</p>
+
 											{#if getForgivenAmount(charge.id) > 0}
-												<p class="text-xs text-emerald-400">
-													-{currency.format(getForgivenAmount(charge.id))}
+												<p class="text-xs font-medium text-emerald-400">
+													-{currency.format(getForgivenAmount(charge.id))} condonado
 												</p>
+
+												{#if chargeForgiveness[charge.id]?.forgivenessReason}
+													<p class="mt-1 text-xs leading-4 text-slate-500">
+														Motivo: {chargeForgiveness[charge.id].forgivenessReason}
+													</p>
+												{/if}
 											{/if}
 										</div>
+
 										<button
 											type="button"
 											onclick={(e) => {

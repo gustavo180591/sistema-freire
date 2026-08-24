@@ -6,6 +6,8 @@
 
 	let selectedSubject = $state<string>('');
 	let selectedCommission = $state<string>('');
+	let selectedCareer = $state<string>('');
+	let selectedLocation = $state<string>('');
 	let title = $state<string>('');
 	let description = $state<string>('');
 	let selectedType = $state<string>('');
@@ -22,6 +24,8 @@
 	function resetForm() {
 		selectedSubject = '';
 		selectedCommission = '';
+		selectedCareer = '';
+		selectedLocation = '';
 		title = '';
 		description = '';
 		selectedType = '';
@@ -106,14 +110,29 @@
 
 	const courseTypes = ['PARCIAL', 'RECUPERATORIO', 'TRABAJO_PRACTICO', 'INTEGRADOR', 'OTRO'];
 	const averageTypes = ['PARCIAL', 'TRABAJO_PRACTICO', 'INTEGRADOR'];
-	let filteredCommissions = $state<PageData['commissions']>([]);
-	let parentEvaluations = $state<PageData['evaluations']>([]);
+
+	// Comisiones filtradas por materia seleccionada
+	let filteredCommissions = $state<any[]>([]);
+	let filteredCareers = $state<any[]>([]);
+	let filteredLocations = $state<any[]>([]);
+	let parentEvaluations = $state<any[]>([]);
 
 	// Actualizar listas filtradas cuando cambia la materia
 	$effect(() => {
 		filteredCommissions = data.commissions.filter(
 			(c) => !selectedSubject || c.subjectId === selectedSubject
 		);
+
+		const subject = data.subjects.find((s) => s.id === selectedSubject);
+
+		filteredCareers = subject?.careerOptions ?? [];
+
+		const career = filteredCareers.find((c) => c.id === selectedCareer);
+
+		filteredLocations = career
+			? data.locations.filter((location) => career.locationIds.includes(location.id))
+			: [];
+
 		parentEvaluations = data.evaluations.filter(
 			(e) =>
 				e.subjectId === selectedSubject &&

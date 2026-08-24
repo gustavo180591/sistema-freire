@@ -42,19 +42,40 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw error(404, 'No se encontraron datos del estudiante');
 	}
 
-	// Cargar evaluaciones de las materias del alumno (nuevo modelo)
-	const subjectIds = studentWithRelations.subjectStatuses.map((s) => s.subjectId);
-	const evaluations = await prisma.evaluation.findMany({
-		where: {
-			subjectId: { in: subjectIds },
-			type: { in: ['EXAMEN_FINAL', 'MESA_EXAMEN'] },
-			evaluationDate: { gte: new Date() } // Solo evaluaciones futuras
-		},
-		include: {
-			subject: true
-		},
-		orderBy: { evaluationDate: 'asc' }
-	});
+	// Mesas de examen disponibles para el alumno.
+	// Deben coincidir con materia + carrera + sede y encontrarse dentro
+	// de las 72 horas de inscripción.
+	const subjectIds = studentWithRelations.subjectStatuses
+		.filter((status) => !status.approved)
+		.map((status) => status.subjectId);
+
+	const now = new Date();
+
+	const evaluations = studentWithRelations.locationId
+		? await prisma.evaluation.findMany({
+				where: {
+					subjectId: { in: subjectIds },
+					type: 'MESA_EXAMEN',
+					careerId: studentWithRelations.careerId,
+					locationId: studentWithRelations.locationId,
+					isClosed: false,
+					registrationOpensAt: { lte: now },
+					registrationClosesAt: { gte: now },
+					evaluationDate: { gt: now }
+				},
+				include: {
+					subject: true,
+					career: true,
+					location: true,
+					examRegistrations: {
+						where: {
+							studentId: studentWithRelations.id
+						}
+					}
+				},
+				orderBy: { evaluationDate: 'asc' }
+			})
+		: [];
 
 	// Determinar si el alumno es de primer año
 	const isFirstYear = studentWithRelations.currentYear === 1;
@@ -180,7 +201,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 			subjectName: e.subject.name,
 			title: e.title,
 			type: e.type,
-			date: e.evaluationDate
+			date: e.evaluationDate,
+			registrationClosesAt: e.registrationClosesAt,
+			career: e.career?.name ?? null,
+			location: e.location?.name ?? null,
+			registered: e.examRegistrations.some((registration) => registration.status === 'REGISTERED')
 		}))
 	};
 };

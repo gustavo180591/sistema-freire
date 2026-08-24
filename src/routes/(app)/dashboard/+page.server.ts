@@ -122,7 +122,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const pendingExamRecords =
 		'examRegistration' in prisma
 			? await (prisma as any).examRegistration
-					.count({ where: { status: 'PENDING' } })
+					.count({ where: { status: 'REGISTERED' } })
 					.catch(() => 0)
 			: 0;
 

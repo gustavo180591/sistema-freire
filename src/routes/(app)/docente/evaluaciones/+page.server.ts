@@ -13,7 +13,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 	}
 	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
 
-	// Obtener el docente asociado al usuario
 	const teacher = await prisma.teacher.findUnique({
 		where: { userId: locals.user.id }
 	});
@@ -22,7 +21,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/dashboard');
 	}
 
-	// Obtener las materias asignadas al docente
 	const subjectTeachers = await prisma.subjectTeacher.findMany({
 		where: { teacherId: teacher.id },
 		include: {
@@ -35,7 +33,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 							}
 						},
 						include: {
-							career: true
+							career: {
+								include: {
+									locations: {
+										select: {
+											locationId: true
+										}
+									}
+								}
+							}
 						}
 					}
 				}
@@ -59,7 +65,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 	const commissionIds = commissions.map((commission) => commission.id);
 
-	// Obtener evaluaciones del docente
+	const locations = await prisma.location.findMany({
+		where: {
+			id: { in: allowedLocationIds },
+			active: true
+		},
+		orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }]
+	});
+
 	const evaluations = await prisma.evaluation.findMany({
 		where: {
 			OR: [
@@ -71,17 +84,65 @@ export const load: PageServerLoad = async ({ locals }) => {
 				}
 			]
 		},
-		include: {
-			subject: true,
-			commission: true,
-			createdByUser: true,
-			_count: { select: { grades: true } },
-			parentEvaluation: {
-				include: {
-					subject: true
+		select: {
+			id: true,
+			title: true,
+			description: true,
+			type: true,
+			evaluationDate: true,
+			maxScore: true,
+			minPassingScore: true,
+			gradingMode: true,
+			participatesInAverage: true,
+			mandatory: true,
+			subjectId: true,
+			commissionId: true,
+			careerId: true,
+			locationId: true,
+			registrationOpensAt: true,
+			registrationClosesAt: true,
+			isClosed: true,
+			closedAt: true,
+			createdAt: true,
+			createdByUserId: true,
+			parentEvaluationId: true,
+			subject: {
+				select: {
+					name: true
 				}
 			},
-			recoveryEvaluations: { select: { id: true } }
+			commission: {
+				select: {
+					code: true
+				}
+			},
+			career: {
+				select: {
+					name: true
+				}
+			},
+			location: {
+				select: {
+					name: true
+				}
+			},
+			createdByUser: {
+				select: {
+					firstName: true,
+					lastName: true
+				}
+			},
+			_count: { select: { grades: true } },
+			parentEvaluation: {
+				select: {
+					title: true
+				}
+			},
+			recoveryEvaluations: {
+				select: {
+					id: true
+				}
+			}
 		},
 		orderBy: { evaluationDate: 'desc' },
 		take: 50
@@ -93,7 +154,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 			code: s.code,
 			name: s.name,
 			yearLevel: s.yearLevel,
-			careers: s.careerSubjects.map((cs) => cs.career.name)
+			careers: s.careerSubjects.map((cs) => cs.career.name),
+			careerOptions: s.careerSubjects.map((cs) => ({
+				id: cs.career.id,
+				name: cs.career.name,
+				locationIds: cs.career.locations.map((location) => location.locationId)
+			}))
+		})),
+		locations: locations.map((location) => ({
+			id: location.id,
+			name: location.name,
+			code: location.code
 		})),
 		commissions: commissions.map((c) => ({
 			id: c.id,
@@ -119,11 +190,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 			subjectId: e.subjectId,
 			commissionId: e.commissionId,
 			commission: e.commission?.code || null,
+			career: e.career?.name || null,
+			location: e.location?.name || null,
+			registrationOpensAt: e.registrationOpensAt,
+			registrationClosesAt: e.registrationClosesAt,
 			isClosed: e.isClosed,
 			closedAt: e.closedAt,
 			createdAt: e.createdAt,
-			registrationOpensAt: e.registrationOpensAt,
-			registrationClosesAt: e.registrationClosesAt,
 			creatorName: `${e.createdByUser.firstName} ${e.createdByUser.lastName}`,
 			parentEvaluationId: e.parentEvaluationId,
 			parentEvaluationTitle: e.parentEvaluation?.title || null,
@@ -143,8 +216,11 @@ export const actions: Actions = {
 		}
 
 		const data = await request.formData();
+
 		const subjectId = data.get('subjectId')?.toString();
 		const commissionId = data.get('commissionId')?.toString() || null;
+		const careerId = data.get('careerId')?.toString() || null;
+		const locationId = data.get('locationId')?.toString() || null;
 		const title = data.get('title')?.toString();
 		const description = data.get('description')?.toString();
 		const type = data.get('type')?.toString();
@@ -172,6 +248,24 @@ export const actions: Actions = {
 			return {
 				error: 'Para crear un examen final seleccioná "Mesa de examen final".'
 			};
+		}
+
+		if (type === 'MESA_EXAMEN') {
+			if (!careerId || !locationId) {
+				return {
+					error: 'Para crear una mesa tenés que seleccionar carrera y sede/localidad'
+				};
+			}
+
+			if (!evaluationDate) {
+				return { error: 'La fecha y hora de la mesa son obligatorias' };
+			}
+
+			const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+
+			if (!allowedLocationIds.includes(locationId)) {
+				return { error: 'No tenés permiso para crear mesas en esa sede/localidad' };
+			}
 		}
 
 		if (!evaluationDate) {
@@ -232,7 +326,9 @@ export const actions: Actions = {
 
 			const evaluation = await evaluationService.createEvaluation({
 				subjectId,
-				commissionId: commissionId || undefined,
+				commissionId: type === 'MESA_EXAMEN' ? undefined : commissionId || undefined,
+				careerId: type === 'MESA_EXAMEN' ? careerId || undefined : undefined,
+				locationId: type === 'MESA_EXAMEN' ? locationId || undefined : undefined,
 				title,
 				description: description || undefined,
 				type: type as EvaluationType,
@@ -262,7 +358,9 @@ export const actions: Actions = {
 
 			return {
 				success:
-					'Evaluación creada correctamente. La inscripción de alumnos quedó abierta durante 72 horas.'
+					type === 'MESA_EXAMEN'
+						? 'Mesa de examen creada. La inscripción estará abierta durante 72 horas.'
+						: 'Evaluación creada correctamente. La inscripción de alumnos quedó abierta durante 72 horas.'
 			};
 		} catch (error) {
 			console.error('Error al crear evaluación:', error);
@@ -354,8 +452,8 @@ export const actions: Actions = {
 		try {
 			const evaluationService = new EvaluationService(prisma);
 
-			// Validar que el usuario puede cerrar la evaluación
 			const validation = await evaluationService.canCloseEvaluation(evaluationId, locals.user.id);
+
 			if (validation) {
 				return validation;
 			}
@@ -391,8 +489,8 @@ export const actions: Actions = {
 		try {
 			const evaluationService = new EvaluationService(prisma);
 
-			// Validar que el usuario puede reabrir la evaluación
 			const validation = await evaluationService.canReopenEvaluation(evaluationId, locals.user.id);
+
 			if (validation) {
 				return validation;
 			}

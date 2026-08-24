@@ -110,6 +110,7 @@ model Career {
   subjectCorrelatives SubjectCorrelative[]
   enrollments         SubjectEnrollment[]
   classSchedules      ClassSchedule[]
+  evaluations         Evaluation[]
 
   @@index([active])
   @@map("careers")
@@ -886,6 +887,7 @@ model Location {
   students        Student[]
   classSchedules  ClassSchedule[]
   receiptConfig   ReceiptLocationConfig?
+  evaluations     Evaluation[]
 
   @@index([active])
   @@map("locations")
@@ -1039,6 +1041,8 @@ model Evaluation {
   closedByUserId        String?
   closedReason          String?
   commissionId          String?
+  careerId              String?
+  locationId            String?
   createdByUserId       String
   evaluationDate        DateTime
   isClosed              Boolean            @default(false)
@@ -1056,6 +1060,8 @@ model Evaluation {
   displayOrder          Int                @default(0)
   closedByUser          User?              @relation("EvaluationCloser", fields: [closedByUserId], references: [id])
   commission            SubjectCommission? @relation(fields: [commissionId], references: [id], onDelete: Restrict)
+  career                Career?            @relation(fields: [careerId], references: [id], onDelete: Restrict)
+  location              Location?          @relation(fields: [locationId], references: [id], onDelete: Restrict)
   createdByUser         User               @relation("EvaluationCreator", fields: [createdByUserId], references: [id])
   parentEvaluation      Evaluation?        @relation("EvaluationRecovery", fields: [parentEvaluationId], references: [id])
   recoveryEvaluations   Evaluation[]       @relation("EvaluationRecovery")
@@ -1071,25 +1077,6 @@ model Evaluation {
   @@index([isClosed])
   @@index([parentEvaluationId])
   @@map("evaluations")
-}
-
-model ExamRegistration {
-  id           String                 @id @default(cuid())
-  evaluationId String
-  studentId    String
-  status       ExamRegistrationStatus @default(REGISTERED)
-  registeredAt DateTime               @default(now())
-  cancelledAt  DateTime?
-  createdAt    DateTime               @default(now())
-  updatedAt    DateTime               @updatedAt
-
-  evaluation Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
-  student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  @@unique([evaluationId, studentId])
-  @@index([evaluationId, status])
-  @@index([studentId, status])
-  @@map("exam_registrations")
 }
 
 model SubjectCommission {
@@ -1186,6 +1173,25 @@ model CourseResult {
   @@index([courseStatus])
   @@index([academicStatus])
   @@map("course_results")
+}
+
+model ExamRegistration {
+  id                 String                 @id @default(cuid())
+  evaluationId       String
+  studentId          String
+  status             ExamRegistrationStatus @default(REGISTERED)
+  registeredAt       DateTime               @default(now())
+  cancelledAt        DateTime?
+  cancellationReason String?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  evaluation         Evaluation             @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  student            Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([evaluationId, studentId])
+  @@index([studentId, status])
+  @@index([evaluationId, status])
+  @@map("exam_registrations")
 }
 
 enum UserStatus {

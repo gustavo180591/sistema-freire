@@ -28,6 +28,8 @@ export interface EvaluationReopenData {
 export interface CreateEvaluationData {
 	subjectId: string;
 	commissionId?: string;
+	careerId?: string;
+	locationId?: string;
 	title: string;
 	description?: string;
 	type: EvaluationType;
@@ -498,6 +500,66 @@ export class EvaluationService {
 		 * La inscripción abre en el momento de crear la evaluación
 		 * y permanece disponible exactamente durante 72 horas.
 		 */
+		if (data.type === EvaluationType.MESA_EXAMEN) {
+			if (!data.careerId || !data.locationId) {
+				return {
+					error: 'Las mesas de examen requieren carrera y sede/localidad'
+				};
+			}
+
+			const teacher = await this.prisma.teacher.findUnique({
+				where: { userId: data.userId },
+				select: { id: true }
+			});
+
+			if (!teacher) {
+				return { error: 'No se encontró el docente asociado al usuario' };
+			}
+
+			const subjectAssignment = await this.prisma.subjectTeacher.findFirst({
+				where: {
+					subjectId: data.subjectId,
+					teacherId: teacher.id
+				}
+			});
+
+			if (!subjectAssignment) {
+				return { error: 'No tenés asignada la materia seleccionada' };
+			}
+
+			const careerSubject = await this.prisma.careerSubject.findFirst({
+				where: {
+					careerId: data.careerId,
+					subjectId: data.subjectId
+				}
+			});
+
+			if (!careerSubject) {
+				return {
+					error: 'La materia seleccionada no pertenece a la carrera indicada'
+				};
+			}
+
+			const careerAtLocation = await this.prisma.career.findFirst({
+				where: {
+					id: data.careerId,
+					active: true,
+					locations: {
+						some: {
+							locationId: data.locationId
+						}
+					}
+				},
+				select: { id: true }
+			});
+
+			if (!careerAtLocation) {
+				return {
+					error: 'La carrera seleccionada no está habilitada en esa sede/localidad'
+				};
+			}
+		}
+
 		const registrationOpensAt = new Date();
 		const registrationClosesAt = new Date(registrationOpensAt.getTime() + 72 * 60 * 60 * 1000);
 
@@ -517,11 +579,14 @@ export class EvaluationService {
 			gradingMode === GradingMode.NUMERIC &&
 			averageTypes.includes(data.type) &&
 			(data.participatesInAverage ?? true);
-
 		const evaluation = await this.prisma.evaluation.create({
 			data: {
 				subjectId: data.subjectId,
-				commissionId: data.commissionId,
+				commissionId: data.type === EvaluationType.MESA_EXAMEN ? null : data.commissionId,
+				careerId: data.type === EvaluationType.MESA_EXAMEN ? data.careerId : null,
+				locationId: data.type === EvaluationType.MESA_EXAMEN ? data.locationId : null,
+				registrationOpensAt,
+				registrationClosesAt,
 				title: data.title,
 				description: data.description,
 				type: data.type,

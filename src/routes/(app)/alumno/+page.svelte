@@ -2,10 +2,6 @@
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
-
-	const getAvailableExam = (subjectId: string) => {
-		return data.evaluations?.find((e) => e.subjectId === subjectId);
-	};
 </script>
 
 <svelte:head>
@@ -135,13 +131,61 @@
 		</div>
 	</div>
 
+	<!-- Mesas de examen disponibles -->
+	{#if data.evaluations.length > 0}
+		<div class="rounded-2xl border border-blue-500/20 bg-slate-900/60 p-6">
+			<div class="mb-5">
+				<h2 class="text-lg font-semibold">Mesas de examen disponibles</h2>
+				<p class="mt-1 text-sm text-slate-400">
+					La inscripción permanece abierta durante 72 horas desde la creación de cada mesa.
+				</p>
+			</div>
+
+			<div class="space-y-3">
+				{#each data.evaluations as exam}
+					<div
+						class="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-950 p-4 sm:flex-row sm:items-center sm:justify-between"
+					>
+						<div>
+							<p class="font-medium">{exam.subjectName}</p>
+							<p class="mt-1 text-sm text-slate-400">{exam.title}</p>
+							<p class="mt-2 text-xs text-slate-500">
+								Mesa: {new Date(exam.date).toLocaleString('es-AR')}
+							</p>
+							{#if exam.registrationClosesAt}
+								<p class="text-xs text-slate-500">
+									Inscripción hasta:
+									{new Date(exam.registrationClosesAt).toLocaleString('es-AR')}
+								</p>
+							{/if}
+						</div>
+
+						{#if exam.registered}
+							<span
+								class="inline-flex rounded-lg bg-emerald-500/20 px-4 py-2 text-sm font-medium text-emerald-400"
+							>
+								✓ Inscripto
+							</span>
+						{:else}
+							<a
+								href="/evaluaciones/{exam.id}/inscribir"
+								class="inline-flex justify-center rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-600"
+							>
+								Inscribirme
+							</a>
+						{/if}
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/if}
+
 	<!-- Materias Cursando -->
 	{#if data.academic.currentSubjects.length > 0}
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
 			<h2 class="mb-4 text-lg font-semibold">📚 Materias Cursando</h2>
 			<div class="space-y-3">
 				{#each data.academic.currentSubjects as subject}
-					{@const availableExam = getAvailableExam(subject.id)}
 					<div
 						class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-4"
 					>
@@ -153,14 +197,6 @@
 							<span class="rounded-full bg-amber-500/20 px-3 py-1 text-xs text-amber-400">
 								{subject.regularityStatus}
 							</span>
-							{#if availableExam}
-								<a
-									href="/evaluaciones/{availableExam.id}/inscribir"
-									class="rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-blue-600"
-								>
-									Inscribir a mesa
-								</a>
-							{/if}
 						</div>
 					</div>
 				{/each}

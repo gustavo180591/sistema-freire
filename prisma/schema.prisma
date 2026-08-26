@@ -648,9 +648,34 @@ model ScholarshipNegotiation {
 // Nuevos modelos financieros - Fase 1
 
 model Receipt {
-  id               String        @id @default(cuid())
-  receiptNumber    Int
-  receiptYear      Int
+  id            String @id @default(cuid())
+  receiptNumber Int
+  receiptYear   Int
+
+  // Identificación fiscal del comprobante.
+  // Se conserva como snapshot para que un recibo histórico no cambie
+  // si luego se modifica la configuración de la sede.
+  locationId    String?
+  locationName  String?
+  receiptLetter String?
+  pointOfSale   String?
+
+  institutionName          String?
+  institutionCode          String?
+  institutionCodeNumber    String?
+  institutionOwner         String?
+  institutionEmail         String?
+  institutionAddress       String?
+  institutionPhone         String?
+  institutionWebsite       String?
+  institutionTaxStatus     String?
+  institutionCuit          String?
+  institutionGrossIncome   String?
+  institutionActivityStart DateTime? @db.Date
+
+  signatureLeftLabel  String?
+  signatureRightLabel String?
+
   studentId        String
   studentName      String
   studentDni       String?
@@ -677,12 +702,14 @@ model Receipt {
   items     ReceiptItem[]
   payments  Payment[]
   agreement PaymentAgreement? @relation(fields: [agreementId], references: [id], onDelete: SetNull)
+  location  Location?         @relation(fields: [locationId], references: [id], onDelete: SetNull)
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
 
-  @@unique([receiptNumber, receiptYear])
+  @@unique([locationId, pointOfSale, receiptNumber])
   @@index([studentId])
   @@index([receiptNumber, receiptYear])
+  @@index([locationId, pointOfSale, receiptNumber])
   @@index([status])
   @@index([agreementId])
   @@map("receipts")
@@ -888,24 +915,47 @@ model Location {
   classSchedules  ClassSchedule[]
   receiptConfig   ReceiptLocationConfig?
   evaluations     Evaluation[]
+  receipts        Receipt[]
 
   @@index([active])
   @@map("locations")
 }
 
 model ReceiptLocationConfig {
-  id                 String   @id @default(cuid())
-  locationId         String   @unique
-  institutionName    String?
-  institutionAddress String?
-  institutionCuit    String?
-  institutionPhone   String?
-  receiptHeader      String?  @db.Text
-  receiptFooter      String?  @db.Text
-  receiptLetter      String   @default("C")
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  location           Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  id         String @id @default(cuid())
+  locationId String @unique
+
+  // Datos institucionales y fiscales.
+  institutionName       String?
+  institutionCode       String?   @default("PAULO FREIRE")
+  institutionCodeNumber String?   @default("1117")
+  institutionOwner      String?   @default("SIDEPP")
+  institutionAddress    String?
+  institutionCuit       String?
+  institutionPhone      String?
+  institutionEmail      String?
+  institutionWebsite    String?
+  taxStatus             String?   @default("IVA EXENTO")
+  grossIncome           String?
+  activityStartDate     DateTime? @db.Date
+
+  // Formato del comprobante.
+  receiptHeader String? @db.Text
+  receiptFooter String? @db.Text
+  receiptLetter String  @default("C")
+
+  // Numeración independiente por sede.
+  pointOfSale       String @default("0001")
+  lastReceiptNumber Int    @default(0)
+
+  // Textos de firmas.
+  signatureLeftLabel  String @default("Firma Secretaría")
+  signatureRightLabel String @default("Firma Responsable")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
 
   @@map("receipt_location_configs")
 }

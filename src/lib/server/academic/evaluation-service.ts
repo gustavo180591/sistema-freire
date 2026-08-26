@@ -585,8 +585,6 @@ export class EvaluationService {
 				commissionId: data.type === EvaluationType.MESA_EXAMEN ? null : data.commissionId,
 				careerId: data.type === EvaluationType.MESA_EXAMEN ? data.careerId : null,
 				locationId: data.type === EvaluationType.MESA_EXAMEN ? data.locationId : null,
-				registrationOpensAt,
-				registrationClosesAt,
 				title: data.title,
 				description: data.description,
 				type: data.type,

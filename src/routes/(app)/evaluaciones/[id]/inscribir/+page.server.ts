@@ -5,7 +5,6 @@ import {
 	getExamRegistrationEligibility,
 	registerStudentForExam
 } from '$lib/server/academic/exam-registration-service';
-import { auditLog } from '$lib/server/audit';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const user = locals.user;
@@ -69,28 +68,25 @@ export const actions: Actions = {
 
 		const student = await getCurrentStudentForUser(user.id);
 
-		const result = await registerStudentForExam({
-			studentId: student.id,
-			evaluationId: params.id,
-			userId: user.id,
-			userName: `${user.firstName} ${user.lastName}`
-		});
+		try {
+			await registerStudentForExam(
+				params.id,
+				student.id,
+				user.id,
+				`${user.firstName} ${user.lastName}`
+			);
 
-		if ('error' in result) {
-			return fail(400, { error: result.error });
+			return {
+				success: true,
+				message: 'Inscripción a mesa de examen realizada correctamente'
+			};
+		} catch (error) {
+			return fail(400, {
+				error:
+					error instanceof Error
+						? error.message
+						: 'No se pudo realizar la inscripción a la mesa de examen'
+			});
 		}
-
-		await auditLog({
-			userId: user.id,
-			action: 'CREATE',
-			entityType: 'ExamRegistration',
-			entityId: result.registration.id,
-			description: `Alumno ${student.lastName} ${student.firstName} se inscribió a la mesa "${result.evaluation.title}"`
-		});
-
-		return {
-			success: true,
-			message: 'Inscripción a mesa de examen realizada correctamente'
-		};
 	}
 };

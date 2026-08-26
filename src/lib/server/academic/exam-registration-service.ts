@@ -8,6 +8,187 @@ function isWindowOpen(opensAt: Date | null, closesAt: Date | null, now = new Dat
 	return now >= opensAt && now <= closesAt;
 }
 
+export async function getExamRegistrationEligibility({
+	studentId,
+	evaluationId
+}: {
+	studentId: string;
+	evaluationId: string;
+}) {
+	const now = new Date();
+
+	const [student, evaluation] = await Promise.all([
+		prisma.student.findUnique({
+			where: {
+				id: studentId
+			},
+			select: {
+				id: true,
+				careerId: true,
+				locationId: true
+			}
+		}),
+		prisma.evaluation.findUnique({
+			where: {
+				id: evaluationId
+			},
+			include: {
+				subject: true,
+				career: true,
+				location: true,
+				examRegistrations: {
+					where: {
+						studentId
+					},
+					orderBy: {
+						registeredAt: 'desc'
+					}
+				}
+			}
+		})
+	]);
+
+	if (!student) {
+		return {
+			evaluation: null,
+			existingRegistration: null,
+			canRegister: false,
+			reason: 'Alumno no encontrado'
+		};
+	}
+
+	if (!evaluation) {
+		return {
+			evaluation: null,
+			existingRegistration: null,
+			canRegister: false,
+			reason: 'Mesa de examen no encontrada'
+		};
+	}
+
+	const existingRegistration = evaluation.examRegistrations[0] ?? null;
+
+	if (evaluation.type !== 'MESA_EXAMEN') {
+		return {
+			evaluation,
+			existingRegistration,
+			canRegister: false,
+			reason: 'La evaluación seleccionada no corresponde a una mesa de examen'
+		};
+	}
+
+	if (!evaluation.careerId || !evaluation.locationId) {
+		return {
+			evaluation,
+			existingRegistration,
+			canRegister: false,
+			reason: 'La mesa de examen no tiene carrera o sede configurada'
+		};
+	}
+
+	if (evaluation.careerId !== student.careerId) {
+		return {
+			evaluation,
+			existingRegistration,
+			canRegister: false,
+			reason: 'La mesa de examen no corresponde a la carrera del alumno'
+		};
+	}
+
+	if (evaluation.locationId !== student.locationId) {
+		return {
+			evaluation,
+			existingRegistration,
+			canRegister: false,
+			reason: 'La mesa de examen no corresponde a la sede del alumno'
+		};
+	}
+
+	if (evaluation.isClosed) {
+		return {
+			evaluation,
+			existingRegistration,
+			canRegister: false,
+			reason: 'La mesa de examen se encuentra cerrada'
+		};
+	}
+
+	if (evaluation.evaluationDate <= now) {
+		return {
+			evaluation,
+			existingRegistration,
+			canRegister: false,
+			reason: 'La fecha de la mesa de examen ya pasó'
+		};
+	}
+
+	const registrationOpensAt = evaluation.registrationOpensAt ?? evaluation.createdAt;
+	const registrationClosesAt =
+		evaluation.registrationClosesAt ??
+		new Date(registrationOpensAt.getTime() + 72 * 60 * 60 * 1000);
+
+	if (!isWindowOpen(registrationOpensAt, registrationClosesAt, now)) {
+		return {
+			evaluation,
+			existingRegistration,
+			canRegister: false,
+			reason: 'El período de inscripción de 72 horas se encuentra cerrado'
+		};
+	}
+
+	if (existingRegistration?.status === 'REGISTERED') {
+		return {
+			evaluation,
+			existingRegistration,
+			canRegister: false,
+			reason: 'Ya estás inscripto a esta mesa de examen'
+		};
+	}
+
+	const enrollment = await prisma.subjectEnrollment.findFirst({
+		where: {
+			studentId,
+			subjectId: evaluation.subjectId,
+			status: 'ACTIVE',
+			...(evaluation.commissionId
+				? {
+						commissionId: evaluation.commissionId
+					}
+				: {})
+		},
+		select: {
+			id: true
+		}
+	});
+
+	if (!enrollment) {
+		return {
+			evaluation,
+			existingRegistration,
+			canRegister: false,
+			reason: 'No tenés una inscripción activa en la materia correspondiente'
+		};
+	}
+
+	const financialEligibility = await getStudentFinancialExamEligibility(studentId);
+
+	if (!financialEligibility.canTakeExam) {
+		return {
+			evaluation,
+			existingRegistration,
+			canRegister: false,
+			reason: financialEligibility.message
+		};
+	}
+
+	return {
+		evaluation,
+		existingRegistration,
+		canRegister: true,
+		reason: ''
+	};
+}
+
 export async function getAvailableExamTablesForStudent(studentId: string) {
 	const now = new Date();
 

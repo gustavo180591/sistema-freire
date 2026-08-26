@@ -614,6 +614,7 @@
 		line-height: 1.2;
 		-webkit-box-orient: vertical;
 		-webkit-line-clamp: 2;
+		line-clamp: 2;
 	}
 
 	.receipt-payment-section {

@@ -18,7 +18,12 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 					role: true
 				}
 			},
-			student: true,
+			student: {
+				include: {
+					career: true,
+					location: true
+				}
+			},
 			teacher: {
 				include: {
 					subjects: {
@@ -70,6 +75,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const careers = await prisma.career.findMany({
 		where: { active: true },
+		include: {
+			locations: {
+				include: {
+					location: true
+				}
+			}
+		},
 		orderBy: { name: 'asc' }
 	});
 
@@ -137,6 +149,7 @@ export const actions: Actions = {
 		const status = formData.get('status')?.toString();
 		const phone = formData.get('phone')?.toString();
 		const dni = formData.get('dni')?.toString()?.trim();
+		const cuil = formData.get('cuil')?.toString()?.trim();
 
 		if (!firstName || !lastName || !email) {
 			return fail(400, { error: 'Datos requeridos faltantes' });
@@ -193,29 +206,40 @@ export const actions: Actions = {
 					email,
 					phone: phone || null,
 					dni: dni || null,
+					cuil: cuil || null,
 					status: status as 'ACTIVE' | 'INACTIVE' | 'BLOCKED'
 				}
 			});
 
-			// Sincronizar DNI con Student si el usuario es alumno y el DNI no está vacío
+			// Mantener sincronizados User y Student.
 			const student = await prisma.student.findUnique({
 				where: { userId: params.id }
 			});
-			if (student && dni) {
+
+			if (student) {
 				await prisma.student.update({
 					where: { userId: params.id },
-					data: { dni }
+					data: {
+						firstName,
+						lastName,
+						...(dni ? { dni } : {})
+					}
 				});
 			}
 
-			// Sincronizar DNI con Teacher si el usuario es docente y el DNI no está vacío
+			// Mantener sincronizados User y Teacher.
 			const teacher = await prisma.teacher.findUnique({
 				where: { userId: params.id }
 			});
-			if (teacher && dni) {
+
+			if (teacher) {
 				await prisma.teacher.update({
 					where: { userId: params.id },
-					data: { dni }
+					data: {
+						firstName,
+						lastName,
+						...(dni ? { dni } : {})
+					}
 				});
 			}
 
@@ -232,6 +256,214 @@ export const actions: Actions = {
 		} catch (e) {
 			console.error(e);
 			return fail(500, { error: 'Error al actualizar usuario' });
+		}
+	},
+
+	updateStudent: async ({ request, params, locals }) => {
+		const currentUser = locals.user;
+
+		if (!currentUser) {
+			return fail(401, { error: 'No autorizado' });
+		}
+
+		const targetUser = await prisma.user.findUnique({
+			where: { id: params.id },
+			select: {
+				id: true,
+				firstName: true,
+				lastName: true,
+				student: {
+					select: {
+						id: true,
+						careerId: true,
+						locationId: true
+					}
+				}
+			}
+		});
+
+		if (!targetUser?.student) {
+			return fail(404, { error: 'El usuario no posee un perfil de alumno' });
+		}
+
+		const formData = await request.formData();
+
+		const careerId = formData.get('studentCareerId')?.toString().trim() ?? '';
+		const locationId = formData.get('studentLocationId')?.toString().trim() ?? '';
+		const currentYearRaw = formData.get('currentYear')?.toString().trim() ?? '';
+		const studentType = formData.get('studentType')?.toString() ?? 'normal';
+
+		const birthDateRaw = formData.get('birthDate')?.toString().trim() ?? '';
+		const bloodType = formData.get('bloodType')?.toString().trim() ?? '';
+		const studentPhone = formData.get('studentPhone')?.toString().trim() ?? '';
+
+		const address = formData.get('address')?.toString().trim() ?? '';
+		const locality = formData.get('locality')?.toString().trim() ?? '';
+		const postalCode = formData.get('postalCode')?.toString().trim() ?? '';
+
+		const highSchool = formData.get('highSchool')?.toString().trim() ?? '';
+		const highSchoolYearRaw = formData.get('highSchoolYear')?.toString().trim() ?? '';
+		const instituteYearRaw = formData.get('instituteYear')?.toString().trim() ?? '';
+
+		const familyContactName = formData.get('familyContactName')?.toString().trim() ?? '';
+		const familyContactPhone = formData.get('familyContactPhone')?.toString().trim() ?? '';
+		const familyRelationship = formData.get('familyRelationship')?.toString().trim() ?? '';
+
+		if (!careerId) {
+			return fail(400, { error: 'Seleccioná la carrera del alumno' });
+		}
+
+		if (!['normal', 'becado', 'recursante'].includes(studentType)) {
+			return fail(400, { error: 'Tipo de alumno inválido' });
+		}
+
+		const career = await prisma.career.findFirst({
+			where: {
+				id: careerId,
+				active: true
+			},
+			select: {
+				id: true,
+				name: true,
+				durationYears: true
+			}
+		});
+
+		if (!career) {
+			return fail(400, { error: 'La carrera seleccionada no existe o no está activa' });
+		}
+
+		if (locationId) {
+			const location = await prisma.location.findFirst({
+				where: {
+					id: locationId,
+					active: true
+				},
+				select: {
+					id: true
+				}
+			});
+
+			if (!location) {
+				return fail(400, { error: 'La localidad/sede seleccionada no existe o no está activa' });
+			}
+
+			const careerLocation = await prisma.careerLocation.findFirst({
+				where: {
+					careerId,
+					locationId
+				},
+				select: {
+					careerId: true
+				}
+			});
+
+			if (!careerLocation) {
+				return fail(400, {
+					error: 'La sede seleccionada no está habilitada para esa carrera'
+				});
+			}
+		}
+
+		let currentYear = 1;
+
+		if (currentYearRaw) {
+			currentYear = Number.parseInt(currentYearRaw, 10);
+
+			if (
+				!Number.isInteger(currentYear) ||
+				currentYear < 1 ||
+				currentYear > career.durationYears
+			) {
+				return fail(400, {
+					error: `El año actual debe estar entre 1 y ${career.durationYears}`
+				});
+			}
+		}
+
+		let birthDate: Date | null = null;
+
+		if (birthDateRaw) {
+			birthDate = new Date(`${birthDateRaw}T00:00:00`);
+
+			if (Number.isNaN(birthDate.getTime())) {
+				return fail(400, { error: 'Fecha de nacimiento inválida' });
+			}
+		}
+
+		const parseOptionalYear = (value: string, label: string): number | null => {
+			if (!value) return null;
+
+			const parsed = Number.parseInt(value, 10);
+
+			if (!Number.isInteger(parsed) || parsed < 1900 || parsed > 2200) {
+				throw new Error(`${label} inválido`);
+			}
+
+			return parsed;
+		};
+
+		let highSchoolYear: number | null;
+		let instituteYear: number | null;
+
+		try {
+			highSchoolYear = parseOptionalYear(highSchoolYearRaw, 'Año del secundario');
+			instituteYear = parseOptionalYear(instituteYearRaw, 'Año del instituto');
+		} catch (error) {
+			return fail(400, {
+				error: error instanceof Error ? error.message : 'Año inválido'
+			});
+		}
+
+		try {
+			await prisma.student.update({
+				where: {
+					id: targetUser.student.id
+				},
+				data: {
+					careerId,
+					locationId: locationId || null,
+					currentYear,
+
+					isBecado: studentType === 'becado',
+					isRecursante: studentType === 'recursante',
+
+					birthDate,
+					bloodType: bloodType || null,
+					phone: studentPhone || null,
+
+					address: address || null,
+					locality: locality || null,
+					postalCode: postalCode || null,
+
+					highSchool: highSchool || null,
+					highSchoolYear,
+					instituteYear,
+
+					familyContactName: familyContactName || null,
+					familyContactPhone: familyContactPhone || null,
+					familyRelationship: familyRelationship || null
+				}
+			});
+
+			await auditLog({
+				userId: currentUser.id,
+				action: AuditAction.UPDATE,
+				entityType: 'STUDENT',
+				entityId: targetUser.student.id,
+				description: `Actualización de datos personales y académicos del alumno ${targetUser.firstName} ${targetUser.lastName}`
+			});
+
+			return {
+				success: true,
+				message: 'Datos del alumno actualizados correctamente'
+			};
+		} catch (error) {
+			console.error('Error al actualizar datos del alumno:', error);
+
+			return fail(500, {
+				error: 'No se pudieron actualizar los datos del alumno'
+			});
 		}
 	},
 

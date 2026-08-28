@@ -12,7 +12,20 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 					role: true
 				}
 			},
-			student: true,
+			student: {
+				include: {
+					career: {
+						include: {
+							locations: {
+								include: {
+									location: true
+								}
+							}
+						}
+					},
+					location: true
+				}
+			},
 			teacher: {
 				include: {
 					subjects: {

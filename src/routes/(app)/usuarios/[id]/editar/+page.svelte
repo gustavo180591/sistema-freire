@@ -18,6 +18,33 @@
 	);
 
 	const hasStudentOrTeacher = $derived(data.user.student || data.user.teacher);
+
+	let selectedStudentCareerId = $state(data.user.student?.careerId ?? '');
+	let selectedStudentLocationId = $state(data.user.student?.locationId ?? '');
+
+	const studentCareerLocations = $derived(
+		data.careers.find((career) => career.id === selectedStudentCareerId)?.locations ?? []
+	);
+
+	function handleStudentCareerChange(event: Event) {
+		const select = event.currentTarget as HTMLSelectElement;
+		selectedStudentCareerId = select.value;
+
+		const career = data.careers.find((item) => item.id === selectedStudentCareerId);
+		const validLocation = career?.locations.some(
+			(item) => item.location.id === selectedStudentLocationId
+		);
+
+		if (!validLocation) {
+			selectedStudentLocationId = '';
+		}
+	}
+
+	function dateInputValue(value: string | Date | null | undefined): string {
+		if (!value) return '';
+
+		return new Date(value).toISOString().slice(0, 10);
+	}
 </script>
 
 <svelte:head>
@@ -45,8 +72,10 @@
 	{/if}
 
 	{#if form?.success}
-		<div class="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-400">
-			Usuario actualizado correctamente
+		<div
+			class="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-400"
+		>
+			{form?.message || 'Datos actualizados correctamente'}
 		</div>
 	{/if}
 
@@ -111,6 +140,18 @@
 					/>
 				</div>
 				<div>
+					<label for="cuil" class="mb-1 block text-sm text-slate-400">CUIL</label>
+					<input
+						id="cuil"
+						name="cuil"
+						type="text"
+						value={data.user.cuil ?? ''}
+						placeholder="20-12345678-9"
+						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+					/>
+				</div>
+
+				<div>
 					<label for="phone" class="mb-1 block text-sm text-slate-400">Teléfono</label>
 					<input
 						id="phone"
@@ -129,6 +170,333 @@
 			</button>
 		</form>
 	</div>
+
+	{#if data.user.student}
+		<div class="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70">
+			<div class="border-b border-slate-800 p-6">
+				<p class="text-xs font-semibold tracking-[0.18em] text-indigo-300 uppercase">
+					Alumno
+				</p>
+				<h2 class="mt-1 text-xl font-bold text-white">Datos personales y académicos</h2>
+				<p class="mt-1 text-sm text-slate-400">
+					Editá la carrera, sede donde cursa, localidad de origen y datos personales del alumno.
+				</p>
+			</div>
+
+			<form method="POST" action="?/updateStudent" use:enhance class="space-y-6 p-6">
+				<!-- Carrera y cursado -->
+				<section class="rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-5">
+					<p class="text-xs font-semibold tracking-[0.16em] text-indigo-300 uppercase">
+						Carrera y cursado
+					</p>
+
+					<div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+						<div class="xl:col-span-2">
+							<label for="studentCareerId" class="mb-2 block text-sm text-slate-400">
+								Carrera
+							</label>
+
+							<select
+								id="studentCareerId"
+								name="studentCareerId"
+								bind:value={selectedStudentCareerId}
+								onchange={handleStudentCareerChange}
+								required
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
+							>
+								<option value="">Seleccionar carrera</option>
+
+								{#each data.careers as career}
+									<option value={career.id}>
+										{career.name}
+									</option>
+								{/each}
+							</select>
+						</div>
+
+						<div>
+							<label for="studentLocationId" class="mb-2 block text-sm text-slate-400">
+								Localidad / sede de la carrera
+							</label>
+
+							<select
+								id="studentLocationId"
+								name="studentLocationId"
+								bind:value={selectedStudentLocationId}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
+							>
+								<option value="">Sin sede asignada</option>
+
+								{#each studentCareerLocations as careerLocation}
+									<option value={careerLocation.location.id}>
+										{careerLocation.location.name}
+									</option>
+								{/each}
+							</select>
+
+							<p class="mt-1 text-xs text-slate-500">
+								Solo aparecen las sedes habilitadas para la carrera seleccionada.
+							</p>
+						</div>
+
+						<div>
+							<label for="currentYear" class="mb-2 block text-sm text-slate-400">
+								Año actual
+							</label>
+
+							<input
+								id="currentYear"
+								name="currentYear"
+								type="number"
+								min="1"
+								value={data.user.student.currentYear}
+								required
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
+							/>
+						</div>
+					</div>
+
+					<div class="mt-4">
+						<label for="studentType" class="mb-2 block text-sm text-slate-400">
+							Tipo de alumno
+						</label>
+
+						<select
+							id="studentType"
+							name="studentType"
+							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500 md:max-w-sm"
+						>
+							<option
+								value="normal"
+								selected={!data.user.student.isBecado && !data.user.student.isRecursante}
+							>
+								Normal
+							</option>
+
+							<option value="becado" selected={data.user.student.isBecado}>
+								Becado
+							</option>
+
+							<option value="recursante" selected={data.user.student.isRecursante}>
+								Recursante
+							</option>
+						</select>
+					</div>
+				</section>
+
+				<!-- Información personal -->
+				<section class="rounded-2xl border border-slate-800 bg-slate-950/40 p-5">
+					<p class="text-xs font-semibold tracking-[0.16em] text-slate-400 uppercase">
+						Información personal del alumno
+					</p>
+
+					<div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+						<div>
+							<label for="birthDate" class="mb-2 block text-sm text-slate-400">
+								Fecha de nacimiento
+							</label>
+							<input
+								id="birthDate"
+								name="birthDate"
+								type="date"
+								value={dateInputValue(data.user.student.birthDate)}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+
+						<div>
+							<label for="bloodType" class="mb-2 block text-sm text-slate-400">
+								Grupo sanguíneo
+							</label>
+							<input
+								id="bloodType"
+								name="bloodType"
+								type="text"
+								value={data.user.student.bloodType ?? ''}
+								placeholder="Ej.: O+"
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+
+						<div>
+							<label for="studentPhone" class="mb-2 block text-sm text-slate-400">
+								Teléfono del alumno
+							</label>
+							<input
+								id="studentPhone"
+								name="studentPhone"
+								type="tel"
+								value={data.user.student.phone ?? ''}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+					</div>
+				</section>
+
+				<!-- Domicilio y procedencia -->
+				<section class="rounded-2xl border border-slate-800 bg-slate-950/40 p-5">
+					<p class="text-xs font-semibold tracking-[0.16em] text-slate-400 uppercase">
+						Domicilio y procedencia
+					</p>
+
+					<div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+						<div class="xl:col-span-2">
+							<label for="address" class="mb-2 block text-sm text-slate-400">
+								Domicilio
+							</label>
+							<input
+								id="address"
+								name="address"
+								type="text"
+								value={data.user.student.address ?? ''}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+
+						<div>
+							<label for="postalCode" class="mb-2 block text-sm text-slate-400">
+								Código postal
+							</label>
+							<input
+								id="postalCode"
+								name="postalCode"
+								type="text"
+								value={data.user.student.postalCode ?? ''}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+
+						<div class="md:col-span-2 xl:col-span-3">
+							<label for="locality" class="mb-2 block text-sm text-slate-400">
+								Localidad de origen
+							</label>
+							<input
+								id="locality"
+								name="locality"
+								type="text"
+								value={data.user.student.locality ?? ''}
+								placeholder="Ej.: Eldorado, Oberá, Posadas..."
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+							<p class="mt-1 text-xs text-slate-500">
+								Esta localidad corresponde al domicilio/procedencia del alumno, no a la sede donde cursa.
+							</p>
+						</div>
+					</div>
+				</section>
+
+				<!-- Estudios previos -->
+				<section class="rounded-2xl border border-slate-800 bg-slate-950/40 p-5">
+					<p class="text-xs font-semibold tracking-[0.16em] text-slate-400 uppercase">
+						Estudios previos
+					</p>
+
+					<div class="mt-4 grid gap-4 md:grid-cols-3">
+						<div>
+							<label for="highSchool" class="mb-2 block text-sm text-slate-400">
+								Escuela secundaria
+							</label>
+							<input
+								id="highSchool"
+								name="highSchool"
+								type="text"
+								value={data.user.student.highSchool ?? ''}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+
+						<div>
+							<label for="highSchoolYear" class="mb-2 block text-sm text-slate-400">
+								Año secundario
+							</label>
+							<input
+								id="highSchoolYear"
+								name="highSchoolYear"
+								type="number"
+								min="1900"
+								max="2200"
+								value={data.user.student.highSchoolYear ?? ''}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+
+						<div>
+							<label for="instituteYear" class="mb-2 block text-sm text-slate-400">
+								Año de ingreso al instituto
+							</label>
+							<input
+								id="instituteYear"
+								name="instituteYear"
+								type="number"
+								min="1900"
+								max="2200"
+								value={data.user.student.instituteYear ?? ''}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+					</div>
+				</section>
+
+				<!-- Contacto familiar -->
+				<section class="rounded-2xl border border-slate-800 bg-slate-950/40 p-5">
+					<p class="text-xs font-semibold tracking-[0.16em] text-slate-400 uppercase">
+						Contacto familiar
+					</p>
+
+					<div class="mt-4 grid gap-4 md:grid-cols-3">
+						<div>
+							<label for="familyContactName" class="mb-2 block text-sm text-slate-400">
+								Nombre y apellido
+							</label>
+							<input
+								id="familyContactName"
+								name="familyContactName"
+								type="text"
+								value={data.user.student.familyContactName ?? ''}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+
+						<div>
+							<label for="familyRelationship" class="mb-2 block text-sm text-slate-400">
+								Vínculo
+							</label>
+							<input
+								id="familyRelationship"
+								name="familyRelationship"
+								type="text"
+								value={data.user.student.familyRelationship ?? ''}
+								placeholder="Madre, padre, tutor..."
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+
+						<div>
+							<label for="familyContactPhone" class="mb-2 block text-sm text-slate-400">
+								Teléfono
+							</label>
+							<input
+								id="familyContactPhone"
+								name="familyContactPhone"
+								type="tel"
+								value={data.user.student.familyContactPhone ?? ''}
+								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+							/>
+						</div>
+					</div>
+				</section>
+
+				<div class="flex justify-end">
+					<button
+						type="submit"
+						class="rounded-xl bg-indigo-500 px-6 py-3 font-semibold text-white transition hover:bg-indigo-400"
+					>
+						Guardar datos del alumno
+					</button>
+				</div>
+			</form>
+		</div>
+	{/if}
 
 	<!-- Card Sedes Habilitadas -->
 	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">

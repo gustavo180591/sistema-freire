@@ -236,62 +236,69 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			let amount = Number(charge.amount);
 			let finalAmount = Number(charge.finalAmount);
 
-			// Si el cargo no está pagado completamente, recalcular monto con configuración actual
+			// Para cuotas pendientes usar la configuración actual,
+			// respetando el tipo específico guardado en cada cargo.
+			//
+			// Esto permite que una edición manual NORMAL/BECADO/RECURSANTE
+			// no sea reemplazada visualmente por el tipo general del alumno.
 			if (charge.status !== 'PAID' && charge.concept.code === 'CUOTA_MENSUAL') {
-				const periodParts = charge.periodLabel.split('-');
-				if (periodParts.length === 2) {
-					const month = parseInt(periodParts[1], 10);
-					if (!isNaN(month)) {
-						const monthInBenefits = benefitsConfig.benefitsMonths.includes(month);
+				const effectiveChargeType =
+					charge.benefitType === 'SCHOLARSHIP'
+						? 'BECADO'
+						: charge.benefitType === 'RECURSANT'
+							? 'RECURSANTE'
+							: charge.benefitType === 'NONE'
+								? 'NORMAL'
+								: student.isBecado
+									? 'BECADO'
+									: student.isRecursante
+										? 'RECURSANTE'
+										: 'NORMAL';
 
-						// Determinar el monto base según configuración actual
-						let baseAmount: number;
-						if (student.isBecado && monthInBenefits) {
-							baseAmount = benefitsConfig.becadoFeeAmount;
-						} else if (student.isRecursante && monthInBenefits) {
-							baseAmount = benefitsConfig.recursantFeeAmount;
-						} else {
-							baseAmount = benefitsConfig.normalFeeAmount;
-						}
+				amount = benefitsConfig.normalFeeAmount;
 
-						// Recalcular beneficios con configuración actual
-						const benefitCalculation = calculateChargeBenefit(
-							new Decimal(baseAmount),
-							{ isBecado: student.isBecado, isRecursante: student.isRecursante },
-							charge.installmentNumber || 1,
-							month,
-							benefitsConfig
-						);
-
-						// Usar montos recalculados para display
-						amount = baseAmount;
-						finalAmount = Number(benefitCalculation.finalAmount);
-					}
-				}
+				finalAmount =
+					effectiveChargeType === 'BECADO'
+						? benefitsConfig.becadoFeeAmount
+						: effectiveChargeType === 'RECURSANTE'
+							? benefitsConfig.recursantFeeAmount
+							: benefitsConfig.normalFeeAmount;
 			}
 
 			// Calcular pendiente correctamente (puede ser negativo para saldo a favor)
 			const pending = finalAmount - Number(charge.paidAmount);
 
-			// Determine charge type based on student type, benefit month, and scholarship status
+			// Determinar el tipo efectivo guardado en este cargo.
+			// Un cambio posterior del tipo general del alumno no debe alterar
+			// cómo se identifica históricamente esta cuota.
 			let chargeType = 'Cuota Normal';
 			let scholarshipLost = false;
 
 			if (charge.concept.code === 'CUOTA_MENSUAL') {
-				const periodParts = charge.periodLabel.split('-');
-				if (periodParts.length === 2) {
-					const month = parseInt(periodParts[1], 10);
-					if (!isNaN(month) && benefitsConfig.benefitsMonths.includes(month)) {
-						if (student.isBecado) {
-							// Verificar si la beca se perdió (scholarshipApplied es 0 pero amount > finalAmount)
-							if (scholarshipApplied === 0 && amount > finalAmount) {
-								chargeType = 'Beca perdida';
-								scholarshipLost = true;
-							} else if (scholarshipApplied > 0) {
-								chargeType = 'Cuota Becado';
+				if (charge.benefitType === 'SCHOLARSHIP') {
+					chargeType = 'Cuota Becado';
+				} else if (charge.benefitType === 'RECURSANT') {
+					chargeType = 'Cuota Recursante';
+				} else if (charge.benefitType === 'NONE') {
+					chargeType = 'Cuota Normal';
+				} else {
+					// Compatibilidad con cargos históricos que no tengan benefitType.
+					const periodParts = charge.periodLabel.split('-');
+
+					if (periodParts.length === 2) {
+						const month = parseInt(periodParts[1], 10);
+
+						if (!isNaN(month) && benefitsConfig.benefitsMonths.includes(month)) {
+							if (student.isBecado) {
+								if (scholarshipApplied === 0 && amount > finalAmount) {
+									chargeType = 'Beca perdida';
+									scholarshipLost = true;
+								} else {
+									chargeType = 'Cuota Becado';
+								}
+							} else if (student.isRecursante) {
+								chargeType = 'Cuota Recursante';
 							}
-						} else if (student.isRecursante) {
-							chargeType = 'Cuota Recursante';
 						}
 					}
 				}
@@ -317,10 +324,25 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			// Buscar recibo asociado al cargo
 			const allocation = await prisma.paymentAllocation.findFirst({
 				where: { chargeId: charge.id },
-				include: { payment: { include: { receipt: { select: { id: true } } } } },
+				include: {
+					payment: {
+						select: {
+							paidAt: true,
+							method: true,
+							receipt: {
+								select: {
+									id: true
+								}
+							}
+						}
+					}
+				},
 				orderBy: { createdAt: 'desc' }
 			});
+
 			const receiptId = allocation?.payment?.receipt?.id || null;
+			const paymentDate = allocation?.payment?.paidAt?.toISOString() ?? null;
+			const paymentMethod = allocation?.payment?.method ?? null;
 
 			return {
 				id: charge.id,
@@ -341,6 +363,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				scholarshipLost,
 				isOverdue,
 				receiptId,
+				paymentDate,
+				paymentMethod,
 				dueDate: dueDate ? dueDate.toISOString() : null
 			};
 		})
@@ -443,6 +467,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			blockingReason: blockingStatus.reason
 		},
 		charges,
+		feeAmounts: {
+			NORMAL: benefitsConfig.normalFeeAmount,
+			BECADO: benefitsConfig.becadoFeeAmount,
+			RECURSANTE: benefitsConfig.recursantFeeAmount
+		},
 		scholarshipLifecycle,
 		canManageScholarship
 	};
@@ -883,24 +912,32 @@ export const actions: Actions = {
 			let discountApplied = 0;
 			let scholarshipApplied = 0;
 
+			let configuredNormalAmount: number | null = null;
+
 			if (charge.concept.code === 'CUOTA_MENSUAL') {
 				const benefitsConfig = await getBenefitsConfig(prisma);
-				const periodParts = charge.periodLabel.split('-');
-				const month = periodParts.length === 2 ? parseInt(periodParts[1], 10) : null;
 
-				const benefitCalculation = calculateChargeBenefit(
-					new Decimal(benefitsConfig.normalFeeAmount),
-					{ isBecado, isRecursante },
-					charge.installmentNumber,
-					isNaN(month as number) ? null : month,
-					benefitsConfig
-				);
+				configuredNormalAmount = benefitsConfig.normalFeeAmount;
 
-				finalAmount = Number(benefitCalculation.finalAmount);
-				benefitType = benefitCalculation.benefitType;
-				benefitReason = benefitCalculation.benefitReason || 'Normal';
-				discountApplied = Number(benefitCalculation.discountApplied || 0);
-				scholarshipApplied = Number(benefitCalculation.scholarshipApplied || 0);
+				if (chargeType === 'BECADO') {
+					finalAmount = benefitsConfig.becadoFeeAmount;
+					benefitType = 'SCHOLARSHIP';
+					benefitReason = 'Cuota Becado';
+					scholarshipApplied = benefitsConfig.normalFeeAmount - benefitsConfig.becadoFeeAmount;
+					discountApplied = 0;
+				} else if (chargeType === 'RECURSANTE') {
+					finalAmount = benefitsConfig.recursantFeeAmount;
+					benefitType = 'RECURSANT';
+					benefitReason = 'Cuota Recursante';
+					discountApplied = benefitsConfig.normalFeeAmount - benefitsConfig.recursantFeeAmount;
+					scholarshipApplied = 0;
+				} else {
+					finalAmount = benefitsConfig.normalFeeAmount;
+					benefitType = 'NONE';
+					benefitReason = 'Cuota Normal';
+					discountApplied = 0;
+					scholarshipApplied = 0;
+				}
 			} else {
 				finalAmount = previousFinalAmount;
 			}
@@ -920,11 +957,20 @@ export const actions: Actions = {
 			};
 
 			if (charge.concept.code === 'CUOTA_MENSUAL') {
+				updateData.amount = new Decimal(configuredNormalAmount ?? finalAmount);
 				updateData.finalAmount = new Decimal(finalAmount);
 				updateData.benefitType = benefitType;
 				updateData.benefitReason = benefitReason;
 				updateData.discountApplied = new Decimal(discountApplied);
 				updateData.scholarshipApplied = new Decimal(scholarshipApplied);
+				updateData.ruleSnapshot = {
+					source: 'MANUAL_CHARGE_EDIT',
+					chargeType,
+					normalFeeAmount: configuredNormalAmount,
+					finalAmount,
+					updatedAt: new Date().toISOString(),
+					updatedBy: locals.user.id
+				};
 			}
 
 			await prisma.studentCharge.update({

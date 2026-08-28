@@ -66,9 +66,20 @@
 	let selectedType = $state<'NORMAL' | 'BECADO' | 'RECURSANTE'>('NORMAL');
 	let changeReason = $state('');
 	let recalculateCharges = $state(false);
+	type EditChargeType = 'NORMAL' | 'BECADO' | 'RECURSANTE';
+
 	let selectedCharge = $state<any>(null);
 	let showViewModal = $state(false);
 	let showEditModal = $state(false);
+	let editChargeType = $state<EditChargeType>('NORMAL');
+
+	const editFinalAmount = $derived(
+		editChargeType === 'BECADO'
+			? data.feeAmounts.BECADO
+			: editChargeType === 'RECURSANTE'
+				? data.feeAmounts.RECURSANTE
+				: data.feeAmounts.NORMAL
+	);
 
 	// Mostrar mensaje de éxito cuando hay form.success
 	$effect(() => {
@@ -108,6 +119,18 @@
 		return 'NORMAL';
 	}
 
+	function getChargeTypeForEdit(charge: any): EditChargeType {
+		if (charge.benefitType === 'SCHOLARSHIP') return 'BECADO';
+		if (charge.benefitType === 'RECURSANT') return 'RECURSANTE';
+		return 'NORMAL';
+	}
+
+	function openEditChargeModal(charge: any) {
+		selectedCharge = charge;
+		editChargeType = getChargeTypeForEdit(charge);
+		showEditModal = true;
+	}
+
 	function getTypeLabel(type: 'NORMAL' | 'BECADO' | 'RECURSANTE'): string {
 		const labels = {
 			NORMAL: 'Normal',
@@ -133,6 +156,21 @@
 	};
 
 	const translateStatus = (status: string) => statusTranslations[status] || status;
+
+	function formatPaymentMethod(value: string | null | undefined): string {
+		if (!value) return '—';
+
+		const methods: Record<string, string> = {
+			CASH: 'Efectivo',
+			BANK_TRANSFER: 'Transferencia bancaria',
+			DEBIT_CARD: 'Tarjeta de débito',
+			CREDIT_CARD: 'Tarjeta de crédito',
+			QR: 'QR',
+			SCHOLARSHIP: 'Beca'
+		};
+
+		return methods[value] || value;
+	}
 
 	function getScholarshipStatusLabel(status: string | null): string {
 		const labels: Record<string, string> = {
@@ -475,6 +513,7 @@
 					<th class="px-4 py-4 text-sm font-semibold">Tipo de cuota</th>
 					<th class="px-4 py-4 text-right text-sm font-semibold">Importe a cobrar</th>
 					<th class="px-4 py-4 text-right text-sm font-semibold">Pagado</th>
+					<th class="px-4 py-4 text-sm font-semibold">Fecha de pago</th>
 					<th class="px-4 py-4 text-right text-sm font-semibold">Pendiente</th>
 					<th class="px-4 py-4 text-sm font-semibold">Estado</th>
 					<th class="px-4 py-4 text-sm font-semibold">Vencimiento</th>
@@ -512,6 +551,15 @@
 						</td>
 						<td class="px-4 py-4 text-right">
 							{currency.format(charge.paid)}
+						</td>
+						<td class="px-4 py-4 whitespace-nowrap">
+							{#if charge.paymentDate}
+								<span class="text-sm text-slate-300">
+									{formatDate(charge.paymentDate)}
+								</span>
+							{:else}
+								<span class="text-sm text-slate-500">—</span>
+							{/if}
 						</td>
 						<td class="px-4 py-4 text-right">
 							{#if charge.pending > 0}
@@ -558,10 +606,7 @@
 								</button>
 								<button
 									type="button"
-									onclick={() => {
-										selectedCharge = charge;
-										showEditModal = true;
-									}}
+									onclick={() => openEditChargeModal(charge)}
 									class="text-sm text-indigo-400 hover:text-indigo-300"
 								>
 									Editar
@@ -609,14 +654,25 @@
 				</p>
 				<p><span class="text-slate-400">Pagado:</span> {currency.format(selectedCharge.paid)}</p>
 				<p>
+					<span class="text-slate-400">Fecha de pago:</span>
+					{#if selectedCharge.paymentDate}
+						{formatDate(selectedCharge.paymentDate)}
+					{:else}
+						—
+					{/if}
+				</p>
+
+				<p>
+					<span class="text-slate-400">Forma de pago:</span>
+					{formatPaymentMethod(selectedCharge.paymentMethod)}
+				</p>
+
+				<p>
 					<span class="text-slate-400">Pendiente:</span>
 					{currency.format(selectedCharge.pending)}
 				</p>
 				<p><span class="text-slate-400">Estado:</span> {translateStatus(selectedCharge.status)}</p>
 				<p><span class="text-slate-400">Tipo de cuota:</span> {selectedCharge.chargeType}</p>
-				{#if selectedCharge.benefitReason}
-					<p><span class="text-slate-400">Motivo:</span> {selectedCharge.benefitReason}</p>
-				{/if}
 			</div>
 			<div class="mt-6 flex justify-end gap-3">
 				{#if selectedCharge.receiptId}
@@ -669,11 +725,7 @@
 					<select
 						id="chargeType"
 						name="chargeType"
-						value={selectedCharge.benefitType === 'SCHOLARSHIP'
-							? 'BECADO'
-							: selectedCharge.benefitType === 'RECURSANT'
-								? 'RECURSANTE'
-								: 'NORMAL'}
+						bind:value={editChargeType}
 						class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-slate-300 focus:border-indigo-500 focus:outline-none"
 						required
 					>
@@ -689,11 +741,12 @@
 					<input
 						type="number"
 						id="finalAmount"
-						value={selectedCharge.finalAmount}
+						value={editFinalAmount}
 						disabled
 						class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-slate-500"
 						step="0.01"
 					/>
+					<p class="mt-2 text-xs text-slate-500">Monto tomado de Configuración → Cuotas.</p>
 				</div>
 				<div>
 					<label for="paidAmount" class="mb-2 block text-sm font-medium text-slate-300">

@@ -71,6 +71,7 @@
 	let selectedCharge = $state<any>(null);
 	let showViewModal = $state(false);
 	let showEditModal = $state(false);
+	let showScholarshipHistory = $state(false);
 	let editChargeType = $state<EditChargeType>('NORMAL');
 
 	const editFinalAmount = $derived(
@@ -323,45 +324,86 @@
 			{/if}
 
 			{#if scholarship.history.length > 0}
-				<div class="mt-8 border-t border-slate-800 pt-6">
-					<h3 class="text-lg font-bold text-white">Historial de la beca</h3>
+				<div class="mt-6 border-t border-slate-800 pt-5">
+					<div
+						class="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 p-4 sm:flex-row sm:items-center sm:justify-between"
+					>
+						<div>
+							<div class="flex items-center gap-2">
+								<h3 class="font-semibold text-white">Historial de la beca</h3>
 
-					<div class="mt-4 space-y-3">
-						{#each scholarship.history as history}
-							<div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-								<div class="flex flex-col gap-2 sm:flex-row sm:justify-between">
-									<div>
-										<p class="font-medium text-slate-200">
-											{history.reason}
-										</p>
-
-										<p class="mt-1 text-xs text-slate-500">
-											{history.previousStatus
-												? `${getScholarshipStatusLabel(history.previousStatus)} → `
-												: ''}
-											{getScholarshipStatusLabel(history.newStatus)}
-										</p>
-
-										{#if history.notes}
-											<p class="mt-2 text-sm text-slate-400">
-												{history.notes}
-											</p>
-										{/if}
-
-										{#if history.changedByName}
-											<p class="mt-2 text-xs text-slate-600">
-												Responsable: {history.changedByName}
-											</p>
-										{/if}
-									</div>
-
-									<p class="shrink-0 text-xs text-slate-500">
-										{formatDate(history.createdAt)}
-									</p>
-								</div>
+								<span
+									class="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-xs font-medium text-slate-400"
+								>
+									{scholarship.history.length}
+								</span>
 							</div>
-						{/each}
+
+							<p class="mt-1 text-xs text-slate-500">
+								{scholarship.history.length === 1
+									? '1 movimiento registrado'
+									: `${scholarship.history.length} movimientos registrados`}
+							</p>
+						</div>
+
+						<button
+							type="button"
+							onclick={() => {
+								showScholarshipHistory = !showScholarshipHistory;
+							}}
+							aria-expanded={showScholarshipHistory}
+							class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-indigo-500 hover:text-white"
+						>
+							{showScholarshipHistory ? 'Ocultar historial' : 'Ver historial'}
+
+							<span
+								class={`text-xs transition-transform duration-200 ${
+									showScholarshipHistory ? 'rotate-180' : ''
+								}`}
+							>
+								▼
+							</span>
+						</button>
 					</div>
+
+					{#if showScholarshipHistory}
+						<div class="mt-4 space-y-3">
+							{#each scholarship.history as history}
+								<div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+									<div class="flex flex-col gap-2 sm:flex-row sm:justify-between">
+										<div>
+											<p class="font-medium text-slate-200">
+												{history.reason}
+											</p>
+
+											<p class="mt-1 text-xs text-slate-500">
+												{history.previousStatus
+													? `${getScholarshipStatusLabel(history.previousStatus)} → `
+													: ''}
+												{getScholarshipStatusLabel(history.newStatus)}
+											</p>
+
+											{#if history.notes}
+												<p class="mt-2 text-sm text-slate-400">
+													{history.notes}
+												</p>
+											{/if}
+
+											{#if history.changedByName}
+												<p class="mt-2 text-xs text-slate-600">
+													Responsable: {history.changedByName}
+												</p>
+											{/if}
+										</div>
+
+										<p class="shrink-0 text-xs text-slate-500">
+											{formatDate(history.createdAt)}
+										</p>
+									</div>
+								</div>
+							{/each}
+						</div>
+					{/if}
 				</div>
 			{/if}
 		{:else}

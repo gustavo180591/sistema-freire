@@ -132,6 +132,12 @@
 								</p>
 							{/if}
 
+							{#if receipt.locationName || receipt.location?.name}
+								<p class="mt-1 text-[12px] font-bold uppercase">
+									{receipt.locationName || receipt.location?.name}
+								</p>
+							{/if}
+
 							{#if institutional.email}
 								<p class="mt-2 text-[10px]">
 									Correo Electrónico: {institutional.email}

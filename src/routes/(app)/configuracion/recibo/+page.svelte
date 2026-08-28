@@ -385,12 +385,11 @@
 											</label>
 											<input
 												id="nextReceiptNumber"
-												name="nextReceiptNumber"
+												readonly
 												type="number"
 												min="1"
 												max="99999999"
 												step="1"
-												required
 												value={currentConfig.nextReceiptNumber}
 												class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 font-mono text-slate-200 outline-none focus:border-indigo-500"
 											/>

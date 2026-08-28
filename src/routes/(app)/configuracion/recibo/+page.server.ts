@@ -70,6 +70,22 @@ export const load: PageServerLoad = async ({ locals }) => {
 	for (const location of locations) {
 		const config = location.receiptConfig;
 
+		const pointOfSale = config?.pointOfSale ?? defaultConfig.pointOfSale;
+
+		const issued = await prisma.receipt.aggregate({
+			where: {
+				locationId: location.id,
+				pointOfSale
+			},
+			_max: {
+				receiptNumber: true
+			}
+		});
+
+		const highestIssuedNumber = issued._max.receiptNumber ?? 0;
+
+		const actualLastReceiptNumber = Math.max(config?.lastReceiptNumber ?? 0, highestIssuedNumber);
+
 		configs[location.id] = {
 			institutionName: config?.institutionName ?? defaultConfig.institutionName,
 			institutionCode: config?.institutionCode ?? defaultConfig.institutionCode,
@@ -89,9 +105,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 			receiptHeader: config?.receiptHeader ?? defaultConfig.receiptHeader,
 			receiptFooter: config?.receiptFooter ?? defaultConfig.receiptFooter,
 			receiptLetter: config?.receiptLetter ?? defaultConfig.receiptLetter,
-			pointOfSale: config?.pointOfSale ?? defaultConfig.pointOfSale,
-			lastReceiptNumber: config?.lastReceiptNumber ?? defaultConfig.lastReceiptNumber,
-			nextReceiptNumber: (config?.lastReceiptNumber ?? 0) + 1,
+			pointOfSale,
+			lastReceiptNumber: actualLastReceiptNumber,
+			nextReceiptNumber: actualLastReceiptNumber + 1,
 			signatureLeftLabel: config?.signatureLeftLabel ?? defaultConfig.signatureLeftLabel,
 			signatureRightLabel: config?.signatureRightLabel ?? defaultConfig.signatureRightLabel
 		};
@@ -123,7 +139,6 @@ export const actions: Actions = {
 		const institutionName = form.get('institutionName')?.toString().trim() ?? '';
 		const receiptLetter = form.get('receiptLetter')?.toString().trim().toUpperCase() ?? 'C';
 		const pointOfSale = form.get('pointOfSale')?.toString().trim() ?? '';
-		const nextReceiptNumberRaw = form.get('nextReceiptNumber')?.toString().trim() ?? '';
 
 		if (!locationId) {
 			return fail(400, { error: 'Falta la localidad' });
@@ -140,18 +155,6 @@ export const actions: Actions = {
 		if (!/^\d{4}$/.test(pointOfSale)) {
 			return fail(400, {
 				error: 'El punto de venta debe contener exactamente 4 dígitos, por ejemplo 0002'
-			});
-		}
-
-		const nextReceiptNumber = Number(nextReceiptNumberRaw);
-
-		if (
-			!Number.isInteger(nextReceiptNumber) ||
-			nextReceiptNumber <= 0 ||
-			nextReceiptNumber > 99_999_999
-		) {
-			return fail(400, {
-				error: 'El próximo número de recibo debe ser un entero entre 1 y 99999999'
 			});
 		}
 
@@ -192,18 +195,12 @@ export const actions: Actions = {
 
 		const highestIssuedNumber = issued._max.receiptNumber ?? 0;
 
-		const currentNextNumber =
-			currentConfig?.pointOfSale === pointOfSale ? currentConfig.lastReceiptNumber + 1 : 1;
+		const configuredLastReceiptNumber =
+			currentConfig?.pointOfSale === pointOfSale ? currentConfig.lastReceiptNumber : 0;
 
-		const minimumAllowedNextNumber = Math.max(highestIssuedNumber + 1, currentNextNumber);
-
-		if (nextReceiptNumber < minimumAllowedNextNumber) {
-			return fail(400, {
-				error: `El próximo número no puede ser menor a ${minimumAllowedNextNumber
-					.toString()
-					.padStart(8, '0')}`
-			});
-		}
+		// La numeración real nunca depende de un valor enviado por el navegador.
+		// Tomamos el mayor número conocido entre configuración y recibos emitidos.
+		const actualLastReceiptNumber = Math.max(configuredLastReceiptNumber, highestIssuedNumber);
 
 		const activityStartDateRaw = form.get('activityStartDate')?.toString().trim() ?? '';
 
@@ -234,7 +231,7 @@ export const actions: Actions = {
 			receiptFooter: optionalText(form.get('receiptFooter')),
 			receiptLetter,
 			pointOfSale,
-			lastReceiptNumber: nextReceiptNumber - 1,
+			lastReceiptNumber: actualLastReceiptNumber,
 			signatureLeftLabel:
 				optionalText(form.get('signatureLeftLabel')) ?? defaultConfig.signatureLeftLabel,
 			signatureRightLabel:

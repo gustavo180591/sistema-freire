@@ -4,7 +4,7 @@
 
 	let { data } = $props();
 
-	let { commission, students, attendanceRecords, stats, userRole } = $derived(data);
+	let { commission, students, attendanceRecords, stats } = $derived(data);
 
 	function formatDate(date: Date): string {
 		return new Date(date).toLocaleDateString('es-AR', {

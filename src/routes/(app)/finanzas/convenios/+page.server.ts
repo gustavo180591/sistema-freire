@@ -2,6 +2,7 @@ import { paymentAgreementService } from '$lib/server/payment-agreements/payment-
 import type { UserRole } from '$lib/server/payment-agreements/payment-agreement-service';
 import { error, redirect } from '@sveltejs/kit';
 import { PrismaClient } from '@prisma/client';
+import { requirePermission } from '$lib/server/auth/permissions-granular';
 
 const prisma = new PrismaClient();
 
@@ -12,19 +13,7 @@ export async function load({ locals }) {
 
 	const userRoles = (locals.user.roles || []) as UserRole[];
 
-	// Check if user can view agreements
-	const canView = userRoles.some(
-		(role) =>
-			role === 'SUPERADMIN' ||
-			role === 'DIRECTOR' ||
-			role === 'FINANZAS' ||
-			role === 'SECRETARIA' ||
-			role === 'ALUMNO'
-	);
-
-	if (!canView) {
-		throw error(403, 'No tienes permiso para ver convenios de pago');
-	}
+	await requirePermission(locals.user, 'PAYMENT_AGREEMENT', 'read');
 
 	// If user is ALUMNO, show only their agreements
 	if (userRoles.includes('ALUMNO')) {

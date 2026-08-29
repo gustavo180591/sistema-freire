@@ -3,6 +3,7 @@ import { error, redirect } from '@sveltejs/kit';
 import { Decimal } from '@prisma/client/runtime/library';
 import type { UserRole } from '$lib/server/payment-agreements/payment-agreement-service';
 import { PrismaClient } from '@prisma/client';
+import { requirePermission } from '$lib/server/auth/permissions-granular';
 
 const prisma = new PrismaClient();
 
@@ -13,14 +14,7 @@ export async function load({ locals }) {
 
 	const userRoles = (locals.user.roles || []) as UserRole[];
 
-	// Check if user can create agreements
-	const canCreate = userRoles.some(
-		(role) => role === 'SUPERADMIN' || role === 'DIRECTOR' || role === 'FINANZAS'
-	);
-
-	if (!canCreate) {
-		throw error(403, 'No tienes permiso para crear convenios de pago');
-	}
+	await requirePermission(locals.user, 'PAYMENT_AGREEMENT', 'create');
 
 	// Get students with unpaid charges
 	const students = await prisma.student.findMany({
@@ -43,6 +37,8 @@ export const actions = {
 		if (!locals.user) {
 			throw error(401, 'No autenticado');
 		}
+
+		await requirePermission(locals.user, 'PAYMENT_AGREEMENT', 'create');
 
 		const userRoles = (locals.user.roles || []) as UserRole[];
 

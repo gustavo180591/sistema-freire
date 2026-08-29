@@ -3,7 +3,7 @@ import { prisma } from '$lib/server/db/prisma';
 import { redirect, error } from '@sveltejs/kit';
 import { getStudentBlockingMessage } from '$lib/server/financial/student-blocking-service';
 import { getCurrentStudentForUser } from '$lib/server/students/current-student-service';
-import { checkAndExpireScholarshipsForStudent } from '$lib/server/financial/scholarship-expiration-service';
+
 import { studentFinancialSummaryService } from '$lib/server/financial/student-financial-summary-service';
 import {
 	getBenefitsConfig,
@@ -11,6 +11,7 @@ import {
 } from '$lib/server/financial/benefit-calculator';
 import { getChargeDueDate } from '$lib/server/financial/scholarship-expiration-service';
 import { Decimal } from '@prisma/client/runtime/library';
+import { requirePermission } from '$lib/server/auth/permissions-granular';
 
 /**
  * Mapper para convertir StudentCharge a POJO serializable
@@ -196,6 +197,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/dashboard');
 	}
 
+	await requirePermission(user, 'STUDENT_CHARGE', 'read');
+	await requirePermission(user, 'PAYMENT', 'read');
+	await requirePermission(user, 'SCHOLARSHIP', 'read');
+
 	// Intentar obtener el estudiante asociado al usuario por DNI
 	let student;
 	try {
@@ -225,13 +230,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 			}
 		};
 	}
-
-	// Verificar y expirar becas vencidas por pago fuera de término
-	await checkAndExpireScholarshipsForStudent(
-		student.id,
-		user.id,
-		`${user.firstName} ${user.lastName}`
-	);
 
 	// Cargar datos adicionales del estudiante
 	const studentWithRelations = await prisma.student.findUnique({

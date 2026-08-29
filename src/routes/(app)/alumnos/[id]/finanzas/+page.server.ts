@@ -1,6 +1,6 @@
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
-import { requireFinancialAccess } from '$lib/server/auth/financial-access';
+import { requireStudentFinancialReadAccess } from '$lib/server/auth/financial-access';
 import { Decimal } from '@prisma/client/runtime/library';
 import {
 	getBenefitsConfig,
@@ -169,16 +169,7 @@ async function generateMissingMonthlyCharges(
 }
 
 export const load: PageServerLoad = async ({ params, locals }) => {
-	await requireFinancialAccess(locals.user, params.id);
-
-	// Expirar becas vencidas por pago fuera de término antes de cargar datos
-	if (locals.user) {
-		await checkAndExpireScholarshipsForStudent(
-			params.id,
-			locals.user.id,
-			`${locals.user.firstName} ${locals.user.lastName}`
-		);
-	}
+	await requireStudentFinancialReadAccess(locals.user, params.id);
 
 	const student = await prisma.student.findUniqueOrThrow({
 		where: { id: params.id },
@@ -198,37 +189,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	});
 
 	const benefitsConfig = await getBenefitsConfig(prisma);
-
-	// Obtener el ciclo lectivo activo para el alumno
-	const activeAcademicTerm = await prisma.academicTerm.findFirst({
-		where: {
-			active: true,
-			...(student.locationId ? { locationId: student.locationId } : {})
-		}
-	});
-
-	// Si hay un ciclo lectivo activo, generar cuotas faltantes
-	if (activeAcademicTerm && locals.user) {
-		await generateMissingMonthlyCharges(
-			student.id,
-			student.firstName,
-			student.lastName,
-			student.isBecado,
-			student.isRecursante,
-			activeAcademicTerm.id,
-			locals.user.id
-		);
-
-		// Recargar los cargos después de generar los faltantes
-		student.studentCharges = await prisma.studentCharge.findMany({
-			where: { studentId: student.id },
-			include: { concept: true },
-			orderBy: [{ periodLabel: 'desc' }]
-		});
-
-		// Actualizar estado de bloqueo financiero del alumno
-		await updateStudentFinancialBlockStatus(student.id);
-	}
 
 	const charges = await Promise.all(
 		student.studentCharges.map(async (charge) => {
@@ -395,6 +355,14 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const canManageScholarship = await checkPermission(locals.user, 'SCHOLARSHIP', 'update');
 
+	const [canCreateCharges, canUpdateFinancialBlock] = await Promise.all([
+		checkPermission(locals.user, 'STUDENT_CHARGE', 'create'),
+		checkPermission(locals.user, 'FINANCIAL_BLOCK', 'update')
+	]);
+
+	const canSynchronizeFinancialState =
+		canManageScholarship && canCreateCharges && canUpdateFinancialBlock;
+
 	const scholarshipLifecycle = {
 		isBecado: lifecycle.isBecado,
 		status: lifecycle.status,
@@ -473,13 +441,103 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			RECURSANTE: benefitsConfig.recursantFeeAmount
 		},
 		scholarshipLifecycle,
-		canManageScholarship
+		canManageScholarship,
+		canSynchronizeFinancialState
 	};
 };
 
 export const actions: Actions = {
+	synchronizeFinancialState: async ({ params, locals }) => {
+		await requireStudentFinancialReadAccess(locals.user, params.id);
+
+		if (!locals.user) {
+			return { error: 'No autenticado' };
+		}
+
+		/*
+		 * Esta operación puede:
+		 * - crear cuotas faltantes;
+		 * - suspender una beca vencida;
+		 * - actualizar el estado de bloqueo financiero.
+		 *
+		 * Por eso requiere capacidades de gestión y nunca se ejecuta
+		 * automáticamente desde el load de la página.
+		 */
+		await requirePermission(locals.user, 'STUDENT_CHARGE', 'create');
+		await requirePermission(locals.user, 'SCHOLARSHIP', 'update');
+		await requirePermission(locals.user, 'FINANCIAL_BLOCK', 'update');
+
+		const student = await prisma.student.findUnique({
+			where: { id: params.id },
+			select: {
+				id: true,
+				firstName: true,
+				lastName: true,
+				isBecado: true,
+				isRecursante: true,
+				locationId: true
+			}
+		});
+
+		if (!student) {
+			return { error: 'Alumno no encontrado' };
+		}
+
+		const activeAcademicTerm = await prisma.academicTerm.findFirst({
+			where: {
+				active: true,
+				...(student.locationId ? { locationId: student.locationId } : {})
+			},
+			select: {
+				id: true
+			}
+		});
+
+		try {
+			const scholarshipResult = await checkAndExpireScholarshipsForStudent(
+				student.id,
+				locals.user.id,
+				`${locals.user.firstName} ${locals.user.lastName}`
+			);
+
+			let chargeResult = {
+				created: 0,
+				skipped: 0
+			};
+
+			if (activeAcademicTerm) {
+				chargeResult = await generateMissingMonthlyCharges(
+					student.id,
+					student.firstName,
+					student.lastName,
+					student.isBecado,
+					student.isRecursante,
+					activeAcademicTerm.id,
+					locals.user.id
+				);
+			}
+
+			await updateStudentFinancialBlockStatus(student.id);
+
+			return {
+				success: true,
+				message: 'Estado financiero sincronizado correctamente',
+				createdCharges: chargeResult.created,
+				skippedCharges: chargeResult.skipped,
+				scholarshipSuspended: scholarshipResult.scholarshipLost
+			};
+		} catch (error) {
+			console.error('Error al sincronizar estado financiero:', error);
+
+			return {
+				error:
+					error instanceof Error ? error.message : 'No se pudo sincronizar el estado financiero'
+			};
+		}
+	},
+
 	startScholarshipNegotiation: async ({ params, locals, request }) => {
-		await requireFinancialAccess(locals.user, params.id);
+		await requireStudentFinancialReadAccess(locals.user, params.id);
 
 		if (!locals.user) {
 			return { error: 'No autenticado' };
@@ -525,7 +583,7 @@ export const actions: Actions = {
 	},
 
 	approveScholarshipNegotiation: async ({ params, locals, request }) => {
-		await requireFinancialAccess(locals.user, params.id);
+		await requireStudentFinancialReadAccess(locals.user, params.id);
 
 		if (!locals.user) {
 			return { error: 'No autenticado' };
@@ -588,7 +646,7 @@ export const actions: Actions = {
 	},
 
 	rejectScholarshipNegotiation: async ({ params, locals, request }) => {
-		await requireFinancialAccess(locals.user, params.id);
+		await requireStudentFinancialReadAccess(locals.user, params.id);
 
 		if (!locals.user) {
 			return { error: 'No autenticado' };
@@ -657,7 +715,8 @@ export const actions: Actions = {
 	},
 
 	changeStudentType: async ({ params, locals, request }) => {
-		await requireFinancialAccess(locals.user, params.id);
+		await requireStudentFinancialReadAccess(locals.user, params.id);
+		await requirePermission(locals.user, 'STUDENT_CHARGE', 'update');
 
 		if (!locals.user) {
 			return { error: 'No autenticado' };
@@ -720,7 +779,8 @@ export const actions: Actions = {
 	},
 
 	recalculateCharges: async ({ params, locals }) => {
-		await requireFinancialAccess(locals.user, params.id);
+		await requireStudentFinancialReadAccess(locals.user, params.id);
+		await requirePermission(locals.user, 'STUDENT_CHARGE', 'update');
 
 		const student = await prisma.student.findUniqueOrThrow({
 			where: { id: params.id },
@@ -864,7 +924,8 @@ export const actions: Actions = {
 	},
 
 	editCharge: async ({ params, locals, request }) => {
-		await requireFinancialAccess(locals.user, params.id);
+		await requireStudentFinancialReadAccess(locals.user, params.id);
+		await requirePermission(locals.user, 'STUDENT_CHARGE', 'update');
 
 		if (!locals.user) {
 			return { error: 'No autenticado' };

@@ -146,8 +146,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			libreStudents,
 			criticalStudents,
 			avgAttendance
-		},
-		userRole: user.roles[0]
+		}
 	};
 };
 
@@ -156,28 +155,32 @@ async function checkCommissionAccess(
 	commission: { locationId?: string | null; teacherId?: string | null },
 	allowedLocationIds: string[]
 ): Promise<boolean> {
-	const role = user.roles[0];
-
-	// Superadmin tiene acceso a todo
-	if (role === 'SUPERADMIN') {
+	// SUPERADMIN conserva acceso técnico total.
+	if (user.roles.includes('SUPERADMIN')) {
 		return true;
 	}
 
-	// Verificar acceso por localidad
+	// El scope territorial siempre se aplica a los roles sin bypass.
 	if (commission.locationId && !allowedLocationIds.includes(commission.locationId)) {
 		return false;
 	}
 
-	// Docente: solo si es el docente de la comisión
-	if (role === 'DOCENTE') {
+	// DOCENTE: puede acceder únicamente si la comisión está asignada a él.
+	if (user.roles.includes('DOCENTE')) {
 		const teacher = await prisma.teacher.findUnique({
-			where: { userId: user.id }
+			where: { userId: user.id },
+			select: { id: true }
 		});
-		return teacher?.id === commission.teacherId;
+
+		if (teacher?.id === commission.teacherId) {
+			return true;
+		}
 	}
 
-	// Preceptor, Secretario, Director: acceso por localidad ya verificado
-	if (['PRECEPTOR', 'SECRETARIO', 'DIRECTOR'].includes(role)) {
+	// Autoridades y preceptor: acceso dentro de su scope de localidad.
+	if (
+		user.roles.some((role) => ['PRECEPTOR', 'SECRETARIA', 'DIRECTOR', 'APODERADO'].includes(role))
+	) {
 		return true;
 	}
 

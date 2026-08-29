@@ -192,16 +192,7 @@
 					label: 'Recibos de sueldo',
 					href: '/recibos',
 					icon: 'receipt',
-					roles: [
-						'SUPERADMIN',
-						'DIRECTOR',
-						'SECRETARIA',
-						'APODERADO',
-						'DOCENTE',
-						'FINANZAS',
-						'PRECEPTOR',
-						'LIQUIDADOR'
-					]
+					roles: ['SUPERADMIN', 'DIRECTOR', 'APODERADO', 'LIQUIDADOR']
 				},
 				{
 					label: 'Reportes',
@@ -222,6 +213,12 @@
 					roles: ['SUPERADMIN', 'DIRECTOR']
 				},
 				{ label: 'Permisos', href: '/permisos', icon: 'key', roles: ['SUPERADMIN'] },
+				{
+					label: 'Config. recibos sueldo',
+					href: '/configuracion/recibos-sueldo',
+					icon: 'receipt',
+					roles: ['SUPERADMIN', 'DIRECTOR', 'APODERADO', 'LIQUIDADOR']
+				},
 				{
 					label: 'Configuración',
 					href: '/configuracion',

@@ -55,8 +55,8 @@ export async function hasPermission(
 	});
 
 	if (!permissionRecord) {
-		// Si no hay registro, usar defaults (solo lectura)
-		return permission === 'read';
+		// Seguridad por defecto: todo permiso debe concederse explícitamente.
+		return false;
 	}
 
 	switch (permission) {
@@ -187,663 +187,257 @@ function getEntityLabel(entity: Entity): string {
 
 // Seed de permisos por defecto
 export async function seedDefaultPermissions() {
-	const defaultPermissions = [
-		// DIRECTOR - Puede todo excepto permisos (solo SUPERADMIN)
-		{
-			roleCode: 'DIRECTOR',
-			entity: 'USER',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: true
-		},
-		{
-			roleCode: 'DIRECTOR',
-			entity: 'STUDENT',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: true
-		},
-		{
-			roleCode: 'DIRECTOR',
-			entity: 'TEACHER',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: true
-		},
-		{
-			roleCode: 'DIRECTOR',
-			entity: 'CAREER',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: true
-		},
-		{
-			roleCode: 'DIRECTOR',
-			entity: 'SUBJECT',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: true
-		},
-		{
-			roleCode: 'DIRECTOR',
-			entity: 'SUBJECT_COMMISSION',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: true
-		},
-		{
-			roleCode: 'DIRECTOR',
-			entity: 'ACADEMIC_TERM',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: true
-		},
-		{
-			roleCode: 'DIRECTOR',
-			entity: 'STUDENT_CHARGE',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: true
-		},
-		{
-			roleCode: 'DIRECTOR',
-			entity: 'PAYMENT',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: true
-		},
-		{
-			roleCode: 'DIRECTOR',
-			entity: 'FINANCIAL_REPORT',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'DIRECTOR',
-			entity: 'PAYSLIP',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: true
-		},
-		{
-			roleCode: 'DIRECTOR',
-			entity: 'SCHOLARSHIP',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: true
-		},
-		{
-			roleCode: 'DIRECTOR',
-			entity: 'AUDIT_LOG',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'DIRECTOR',
-			entity: 'PERMISSION',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
+	type PermissionFlags = {
+		canCreate: boolean;
+		canRead: boolean;
+		canUpdate: boolean;
+		canDelete: boolean;
+	};
+
+	const NONE: PermissionFlags = {
+		canCreate: false,
+		canRead: false,
+		canUpdate: false,
+		canDelete: false
+	};
+
+	const READ: PermissionFlags = {
+		canCreate: false,
+		canRead: true,
+		canUpdate: false,
+		canDelete: false
+	};
+
+	const CR: PermissionFlags = {
+		canCreate: true,
+		canRead: true,
+		canUpdate: false,
+		canDelete: false
+	};
+
+	const CRU: PermissionFlags = {
+		canCreate: true,
+		canRead: true,
+		canUpdate: true,
+		canDelete: false
+	};
+
+	const CRD: PermissionFlags = {
+		canCreate: true,
+		canRead: true,
+		canUpdate: false,
+		canDelete: true
+	};
+
+	const CRUD: PermissionFlags = {
+		canCreate: true,
+		canRead: true,
+		canUpdate: true,
+		canDelete: true
+	};
+
+	const roleNames: Record<string, string> = {
+		DIRECTOR: 'Director',
+		SECRETARIA: 'Secretaría',
+		DOCENTE: 'Docente',
+		FINANZAS: 'Finanzas',
+		PRECEPTOR: 'Preceptor',
+		ALUMNO: 'Alumno',
+		APODERADO: 'Apoderado',
+		LIQUIDADOR: 'Liquidador',
+		SIN_TIPO: 'Sin tipo'
+	};
+
+	const managedRoles = Object.keys(roleNames);
+
+	/*
+	 * DIRECTOR y APODERADO poseen autoridad operativa completa.
+	 * PERMISSION queda reservado exclusivamente a SUPERADMIN.
+	 */
+	const fullOperationalRoles = new Set(['DIRECTOR', 'APODERADO']);
+
+	/*
+	 * Las entidades no declaradas aquí quedan explícitamente en NONE.
+	 * Esto acompaña la política deny-by-default de hasPermission().
+	 */
+	const grants: Record<string, Partial<Record<Entity, PermissionFlags>>> = {
+		DIRECTOR: {},
+
+		SECRETARIA: {
+			USER: CRU,
+			STUDENT: CRU,
+			TEACHER: CRU,
+			CAREER: READ,
+			SUBJECT: READ,
+			SUBJECT_COMMISSION: CRU,
+			SUBJECT_ENROLLMENT: CRUD,
+			ACADEMIC_TERM: READ,
+			STUDENT_CHARGE: READ,
+			PAYMENT: READ,
+			RECEIPT: READ,
+			SCHOLARSHIP: CRU,
+			GRADE: READ,
+			ATTENDANCE: READ,
+			STUDENT_FOLLOW_UP: CRU,
+			MATERIAL: READ,
+			COMMUNICATION: CRU,
+			EVALUATION: CRU,
+			SCHEDULE: CRU,
+			DOCUMENT: CRU,
+			FINANCIAL_BLOCK: READ,
+			FINANCIAL_REPORT: READ,
+			PAYMENT_AGREEMENT: READ
 		},
 
-		// SECRETARIA - Puede gestionar académico pero no finanzas
-		{
-			roleCode: 'SECRETARIA',
-			entity: 'USER',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'SECRETARIA',
-			entity: 'STUDENT',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: false
-		},
-		{
-			roleCode: 'SECRETARIA',
-			entity: 'TEACHER',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'SECRETARIA',
-			entity: 'CAREER',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'SECRETARIA',
-			entity: 'SUBJECT',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'SECRETARIA',
-			entity: 'SUBJECT_COMMISSION',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: false
+		DOCENTE: {
+			STUDENT: READ,
+			TEACHER: READ,
+			CAREER: READ,
+			SUBJECT: READ,
+			SUBJECT_COMMISSION: READ,
+			SUBJECT_ENROLLMENT: READ,
+			ACADEMIC_TERM: READ,
+			GRADE: CRU,
+			ATTENDANCE: CRU,
+			STUDENT_FOLLOW_UP: CRU,
+			MATERIAL: CRUD,
+			COMMUNICATION: CRU,
+			EVALUATION: CRU,
+			SCHEDULE: READ,
+			DOCUMENT: CR
 		},
 
-		// FINANZAS - Solo finanzas
-		{
-			roleCode: 'FINANZAS',
-			entity: 'USER',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'FINANZAS',
-			entity: 'STUDENT',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'FINANZAS',
-			entity: 'STUDENT_CHARGE',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: false
-		},
-		{
-			roleCode: 'FINANZAS',
-			entity: 'PAYMENT',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: false
-		},
-		{
-			roleCode: 'FINANZAS',
-			entity: 'FINANCIAL_REPORT',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'FINANZAS',
-			entity: 'PAYSLIP',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: false
-		},
-		{
-			roleCode: 'FINANZAS',
-			entity: 'SCHOLARSHIP',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
+		FINANZAS: {
+			USER: READ,
+			STUDENT: READ,
+			CAREER: READ,
+			ACADEMIC_TERM: READ,
+			STUDENT_CHARGE: CRU,
+			PAYMENT: CRU,
+			RECEIPT: CRU,
+			SCHOLARSHIP: CRUD,
+			DOCUMENT: READ,
+			FINANCIAL_BLOCK: CRU,
+			FINANCIAL_REPORT: READ,
+			PAYMENT_AGREEMENT: CRU
 		},
 
-		// LIQUIDADOR - Solo carga de recibos de sueldo
-		{
-			roleCode: 'LIQUIDADOR',
-			entity: 'USER',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'LIQUIDADOR',
-			entity: 'STUDENT',
-			canCreate: false,
-			canRead: false,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'LIQUIDADOR',
-			entity: 'TEACHER',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'LIQUIDADOR',
-			entity: 'PAYSLIP',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: false
+		PRECEPTOR: {
+			STUDENT: READ,
+			TEACHER: READ,
+			CAREER: READ,
+			SUBJECT: READ,
+			SUBJECT_COMMISSION: READ,
+			SUBJECT_ENROLLMENT: READ,
+			ACADEMIC_TERM: READ,
+			GRADE: CRU,
+			ATTENDANCE: CRU,
+			STUDENT_FOLLOW_UP: CRU,
+			MATERIAL: READ,
+			COMMUNICATION: CRU,
+			EVALUATION: READ,
+			SCHEDULE: READ,
+			DOCUMENT: CRU
 		},
 
-		// DOCENTE - Gestión académica de sus materias asignadas
-		{
-			roleCode: 'DOCENTE',
-			entity: 'USER',
-			canCreate: false,
-			canRead: false,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'DOCENTE',
-			entity: 'STUDENT',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'DOCENTE',
-			entity: 'TEACHER',
-			canCreate: false,
-			canRead: false,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'DOCENTE',
-			entity: 'CAREER',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'DOCENTE',
-			entity: 'SUBJECT',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'DOCENTE',
-			entity: 'ACADEMIC_TERM',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'DOCENTE',
-			entity: 'GRADE',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: false
-		},
-		{
-			roleCode: 'DOCENTE',
-			entity: 'ATTENDANCE',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: false
-		},
-		{
-			roleCode: 'DOCENTE',
-			entity: 'STUDENT_FOLLOW_UP',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: false
-		},
-		{
-			roleCode: 'DOCENTE',
-			entity: 'MATERIAL',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: true
-		},
-		{
-			roleCode: 'DOCENTE',
-			entity: 'COMMUNICATION',
-			canCreate: true,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'DOCENTE',
-			entity: 'EVALUATION',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: false
-		},
-		{
-			roleCode: 'DOCENTE',
-			entity: 'SCHEDULE',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'DOCENTE',
-			entity: 'DOCUMENT',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'DOCENTE',
-			entity: 'STUDENT_CHARGE',
-			canCreate: false,
-			canRead: false,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'DOCENTE',
-			entity: 'PAYMENT',
-			canCreate: false,
-			canRead: false,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'DOCENTE',
-			entity: 'PAYSLIP',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'DOCENTE',
-			entity: 'SCHOLARSHIP',
-			canCreate: false,
-			canRead: false,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'DOCENTE',
-			entity: 'AUDIT_LOG',
-			canCreate: false,
-			canRead: false,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'DOCENTE',
-			entity: 'PERMISSION',
-			canCreate: false,
-			canRead: false,
-			canUpdate: false,
-			canDelete: false
+		ALUMNO: {
+			USER: READ,
+			STUDENT: READ,
+			TEACHER: READ,
+			CAREER: READ,
+			SUBJECT: READ,
+			SUBJECT_COMMISSION: READ,
+			SUBJECT_ENROLLMENT: CRD,
+			ACADEMIC_TERM: READ,
+			STUDENT_CHARGE: READ,
+			PAYMENT: READ,
+			RECEIPT: READ,
+			SCHOLARSHIP: READ,
+			GRADE: READ,
+			ATTENDANCE: READ,
+			MATERIAL: READ,
+			COMMUNICATION: READ,
+			EVALUATION: READ,
+			SCHEDULE: READ,
+			DOCUMENT: READ,
+			FINANCIAL_BLOCK: READ,
+			PAYMENT_AGREEMENT: READ
 		},
 
-		// APODERADO - Permisos similares a DIRECTOR pero limitados
-		{
-			roleCode: 'APODERADO',
-			entity: 'USER',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'APODERADO',
-			entity: 'STUDENT',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: true
-		},
-		{
-			roleCode: 'APODERADO',
-			entity: 'TEACHER',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'APODERADO',
-			entity: 'CAREER',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: true
-		},
-		{
-			roleCode: 'APODERADO',
-			entity: 'SUBJECT',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'APODERADO',
-			entity: 'SUBJECT_COMMISSION',
-			canCreate: true,
-			canRead: true,
-			canUpdate: true,
-			canDelete: false
-		},
-		{
-			roleCode: 'APODERADO',
-			entity: 'ACADEMIC_TERM',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'APODERADO',
-			entity: 'STUDENT_CHARGE',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'APODERADO',
-			entity: 'PAYMENT',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'APODERADO',
-			entity: 'FINANCIAL_REPORT',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'APODERADO',
-			entity: 'PAYSLIP',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'APODERADO',
-			entity: 'SCHOLARSHIP',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'APODERADO',
-			entity: 'AUDIT_LOG',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'APODERADO',
-			entity: 'PERMISSION',
-			canCreate: false,
-			canRead: false,
-			canUpdate: false,
-			canDelete: false
+		APODERADO: {},
+
+		LIQUIDADOR: {
+			PAYSLIP: CRU
 		},
 
-		// PRECEPTOR - Gestión de asistencia, seguimiento de alumnos y calificaciones
-		{
-			roleCode: 'PRECEPTOR',
-			entity: 'USER',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'PRECEPTOR',
-			entity: 'STUDENT',
-			canCreate: false,
-			canRead: true,
-			canUpdate: true,
-			canDelete: false
-		},
-		{
-			roleCode: 'PRECEPTOR',
-			entity: 'TEACHER',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'PRECEPTOR',
-			entity: 'CAREER',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'PRECEPTOR',
-			entity: 'SUBJECT',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'PRECEPTOR',
-			entity: 'ACADEMIC_TERM',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'PRECEPTOR',
-			entity: 'STUDENT_CHARGE',
-			canCreate: false,
-			canRead: false,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'PRECEPTOR',
-			entity: 'PAYMENT',
-			canCreate: false,
-			canRead: false,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'PRECEPTOR',
-			entity: 'PAYSLIP',
-			canCreate: false,
-			canRead: false,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'PRECEPTOR',
-			entity: 'SCHOLARSHIP',
-			canCreate: false,
-			canRead: false,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'PRECEPTOR',
-			entity: 'AUDIT_LOG',
-			canCreate: false,
-			canRead: false,
-			canUpdate: false,
-			canDelete: false
-		},
-		{
-			roleCode: 'PRECEPTOR',
-			entity: 'PERMISSION',
-			canCreate: false,
-			canRead: false,
-			canUpdate: false,
-			canDelete: false
-		},
+		SIN_TIPO: {}
+	};
 
-		// ALUMNO - Solo ver sus datos
-		{
-			roleCode: 'ALUMNO',
-			entity: 'STUDENT',
-			canCreate: false,
-			canRead: true,
-			canUpdate: false,
-			canDelete: false
-		}
-	];
+	const defaultPermissions = managedRoles.flatMap((roleCode) =>
+		ENTITIES.map((entity) => {
+			const permissions =
+				fullOperationalRoles.has(roleCode) && entity !== 'PERMISSION'
+					? CRUD
+					: (grants[roleCode]?.[entity] ?? NONE);
 
-	for (const perm of defaultPermissions) {
-		const { roleCode, entity, ...permissions } = perm;
-		await prisma.permission.upsert({
-			where: {
-				roleCode_entity: {
-					roleCode: roleCode as any,
-					entity: entity as Entity
-				}
-			},
-			update: permissions,
-			create: {
-				roleCode: roleCode as any,
-				entity: entity as Entity,
+			return {
+				roleCode,
+				entity,
 				...permissions
+			};
+		})
+	);
+
+	if (defaultPermissions.length !== managedRoles.length * ENTITIES.length) {
+		throw new Error(
+			`Matriz institucional incompleta: ${defaultPermissions.length}/${managedRoles.length * ENTITIES.length}`
+		);
+	}
+
+	await prisma.$transaction(async (tx) => {
+		/*
+		 * Asegurar también las filas de roles institucionales.
+		 * Esto evita casos como LIQUIDADOR existente en RoleCode
+		 * pero ausente de la tabla roles.
+		 */
+		for (const [roleCode, name] of Object.entries(roleNames)) {
+			await tx.role.upsert({
+				where: {
+					code: roleCode as any
+				},
+				update: {
+					name
+				},
+				create: {
+					code: roleCode as any,
+					name
+				}
+			});
+		}
+
+		/*
+		 * "Restablecer" significa reemplazar completamente la matriz
+		 * de estos roles por los valores institucionales oficiales.
+		 *
+		 * SUPERADMIN queda fuera porque posee bypass técnico.
+		 */
+		await tx.permission.deleteMany({
+			where: {
+				roleCode: {
+					in: managedRoles as any
+				}
 			}
 		});
-	}
+
+		await tx.permission.createMany({
+			data: defaultPermissions.map((permission) => ({
+				roleCode: permission.roleCode as any,
+				entity: permission.entity,
+				canCreate: permission.canCreate,
+				canRead: permission.canRead,
+				canUpdate: permission.canUpdate,
+				canDelete: permission.canDelete
+			}))
+		});
+	});
 }

@@ -5,8 +5,12 @@ import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
 import { checkAndExpireScholarshipsForStudent } from '$lib/server/financial/scholarship-expiration-service';
 import { createReceiptForPayment } from '$lib/server/financial/receipt-service';
+import { checkPermission, requirePermission } from '$lib/server/auth/permissions-granular';
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, locals }) => {
+	await requirePermission(locals.user, 'PAYMENT', 'create');
+	await requirePermission(locals.user, 'STUDENT_CHARGE', 'read');
+
 	const studentId = url.searchParams.get('studentId');
 
 	const students = await prisma.student.findMany({
@@ -96,7 +100,10 @@ export const load: PageServerLoad = async ({ url }) => {
 };
 
 export const actions: Actions = {
-	getCharges: async ({ request }) => {
+	getCharges: async ({ request, locals }) => {
+		await requirePermission(locals.user, 'PAYMENT', 'create');
+		await requirePermission(locals.user, 'STUDENT_CHARGE', 'read');
+
 		const form = await request.formData();
 		const studentId = String(form.get('studentId') ?? '');
 
@@ -134,6 +141,10 @@ export const actions: Actions = {
 		};
 	},
 	create: async ({ request, locals }) => {
+		await requirePermission(locals.user, 'PAYMENT', 'create');
+		await requirePermission(locals.user, 'STUDENT_CHARGE', 'update');
+		await requirePermission(locals.user, 'RECEIPT', 'create');
+
 		const form = await request.formData();
 
 		const studentId = String(form.get('studentId') ?? '');
@@ -190,19 +201,8 @@ export const actions: Actions = {
 			}
 		}
 
-		// Verificar permisos para condonación
-		const hasForgivenessPermission = locals.user
-			? await prisma.userRole.findFirst({
-					where: {
-						userId: locals.user.id,
-						role: {
-							code: {
-								in: ['SUPERADMIN', 'DIRECTOR', 'FINANZAS', 'SECRETARIA']
-							}
-						}
-					}
-				})
-			: null;
+		// Condonar modifica económicamente un cargo existente.
+		const hasForgivenessPermission = await checkPermission(locals.user, 'STUDENT_CHARGE', 'update');
 
 		// Validar datos de condonación
 		for (const [chargeId, data] of Object.entries(chargeForgivenessData)) {

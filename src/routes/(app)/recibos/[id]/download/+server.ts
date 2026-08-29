@@ -3,43 +3,30 @@ import { AuditAction } from '@prisma/client';
 import type { RequestHandler } from './$types';
 import { auditLog } from '$lib/server/audit';
 import { getPayslipById } from '$lib/server/services/payroll/payslip.service';
-import { requireRoleOrOwnership } from '$lib/server/auth/authorization';
+import { requirePermission } from '$lib/server/auth/permissions-granular';
 import { FileStorageService } from '$lib/server/services/storage/file-storage.service';
 
 export const GET: RequestHandler = async ({ params, locals }) => {
+	await requirePermission(locals.user, 'PAYSLIP', 'read');
+
 	const payslip = await getPayslipById(params.id);
 
-	if (!payslip) {
+	if (!payslip || payslip.deletedAt) {
 		throw error(404, 'Recibo no encontrado');
 	}
-
-	// Verificar si está eliminado lógicamente
-	if (payslip.deletedAt) {
-		throw error(404, 'Recibo no encontrado');
-	}
-
-	// ACL híbrido:
-	// - DIRECTOR / FINANZAS / LIQUIDADOR acceden por rol
-	// - DOCENTE accede solo si es dueño
-	requireRoleOrOwnership(
-		locals.user,
-		['DIRECTOR', 'FINANZAS', 'LIQUIDADOR'],
-		payslip.teacher.userId
-	);
 
 	if (!payslip.fileKey) {
 		throw error(404, 'El PDF del recibo no está disponible');
 	}
 
-	// Leer archivo desde almacenamiento privado
 	let fileBuffer: Buffer;
+
 	try {
 		fileBuffer = await FileStorageService.readFile(payslip.fileKey);
-	} catch (err) {
+	} catch {
 		throw error(404, 'No se pudo recuperar el archivo PDF');
 	}
 
-	// Auditoría
 	try {
 		await auditLog({
 			action: AuditAction.EXPORT,
@@ -49,7 +36,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 			userId: locals.user?.id
 		});
 	} catch {
-		// noop
+		// La auditoría no debe impedir la descarga autorizada.
 	}
 
 	const fileName =

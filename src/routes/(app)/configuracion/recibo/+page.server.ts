@@ -1,8 +1,9 @@
 import { prisma } from '$lib/server/db/prisma';
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { checkPermission, requirePermission } from '$lib/server/auth/permissions-granular';
 
-const ALLOWED_ROLES = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'FINANZAS', 'APODERADO'];
+const CONFIGURATION_ROLES = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'FINANZAS', 'APODERADO'];
 
 const defaultConfig = {
 	institutionName: 'Instituto Superior de Formación Docente',
@@ -27,8 +28,8 @@ const defaultConfig = {
 	signatureRightLabel: 'Firma Responsable'
 };
 
-function hasAccess(user: App.Locals['user']) {
-	return Boolean(user && user.roles.some((role) => ALLOWED_ROLES.includes(role)));
+function hasConfigurationRole(user: App.Locals['user']) {
+	return Boolean(user && user.roles.some((role) => CONFIGURATION_ROLES.includes(role)));
 }
 
 function optionalText(value: FormDataEntryValue | null): string | null {
@@ -51,9 +52,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw error(401, 'Usuario no autenticado');
 	}
 
-	if (!hasAccess(locals.user)) {
-		throw error(403, 'No tenés permisos para configurar recibos');
+	if (!hasConfigurationRole(locals.user)) {
+		throw error(403, 'No tenés permisos para acceder a la configuración de recibos');
 	}
+
+	await requirePermission(locals.user, 'RECEIPT', 'read');
 
 	const locations = await prisma.location.findMany({
 		where: {
@@ -129,8 +132,14 @@ export const actions: Actions = {
 			return fail(401, { error: 'Usuario no autenticado' });
 		}
 
-		if (!hasAccess(locals.user)) {
+		if (!hasConfigurationRole(locals.user)) {
 			return fail(403, { error: 'No tenés permisos para configurar recibos' });
+		}
+
+		const canUpdate = await checkPermission(locals.user, 'RECEIPT', 'update');
+
+		if (!canUpdate) {
+			return fail(403, { error: 'No tenés permisos para modificar la configuración de recibos' });
 		}
 
 		const form = await request.formData();

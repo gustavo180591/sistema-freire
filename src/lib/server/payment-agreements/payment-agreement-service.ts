@@ -102,8 +102,11 @@ export type UserRole =
 	| 'SECRETARIA'
 	| 'FINANZAS'
 	| 'DOCENTE'
+	| 'PRECEPTOR'
 	| 'ALUMNO'
-	| 'APODERADO';
+	| 'APODERADO'
+	| 'LIQUIDADOR'
+	| 'SIN_TIPO';
 
 // Types for effective debt calculation (Phase 5.2)
 export type EffectiveDebtSummary = {
@@ -367,7 +370,8 @@ class PaymentAgreementService {
 	 */
 	private canCreateOrActivate(userRoles: UserRole[]): boolean {
 		return userRoles.some(
-			(role) => role === 'SUPERADMIN' || role === 'DIRECTOR' || role === 'FINANZAS'
+			(role) =>
+				role === 'SUPERADMIN' || role === 'DIRECTOR' || role === 'FINANZAS' || role === 'APODERADO'
 		);
 	}
 
@@ -381,8 +385,43 @@ class PaymentAgreementService {
 				role === 'DIRECTOR' ||
 				role === 'FINANZAS' ||
 				role === 'SECRETARIA' ||
+				role === 'APODERADO' ||
 				role === 'ALUMNO'
 		);
+	}
+
+	/**
+	 * Valida scope de ALUMNO.
+	 *
+	 * Los roles institucionales poseen scope global.
+	 * Un usuario que sea únicamente ALUMNO solo puede operar
+	 * sobre su propio Student.
+	 */
+	private async assertStudentOwnership(
+		userRoles: UserRole[],
+		userId: string | undefined,
+		studentId: string
+	): Promise<void> {
+		const hasGlobalAccess = userRoles.some((role) =>
+			['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'FINANZAS', 'APODERADO'].includes(role)
+		);
+
+		if (hasGlobalAccess || !userRoles.includes('ALUMNO')) {
+			return;
+		}
+
+		if (!userId) {
+			throw new Error('User ID is required to validate student ownership');
+		}
+
+		const student = await prisma.student.findUnique({
+			where: { userId },
+			select: { id: true }
+		});
+
+		if (!student || student.id !== studentId) {
+			throw new Error('User can only access their own payment agreements');
+		}
 	}
 
 	/**
@@ -471,10 +510,7 @@ class PaymentAgreementService {
 			return null;
 		}
 
-		// If user is ALUMNO, only allow viewing their own agreements
-		if (userRoles.includes('ALUMNO') && userId && agreement.studentId !== userId) {
-			throw new Error('User can only view their own payment agreements');
-		}
+		await this.assertStudentOwnership(userRoles, userId, agreement.studentId);
 
 		return agreement as unknown as PaymentAgreement;
 	}
@@ -491,10 +527,7 @@ class PaymentAgreementService {
 			throw new Error('User does not have permission to view payment agreements');
 		}
 
-		// If user is ALUMNO, only allow viewing their own agreements
-		if (userRoles.includes('ALUMNO') && requestingUserId && studentId !== requestingUserId) {
-			throw new Error('User can only view their own payment agreements');
-		}
+		await this.assertStudentOwnership(userRoles, requestingUserId, studentId);
 
 		const agreements = await prisma.paymentAgreement.findMany({
 			where: { studentId },
@@ -864,8 +897,8 @@ class PaymentAgreementService {
 		installment: PaymentAgreementInstallment;
 		agreement: PaymentAgreement;
 	}> {
-		// Check permissions
-		if (!this.canViewAgreements(userRoles)) {
+		// Registrar pagos es una operación de gestión, no de solo lectura.
+		if (!this.canCreateOrActivate(userRoles)) {
 			throw new Error('User does not have permission to register payments');
 		}
 

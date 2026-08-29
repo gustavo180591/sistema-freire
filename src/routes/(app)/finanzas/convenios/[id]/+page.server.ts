@@ -2,10 +2,7 @@ import { paymentAgreementService } from '$lib/server/payment-agreements/payment-
 import { error, redirect } from '@sveltejs/kit';
 import type { UserRole } from '$lib/server/payment-agreements/payment-agreement-service';
 import { Decimal } from '@prisma/client/runtime/library';
-import {
-	canEvaluateAgreementStatus,
-	canEvaluateAgreementBlockException
-} from '$lib/server/payment-agreements/payment-agreement-permissions';
+import { requirePermission } from '$lib/server/auth/permissions-granular';
 
 export async function load({ locals, params }) {
 	if (!locals.user) {
@@ -14,19 +11,7 @@ export async function load({ locals, params }) {
 
 	const userRoles = (locals.user.roles || []) as UserRole[];
 
-	// Check if user can view agreements
-	const canView = userRoles.some(
-		(role) =>
-			role === 'SUPERADMIN' ||
-			role === 'DIRECTOR' ||
-			role === 'FINANZAS' ||
-			role === 'SECRETARIA' ||
-			role === 'ALUMNO'
-	);
-
-	if (!canView) {
-		throw error(403, 'No tienes permiso para ver convenios de pago');
-	}
+	await requirePermission(locals.user, 'PAYMENT_AGREEMENT', 'read');
 
 	const agreement = await paymentAgreementService.getAgreementById(
 		params.id,
@@ -130,6 +115,8 @@ export const actions = {
 			throw error(401, 'No autenticado');
 		}
 
+		await requirePermission(locals.user, 'PAYMENT_AGREEMENT', 'update');
+
 		const userRoles = (locals.user.roles || []) as UserRole[];
 
 		try {
@@ -151,6 +138,8 @@ export const actions = {
 		if (!locals.user) {
 			throw error(401, 'No autenticado');
 		}
+
+		await requirePermission(locals.user, 'PAYMENT', 'create');
 
 		const userRoles = (locals.user.roles || []) as UserRole[];
 
@@ -192,10 +181,7 @@ export const actions = {
 			throw error(401, 'No autenticado');
 		}
 
-		// Check if user can evaluate agreements
-		if (!canEvaluateAgreementStatus(locals.user)) {
-			return { success: false, error: 'No tienes permiso para evaluar convenios' };
-		}
+		await requirePermission(locals.user, 'PAYMENT_AGREEMENT', 'update');
 
 		try {
 			const result = await paymentAgreementService.evaluateAgreementFinancialStatus(
@@ -216,10 +202,8 @@ export const actions = {
 			throw error(401, 'No autenticado');
 		}
 
-		// Check if user can evaluate agreements
-		if (!canEvaluateAgreementBlockException(locals.user)) {
-			return { success: false, error: 'No tienes permiso para evaluar excepciones de bloqueo' };
-		}
+		await requirePermission(locals.user, 'PAYMENT_AGREEMENT', 'update');
+		await requirePermission(locals.user, 'FINANCIAL_BLOCK', 'update');
 
 		try {
 			const result = await paymentAgreementService.evaluateAgreementBlockStatus(

@@ -1,12 +1,11 @@
 import type { PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
-import { requireRole } from '$lib/server/auth/authorization';
+import { requirePermission } from '$lib/server/auth/permissions-granular';
 import { error } from '@sveltejs/kit';
 import type { AuditAction } from '@prisma/client';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
-	// Solo SUPERADMIN y DIRECTOR pueden ver auditoría
-	requireRole(locals.user, ['SUPERADMIN', 'DIRECTOR']);
+	await requirePermission(locals.user, 'AUDIT_LOG', 'read');
 
 	const searchParams = url.searchParams;
 

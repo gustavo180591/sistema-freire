@@ -1,8 +1,11 @@
 import { prisma } from '$lib/server/db/prisma';
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
+import { requirePermission } from '$lib/server/auth/permissions-granular';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
+	await requirePermission(locals.user, 'PAYSLIP', 'read');
+
 	const config = await prisma.financialConfig.findUnique({
 		where: { key: 'payslip_portal_url' }
 	});
@@ -13,7 +16,9 @@ export const load: PageServerLoad = async () => {
 };
 
 export const actions: Actions = {
-	default: async ({ request }) => {
+	default: async ({ request, locals }) => {
+		await requirePermission(locals.user, 'PAYSLIP', 'update');
+
 		const formData = await request.formData();
 		const url = formData.get('url') as string;
 
@@ -22,7 +27,6 @@ export const actions: Actions = {
 		}
 
 		try {
-			// Validate URL format
 			new URL(url);
 
 			await prisma.financialConfig.upsert({
@@ -43,7 +47,10 @@ export const actions: Actions = {
 					error: 'URL inválida. Ingrese una URL válida (ej: https://ejemplo.com)'
 				});
 			}
-			return fail(500, { error: 'Error al guardar la configuración' });
+
+			return fail(500, {
+				error: 'Error al guardar la configuración'
+			});
 		}
 	}
 };

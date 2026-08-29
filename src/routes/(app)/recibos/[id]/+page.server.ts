@@ -3,8 +3,11 @@ import type { PageServerLoad } from './$types';
 
 import { prisma } from '$lib/server/db/prisma';
 import { getReceiptById, INSTITUTIONAL_DATA } from '$lib/server/financial/receipt-service';
+import { requirePermission } from '$lib/server/auth/permissions-granular';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
+	await requirePermission(locals.user, 'RECEIPT', 'read');
+
 	const receipt = await getReceiptById(params.id);
 
 	if (!receipt) {

@@ -2,9 +2,19 @@ import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { requireRole, getUserAllowedLocationIds } from '$lib/server/auth/authorization';
+import { requirePermission } from '$lib/server/auth/permissions-granular';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
-	requireRole(locals.user, ['DOCENTE', 'DIRECTOR', 'SECRETARIA', 'SUPERADMIN']);
+	requireRole(locals.user, [
+		'DOCENTE',
+		'PRECEPTOR',
+		'DIRECTOR',
+		'SECRETARIA',
+		'APODERADO',
+		'SUPERADMIN'
+	]);
+
+	await requirePermission(locals.user, 'GRADE', 'read');
 
 	if (!locals.user) {
 		throw redirect(303, '/login');
@@ -40,13 +50,17 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		throw redirect(303, '/comisiones');
 	}
 
-	// Verificar permisos: solo el docente de la comisión o administradores pueden ver
-	const isAdmin = locals.user.roles.some((r: any) =>
-		['SUPERADMIN', 'DIRECTOR', 'SECRETARIA'].includes(r.role.code)
+	// Scope sobre la comisión.
+	// Autoridades institucionales: acceso global.
+	// Preceptor: la localidad ya fue validada arriba.
+	// Docente: únicamente su propia comisión.
+	const hasInstitutionalAccess = locals.user.roles.some((role) =>
+		['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'].includes(role)
 	);
+	const isPreceptor = locals.user.roles.includes('PRECEPTOR');
 	const isTeacher = commission.teacher?.userId === locals.user.id;
 
-	if (!isAdmin && !isTeacher) {
+	if (!hasInstitutionalAccess && !isPreceptor && !isTeacher) {
 		throw redirect(303, '/comisiones');
 	}
 

@@ -19,8 +19,17 @@
 
 	const hasStudentOrTeacher = $derived(data.user.student || data.user.teacher);
 
-	let selectedStudentCareerId = $state(data.user.student?.careerId ?? '');
-	let selectedStudentLocationId = $state(data.user.student?.locationId ?? '');
+	function getInitialStudentSelection() {
+		return {
+			careerId: data.user.student?.careerId ?? '',
+			locationId: data.user.student?.locationId ?? ''
+		};
+	}
+
+	const initialStudentSelection = getInitialStudentSelection();
+
+	let selectedStudentCareerId = $state(initialStudentSelection.careerId);
+	let selectedStudentLocationId = $state(initialStudentSelection.locationId);
 
 	const studentCareerLocations = $derived(
 		data.careers.find((career) => career.id === selectedStudentCareerId)?.locations ?? []
@@ -72,9 +81,7 @@
 	{/if}
 
 	{#if form?.success}
-		<div
-			class="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-400"
-		>
+		<div class="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-400">
 			{form?.message || 'Datos actualizados correctamente'}
 		</div>
 	{/if}
@@ -174,9 +181,7 @@
 	{#if data.user.student}
 		<div class="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70">
 			<div class="border-b border-slate-800 p-6">
-				<p class="text-xs font-semibold tracking-[0.18em] text-indigo-300 uppercase">
-					Alumno
-				</p>
+				<p class="text-xs font-semibold tracking-[0.18em] text-indigo-300 uppercase">Alumno</p>
 				<h2 class="mt-1 text-xl font-bold text-white">Datos personales y académicos</h2>
 				<p class="mt-1 text-sm text-slate-400">
 					Editá la carrera, sede donde cursa, localidad de origen y datos personales del alumno.
@@ -273,9 +278,7 @@
 								Normal
 							</option>
 
-							<option value="becado" selected={data.user.student.isBecado}>
-								Becado
-							</option>
+							<option value="becado" selected={data.user.student.isBecado}> Becado </option>
 
 							<option value="recursante" selected={data.user.student.isRecursante}>
 								Recursante
@@ -341,9 +344,7 @@
 
 					<div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
 						<div class="xl:col-span-2">
-							<label for="address" class="mb-2 block text-sm text-slate-400">
-								Domicilio
-							</label>
+							<label for="address" class="mb-2 block text-sm text-slate-400"> Domicilio </label>
 							<input
 								id="address"
 								name="address"
@@ -379,7 +380,8 @@
 								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
 							/>
 							<p class="mt-1 text-xs text-slate-500">
-								Esta localidad corresponde al domicilio/procedencia del alumno, no a la sede donde cursa.
+								Esta localidad corresponde al domicilio/procedencia del alumno, no a la sede donde
+								cursa.
 							</p>
 						</div>
 					</div>

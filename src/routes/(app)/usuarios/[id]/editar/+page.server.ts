@@ -3,6 +3,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
+import { requirePermission } from '$lib/server/auth/permissions-granular';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const currentUser = locals.user;
@@ -266,6 +267,8 @@ export const actions: Actions = {
 			return fail(401, { error: 'No autorizado' });
 		}
 
+		await requirePermission(currentUser, 'STUDENT', 'update');
+
 		const targetUser = await prisma.user.findUnique({
 			where: { id: params.id },
 			select: {
@@ -370,11 +373,7 @@ export const actions: Actions = {
 		if (currentYearRaw) {
 			currentYear = Number.parseInt(currentYearRaw, 10);
 
-			if (
-				!Number.isInteger(currentYear) ||
-				currentYear < 1 ||
-				currentYear > career.durationYears
-			) {
+			if (!Number.isInteger(currentYear) || currentYear < 1 || currentYear > career.durationYears) {
 				return fail(400, {
 					error: `El año actual debe estar entre 1 y ${career.durationYears}`
 				});

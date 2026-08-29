@@ -1,6 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { hasPermission } from '$lib/server/auth/permissions-granular';
-import { prisma } from '$lib/server/db/prisma';
+import { requirePermission } from '$lib/server/auth/permissions-granular';
 import { error } from '@sveltejs/kit';
 import {
 	getFinancialReportFilters,
@@ -19,19 +18,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		throw error(401, 'Usuario no autenticado');
 	}
 
-	// Get user roles
-	const userRoles = await prisma.userRole.findMany({
-		where: { userId: locals.user.id },
-		include: { role: true }
-	});
-	const roleCodes = userRoles.map((ur) => ur.role.code);
-
-	// Check if user has permission to view financial reports
-	const canViewReports = await hasPermission(roleCodes[0] || '', 'FINANCIAL_REPORT', 'read');
-
-	if (!canViewReports) {
-		throw error(403, 'No tiene permisos para ver reportes financieros');
-	}
+	await requirePermission(locals.user, 'FINANCIAL_REPORT', 'read');
 
 	// Obtener filtros disponibles
 	const filters = await getFinancialReportFilters();

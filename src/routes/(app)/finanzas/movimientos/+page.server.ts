@@ -1,7 +1,6 @@
 import type { PageServerLoad, Actions } from './$types';
 import { financialService } from '$lib/server/financial/financial-service';
-import { hasPermission } from '$lib/server/auth/permissions-granular';
-import { prisma } from '$lib/server/db/prisma';
+import { requirePermission } from '$lib/server/auth/permissions-granular';
 import { fail } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -9,19 +8,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		throw new Error('Usuario no autenticado');
 	}
 
-	// Get user roles
-	const userRoles = await prisma.userRole.findMany({
-		where: { userId: locals.user.id },
-		include: { role: true }
-	});
-	const roleCodes = userRoles.map((ur: any) => ur.role.code);
-
-	// Check if user has permission to view financial reports
-	const canViewReports = await hasPermission(roleCodes[0] || '', 'FINANCIAL_REPORT', 'read');
-
-	if (!canViewReports) {
-		throw new Error('No tiene permisos para ver movimientos financieros');
-	}
+	await requirePermission(locals.user, 'FINANCIAL_REPORT', 'read');
 
 	// Get filters from URL
 	const studentId = url.searchParams.get('studentId') || undefined;
@@ -52,17 +39,7 @@ export const actions: Actions = {
 			return fail(401, { error: 'Usuario no autenticado' });
 		}
 
-		const userRoles = await prisma.userRole.findMany({
-			where: { userId: locals.user.id },
-			include: { role: true }
-		});
-		const roleCodes = userRoles.map((ur: any) => ur.role.code);
-
-		const canViewReports = await hasPermission(roleCodes[0] || '', 'FINANCIAL_REPORT', 'read');
-
-		if (!canViewReports) {
-			return fail(403, { error: 'No tiene permisos para ver movimientos financieros' });
-		}
+		await requirePermission(locals.user, 'FINANCIAL_REPORT', 'read');
 
 		const data = await request.formData();
 		const studentId = data.get('studentId') as string | undefined;

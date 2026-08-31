@@ -6,6 +6,7 @@ import { auditLog } from '$lib/server/audit';
 import { EnrollmentStatus } from '@prisma/client';
 import { assertStudentNotFinanciallyBlocked } from '$lib/server/financial/student-blocking-service';
 import { getCurrentStudentForUser } from '$lib/server/students/current-student-service';
+import { requirePermission } from '$lib/server/auth/permissions-granular';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
@@ -20,7 +21,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/dashboard');
 	}
 
-	// Obtener el estudiante asociado al usuario (por userId o DNI)
+	await requirePermission(user, 'SUBJECT_ENROLLMENT', 'create');
+
+	// Obtener el estudiante asociado directamente al usuario
 	const student = await getCurrentStudentForUser(user.id);
 
 	// Cargar datos adicionales del estudiante
@@ -134,6 +137,8 @@ export const actions: Actions = {
 		if (!isStudent) {
 			return fail(403, { error: 'Solo alumnos pueden inscribirse' });
 		}
+
+		await requirePermission(user, 'SUBJECT_ENROLLMENT', 'create');
 
 		const formData = await request.formData();
 		const subjectIds = formData.getAll('subjectIds') as string[];

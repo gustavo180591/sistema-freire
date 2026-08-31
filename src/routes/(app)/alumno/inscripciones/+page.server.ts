@@ -4,11 +4,7 @@ import { redirect, fail, error } from '@sveltejs/kit';
 import { auditLog } from '$lib/server/audit';
 import { EnrollmentStatus } from '@prisma/client';
 import { getCurrentStudentForUser } from '$lib/server/students/current-student-service';
-import {
-	getAvailableExamTablesForStudent,
-	registerStudentForExam,
-	cancelExamRegistration
-} from '$lib/server/academic/exam-registration-service';
+import { requirePermission } from '$lib/server/auth/permissions-granular';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
@@ -23,7 +19,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/dashboard');
 	}
 
-	// Obtener el estudiante asociado al usuario (por userId o DNI)
+	await requirePermission(user, 'SUBJECT_ENROLLMENT', 'read');
+
+	// Obtener el estudiante asociado directamente al usuario
 	const student = await getCurrentStudentForUser(user.id);
 
 	// Cargar datos adicionales del estudiante
@@ -61,9 +59,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 		where: { active: true },
 		orderBy: { startDate: 'desc' }
 	});
-
-	// Mesas de examen disponibles para este alumno.
-	const examTables = await getAvailableExamTablesForStudent(studentWithRelations.id);
 
 	return {
 		student: {
@@ -121,90 +116,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 			canCancel:
 				e.status === EnrollmentStatus.ACTIVE && (!activeTerm || e.academicTermId === activeTerm.id)
 		})),
-		activeTerm,
-		examTables
+		activeTerm
 	};
 };
 
 export const actions: Actions = {
-	registerExam: async ({ request, locals }) => {
-		const user = locals.user;
-
-		if (!user) {
-			return fail(401, { error: 'No autenticado' });
-		}
-
-		if (!user.roles.includes('ALUMNO')) {
-			return fail(403, { error: 'Solo los alumnos pueden inscribirse a mesas de examen' });
-		}
-
-		const data = await request.formData();
-		const evaluationId = data.get('evaluationId')?.toString();
-
-		if (!evaluationId) {
-			return fail(400, { error: 'Mesa de examen requerida' });
-		}
-
-		const student = await getCurrentStudentForUser(user.id);
-
-		try {
-			await registerStudentForExam(
-				evaluationId,
-				student.id,
-				user.id,
-				`${student.firstName} ${student.lastName}`
-			);
-
-			return {
-				success: true,
-				message: 'Te inscribiste correctamente a la mesa de examen'
-			};
-		} catch (err) {
-			const message = err instanceof Error ? err.message : 'No se pudo realizar la inscripción';
-
-			return fail(400, { error: message });
-		}
-	},
-
-	cancelExam: async ({ request, locals }) => {
-		const user = locals.user;
-
-		if (!user) {
-			return fail(401, { error: 'No autenticado' });
-		}
-
-		if (!user.roles.includes('ALUMNO')) {
-			return fail(403, { error: 'Solo los alumnos pueden cancelar su inscripción' });
-		}
-
-		const data = await request.formData();
-		const registrationId = data.get('registrationId')?.toString();
-
-		if (!registrationId) {
-			return fail(400, { error: 'Inscripción requerida' });
-		}
-
-		const student = await getCurrentStudentForUser(user.id);
-
-		try {
-			await cancelExamRegistration(
-				registrationId,
-				student.id,
-				user.id,
-				`${student.firstName} ${student.lastName}`
-			);
-
-			return {
-				success: true,
-				message: 'Inscripción a examen cancelada correctamente'
-			};
-		} catch (err) {
-			const message = err instanceof Error ? err.message : 'No se pudo cancelar la inscripción';
-
-			return fail(400, { error: message });
-		}
-	},
-
 	// Cancelar inscripción
 	cancel: async ({ request, locals }) => {
 		const user = locals.user;
@@ -214,6 +130,8 @@ export const actions: Actions = {
 		if (!isStudent) {
 			return fail(403, { error: 'Solo alumnos pueden cancelar sus inscripciones' });
 		}
+
+		await requirePermission(user, 'SUBJECT_ENROLLMENT', 'delete');
 
 		const formData = await request.formData();
 		const enrollmentId = formData.get('enrollmentId')?.toString();

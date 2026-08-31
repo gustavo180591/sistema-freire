@@ -8,6 +8,21 @@ function isWindowOpen(opensAt: Date | null, closesAt: Date | null, now = new Dat
 	return now >= opensAt && now <= closesAt;
 }
 
+function getRegistrationWindow(evaluation: {
+	createdAt: Date;
+	registrationOpensAt: Date | null;
+	registrationClosesAt: Date | null;
+}) {
+	const opensAt = evaluation.registrationOpensAt ?? evaluation.createdAt;
+	const closesAt =
+		evaluation.registrationClosesAt ?? new Date(opensAt.getTime() + 72 * 60 * 60 * 1000);
+
+	return {
+		opensAt,
+		closesAt
+	};
+}
+
 export async function getExamRegistrationEligibility({
 	studentId,
 	evaluationId
@@ -25,7 +40,8 @@ export async function getExamRegistrationEligibility({
 			select: {
 				id: true,
 				careerId: true,
-				locationId: true
+				locationId: true,
+				status: true
 			}
 		}),
 		prisma.evaluation.findUnique({
@@ -54,6 +70,15 @@ export async function getExamRegistrationEligibility({
 			existingRegistration: null,
 			canRegister: false,
 			reason: 'Alumno no encontrado'
+		};
+	}
+
+	if (student.status !== 'ACTIVE') {
+		return {
+			evaluation: null,
+			existingRegistration: null,
+			canRegister: false,
+			reason: 'Tu condición de alumno no se encuentra activa'
 		};
 	}
 
@@ -122,10 +147,8 @@ export async function getExamRegistrationEligibility({
 		};
 	}
 
-	const registrationOpensAt = evaluation.registrationOpensAt ?? evaluation.createdAt;
-	const registrationClosesAt =
-		evaluation.registrationClosesAt ??
-		new Date(registrationOpensAt.getTime() + 72 * 60 * 60 * 1000);
+	const { opensAt: registrationOpensAt, closesAt: registrationClosesAt } =
+		getRegistrationWindow(evaluation);
 
 	if (!isWindowOpen(registrationOpensAt, registrationClosesAt, now)) {
 		return {
@@ -192,6 +215,21 @@ export async function getExamRegistrationEligibility({
 export async function getAvailableExamTablesForStudent(studentId: string) {
 	const now = new Date();
 
+	const student = await prisma.student.findUnique({
+		where: {
+			id: studentId
+		},
+		select: {
+			careerId: true,
+			locationId: true,
+			status: true
+		}
+	});
+
+	if (!student?.locationId || student.status !== 'ACTIVE') {
+		return [];
+	}
+
 	const enrollments = await prisma.subjectEnrollment.findMany({
 		where: {
 			studentId,
@@ -210,13 +248,10 @@ export async function getAvailableExamTablesForStudent(studentId: string) {
 
 	const evaluations = await prisma.evaluation.findMany({
 		where: {
+			type: 'MESA_EXAMEN',
 			isClosed: false,
-			registrationOpensAt: {
-				not: null
-			},
-			registrationClosesAt: {
-				not: null
-			},
+			careerId: student.careerId,
+			locationId: student.locationId,
 			subjectId: {
 				in: subjectIds
 			},
@@ -226,6 +261,18 @@ export async function getAvailableExamTablesForStudent(studentId: string) {
 		},
 		include: {
 			subject: true,
+			career: {
+				select: {
+					id: true,
+					name: true
+				}
+			},
+			location: {
+				select: {
+					id: true,
+					name: true
+				}
+			},
 			createdByUser: {
 				select: {
 					firstName: true,
@@ -251,11 +298,8 @@ export async function getAvailableExamTablesForStudent(studentId: string) {
 
 	return evaluations.map((evaluation) => {
 		const registration = evaluation.examRegistrations[0] ?? null;
-		const registrationOpen = isWindowOpen(
-			evaluation.registrationOpensAt,
-			evaluation.registrationClosesAt,
-			now
-		);
+		const { opensAt, closesAt } = getRegistrationWindow(evaluation);
+		const registrationOpen = isWindowOpen(opensAt, closesAt, now);
 
 		return {
 			id: evaluation.id,
@@ -263,8 +307,8 @@ export async function getAvailableExamTablesForStudent(studentId: string) {
 			description: evaluation.description,
 			type: evaluation.type,
 			evaluationDate: evaluation.evaluationDate,
-			registrationOpensAt: evaluation.registrationOpensAt,
-			registrationClosesAt: evaluation.registrationClosesAt,
+			registrationOpensAt: opensAt,
+			registrationClosesAt: closesAt,
 			registrationOpen,
 			subject: {
 				id: evaluation.subject.id,
@@ -272,6 +316,18 @@ export async function getAvailableExamTablesForStudent(studentId: string) {
 				name: evaluation.subject.name,
 				yearLevel: evaluation.subject.yearLevel
 			},
+			career: evaluation.career
+				? {
+						id: evaluation.career.id,
+						name: evaluation.career.name
+					}
+				: null,
+			location: evaluation.location
+				? {
+						id: evaluation.location.id,
+						name: evaluation.location.name
+					}
+				: null,
 			teacher: `${evaluation.createdByUser.firstName} ${evaluation.createdByUser.lastName}`,
 			registration
 		};
@@ -284,42 +340,88 @@ export async function registerStudentForExam(
 	userId: string,
 	userName: string
 ) {
-	const financialEligibility = await getStudentFinancialExamEligibility(
+	/*
+	 * La UI no es una barrera de seguridad.
+	 * La elegibilidad se verifica nuevamente en el servicio antes
+	 * de iniciar cualquier escritura.
+	 */
+	const eligibility = await getExamRegistrationEligibility({
 		studentId,
-		userId,
-		userName
-	);
+		evaluationId
+	});
 
-	if (!financialEligibility.canTakeExam) {
-		throw new Error(financialEligibility.message);
+	if (!eligibility.canRegister) {
+		throw new Error(eligibility.reason);
 	}
 
 	const now = new Date();
 
 	const registration = await prisma.$transaction(async (tx) => {
-		const evaluation = await tx.evaluation.findUnique({
-			where: {
-				id: evaluationId
-			},
-			include: {
-				subject: true
-			}
-		});
+		/*
+		 * Revalidar dentro de la transacción las invariantes críticas
+		 * para evitar depender solamente del chequeo previo.
+		 */
+		const [student, evaluation] = await Promise.all([
+			tx.student.findUnique({
+				where: {
+					id: studentId
+				},
+				select: {
+					careerId: true,
+					locationId: true,
+					status: true
+				}
+			}),
+			tx.evaluation.findUnique({
+				where: {
+					id: evaluationId
+				},
+				include: {
+					subject: true
+				}
+			})
+		]);
+
+		if (!student) {
+			throw new Error('Alumno no encontrado');
+		}
+
+		if (student.status !== 'ACTIVE') {
+			throw new Error('Tu condición de alumno no se encuentra activa');
+		}
 
 		if (!evaluation) {
-			throw new Error('La evaluación no existe');
+			throw new Error('La mesa de examen no existe');
+		}
+
+		if (evaluation.type !== 'MESA_EXAMEN') {
+			throw new Error('La evaluación seleccionada no corresponde a una mesa de examen');
+		}
+
+		if (!evaluation.careerId || !evaluation.locationId) {
+			throw new Error('La mesa de examen no tiene carrera o sede configurada');
+		}
+
+		if (evaluation.careerId !== student.careerId) {
+			throw new Error('La mesa de examen no corresponde a la carrera del alumno');
+		}
+
+		if (evaluation.locationId !== student.locationId) {
+			throw new Error('La mesa de examen no corresponde a la sede del alumno');
 		}
 
 		if (evaluation.isClosed) {
-			throw new Error('La evaluación está cerrada');
-		}
-
-		if (!isWindowOpen(evaluation.registrationOpensAt, evaluation.registrationClosesAt, now)) {
-			throw new Error('El período de inscripción de 72 horas está cerrado');
+			throw new Error('La mesa de examen está cerrada');
 		}
 
 		if (evaluation.evaluationDate <= now) {
-			throw new Error('La evaluación ya no admite inscripciones');
+			throw new Error('La mesa de examen ya no admite inscripciones');
+		}
+
+		const { opensAt, closesAt } = getRegistrationWindow(evaluation);
+
+		if (!isWindowOpen(opensAt, closesAt, now)) {
+			throw new Error('El período de inscripción a la mesa se encuentra cerrado');
 		}
 
 		const enrollment = await tx.subjectEnrollment.findFirst({
@@ -336,8 +438,24 @@ export async function registerStudentForExam(
 
 		if (!enrollment) {
 			throw new Error(
-				'No tenés una inscripción activa en la materia y comisión correspondientes a esta evaluación'
+				'No tenés una inscripción activa en la materia y comisión correspondientes a esta mesa'
 			);
+		}
+
+		const existingRegistration = await tx.examRegistration.findUnique({
+			where: {
+				evaluationId_studentId: {
+					evaluationId,
+					studentId
+				}
+			},
+			select: {
+				status: true
+			}
+		});
+
+		if (existingRegistration?.status === 'REGISTERED') {
+			throw new Error('Ya estás inscripto a esta mesa de examen');
 		}
 
 		return tx.examRegistration.upsert({
@@ -366,7 +484,7 @@ export async function registerStudentForExam(
 		action: 'CREATE',
 		entityType: 'ExamRegistration',
 		entityId: registration.id,
-		description: `Alumno ${userName} se inscribió a la evaluación ${evaluationId}`
+		description: `Alumno ${userName} se inscribió a la mesa de examen ${evaluationId}`
 	});
 
 	return registration;
@@ -405,13 +523,9 @@ export async function cancelExamRegistration(
 		throw new Error('La inscripción ya no está activa');
 	}
 
-	if (
-		!isWindowOpen(
-			registration.evaluation.registrationOpensAt,
-			registration.evaluation.registrationClosesAt,
-			now
-		)
-	) {
+	const { opensAt, closesAt } = getRegistrationWindow(registration.evaluation);
+
+	if (!isWindowOpen(opensAt, closesAt, now)) {
 		throw new Error('La inscripción ya cerró y no puede cancelarse desde el portal');
 	}
 

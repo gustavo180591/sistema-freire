@@ -108,12 +108,18 @@
 			category: 'Mis Estudios',
 			collapsible: true,
 			items: [
-				{ label: 'Perfil', href: '/alumno/perfil', icon: 'user-circle', roles: ['ALUMNO'] },
 				{
-					label: 'Historial',
-					href: '/alumno/historial',
-					icon: 'graduation-cap',
+					label: 'Perfil',
+					href: '/alumno/perfil',
+					icon: 'user-circle',
 					roles: ['ALUMNO']
+				},
+				{
+					label: 'Mis materias',
+					href: '/alumno/inscripciones',
+					icon: 'book-open',
+					roles: ['ALUMNO'],
+					exact: true
 				},
 				{
 					label: 'Asistencia',
@@ -128,12 +134,23 @@
 					roles: ['ALUMNO']
 				},
 				{
-					label: 'Inscripciones',
-					href: '/alumno/inscripciones',
-					icon: 'diagram-project',
+					label: 'Inscribirse a mesa de examen',
+					href: '/alumno/inscripciones/examenes',
+					icon: 'clipboard-list',
 					roles: ['ALUMNO']
 				},
-				{ label: 'Finanzas', href: '/alumno/finanzas', icon: 'coins', roles: ['ALUMNO'] }
+				{
+					label: 'Historial',
+					href: '/alumno/historial',
+					icon: 'graduation-cap',
+					roles: ['ALUMNO']
+				},
+				{
+					label: 'Finanzas',
+					href: '/alumno/finanzas',
+					icon: 'coins',
+					roles: ['ALUMNO']
+				}
 			]
 		},
 		{

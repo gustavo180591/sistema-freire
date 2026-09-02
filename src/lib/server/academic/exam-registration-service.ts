@@ -502,45 +502,90 @@ export async function cancelExamRegistration(
 ) {
 	const now = new Date();
 
-	const registration = await prisma.examRegistration.findUnique({
-		where: {
-			id: registrationId
-		},
-		include: {
-			evaluation: {
-				include: {
-					subject: true
+	const result = await prisma.$transaction(async (tx) => {
+		/*
+		 * Igual que en la inscripción, no confiamos únicamente en la UI.
+		 * Todas las invariantes de cancelación se verifican nuevamente
+		 * inmediatamente antes de modificar la inscripción.
+		 */
+		const registration = await tx.examRegistration.findUnique({
+			where: {
+				id: registrationId
+			},
+			include: {
+				evaluation: {
+					include: {
+						subject: true
+					}
 				}
 			}
+		});
+
+		if (!registration) {
+			throw new Error('Inscripción a examen no encontrada');
 		}
-	});
 
-	if (!registration) {
-		throw new Error('Inscripción a examen no encontrada');
-	}
-
-	if (registration.studentId !== studentId) {
-		throw new Error('No tenés permiso para cancelar esta inscripción');
-	}
-
-	if (registration.status !== 'REGISTERED') {
-		throw new Error('La inscripción ya no está activa');
-	}
-
-	const { opensAt, closesAt } = getRegistrationWindow(registration.evaluation);
-
-	if (!isWindowOpen(opensAt, closesAt, now)) {
-		throw new Error('La inscripción ya cerró y no puede cancelarse desde el portal');
-	}
-
-	const updated = await prisma.examRegistration.update({
-		where: {
-			id: registrationId
-		},
-		data: {
-			status: 'CANCELLED',
-			cancelledAt: now
+		if (registration.studentId !== studentId) {
+			throw new Error('No tenés permiso para cancelar esta inscripción');
 		}
+
+		if (registration.status !== 'REGISTERED') {
+			throw new Error('La inscripción ya no está activa');
+		}
+
+		if (registration.evaluation.type !== 'MESA_EXAMEN') {
+			throw new Error('La inscripción no corresponde a una mesa de examen');
+		}
+
+		if (registration.evaluation.isClosed) {
+			throw new Error('La mesa de examen se encuentra cerrada');
+		}
+
+		if (registration.evaluation.evaluationDate <= now) {
+			throw new Error('La mesa de examen ya se realizó y la inscripción no puede cancelarse');
+		}
+
+		const { opensAt, closesAt } = getRegistrationWindow(registration.evaluation);
+
+		if (!isWindowOpen(opensAt, closesAt, now)) {
+			throw new Error('La inscripción ya cerró y no puede cancelarse desde el portal');
+		}
+
+		/*
+		 * El status vuelve a formar parte del WHERE para evitar que una
+		 * operación concurrente cancele/modifique una inscripción que ya
+		 * dejó de estar activa después de la lectura anterior.
+		 */
+		const updateResult = await tx.examRegistration.updateMany({
+			where: {
+				id: registrationId,
+				studentId,
+				status: 'REGISTERED'
+			},
+			data: {
+				status: 'CANCELLED',
+				cancelledAt: now
+			}
+		});
+
+		if (updateResult.count !== 1) {
+			throw new Error('La inscripción ya no está activa');
+		}
+
+		const updated = await tx.examRegistration.findUnique({
+			where: {
+				id: registrationId
+			}
+		});
+
+		if (!updated) {
+			throw new Error('No se pudo recuperar la inscripción cancelada');
+		}
+
+		return {
+			registration: updated,
+			subjectName: registration.evaluation.subject.name
+		};
 	});
 
 	await auditLog({
@@ -548,8 +593,8 @@ export async function cancelExamRegistration(
 		action: 'UPDATE',
 		entityType: 'ExamRegistration',
 		entityId: registrationId,
-		description: `Alumno ${userName} canceló su inscripción a ${registration.evaluation.subject.name}`
+		description: `Alumno ${userName} canceló su inscripción a ${result.subjectName}`
 	});
 
-	return updated;
+	return result.registration;
 }

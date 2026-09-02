@@ -270,8 +270,7 @@ export const actions: Actions = {
 
 		if (!evaluationDate) {
 			return {
-				error:
-					'La fecha y hora de la evaluación son obligatorias porque los alumnos disponen de 72 horas para inscribirse'
+				error: 'La fecha y hora de la evaluación son obligatorias'
 			};
 		}
 
@@ -360,7 +359,7 @@ export const actions: Actions = {
 				success:
 					type === 'MESA_EXAMEN'
 						? 'Mesa de examen creada. La inscripción estará abierta durante 72 horas.'
-						: 'Evaluación creada correctamente. La inscripción de alumnos quedó abierta durante 72 horas.'
+						: 'Evaluación creada correctamente.'
 			};
 		} catch (error) {
 			console.error('Error al crear evaluación:', error);
@@ -452,17 +451,15 @@ export const actions: Actions = {
 		try {
 			const evaluationService = new EvaluationService(prisma);
 
-			const validation = await evaluationService.canCloseEvaluation(evaluationId, locals.user.id);
-
-			if (validation) {
-				return validation;
-			}
-
-			await evaluationService.closeEvaluation({
+			const result = await evaluationService.closeEvaluation({
 				evaluationId,
 				userId: locals.user.id,
 				reason
 			});
+
+			if (result) {
+				return result;
+			}
 
 			return { success: 'Evaluación cerrada exitosamente' };
 		} catch (error) {
@@ -489,17 +486,15 @@ export const actions: Actions = {
 		try {
 			const evaluationService = new EvaluationService(prisma);
 
-			const validation = await evaluationService.canReopenEvaluation(evaluationId, locals.user.id);
-
-			if (validation) {
-				return validation;
-			}
-
-			await evaluationService.reopenEvaluation({
+			const result = await evaluationService.reopenEvaluation({
 				evaluationId,
 				userId: locals.user.id,
 				reason
 			});
+
+			if (result) {
+				return result;
+			}
 
 			return { success: 'Evaluación reabierta exitosamente' };
 		} catch (error) {

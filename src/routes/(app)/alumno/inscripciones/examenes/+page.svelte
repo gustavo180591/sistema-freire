@@ -62,7 +62,9 @@
 	{/if}
 
 	{#if form?.success}
-		<div class="rounded-2xl border border-emerald-800 bg-emerald-950/30 p-5 text-emerald-300">
+		<div
+			class="rounded-2xl border border-emerald-800 bg-emerald-950/30 p-5 font-medium text-emerald-700"
+		>
 			{form.message}
 		</div>
 	{/if}

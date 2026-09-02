@@ -170,6 +170,12 @@
 					roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA']
 				},
 				{
+					label: 'Mesas de examen',
+					href: '/mesas-examen',
+					icon: 'calendar',
+					roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'DOCENTE']
+				},
+				{
 					label: 'Preceptores',
 					href: '/preceptores',
 					icon: 'clipboard-user',

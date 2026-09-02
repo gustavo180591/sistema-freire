@@ -128,12 +128,27 @@ export async function assertCanAccessOwnStudentData(user: App.Locals['user']): P
 	return student.id;
 }
 
+export type LocationAccessOptions = {
+	globalAccessRoles?: readonly string[];
+};
+
+const DEFAULT_GLOBAL_LOCATION_ACCESS_ROLES: readonly string[] = [
+	'SUPERADMIN',
+	'DIRECTOR',
+	'FINANZAS',
+	'APODERADO'
+];
+
 /**
- * Obtiene los IDs de localidades permitidos para un usuario
- * Roles con acceso global a todas las localidades: SUPERADMIN, DIRECTOR, SECRETARIA, FINANZAS, APODERADO
- * Otros roles (DOCENTE, PRECEPTOR, ALUMNO) solo ven sus localidades asignadas
+ * Obtiene los IDs de localidades permitidos para un usuario.
+ *
+ * Por defecto algunos roles poseen alcance global institucional.
+ * Cada módulo puede limitar qué roles otorgan alcance global mediante options.
  */
-export async function getUserAllowedLocationIds(userId: string): Promise<string[]> {
+export async function getUserAllowedLocationIds(
+	userId: string,
+	options: LocationAccessOptions = {}
+): Promise<string[]> {
 	// Verificar roles del usuario
 	const user = await prisma.user.findUnique({
 		where: { id: userId },
@@ -148,8 +163,8 @@ export async function getUserAllowedLocationIds(userId: string): Promise<string[
 
 	if (!user) return [];
 
-	// Roles con acceso global a todas las localidades
-	const globalAccessRoles = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'FINANZAS', 'APODERADO'];
+	const globalAccessRoles = options.globalAccessRoles ?? DEFAULT_GLOBAL_LOCATION_ACCESS_ROLES;
+
 	const hasGlobalAccess = user.roles.some((r) => globalAccessRoles.includes(r.role.code));
 
 	if (hasGlobalAccess) {
@@ -177,16 +192,25 @@ export async function getUserAllowedLocationIds(userId: string): Promise<string[
 /**
  * Verifica si un usuario tiene acceso a una localidad específica
  */
-export async function hasLocationAccess(userId: string, locationId: string): Promise<boolean> {
-	const allowedIds = await getUserAllowedLocationIds(userId);
+export async function hasLocationAccess(
+	userId: string,
+	locationId: string,
+	options: LocationAccessOptions = {}
+): Promise<boolean> {
+	const allowedIds = await getUserAllowedLocationIds(userId, options);
 	return allowedIds.includes(locationId);
 }
 
 /**
  * Requiere que el usuario tenga acceso a la localidad especificada
  */
-export async function requireLocationAccess(userId: string, locationId: string) {
-	const hasAccess = await hasLocationAccess(userId, locationId);
+export async function requireLocationAccess(
+	userId: string,
+	locationId: string,
+	options: LocationAccessOptions = {}
+) {
+	const hasAccess = await hasLocationAccess(userId, locationId, options);
+
 	if (!hasAccess) {
 		throw error(403, 'No tienes permisos para acceder a datos de esta localidad');
 	}

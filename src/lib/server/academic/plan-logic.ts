@@ -172,7 +172,9 @@ export async function calculateFinalStatus(
 	promotionDate?: Date;
 	courseAverage: number | null;
 	courseStatus: CourseStatus;
+	finalExamScore: number | null;
 	finalExamStatus: FinalExamStatus;
+	finalApprovalDate: Date | null;
 	academicStatus: AcademicStatus;
 }> {
 	const client = tx || prisma;
@@ -239,8 +241,10 @@ export async function calculateFinalStatus(
 			finalGrade: null,
 			courseAverage: null,
 			courseStatus: CourseStatus.IN_PROGRESS,
+			finalExamScore: null,
 			finalExamStatus: FinalExamStatus.PENDING,
-			academicStatus: AcademicStatus.EN_COURSE
+			finalApprovalDate: null,
+			academicStatus: regularityStatus === 'LIBRE' ? AcademicStatus.LIBRE : AcademicStatus.EN_COURSE
 		};
 	}
 
@@ -272,8 +276,31 @@ export async function calculateFinalStatus(
 		(g) => g.evaluation && ['EXAMEN_FINAL', 'MESA_EXAMEN'].includes(g.evaluation.type)
 	);
 
+	/*
+	 * Grade conserva el historial completo de intentos de examen final.
+	 *
+	 * Para el estado agregado:
+	 * - un final aprobado prevalece;
+	 * - si todavía no aprobó, representa el último final efectivamente rendido;
+	 * - ABSENT y EXCUSED no cuentan como final rendido;
+	 * - desaprobar o ausentarse no elimina por sí solo la regularidad.
+	 */
+	const completedFinals = finalExamEvaluations
+		.filter((grade) => grade.status === 'PRESENT' && grade.value !== null)
+		.sort((a, b) => b.evaluation.evaluationDate.getTime() - a.evaluation.evaluationDate.getTime());
+
+	const passedFinal = completedFinals.find((grade) => {
+		const passingScore = Number(grade.evaluation.minPassingScore ?? approvalThreshold);
+
+		return Number(grade.value) >= passingScore;
+	});
+
+	const latestCompletedFinal = completedFinals[0] ?? null;
+	const effectiveFinal = passedFinal ?? latestCompletedFinal;
+
 	// Determinar courseStatus
 	let courseStatus: CourseStatus;
+
 	if (courseAverage === null) {
 		courseStatus = CourseStatus.IN_PROGRESS;
 	} else if (courseAverage >= promotionThreshold) {
@@ -286,63 +313,64 @@ export async function calculateFinalStatus(
 
 	// Determinar finalExamStatus
 	let finalExamStatus: FinalExamStatus;
+
 	if (courseStatus === CourseStatus.PROMOTED) {
 		finalExamStatus = FinalExamStatus.NOT_REQUIRED;
-	} else if (finalExamEvaluations.length === 0) {
-		finalExamStatus = FinalExamStatus.PENDING;
+	} else if (passedFinal) {
+		finalExamStatus = FinalExamStatus.PASSED;
+	} else if (latestCompletedFinal) {
+		finalExamStatus = FinalExamStatus.FAILED;
 	} else {
-		const completedFinals = finalExamEvaluations
-			.filter((grade) => grade.status === 'PRESENT' && grade.value !== null)
-			.sort(
-				(a, b) => b.evaluation.evaluationDate.getTime() - a.evaluation.evaluationDate.getTime()
-			);
-		const passedFinal = completedFinals.find((grade) => Number(grade.value) >= approvalThreshold);
-		const finalExam = passedFinal || completedFinals[0];
-
-		if (finalExam?.value !== null && finalExam?.value !== undefined) {
-			if (Number(finalExam.value) >= approvalThreshold) {
-				finalExamStatus = FinalExamStatus.PASSED;
-			} else {
-				finalExamStatus = FinalExamStatus.FAILED;
-			}
-		} else {
-			// ABSENT, EXCUSED y otros se tratan como PENDING
-			finalExamStatus = FinalExamStatus.PENDING;
-		}
+		finalExamStatus = FinalExamStatus.PENDING;
 	}
 
-	// Determinar academicStatus (estado académico final)
+	const finalExamScore =
+		courseStatus === CourseStatus.PROMOTED ||
+		effectiveFinal?.value === null ||
+		effectiveFinal?.value === undefined
+			? null
+			: Number(effectiveFinal.value);
+
+	const finalApprovalDate =
+		finalExamStatus === FinalExamStatus.PASSED && passedFinal
+			? passedFinal.evaluation.evaluationDate
+			: null;
+
+	/*
+	 * Un examen final desaprobado no convierte automáticamente a un
+	 * alumno regular en LIBRE. La regularidad pertenece a cursada/asistencia.
+	 */
 	let academicStatus: AcademicStatus;
+
 	if (courseStatus === CourseStatus.PROMOTED) {
 		academicStatus = AcademicStatus.PROMOCIONADO;
 	} else if (finalExamStatus === FinalExamStatus.PASSED) {
 		academicStatus = AcademicStatus.APROBADO;
-	} else if (finalExamStatus === FinalExamStatus.FAILED) {
+	} else if (regularityStatus === 'LIBRE') {
 		academicStatus = AcademicStatus.LIBRE;
 	} else if (courseStatus === CourseStatus.FAILED_COURSE) {
 		academicStatus = AcademicStatus.LIBRE;
+	} else if (
+		finalExamStatus === FinalExamStatus.FAILED ||
+		courseStatus === CourseStatus.PASSED_COURSE
+	) {
+		academicStatus = regularityStatus === 'REGULAR' ? AcademicStatus.REGULAR : AcademicStatus.LIBRE;
 	} else {
 		academicStatus = AcademicStatus.EN_COURSE;
 	}
 
-	// La regularidad se conserva desde el módulo de asistencia. Una ausencia a
-	// una evaluación no puede convertir por sí sola a un alumno en LIBRE.
-
-	// Calcular finalGrade (nota final efectiva)
+	/*
+	 * finalGrade se conserva por compatibilidad.
+	 * La nota específica del examen final vive en finalExamScore.
+	 */
 	let finalGrade: number | null;
+
 	if (courseStatus === CourseStatus.PROMOTED) {
 		finalGrade = courseAverage;
 	} else if (finalExamStatus === FinalExamStatus.PASSED) {
-		const passedFinal = finalExamEvaluations
-			.filter((grade) => grade.status === 'PRESENT' && grade.value !== null)
-			.sort((a, b) => b.evaluation.evaluationDate.getTime() - a.evaluation.evaluationDate.getTime())
-			.find((grade) => Number(grade.value) >= approvalThreshold);
-		finalGrade =
-			passedFinal?.value === null || passedFinal?.value === undefined
-				? null
-				: Number(passedFinal.value);
+		finalGrade = finalExamScore;
 	} else {
-		finalGrade = courseAverage; // Promedio de cursada como referencia
+		finalGrade = courseAverage;
 	}
 
 	// Determinar approved y promoted (campos heredados para compatibilidad)
@@ -359,7 +387,9 @@ export async function calculateFinalStatus(
 		promotionDate,
 		courseAverage,
 		courseStatus,
+		finalExamScore,
 		finalExamStatus,
+		finalApprovalDate,
 		academicStatus
 	};
 }
@@ -471,7 +501,9 @@ async function updateStudentSubjectStatusInternal(
 				// Nuevos campos del modelo
 				courseAverage: status.courseAverage,
 				courseStatus: status.courseStatus,
+				finalExamScore: status.finalExamScore,
 				finalExamStatus: status.finalExamStatus,
+				finalApprovalDate: status.finalApprovalDate,
 				academicStatus: status.academicStatus
 			}
 		});
@@ -489,7 +521,9 @@ async function updateStudentSubjectStatusInternal(
 				// Nuevos campos del modelo
 				courseAverage: status.courseAverage,
 				courseStatus: status.courseStatus,
+				finalExamScore: status.finalExamScore,
 				finalExamStatus: status.finalExamStatus,
+				finalApprovalDate: status.finalApprovalDate,
 				academicStatus: status.academicStatus
 			}
 		});

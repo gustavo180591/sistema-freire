@@ -173,8 +173,8 @@
 					<h2 class="mt-1 text-2xl font-semibold text-white">Nueva evaluación</h2>
 
 					<p class="mt-2 max-w-3xl text-sm text-slate-400">
-						Configurá la instancia evaluativa que deberán rendir los alumnos. Todas las evaluaciones
-						requieren inscripción previa durante 72 horas.
+						Configurá la instancia evaluativa que deberán rendir los alumnos. Las mesas de examen
+						habilitan una ventana de inscripción previa de 72 horas.
 					</p>
 				</div>
 
@@ -226,16 +226,17 @@
 									<div>
 										<p class="text-sm font-semibold text-white">Tipo de instancia</p>
 										<p class="mt-1 max-w-3xl text-sm text-slate-400">
-											Todas las evaluaciones requieren inscripción del alumno. Al crear una
-											instancia se abrirá automáticamente una ventana de inscripción durante 72
-											horas.
+											Las evaluaciones de cursada se gestionan dentro de la comisión. Solo las mesas
+											de examen habilitan automáticamente una ventana de inscripción de 72 horas.
 										</p>
 									</div>
 
 									<span
 										class="w-fit shrink-0 rounded-full bg-indigo-500/15 px-3 py-1.5 text-xs font-semibold text-indigo-300"
 									>
-										Inscripción · 72 hs
+										{selectedType === 'MESA_EXAMEN'
+											? 'Inscripción · 72 hs'
+											: 'Evaluación de cursada'}
 									</span>
 								</div>
 							</div>
@@ -379,14 +380,14 @@
 									class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 								/>
 
-								{#if selectedType}
+								{#if selectedType === 'MESA_EXAMEN'}
 									<div
 										class="mt-3 rounded-xl border border-indigo-800/60 bg-indigo-950/30 p-3 text-sm text-indigo-300"
 									>
 										<strong>Inscripción de alumnos:</strong>
-										al crear esta evaluación se abrirá automáticamente un período de
-										<strong>72 horas exactas</strong>. La fecha de la evaluación debe ser posterior
-										al cierre de ese período.
+										al crear la mesa se abrirá automáticamente un período de
+										<strong>72 horas exactas</strong>. La fecha de la mesa debe ser posterior al
+										cierre de ese período.
 									</div>
 								{/if}
 							</div>

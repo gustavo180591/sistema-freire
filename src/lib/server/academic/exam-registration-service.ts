@@ -1,6 +1,5 @@
 import { prisma } from '$lib/server/db/prisma';
 import { auditLog } from '$lib/server/audit';
-import { getStudentFinancialExamEligibility } from './exam-eligibility-service';
 
 function isWindowOpen(opensAt: Date | null, closesAt: Date | null, now = new Date()): boolean {
 	if (!opensAt || !closesAt) return false;
@@ -193,16 +192,13 @@ export async function getExamRegistrationEligibility({
 		};
 	}
 
-	const financialEligibility = await getStudentFinancialExamEligibility(studentId);
-
-	if (!financialEligibility.canTakeExam) {
-		return {
-			evaluation,
-			existingRegistration,
-			canRegister: false,
-			reason: financialEligibility.message
-		};
-	}
+	/*
+	 * La situación financiera del alumno no bloquea la inscripción
+	 * ni el derecho a rendir una mesa de examen.
+	 *
+	 * Las deudas continúan gestionándose en el módulo financiero,
+	 * pero no forman parte de la elegibilidad académica de la mesa.
+	 */
 
 	return {
 		evaluation,
@@ -273,6 +269,12 @@ export async function getAvailableExamTablesForStudent(studentId: string) {
 					name: true
 				}
 			},
+			responsibleTeacher: {
+				select: {
+					firstName: true,
+					lastName: true
+				}
+			},
 			createdByUser: {
 				select: {
 					firstName: true,
@@ -328,7 +330,9 @@ export async function getAvailableExamTablesForStudent(studentId: string) {
 						name: evaluation.location.name
 					}
 				: null,
-			teacher: `${evaluation.createdByUser.firstName} ${evaluation.createdByUser.lastName}`,
+			teacher: evaluation.responsibleTeacher
+				? `${evaluation.responsibleTeacher.firstName} ${evaluation.responsibleTeacher.lastName}`
+				: `${evaluation.createdByUser.firstName} ${evaluation.createdByUser.lastName}`,
 			registration
 		};
 	});

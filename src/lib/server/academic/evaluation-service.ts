@@ -30,6 +30,7 @@ export interface CreateEvaluationData {
 	commissionId?: string;
 	careerId?: string;
 	locationId?: string;
+	responsibleTeacherId?: string;
 	title: string;
 	description?: string;
 	type: EvaluationType;
@@ -69,6 +70,17 @@ export interface LoadGradesBatchData {
 		subjectEnrollmentId: string;
 		value: number | null;
 		qualitativeValue?: QualitativeGrade | null;
+		status: GradeStatus;
+		observations?: string;
+	}>;
+	userId: string;
+}
+
+export interface LoadExamTableGradesData {
+	evaluationId: string;
+	grades: Array<{
+		studentId: string;
+		value: number | null;
 		status: GradeStatus;
 		observations?: string;
 	}>;
@@ -139,16 +151,36 @@ export class EvaluationService {
 	async canUserModifyEvaluation(evaluationId: string, userId: string): Promise<boolean> {
 		const evaluation = await this.prisma.evaluation.findUnique({
 			where: { id: evaluationId },
-			select: { commissionId: true, subjectId: true }
+			select: {
+				commissionId: true,
+				subjectId: true,
+				type: true,
+				responsibleTeacherId: true
+			}
 		});
 
 		if (!evaluation) return false;
 
 		const teacher = await this.prisma.teacher.findUnique({
 			where: { userId },
-			select: { id: true }
+			select: { id: true, status: true }
 		});
 		if (!teacher) return false;
+
+		/*
+		 * Para mesas nuevas, solo el docente responsable puede operar
+		 * académicamente sobre la evaluación.
+		 *
+		 * Las mesas históricas anteriores a responsibleTeacherId conservan
+		 * temporalmente el control por asignación a la materia.
+		 */
+		if (evaluation.type === EvaluationType.MESA_EXAMEN) {
+			if (teacher.status !== 'ACTIVE') return false;
+
+			if (evaluation.responsibleTeacherId) {
+				return evaluation.responsibleTeacherId === teacher.id;
+			}
+		}
 
 		if (evaluation.commissionId) {
 			const commission = await this.prisma.subjectCommission.findFirst({
@@ -258,13 +290,28 @@ export class EvaluationService {
 	}
 
 	/**
-	 * Cierra una evaluación
+	 * Cierra una evaluación.
+	 *
+	 * La operación valida sus propias invariantes para evitar que un caller
+	 * pueda cerrar una evaluación omitiendo las validaciones académicas.
 	 */
-	async closeEvaluation(data: EvaluationCloseData): Promise<void> {
+	async closeEvaluation(data: EvaluationCloseData): Promise<EvaluationValidationError | null> {
+		const validation = await this.canCloseEvaluation(data.evaluationId, data.userId);
+
+		if (validation) {
+			return validation;
+		}
+
 		const evaluation = await this.prisma.evaluation.findUnique({
 			where: { id: data.evaluationId },
 			select: { title: true }
 		});
+
+		if (!evaluation) {
+			return { error: 'Evaluación no encontrada' };
+		}
+
+		const reason = data.reason?.trim() || undefined;
 
 		await this.prisma.evaluation.update({
 			where: { id: data.evaluationId },
@@ -272,31 +319,46 @@ export class EvaluationService {
 				isClosed: true,
 				closedAt: new Date(),
 				closedByUserId: data.userId,
-				closedReason: data.reason || null
+				closedReason: reason ?? null
 			}
 		});
 
-		// Auditoría
 		await auditLog({
 			action: AuditAction.UPDATE,
 			entityType: 'Evaluation',
 			entityId: data.evaluationId,
-			description: `Cerró evaluación "${evaluation?.title}"${data.reason ? `: ${data.reason}` : ''}`,
+			description: `Cerró evaluación "${evaluation.title}"${reason ? `: ${reason}` : ''}`,
 			userId: data.userId,
 			metadata: {
-				reason: data.reason
+				reason: reason ?? null
 			}
 		});
+
+		return null;
 	}
 
 	/**
-	 * Reabre una evaluación
+	 * Reabre una evaluación.
+	 *
+	 * La operación valida autorización y estado antes de modificar la BD.
 	 */
-	async reopenEvaluation(data: EvaluationReopenData): Promise<void> {
+	async reopenEvaluation(data: EvaluationReopenData): Promise<EvaluationValidationError | null> {
+		const validation = await this.canReopenEvaluation(data.evaluationId, data.userId);
+
+		if (validation) {
+			return validation;
+		}
+
 		const evaluation = await this.prisma.evaluation.findUnique({
 			where: { id: data.evaluationId },
 			select: { title: true }
 		});
+
+		if (!evaluation) {
+			return { error: 'Evaluación no encontrada' };
+		}
+
+		const reason = data.reason?.trim() || undefined;
 
 		await this.prisma.evaluation.update({
 			where: { id: data.evaluationId },
@@ -307,21 +369,22 @@ export class EvaluationService {
 				closedReason: null,
 				reopenedAt: new Date(),
 				reopenedByUserId: data.userId,
-				reopenReason: data.reason || null
+				reopenReason: reason ?? null
 			}
 		});
 
-		// Auditoría
 		await auditLog({
 			action: AuditAction.UPDATE,
 			entityType: 'Evaluation',
 			entityId: data.evaluationId,
-			description: `Reabrió evaluación "${evaluation?.title}"${data.reason ? `: ${data.reason}` : ''}`,
+			description: `Reabrió evaluación "${evaluation.title}"${reason ? `: ${reason}` : ''}`,
 			userId: data.userId,
 			metadata: {
-				reason: data.reason
+				reason: reason ?? null
 			}
 		});
+
+		return null;
 	}
 
 	/**
@@ -333,7 +396,13 @@ export class EvaluationService {
 	): Promise<EvaluationValidationError | null> {
 		const evaluation = await this.prisma.evaluation.findUnique({
 			where: { id: evaluationId },
-			select: { isClosed: true, mandatory: true, commissionId: true }
+			select: {
+				isClosed: true,
+				mandatory: true,
+				commissionId: true,
+				type: true,
+				evaluationDate: true
+			}
 		});
 
 		if (!evaluation) {
@@ -346,6 +415,51 @@ export class EvaluationService {
 
 		if (evaluation.isClosed) {
 			return { error: 'La evaluación ya está cerrada' };
+		}
+
+		if (evaluation.type === EvaluationType.MESA_EXAMEN) {
+			if (evaluation.evaluationDate > new Date()) {
+				return {
+					error: 'La mesa no puede cerrarse antes de la fecha del examen'
+				};
+			}
+
+			const registrations = await this.prisma.examRegistration.findMany({
+				where: {
+					evaluationId,
+					status: 'REGISTERED'
+				},
+				select: {
+					studentId: true
+				}
+			});
+
+			const registeredStudentIds = registrations.map((registration) => registration.studentId);
+
+			const completedGrades =
+				registeredStudentIds.length === 0
+					? 0
+					: await this.prisma.grade.count({
+							where: {
+								evaluationId,
+								studentId: {
+									in: registeredStudentIds
+								},
+								status: {
+									not: GradeStatus.PENDING
+								}
+							}
+						});
+
+			if (completedGrades < registeredStudentIds.length) {
+				return {
+					error: `Faltan completar ${
+						registeredStudentIds.length - completedGrades
+					} resultados de alumnos inscriptos`
+				};
+			}
+
+			return null;
 		}
 
 		if (evaluation.mandatory && evaluation.commissionId) {
@@ -419,31 +533,33 @@ export class EvaluationService {
 			return { error: 'La comisión es obligatoria para una evaluación de cursada' };
 		}
 
-		if (data.commissionId) {
-			const commission = await this.prisma.subjectCommission.findUnique({
-				where: { id: data.commissionId },
-				include: { teacher: { select: { userId: true } } }
-			});
+		if (data.type !== EvaluationType.MESA_EXAMEN) {
+			if (data.commissionId) {
+				const commission = await this.prisma.subjectCommission.findUnique({
+					where: { id: data.commissionId },
+					include: { teacher: { select: { userId: true } } }
+				});
 
-			if (!commission || !commission.active) {
-				return { error: 'Comisión no encontrada o inactiva' };
-			}
-			if (commission.subjectId !== data.subjectId) {
-				return { error: 'La comisión no corresponde a la materia seleccionada' };
-			}
-			if (commission.teacher?.userId !== data.userId) {
-				return { error: 'No tenés permiso para crear evaluaciones en esta comisión' };
-			}
-		} else {
-			const teacherAssignment = await this.prisma.subjectTeacher.findFirst({
-				where: {
-					subjectId: data.subjectId,
-					teacher: { userId: data.userId }
-				},
-				select: { subjectId: true }
-			});
-			if (!teacherAssignment) {
-				return { error: 'No tenés permiso para crear evaluaciones en esta materia' };
+				if (!commission || !commission.active) {
+					return { error: 'Comisión no encontrada o inactiva' };
+				}
+				if (commission.subjectId !== data.subjectId) {
+					return { error: 'La comisión no corresponde a la materia seleccionada' };
+				}
+				if (commission.teacher?.userId !== data.userId) {
+					return { error: 'No tenés permiso para crear evaluaciones en esta comisión' };
+				}
+			} else {
+				const teacherAssignment = await this.prisma.subjectTeacher.findFirst({
+					where: {
+						subjectId: data.subjectId,
+						teacher: { userId: data.userId }
+					},
+					select: { subjectId: true }
+				});
+				if (!teacherAssignment) {
+					return { error: 'No tenés permiso para crear evaluaciones en esta materia' };
+				}
 			}
 		}
 
@@ -495,11 +611,14 @@ export class EvaluationService {
 		}
 
 		/*
-		 * Toda instancia evaluativa requiere inscripción del alumno.
-		 *
-		 * La inscripción abre en el momento de crear la evaluación
-		 * y permanece disponible exactamente durante 72 horas.
+		 * La inscripción previa es una regla propia de MESA_EXAMEN.
+		 * Las evaluaciones de cursada se administran dentro de su comisión
+		 * y no generan una ventana automática de inscripción.
 		 */
+		let responsibleTeacherId: string | null = null;
+		let registrationOpensAt: Date | null = null;
+		let registrationClosesAt: Date | null = null;
+
 		if (data.type === EvaluationType.MESA_EXAMEN) {
 			if (!data.careerId || !data.locationId) {
 				return {
@@ -507,30 +626,89 @@ export class EvaluationService {
 				};
 			}
 
-			const teacher = await this.prisma.teacher.findUnique({
-				where: { userId: data.userId },
-				select: { id: true }
-			});
+			/*
+			 * Un flujo institucional puede indicar explícitamente al docente.
+			 * Durante la transición, el portal DOCENTE puede omitirlo y el
+			 * propio docente creador queda como responsable.
+			 */
+			responsibleTeacherId = data.responsibleTeacherId ?? null;
 
-			if (!teacher) {
-				return { error: 'No se encontró el docente asociado al usuario' };
+			if (!responsibleTeacherId) {
+				const creatorTeacher = await this.prisma.teacher.findUnique({
+					where: { userId: data.userId },
+					select: {
+						id: true,
+						status: true
+					}
+				});
+
+				if (!creatorTeacher || creatorTeacher.status !== 'ACTIVE') {
+					return {
+						error: 'La mesa de examen requiere seleccionar un docente responsable activo'
+					};
+				}
+
+				responsibleTeacherId = creatorTeacher.id;
 			}
 
-			const subjectAssignment = await this.prisma.subjectTeacher.findFirst({
+			const responsibleTeacher = await this.prisma.teacher.findUnique({
+				where: { id: responsibleTeacherId },
+				select: {
+					id: true,
+					status: true,
+					user: {
+						select: {
+							locationPermissions: {
+								select: {
+									locationId: true
+								}
+							}
+						}
+					}
+				}
+			});
+
+			if (!responsibleTeacher || responsibleTeacher.status !== 'ACTIVE') {
+				return {
+					error: 'El docente responsable seleccionado no existe o no se encuentra activo'
+				};
+			}
+
+			const teacherHasLocationAccess = responsibleTeacher.user.locationPermissions.some(
+				(permission) => permission.locationId === data.locationId
+			);
+
+			if (!teacherHasLocationAccess) {
+				return {
+					error: 'El docente responsable no está asignado a la sede seleccionada'
+				};
+			}
+
+			const subjectAssignment = await this.prisma.subjectTeacher.findUnique({
 				where: {
-					subjectId: data.subjectId,
-					teacherId: teacher.id
+					subjectId_teacherId: {
+						subjectId: data.subjectId,
+						teacherId: responsibleTeacherId
+					}
+				},
+				select: {
+					subjectId: true
 				}
 			});
 
 			if (!subjectAssignment) {
-				return { error: 'No tenés asignada la materia seleccionada' };
+				return {
+					error: 'El docente responsable no tiene asignada la materia seleccionada'
+				};
 			}
 
 			const careerSubject = await this.prisma.careerSubject.findFirst({
 				where: {
 					careerId: data.careerId,
 					subjectId: data.subjectId
+				},
+				select: {
+					id: true
 				}
 			});
 
@@ -550,7 +728,9 @@ export class EvaluationService {
 						}
 					}
 				},
-				select: { id: true }
+				select: {
+					id: true
+				}
 			});
 
 			if (!careerAtLocation) {
@@ -558,16 +738,15 @@ export class EvaluationService {
 					error: 'La carrera seleccionada no está habilitada en esa sede/localidad'
 				};
 			}
-		}
 
-		const registrationOpensAt = new Date();
-		const registrationClosesAt = new Date(registrationOpensAt.getTime() + 72 * 60 * 60 * 1000);
+			registrationOpensAt = new Date();
+			registrationClosesAt = new Date(registrationOpensAt.getTime() + 72 * 60 * 60 * 1000);
 
-		if (data.evaluationDate <= registrationClosesAt) {
-			return {
-				error:
-					'La fecha de la evaluación debe ser posterior al cierre de las 72 horas de inscripción'
-			};
+			if (data.evaluationDate <= registrationClosesAt) {
+				return {
+					error: 'La fecha de la mesa debe ser posterior al cierre de las 72 horas de inscripción'
+				};
+			}
 		}
 
 		const averageTypes: EvaluationType[] = [
@@ -585,6 +764,7 @@ export class EvaluationService {
 				commissionId: data.type === EvaluationType.MESA_EXAMEN ? null : data.commissionId,
 				careerId: data.type === EvaluationType.MESA_EXAMEN ? data.careerId : null,
 				locationId: data.type === EvaluationType.MESA_EXAMEN ? data.locationId : null,
+				responsibleTeacherId,
 				title: data.title,
 				description: data.description,
 				type: data.type,
@@ -613,6 +793,11 @@ export class EvaluationService {
 			metadata: {
 				subjectId: data.subjectId,
 				commissionId: data.commissionId,
+				careerId: data.careerId ?? null,
+				locationId: data.locationId ?? null,
+				responsibleTeacherId,
+				registrationOpensAt: registrationOpensAt?.toISOString() ?? null,
+				registrationClosesAt: registrationClosesAt?.toISOString() ?? null,
 				type: data.type,
 				gradingMode,
 				participatesInAverage,
@@ -751,7 +936,13 @@ export class EvaluationService {
 				id: true,
 				title: true,
 				isClosed: true,
-				_count: { select: { grades: true, recoveryEvaluations: true } }
+				_count: {
+					select: {
+						grades: true,
+						recoveryEvaluations: true,
+						examRegistrations: true
+					}
+				}
 			}
 		});
 
@@ -765,6 +956,10 @@ export class EvaluationService {
 		if (evaluation._count.grades > 0) {
 			return { error: 'No se puede eliminar porque ya tiene calificaciones cargadas' };
 		}
+		if (evaluation._count.examRegistrations > 0) {
+			return { error: 'No se puede eliminar porque ya tiene alumnos inscriptos' };
+		}
+
 		if (evaluation._count.recoveryEvaluations > 0) {
 			return { error: 'No se puede eliminar porque tiene un recuperatorio asociado' };
 		}
@@ -780,6 +975,190 @@ export class EvaluationService {
 		});
 
 		return { id: evaluation.id };
+	}
+
+	/**
+	 * Carga resultados de una mesa de examen.
+	 *
+	 * A diferencia de la cursada, una mesa no depende de una comisión.
+	 * Los alumnos autorizados provienen de ExamRegistration REGISTERED.
+	 */
+	async loadExamTableGrades(data: LoadExamTableGradesData) {
+		const validation = await this.canLoadGrades(data.evaluationId, data.userId);
+
+		if (validation) {
+			return validation;
+		}
+
+		const evaluation = await this.prisma.evaluation.findUnique({
+			where: {
+				id: data.evaluationId
+			},
+			select: {
+				type: true,
+				subjectId: true,
+				maxScore: true,
+				gradingMode: true,
+				title: true,
+				evaluationDate: true
+			}
+		});
+
+		if (!evaluation) {
+			return {
+				error: 'Evaluación no encontrada'
+			};
+		}
+
+		if (evaluation.type !== EvaluationType.MESA_EXAMEN) {
+			return {
+				error: 'Esta operación solamente está disponible para mesas de examen'
+			};
+		}
+
+		if (evaluation.evaluationDate > new Date()) {
+			return {
+				error: 'No se pueden cargar resultados antes de la fecha del examen'
+			};
+		}
+
+		if (data.grades.length === 0) {
+			return {
+				error: 'No hay resultados para guardar'
+			};
+		}
+
+		const studentIds = [...new Set(data.grades.map((grade) => grade.studentId))];
+
+		if (studentIds.length !== data.grades.length) {
+			return {
+				error: 'Hay alumnos duplicados en la carga de resultados'
+			};
+		}
+
+		const registrations = await this.prisma.examRegistration.findMany({
+			where: {
+				evaluationId: data.evaluationId,
+				studentId: {
+					in: studentIds
+				},
+				status: 'REGISTERED'
+			},
+			select: {
+				studentId: true
+			}
+		});
+
+		if (registrations.length !== studentIds.length) {
+			return {
+				error: 'Uno o más alumnos no poseen una inscripción activa en esta mesa'
+			};
+		}
+
+		for (const gradeData of data.grades) {
+			const gradeError = validateGradeResult({
+				status: gradeData.status,
+				value: gradeData.status === GradeStatus.PRESENT ? gradeData.value : null,
+				qualitativeValue: null,
+				gradingMode: evaluation.gradingMode,
+				maxScore: Number(evaluation.maxScore)
+			});
+
+			if (gradeError) {
+				return {
+					error: gradeError
+				};
+			}
+		}
+
+		const { result, changes } = await this.prisma.$transaction(async (tx) => {
+			const savedGrades = [];
+			const changes: Array<Record<string, unknown>> = [];
+
+			const existingGrades = await tx.grade.findMany({
+				where: {
+					evaluationId: data.evaluationId,
+					studentId: {
+						in: studentIds
+					}
+				}
+			});
+
+			const existingByStudent = new Map(existingGrades.map((grade) => [grade.studentId, grade]));
+
+			for (const gradeData of data.grades) {
+				const existing = existingByStudent.get(gradeData.studentId);
+
+				const value = gradeData.status === GradeStatus.PRESENT ? gradeData.value : null;
+
+				const observations = gradeData.observations?.trim() || null;
+
+				const grade = existing
+					? await tx.grade.update({
+							where: {
+								id: existing.id
+							},
+							data: {
+								value,
+								qualitativeValue: null,
+								status: gradeData.status,
+								observations,
+								updatedByUserId: data.userId
+							}
+						})
+					: await tx.grade.create({
+							data: {
+								evaluationId: data.evaluationId,
+								studentId: gradeData.studentId,
+								value,
+								qualitativeValue: null,
+								status: gradeData.status,
+								observations,
+								createdByUserId: data.userId
+							}
+						});
+
+				savedGrades.push(grade);
+
+				changes.push({
+					studentId: gradeData.studentId,
+					before: existing
+						? {
+								value: existing.value === null ? null : Number(existing.value),
+								status: existing.status,
+								observations: existing.observations
+							}
+						: null,
+					after: {
+						value: grade.value === null ? null : Number(grade.value),
+						status: grade.status,
+						observations: grade.observations
+					}
+				});
+
+				await updateStudentSubjectStatus(gradeData.studentId, evaluation.subjectId, tx);
+			}
+
+			return {
+				result: savedGrades,
+				changes
+			};
+		});
+
+		await auditLog({
+			action: AuditAction.UPDATE,
+			entityType: 'Evaluation',
+			entityId: data.evaluationId,
+			description: `Cargó ${data.grades.length} resultados en mesa "${evaluation.title}"`,
+			userId: data.userId,
+			metadata: {
+				subjectId: evaluation.subjectId,
+				gradesCount: data.grades.length,
+				changes
+			}
+		});
+
+		return result;
 	}
 
 	/**

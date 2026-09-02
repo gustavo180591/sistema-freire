@@ -205,21 +205,22 @@ model AcademicYearHistory {
 }
 
 model Teacher {
-  id             String              @id @default(cuid())
-  userId         String              @unique
-  dni            String              @unique
-  firstName      String
-  lastName       String
-  status         TeacherStatus       @default(ACTIVE)
-  hireDate       DateTime?
-  observations   String?
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  payslips       Payslip[]
-  commissions    SubjectCommission[]
-  subjects       SubjectTeacher[]
-  classSchedules ClassSchedule[]
-  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                     String              @id @default(cuid())
+  userId                 String              @unique
+  dni                    String              @unique
+  firstName              String
+  lastName               String
+  status                 TeacherStatus       @default(ACTIVE)
+  hireDate               DateTime?
+  observations           String?
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+  payslips               Payslip[]
+  commissions            SubjectCommission[]
+  subjects               SubjectTeacher[]
+  classSchedules         ClassSchedule[]
+  responsibleEvaluations Evaluation[]        @relation("EvaluationResponsibleTeacher")
+  user                   User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([lastName, firstName])
   @@index([status])
@@ -1094,6 +1095,7 @@ model Evaluation {
   careerId              String?
   locationId            String?
   createdByUserId       String
+  responsibleTeacherId  String?
   evaluationDate        DateTime
   isClosed              Boolean            @default(false)
   minPassingScore       Decimal            @default(6) @db.Decimal(6, 2)
@@ -1113,6 +1115,7 @@ model Evaluation {
   career                Career?            @relation(fields: [careerId], references: [id], onDelete: Restrict)
   location              Location?          @relation(fields: [locationId], references: [id], onDelete: Restrict)
   createdByUser         User               @relation("EvaluationCreator", fields: [createdByUserId], references: [id])
+  responsibleTeacher    Teacher?           @relation("EvaluationResponsibleTeacher", fields: [responsibleTeacherId], references: [id], onDelete: Restrict)
   parentEvaluation      Evaluation?        @relation("EvaluationRecovery", fields: [parentEvaluationId], references: [id])
   recoveryEvaluations   Evaluation[]       @relation("EvaluationRecovery")
   reopenedByUser        User?              @relation("EvaluationReopener", fields: [reopenedByUserId], references: [id])
@@ -1123,6 +1126,7 @@ model Evaluation {
   @@index([subjectId])
   @@index([commissionId])
   @@index([createdByUserId])
+  @@index([responsibleTeacherId])
   @@index([evaluationDate])
   @@index([isClosed])
   @@index([parentEvaluationId])

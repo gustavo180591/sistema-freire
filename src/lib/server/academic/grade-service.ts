@@ -1,7 +1,7 @@
 import { prisma } from '../db/prisma';
 import { error } from '@sveltejs/kit';
 import { teacherAcademicService } from './teacher-academic-service';
-import { EvaluationType, GradeStatus, CourseStatus, AcademicStatus } from '@prisma/client';
+import { EvaluationType } from '@prisma/client';
 
 export interface EvaluationInput {
 	subjectId: string;
@@ -12,13 +12,6 @@ export interface EvaluationInput {
 	evaluationDate: Date;
 	maxScore: number;
 	minPassingScore: number;
-	observations: string | null;
-}
-
-export interface GradeInput {
-	studentId: string;
-	value: number | null;
-	status: GradeStatus;
 	observations: string | null;
 }
 
@@ -150,12 +143,20 @@ export class GradeService {
 		}
 
 		// Verificar acceso
-		if (evaluation.commissionId) {
+		if (evaluation.type === EvaluationType.MESA_EXAMEN && evaluation.responsibleTeacherId) {
+			if (evaluation.responsibleTeacherId !== teacherId) {
+				throw error(403, 'Solo el docente responsable puede consultar los resultados de esta mesa');
+			}
+		} else if (evaluation.commissionId) {
 			await teacherAcademicService.assertTeacherCanAccessCommission(
 				teacherId,
 				evaluation.commissionId
 			);
 		} else {
+			/*
+			 * Compatibilidad temporal para evaluaciones sin comisión y
+			 * mesas históricas anteriores a responsibleTeacherId.
+			 */
 			await teacherAcademicService.assertTeacherCanAccessSubject(teacherId, evaluation.subjectId);
 		}
 
@@ -164,7 +165,7 @@ export class GradeService {
 			studentId: g.studentId,
 			studentName: `${g.student.firstName} ${g.student.lastName}`,
 			studentDni: g.student.dni,
-			value: g.value ? Number(g.value) : null,
+			value: g.value === null ? null : Number(g.value),
 			status: g.status,
 			observations: g.observations
 		}));
@@ -185,164 +186,6 @@ export class GradeService {
 			observations: evaluation.observations,
 			grades
 		};
-	}
-
-	/**
-	 * Guarda notas para una evaluación
-	 */
-	async saveGrades(
-		evaluationId: string,
-		teacherId: string,
-		updatedByUserId: string,
-		grades: GradeInput[]
-	): Promise<void> {
-		const evaluation = await prisma.evaluation.findUnique({
-			where: { id: evaluationId }
-		});
-
-		if (!evaluation) {
-			throw error(404, 'Evaluación no encontrada');
-		}
-
-		// Verificar acceso
-		if (evaluation.commissionId) {
-			await teacherAcademicService.assertTeacherCanAccessCommission(
-				teacherId,
-				evaluation.commissionId
-			);
-		} else {
-			await teacherAcademicService.assertTeacherCanAccessSubject(teacherId, evaluation.subjectId);
-		}
-
-		// Guardar cada nota
-		for (const gradeData of grades) {
-			// Validar que la nota esté dentro del rango
-			if (gradeData.value !== null) {
-				if (gradeData.value < 0 || gradeData.value > Number(evaluation.maxScore)) {
-					throw error(400, `La nota debe estar entre 0 y ${evaluation.maxScore}`);
-				}
-			}
-
-			// Buscar nota existente
-			const existingGrade = await prisma.grade.findUnique({
-				where: {
-					evaluationId_studentId: {
-						evaluationId,
-						studentId: gradeData.studentId
-					}
-				}
-			});
-
-			if (existingGrade) {
-				// Actualizar nota existente
-				await prisma.grade.update({
-					where: { id: existingGrade.id },
-					data: {
-						value: gradeData.value,
-						status: gradeData.status,
-						observations: gradeData.observations,
-						updatedByUserId
-					}
-				});
-			} else {
-				// Crear nueva nota
-				await prisma.grade.create({
-					data: {
-						studentId: gradeData.studentId,
-						evaluationId,
-						value: gradeData.value,
-						status: gradeData.status,
-						observations: gradeData.observations,
-						createdByUserId: updatedByUserId
-					}
-				});
-			}
-
-			// Recalcular estado académico del alumno
-			await this.recalculateStudentSubjectStatus(gradeData.studentId, evaluation.subjectId);
-		}
-	}
-
-	/**
-	 * Recalcula el estado académico de un alumno en una materia
-	 */
-	async recalculateStudentSubjectStatus(studentId: string, subjectId: string): Promise<void> {
-		// Obtener la materia para conocer los thresholds
-		const subject = await prisma.subject.findUnique({
-			where: { id: subjectId }
-		});
-
-		if (!subject) {
-			throw error(404, 'Materia no encontrada');
-		}
-
-		const approvalThreshold = Number(subject.approvalThreshold);
-		const promotionThreshold = Number(subject.promotionThreshold);
-
-		// Obtener todas las notas del alumno en esta materia
-		const grades = await prisma.grade.findMany({
-			where: {
-				studentId,
-				evaluation: {
-					subjectId
-				}
-			},
-			include: {
-				evaluation: true
-			}
-		});
-
-		// Calcular promedio de cursada (solo notas PRESENT)
-		const presentGrades = grades.filter((g) => g.status === 'PRESENT' && g.value !== null);
-		let courseAverage = null;
-		if (presentGrades.length > 0) {
-			const sum = presentGrades.reduce((acc, g) => acc + Number(g.value), 0);
-			courseAverage = sum / presentGrades.length;
-		}
-
-		// Determinar estado de cursada
-		let courseStatus: CourseStatus = 'IN_PROGRESS';
-		let approved = false;
-		let promoted = false;
-
-		if (courseAverage !== null) {
-			if (courseAverage >= promotionThreshold) {
-				courseStatus = 'PROMOTED';
-				approved = true;
-				promoted = true;
-			} else if (courseAverage >= approvalThreshold) {
-				courseStatus = 'PASSED_COURSE';
-				approved = true;
-			} else {
-				courseStatus = 'FAILED_COURSE';
-			}
-		}
-
-		// Actualizar StudentSubjectStatus
-		await prisma.studentSubjectStatus.upsert({
-			where: {
-				studentId_subjectId: {
-					studentId,
-					subjectId
-				}
-			},
-			create: {
-				studentId,
-				subjectId,
-				courseAverage: courseAverage || 0,
-				courseStatus,
-				approved,
-				promoted,
-				academicStatus: approved ? 'APROBADO' : 'EN_COURSE'
-			},
-			update: {
-				courseAverage: courseAverage || 0,
-				courseStatus,
-				approved,
-				promoted,
-				academicStatus: approved ? 'APROBADO' : 'EN_COURSE'
-			}
-		});
 	}
 
 	/**
@@ -375,7 +218,7 @@ export class GradeService {
 			subjectName: g.evaluation.subject.name,
 			subjectCode: g.evaluation.subject.code,
 			commissionCode: g.evaluation.commission?.code || null,
-			value: g.value ? Number(g.value) : null,
+			value: g.value === null ? null : Number(g.value),
 			maxScore: Number(g.evaluation.maxScore),
 			minPassingScore: Number(g.evaluation.minPassingScore),
 			status: g.status,

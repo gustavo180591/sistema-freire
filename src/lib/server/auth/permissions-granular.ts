@@ -330,7 +330,7 @@ export async function seedDefaultPermissions() {
 			SUBJECT_COMMISSION: READ,
 			SUBJECT_ENROLLMENT: READ,
 			ACADEMIC_TERM: READ,
-			GRADE: CRU,
+			GRADE: READ,
 			ATTENDANCE: CRU,
 			STUDENT_FOLLOW_UP: CRU,
 			MATERIAL: READ,

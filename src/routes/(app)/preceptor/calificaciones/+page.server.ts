@@ -1,7 +1,8 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
-import { requireRole, getUserAllowedLocationIds } from '$lib/server/auth/authorization';
+import { requireRole } from '$lib/server/auth/authorization';
+import { getPreceptorScope } from '$lib/server/preceptor/preceptor-scope-service';
 import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
 
@@ -13,18 +14,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 	}
 
 	// Obtener localidades permitidas para el preceptor
-	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+	const { locationIds: allowedLocationIds } = await getPreceptorScope(locals.user.id);
 
 	// Obtener estudiantes activos filtrados por localidad
 	const students = await prisma.student.findMany({
 		where: {
 			status: 'ACTIVE',
-			career: {
-				locations: {
-					some: {
-						locationId: { in: allowedLocationIds }
-					}
-				}
+			locationId: {
+				in: allowedLocationIds
 			}
 		},
 		include: {
@@ -39,12 +36,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		where: {
 			student: {
 				status: 'ACTIVE',
-				career: {
-					locations: {
-						some: {
-							locationId: { in: allowedLocationIds }
-						}
-					}
+				locationId: {
+					in: allowedLocationIds
 				}
 			}
 		},

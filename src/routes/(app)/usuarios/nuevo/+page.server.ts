@@ -105,6 +105,7 @@ export const actions: Actions = {
 		const careerId = data.get('careerId')?.toString();
 		const alumnoType = data.get('alumnoType')?.toString() || 'normal';
 		const inscriptionPaid = data.get('inscriptionPaid')?.toString() === 'on';
+		let selectedLocality = data.get('locality')?.toString().trim() ?? '';
 
 		// Verificar permisos: SECRETARIA solo puede crear DOCENTE, ALUMNO, PRECEPTOR
 		const isSecretary = currentUser.roles.includes('SECRETARIA');
@@ -116,7 +117,8 @@ export const actions: Actions = {
 			});
 		}
 
-		// Si es SECRETARIA, verificar que la localidad seleccionada esté en sus permisos
+		// SECRETARIA opera únicamente dentro de las sedes que tiene asignadas.
+		// La sede se resuelve en el servidor para no confiar en el navegador.
 		if (isSecretary) {
 			const userWithPermissions = await prisma.user.findUnique({
 				where: { id: currentUser.id },
@@ -129,19 +131,59 @@ export const actions: Actions = {
 				}
 			});
 
-			if (!userWithPermissions || userWithPermissions.locationPermissions.length === 0) {
-				return fail(403, { error: 'No tienes permisos de localidad asignados' });
+			const allowedLocationCodes =
+				userWithPermissions?.locationPermissions
+					.filter((permission) => permission.location.active)
+					.map((permission) => permission.location.code) ?? [];
+
+			if (allowedLocationCodes.length === 0) {
+				return fail(403, {
+					error: 'No tienes permisos de localidad asignados'
+				});
 			}
 
-			const allowedLocationCodes = userWithPermissions.locationPermissions.map(
-				(lp) => lp.location.code
-			);
-			const selectedLocality = data.get('locality')?.toString();
+			if (allowedLocationCodes.length === 1) {
+				// Si SECRETARIA tiene una única sede, el servidor la impone.
+				selectedLocality = allowedLocationCodes[0];
+			} else {
+				if (!selectedLocality) {
+					return fail(400, {
+						error: 'Seleccioná una localidad habilitada'
+					});
+				}
 
-			if (selectedLocality && !allowedLocationCodes.includes(selectedLocality)) {
-				return fail(403, { error: 'Solo puedes crear usuarios de tu localidad asignada' });
+				if (!allowedLocationCodes.includes(selectedLocality)) {
+					return fail(403, {
+						error: 'Solo puedes crear usuarios de tus localidades asignadas'
+					});
+				}
 			}
 		}
+
+		if (type === 'PRECEPTOR' && !selectedLocality) {
+			return fail(400, {
+				error: 'El preceptor debe tener una sede asignada'
+			});
+		}
+
+		if (selectedLocality) {
+			const selectedLocation = await prisma.location.findFirst({
+				where: {
+					code: selectedLocality,
+					active: true
+				},
+				select: {
+					id: true
+				}
+			});
+
+			if (!selectedLocation) {
+				return fail(400, {
+					error: 'La localidad seleccionada no existe o no está activa'
+				});
+			}
+		}
+
 		const isBecado = alumnoType === 'becado';
 		const isRecursante = alumnoType === 'recursante';
 		try {
@@ -220,7 +262,7 @@ export const actions: Actions = {
 					const bloodType = data.get('bloodType')?.toString();
 					const phone = data.get('phone')?.toString();
 					const address = data.get('address')?.toString();
-					const locality = data.get('locality')?.toString();
+					const locality = selectedLocality;
 					const postalCode = data.get('postalCode')?.toString();
 					const highSchool = data.get('highSchool')?.toString();
 					const highSchoolYear = data.get('highSchoolYear')?.toString()
@@ -322,7 +364,7 @@ export const actions: Actions = {
 
 				// Si es DOCENTE, crear el registro de docente solo cuando haya DNI.
 				if (type === 'DOCENTE') {
-					const locality = data.get('locality')?.toString();
+					const locality = selectedLocality;
 					const hireDate = data.get('hireDate')?.toString();
 					const observations = data.get('observations')?.toString();
 
@@ -368,7 +410,7 @@ export const actions: Actions = {
 
 				// Si es PRECEPTOR, capturar localidad y asignar permiso
 				if (type === 'PRECEPTOR') {
-					const locality = data.get('locality')?.toString();
+					const locality = selectedLocality;
 
 					// Asignar permiso de localidad si se seleccionó
 					if (locality) {
@@ -388,7 +430,7 @@ export const actions: Actions = {
 
 				// Si es SECRETARIA, asignar permiso de localidad
 				if (type === 'SECRETARIA') {
-					const locality = data.get('locality')?.toString();
+					const locality = selectedLocality;
 
 					// Asignar permiso de localidad si se seleccionó
 					if (locality) {
@@ -411,7 +453,7 @@ export const actions: Actions = {
 
 			// Registrar en auditoría
 			await auditLog({
-				userId: result.id,
+				userId: currentUser.id,
 				action: AuditAction.CREATE,
 				entityType: type,
 				entityId: result.id,

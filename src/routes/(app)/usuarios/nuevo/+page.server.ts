@@ -6,8 +6,12 @@ import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
 import { generateAutomaticCharges } from '$lib/server/financial/charge-generator';
 import { autoEnrollStudentInYearSubjects } from '$lib/server/academic/enrollment-service';
+import { requireRole } from '$lib/server/auth/authorization';
+import { requirePermission } from '$lib/server/auth/permissions-granular';
 
 import type { RoleCode } from '@prisma/client';
+
+const USER_MANAGEMENT_ROLES = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'];
 
 const ROLE_MAP: Record<string, RoleCode> = {
 	ALUMNO: 'ALUMNO',
@@ -33,6 +37,9 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	if (!currentUser) {
 		throw redirect(303, '/login');
 	}
+
+	requireRole(currentUser, [...USER_MANAGEMENT_ROLES]);
+	await requirePermission(currentUser, 'USER', 'read');
 
 	const careers = await prisma.career.findMany({
 		where: { active: true },
@@ -90,6 +97,9 @@ export const actions: Actions = {
 		if (!currentUser) {
 			return fail(401, { error: 'No autorizado' });
 		}
+
+		requireRole(currentUser, [...USER_MANAGEMENT_ROLES]);
+		await requirePermission(currentUser, 'USER', 'create');
 
 		const data = await request.formData();
 		const submittedEmail = data.get('email')?.toString().trim() ?? '';

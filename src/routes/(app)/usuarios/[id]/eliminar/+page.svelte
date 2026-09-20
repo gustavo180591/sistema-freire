@@ -7,13 +7,13 @@
 </script>
 
 <svelte:head>
-	<title>Eliminar Usuario | Sistema Freire</title>
+	<title>Desactivar Usuario | Sistema Freire</title>
 </svelte:head>
 
 <div class="mx-auto max-w-2xl space-y-8">
 	<div>
 		<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Usuarios</p>
-		<h1 class="text-3xl font-bold tracking-tight">Eliminar Usuario</h1>
+		<h1 class="text-3xl font-bold tracking-tight">Desactivar Usuario</h1>
 	</div>
 
 	{#if form?.error}
@@ -22,10 +22,10 @@
 		</div>
 	{/if}
 
-	<div class="rounded-3xl border border-red-800 bg-red-950/30 p-8">
+	<div class="rounded-3xl border border-amber-800 bg-amber-950/30 p-8">
 		<div class="flex items-start space-x-4">
-			<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-500/20">
-				<svg class="h-6 w-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-500/20">
+				<svg class="h-6 w-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path
 						stroke-linecap="round"
 						stroke-linejoin="round"
@@ -34,26 +34,37 @@
 					/>
 				</svg>
 			</div>
+
 			<div class="flex-1">
-				<h2 class="text-xl font-bold text-white">¿Estás seguro?</h2>
+				<h2 class="text-xl font-bold text-white">¿Desactivar esta cuenta?</h2>
+
 				<p class="mt-2 text-slate-300">
-					Estás a punto de eliminar al usuario <strong class="text-white"
-						>{data.user.firstName} {data.user.lastName}</strong
-					>
+					Vas a desactivar a
+					<strong class="text-white">
+						{data.user.firstName}
+						{data.user.lastName}
+					</strong>
 					({data.user.email}).
 				</p>
-				<p class="mt-2 text-sm text-slate-400">Esta acción eliminará permanentemente:</p>
+
+				<p class="mt-4 text-sm text-slate-300">Al confirmar:</p>
+
 				<ul class="mt-2 list-inside list-disc space-y-1 text-sm text-slate-400">
-					<li>El usuario y sus roles</li>
-					<li>Permisos de localidad asignados</li>
+					<li>La cuenta dejará de poder iniciar sesión</li>
+					<li>Se revocarán todas sus sesiones activas</li>
+					<li>Sus roles y sedes asignadas se conservarán</li>
 					{#if data.user.student}
-						<li>Registro de estudiante asociado</li>
+						<li>El registro e historial académico del alumno se conservarán</li>
 					{/if}
 					{#if data.user.teacher}
-						<li>Registro de docente asociado</li>
+						<li>El registro e historial docente se conservarán</li>
 					{/if}
+					<li>Notas, evaluaciones, documentos y movimientos históricos no se eliminarán</li>
 				</ul>
-				<p class="mt-4 text-sm font-medium text-red-400">Esta acción no se puede deshacer.</p>
+
+				<p class="mt-4 text-sm font-medium text-amber-300">
+					Esta acción desactiva el acceso, pero no borra información institucional.
+				</p>
 			</div>
 		</div>
 
@@ -62,6 +73,7 @@
 			class="mt-8 flex justify-end space-x-4"
 			use:enhance={() => {
 				loading = true;
+
 				return async ({ update }) => {
 					loading = false;
 					await update();
@@ -74,12 +86,13 @@
 			>
 				Cancelar
 			</a>
+
 			<button
 				type="submit"
 				disabled={loading}
-				class="rounded-2xl bg-red-600 px-6 py-3 font-semibold text-white transition hover:bg-red-500 disabled:opacity-50"
+				class="rounded-2xl bg-amber-600 px-6 py-3 font-semibold text-white transition hover:bg-amber-500 disabled:opacity-50"
 			>
-				{loading ? 'Eliminando...' : 'Eliminar Usuario'}
+				{loading ? 'Desactivando...' : 'Desactivar Usuario'}
 			</button>
 		</form>
 	</div>

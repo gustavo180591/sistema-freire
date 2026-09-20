@@ -68,6 +68,17 @@ export const handle: Handle = async ({ event, resolve }) => {
 		throw redirect(303, '/login');
 	}
 
+	if (session.user.status !== 'ACTIVE') {
+		await prisma.session.deleteMany({
+			where: {
+				id: session.id
+			}
+		});
+
+		event.cookies.delete('session', { path: '/' });
+		throw redirect(303, '/login');
+	}
+
 	const roles = session.user.roles.map((r) => r.role.code);
 
 	event.locals.user = {

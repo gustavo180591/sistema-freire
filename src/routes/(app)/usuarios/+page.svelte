@@ -150,20 +150,22 @@
 										/>
 									</svg>
 								</a>
-								<button
-									onclick={() => (deletingUser = user)}
-									class="text-red-400 transition-colors hover:text-red-300"
-									aria-label="Eliminar usuario"
-								>
-									<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-										/>
-									</svg>
-								</button>
+								{#if user.status === 'Activo'}
+									<button
+										onclick={() => (deletingUser = user)}
+										class="text-amber-400 transition-colors hover:text-amber-300"
+										aria-label="Desactivar usuario"
+									>
+										<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M18.364 5.636a9 9 0 11-12.728 0M12 2v10"
+											/>
+										</svg>
+									</button>
+								{/if}
 							</div>
 						</td>
 					</tr>
@@ -231,20 +233,22 @@
 								/>
 							</svg>
 						</a>
-						<button
-							onclick={() => (deletingUser = user)}
-							class="text-red-400 transition-colors hover:text-red-300"
-							aria-label="Eliminar usuario"
-						>
-							<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-								/>
-							</svg>
-						</button>
+						{#if user.status === 'Activo'}
+							<button
+								onclick={() => (deletingUser = user)}
+								class="text-amber-400 transition-colors hover:text-amber-300"
+								aria-label="Desactivar usuario"
+							>
+								<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M18.364 5.636a9 9 0 11-12.728 0M12 2v10"
+									/>
+								</svg>
+							</button>
+						{/if}
 					</div>
 				</div>
 			</div>
@@ -257,7 +261,7 @@
 	</div>
 </div>
 
-<!-- Modal de Eliminación -->
+<!-- Modal de desactivación -->
 {#if deletingUser}
 	<div
 		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
@@ -267,7 +271,7 @@
 		onkeydown={(e) => e.key === 'Escape' && (deletingUser = null)}
 	>
 		<div
-			class="relative mx-4 w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6"
+			class="relative mx-4 w-full max-w-md rounded-2xl border border-amber-800/70 bg-slate-900 p-6"
 			role="dialog"
 			aria-modal="true"
 			tabindex="0"
@@ -275,7 +279,8 @@
 			onkeydown={(e) => e.stopPropagation()}
 		>
 			<div class="mb-4 flex items-center justify-between">
-				<h3 class="text-lg font-semibold text-white">Eliminar Usuario</h3>
+				<h3 class="text-lg font-semibold text-white">Desactivar Usuario</h3>
+
 				<button
 					type="button"
 					aria-label="Cerrar modal"
@@ -292,13 +297,24 @@
 					</svg>
 				</button>
 			</div>
+
 			<div class="space-y-4">
 				<p class="text-slate-300">
-					¿Estás seguro de que deseas eliminar al usuario <span class="font-semibold text-white"
-						>{deletingUser.fullName}</span
-					>?
+					¿Deseas desactivar la cuenta de
+					<span class="font-semibold text-white">
+						{deletingUser.fullName}
+					</span>?
 				</p>
-				<p class="text-sm text-slate-400">Esta acción no se puede deshacer.</p>
+
+				<div
+					class="rounded-xl border border-amber-800/60 bg-amber-950/30 p-4 text-sm text-amber-100"
+				>
+					<p>La cuenta dejará de poder iniciar sesión y se revocarán sus sesiones activas.</p>
+					<p class="mt-2 text-amber-200/80">
+						Sus roles, sedes e historial institucional se conservarán.
+					</p>
+				</div>
+
 				<form method="POST" action="/usuarios/{deletingUser.id}/eliminar" use:enhance>
 					<div class="flex justify-end gap-3 pt-4">
 						<button
@@ -308,11 +324,12 @@
 						>
 							Cancelar
 						</button>
+
 						<button
 							type="submit"
-							class="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
+							class="rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-500"
 						>
-							Eliminar Usuario
+							Desactivar Usuario
 						</button>
 					</div>
 				</form>

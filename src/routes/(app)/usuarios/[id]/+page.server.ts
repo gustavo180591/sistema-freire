@@ -1,11 +1,161 @@
 import { prisma } from '$lib/server/db/prisma';
 import type { PageServerLoad, Actions } from './$types';
-import { error, fail } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'node:crypto';
+import type { RoleCode } from '@prisma/client';
+import { AuditAction } from '@prisma/client';
+import { auditLog } from '$lib/server/audit';
+import { requirePermission } from '$lib/server/auth/permissions-granular';
+import { requireRole } from '$lib/server/auth/authorization';
+
+const USER_MANAGEMENT_ROLES: string[] = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'];
+
+const SECRETARY_RESTRICTED_ROLES: RoleCode[] = [
+	'SUPERADMIN',
+	'SECRETARIA',
+	'DIRECTOR',
+	'APODERADO',
+	'FINANZAS'
+];
+
+type AuthenticatedUser = NonNullable<App.Locals['user']>;
+
+function usesSecretaryScope(user: AuthenticatedUser): boolean {
+	return user.roles.includes('SECRETARIA');
+}
+
+function isSuperadmin(user: AuthenticatedUser): boolean {
+	return user.roles.includes('SUPERADMIN');
+}
+
+async function getSecretaryLocationIds(userId: string): Promise<string[]> {
+	const permissions = await prisma.userLocationPermission.findMany({
+		where: {
+			userId,
+			location: {
+				active: true
+			}
+		},
+		select: {
+			locationId: true
+		}
+	});
+
+	return [...new Set(permissions.map((permission) => permission.locationId))];
+}
+
+async function requireSuperadminTargetAccess(
+	currentUser: AuthenticatedUser,
+	targetUserId: string
+): Promise<void> {
+	if (isSuperadmin(currentUser)) {
+		return;
+	}
+
+	const target = await prisma.user.findUnique({
+		where: {
+			id: targetUserId
+		},
+		select: {
+			roles: {
+				select: {
+					role: {
+						select: {
+							code: true
+						}
+					}
+				}
+			}
+		}
+	});
+
+	if (!target) {
+		throw error(404, 'Usuario no encontrado');
+	}
+
+	if (target.roles.some(({ role }) => role.code === 'SUPERADMIN')) {
+		throw error(403, 'Solo SUPERADMIN puede administrar a otro usuario SUPERADMIN');
+	}
+}
+
+async function requireSecretaryTargetAccess(
+	currentUser: AuthenticatedUser,
+	targetUserId: string
+): Promise<void> {
+	if (!usesSecretaryScope(currentUser)) {
+		return;
+	}
+
+	const locationIds = await getSecretaryLocationIds(currentUser.id);
+
+	if (locationIds.length === 0) {
+		throw error(403, 'No tienes sedes habilitadas para administrar usuarios');
+	}
+
+	const target = await prisma.user.findUnique({
+		where: {
+			id: targetUserId
+		},
+		select: {
+			roles: {
+				select: {
+					role: {
+						select: {
+							code: true
+						}
+					}
+				}
+			},
+			student: {
+				select: {
+					locationId: true
+				}
+			},
+			locationPermissions: {
+				select: {
+					locationId: true
+				}
+			}
+		}
+	});
+
+	if (!target) {
+		throw error(404, 'Usuario no encontrado');
+	}
+
+	if (target.roles.some(({ role }) => SECRETARY_RESTRICTED_ROLES.includes(role.code))) {
+		throw error(403, 'No tienes permiso para administrar usuarios con roles administrativos');
+	}
+
+	const studentInScope =
+		target.student?.locationId != null && locationIds.includes(target.student.locationId);
+
+	const staffInScope = target.locationPermissions.some((permission) =>
+		locationIds.includes(permission.locationId)
+	);
+
+	if (!studentInScope && !staffInScope) {
+		throw error(403, 'El usuario pertenece a otra sede');
+	}
+}
 
 export const load: PageServerLoad = async ({ params, locals }) => {
+	const currentUser = locals.user;
+
+	if (!currentUser) {
+		throw redirect(303, '/login');
+	}
+
+	requireRole(currentUser, [...USER_MANAGEMENT_ROLES]);
+	await requirePermission(currentUser, 'USER', 'read');
+	await requireSuperadminTargetAccess(currentUser, params.id);
+	await requireSecretaryTargetAccess(currentUser, params.id);
+
 	const user = await prisma.user.findUnique({
-		where: { id: params.id },
+		where: {
+			id: params.id
+		},
 		include: {
 			roles: {
 				include: {
@@ -63,14 +213,21 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		throw error(404, 'Usuario no encontrado');
 	}
 
-	// Obtener carrera del docente si tiene materias asignadas
-	let teacherCareer: any = null;
+	let teacherCareer: {
+		id: string;
+		name: string;
+		code: string;
+		locations: string[];
+	} | null = null;
+
 	if (user.teacher && user.teacher.subjects.length > 0) {
 		const firstSubject = user.teacher.subjects[0];
+
 		if (firstSubject.subject.careerSubjects.length > 0) {
 			const careerSubject = firstSubject.subject.careerSubjects[0];
-			// Obtener localidades donde el docente presta servicio
-			const locations = user.locationPermissions.map((lp) => lp.location.name);
+
+			const locations = user.locationPermissions.map((permission) => permission.location.name);
+
 			teacherCareer = {
 				id: careerSubject.career.id,
 				name: careerSubject.career.name,
@@ -80,29 +237,50 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		}
 	}
 
-	// Serializar valores Decimal a números para evitar errores de serialización
+	/*
+	 * IMPORTANTE:
+	 * Construimos explícitamente el objeto que viaja al navegador.
+	 * No serializamos passwordHash, totpSecret ni datos internos
+	 * del mecanismo de bloqueo de autenticación.
+	 */
 	const serializedUser = {
-		...user,
+		id: user.id,
+		email: user.email,
+		firstName: user.firstName,
+		lastName: user.lastName,
+		status: user.status,
+		phone: user.phone,
+		dni: user.dni,
+		cuil: user.cuil,
+		createdAt: user.createdAt,
+		updatedAt: user.updatedAt,
+		totpEnabled: user.totpEnabled,
+		totpVerified: user.totpVerified,
+		roles: user.roles,
+		student: user.student,
+		locationPermissions: user.locationPermissions,
 		teacher: user.teacher
 			? {
 					...user.teacher,
-					subjects: user.teacher.subjects.map((st) => ({
-						...st,
+					subjects: user.teacher.subjects.map((subjectTeacher) => ({
+						...subjectTeacher,
 						subject: {
-							...st.subject,
-							approvalThreshold: st.subject.approvalThreshold
-								? Number(st.subject.approvalThreshold)
-								: null,
-							promotionThreshold: st.subject.promotionThreshold
-								? Number(st.subject.promotionThreshold)
-								: null,
-							careerSubjects: st.subject.careerSubjects.map((cs) => ({
-								...cs,
+							...subjectTeacher.subject,
+							approvalThreshold:
+								subjectTeacher.subject.approvalThreshold != null
+									? Number(subjectTeacher.subject.approvalThreshold)
+									: null,
+							promotionThreshold:
+								subjectTeacher.subject.promotionThreshold != null
+									? Number(subjectTeacher.subject.promotionThreshold)
+									: null,
+							careerSubjects: subjectTeacher.subject.careerSubjects.map((careerSubject) => ({
+								...careerSubject,
 								career: {
-									...cs.career,
-									locations: cs.career.locations.map((cl) => ({
-										...cl,
-										location: cl.location
+									...careerSubject.career,
+									locations: careerSubject.career.locations.map((careerLocation) => ({
+										...careerLocation,
+										location: careerLocation.location
 									}))
 								}
 							}))
@@ -112,23 +290,26 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			: null
 	};
 
-	// Obtener usuario actual y sus roles
-	const currentUser = locals.user;
-	const currentUserRoles = currentUser?.roles || [];
+	const targetIsSuperadmin = user.roles.some(({ role }) => role.code === 'SUPERADMIN');
 
-	// Determinar si el usuario actual puede reestablecer contraseñas
-	const canResetPassword = currentUserRoles.some((role) =>
-		['SUPERADMIN', 'APODERADO', 'DIRECTOR', 'SECRETARIA'].includes(role)
-	);
+	const hasResetRole = currentUser.roles.some((role) => USER_MANAGEMENT_ROLES.includes(role));
 
-	// Determinar si el usuario tiene roles administrativos
-	const isAdmin = user.roles.some((ur) =>
-		['SUPERADMIN', 'DIRECTOR', 'SECRETARIA'].includes(ur.role.code)
-	);
+	const canResetPassword =
+		hasResetRole &&
+		currentUser.id !== user.id &&
+		(isSuperadmin(currentUser) || !targetIsSuperadmin);
 
-	// Cargar evaluaciones creadas por el usuario o todas si es admin (nuevo modelo)
+	/*
+	 * En el detalle del usuario mostramos únicamente las
+	 * evaluaciones creadas por ese usuario.
+	 *
+	 * Que el usuario objetivo sea administrativo no debe convertir
+	 * esta pantalla en una vista global de todas las evaluaciones.
+	 */
 	const evaluations = await prisma.evaluation.findMany({
-		where: isAdmin ? {} : { createdByUserId: user.id },
+		where: {
+			createdByUserId: user.id
+		},
 		include: {
 			subject: true,
 			createdByUser: {
@@ -138,21 +319,23 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				}
 			}
 		},
-		orderBy: { evaluationDate: 'desc' }
+		orderBy: {
+			evaluationDate: 'desc'
+		}
 	});
 
 	return {
 		user: serializedUser,
 		teacherCareer,
 		canResetPassword,
-		evaluations: evaluations.map((e) => ({
-			id: e.id,
-			title: e.title,
-			type: e.type,
-			date: e.evaluationDate,
-			subject: e.subject.name,
-			subjectCode: e.subject.code,
-			creator: `${e.createdByUser.firstName} ${e.createdByUser.lastName}`
+		evaluations: evaluations.map((evaluation) => ({
+			id: evaluation.id,
+			title: evaluation.title,
+			type: evaluation.type,
+			date: evaluation.evaluationDate,
+			subject: evaluation.subject.name,
+			subjectCode: evaluation.subject.code,
+			creator: `${evaluation.createdByUser.firstName} ${evaluation.createdByUser.lastName}`
 		}))
 	};
 };
@@ -160,44 +343,88 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 export const actions: Actions = {
 	resetPassword: async ({ params, locals }) => {
 		const currentUser = locals.user;
+
 		if (!currentUser) {
-			return fail(401, { error: 'No autorizado' });
+			return fail(401, {
+				error: 'No autorizado'
+			});
 		}
 
-		const currentUserRoles = currentUser.roles || [];
+		requireRole(currentUser, [...USER_MANAGEMENT_ROLES]);
+		await requirePermission(currentUser, 'USER', 'update');
+		await requireSuperadminTargetAccess(currentUser, params.id);
+		await requireSecretaryTargetAccess(currentUser, params.id);
 
-		// Validar permisos: solo SUPERADMIN, APODERADO, DIRECTOR, SECRETARIA
-		const hasPermission = currentUserRoles.some((role) =>
-			['SUPERADMIN', 'APODERADO', 'DIRECTOR', 'SECRETARIA'].includes(role)
-		);
-
-		if (!hasPermission) {
-			return fail(403, { error: 'No tenés permisos para reestablecer contraseñas' });
+		if (currentUser.id === params.id) {
+			return fail(400, {
+				error: 'No puedes restablecer tu propia contraseña desde la administración'
+			});
 		}
 
-		// Verificar que el usuario existe
 		const user = await prisma.user.findUnique({
-			where: { id: params.id },
-			select: { id: true, email: true, firstName: true, lastName: true }
+			where: {
+				id: params.id
+			},
+			select: {
+				id: true,
+				email: true,
+				firstName: true,
+				lastName: true
+			}
 		});
 
 		if (!user) {
-			return fail(404, { error: 'Usuario no encontrado' });
+			return fail(404, {
+				error: 'Usuario no encontrado'
+			});
 		}
 
-		// Hashear la contraseña por defecto
-		const defaultPassword = '12345678';
-		const passwordHash = await bcrypt.hash(defaultPassword, 10);
+		/*
+		 * Contraseña temporal aleatoria.
+		 * Se muestra una única vez en la respuesta de la acción.
+		 */
+		const temporaryPassword = randomBytes(12).toString('base64url');
+		const passwordHash = await bcrypt.hash(temporaryPassword, 10);
 
-		// Actualizar la contraseña
-		await prisma.user.update({
-			where: { id: params.id },
-			data: { passwordHash }
-		});
+		try {
+			const deletedSessions = await prisma.$transaction(async (tx) => {
+				await tx.user.update({
+					where: {
+						id: params.id
+					},
+					data: {
+						passwordHash,
+						failedLoginAttempts: 0,
+						lockedUntil: null,
+						lastFailedAttempt: null
+					}
+				});
 
-		return {
-			success: true,
-			message: `Contraseña reestablecida a ${defaultPassword} para ${user.firstName} ${user.lastName}`
-		};
+				return tx.session.deleteMany({
+					where: {
+						userId: params.id
+					}
+				});
+			});
+
+			await auditLog({
+				userId: currentUser.id,
+				action: AuditAction.UPDATE,
+				entityType: 'USER',
+				entityId: params.id,
+				description: `Restablecimiento administrativo de contraseña para ${user.firstName} ${user.lastName} (${user.email}). ${deletedSessions.count} sesiones revocadas.`
+			});
+
+			return {
+				success: true,
+				message: `Contraseña temporal para ${user.firstName} ${user.lastName}: ${temporaryPassword}`
+			};
+		} catch (error) {
+			console.error('Error al restablecer contraseña:', error);
+
+			return fail(500, {
+				error: 'Error al restablecer la contraseña'
+			});
+		}
 	}
 };

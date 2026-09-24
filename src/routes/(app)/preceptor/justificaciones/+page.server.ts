@@ -1,34 +1,56 @@
-import { redirect } from '@sveltejs/kit';
-import type { PageServerLoad, Actions } from './$types';
-import { prisma } from '$lib/server/db/prisma';
-import { requireRole } from '$lib/server/auth/authorization';
-import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
+import { fail, redirect } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
+import { auditLog } from '$lib/server/audit';
+import { requireRole } from '$lib/server/auth/authorization';
+import { requirePermission } from '$lib/server/auth/permissions-granular';
+import { prisma } from '$lib/server/db/prisma';
+import {
+	getPreceptorScope,
+	requirePreceptorAttendanceEntryAccess
+} from '$lib/server/preceptor/preceptor-scope-service';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	requireRole(locals.user, ['PRECEPTOR']);
+	const currentUser = locals.user;
 
-	if (!locals.user) {
+	if (!currentUser) {
 		throw redirect(303, '/login');
 	}
 
-	// Obtener estudiantes activos
-	const students = await prisma.student.findMany({
-		where: { status: 'ACTIVE' },
-		include: {
-			user: true,
-			career: true
-		},
-		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
-	});
+	requireRole(currentUser, ['PRECEPTOR']);
+	await requirePermission(currentUser, 'ATTENDANCE', 'read');
 
-	// Obtener entradas de asistencia con ausencias sin justificar
-	const unexcusedAbsences = await prisma.attendanceEntry.findMany({
-		where: { present: false },
+	const scope = await getPreceptorScope(currentUser.id);
+
+	/*
+	 * Compatibilidad:
+	 *
+	 * - registros nuevos/formalizados: status = ABSENT
+	 * - registros legacy: status = null + present = false
+	 *
+	 * JUSTIFIED queda fuera de esta consulta.
+	 */
+	const absenceCandidates = await prisma.attendanceEntry.findMany({
+		where: {
+			student: {
+				status: 'ACTIVE',
+				locationId: {
+					in: scope.locationIds
+				}
+			},
+			OR: [
+				{
+					status: 'ABSENT'
+				},
+				{
+					status: null,
+					present: false
+				}
+			]
+		},
 		include: {
 			student: {
 				include: {
-					user: true,
 					career: true
 				}
 			},
@@ -45,74 +67,133 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
+	/*
+	 * Históricamente el sistema utilizó notes como criterio
+	 * provisional de justificación. Mientras esos registros
+	 * legacy existan, no debemos ofrecerlos nuevamente como
+	 * pendientes.
+	 */
+	const unexcusedAbsences = absenceCandidates.filter((entry) => !entry.notes?.trim());
+
 	return {
-		students: students.map((s) => ({
-			id: s.id,
-			dni: s.dni,
-			firstName: s.firstName,
-			lastName: s.lastName,
-			career: s.career.name
-		})),
-		unexcusedAbsences: unexcusedAbsences.map((a) => ({
-			id: a.id,
-			studentId: a.studentId,
-			studentName: `${a.student.lastName}, ${a.student.firstName}`,
-			studentDni: a.student.dni,
-			date: a.attendance.classDate,
-			subject: a.attendance.subject.name,
-			notes: a.notes
+		unexcusedAbsences: unexcusedAbsences.map((entry) => ({
+			id: entry.id,
+			studentId: entry.studentId,
+			studentName: `${entry.student.lastName}, ${entry.student.firstName}`,
+			studentDni: entry.student.dni,
+			date: entry.attendance.classDate,
+			subject: entry.attendance.subject.name
 		}))
 	};
 };
 
 export const actions: Actions = {
 	default: async ({ request, locals }) => {
-		requireRole(locals.user, ['PRECEPTOR']);
+		const currentUser = locals.user;
+
+		if (!currentUser) {
+			return fail(401, {
+				error: 'No autorizado'
+			});
+		}
+
+		requireRole(currentUser, ['PRECEPTOR']);
+		await requirePermission(currentUser, 'ATTENDANCE', 'update');
 
 		const data = await request.formData();
-		const entryId = data.get('entryId')?.toString();
-		const justification = data.get('justification')?.toString();
+		const entryId = data.get('entryId')?.toString().trim() ?? '';
+		const justification = data.get('justification')?.toString().trim() ?? '';
 
 		if (!entryId || !justification) {
-			return { error: 'Por favor completá todos los campos requeridos' };
+			return fail(400, {
+				error: 'Por favor completá todos los campos requeridos'
+			});
+		}
+
+		/*
+		 * La comprobación de ownership/sede queda fuera del try/catch
+		 * para no convertir un HttpError 403 en un error 500.
+		 */
+		const entry = await requirePreceptorAttendanceEntryAccess(currentUser.id, entryId);
+
+		if (entry.student.status !== 'ACTIVE') {
+			return fail(400, {
+				error: 'El alumno ya no se encuentra activo'
+			});
+		}
+
+		/*
+		 * JUSTIFIED es el estado formal.
+		 *
+		 * Para registros legacy también consideramos justificada
+		 * una ausencia que todavía tenga status null/ABSENT pero
+		 * ya posea notes, porque esa era la semántica utilizada
+		 * anteriormente por este módulo y por los reportes.
+		 */
+		if (entry.status === 'JUSTIFIED' || Boolean(entry.notes?.trim())) {
+			return fail(400, {
+				error: 'La inasistencia ya se encuentra justificada'
+			});
+		}
+
+		const isAbsence =
+			entry.status === 'ABSENT' || (entry.status === null && entry.present === false);
+
+		if (!isAbsence) {
+			return fail(400, {
+				error: 'Solo se pueden justificar registros de inasistencia'
+			});
 		}
 
 		try {
-			// Obtener datos de la entrada para auditoría
-			const entry = await prisma.attendanceEntry.findUnique({
-				where: { id: entryId },
-				include: {
-					student: {
-						include: { user: true }
-					},
-					attendance: {
-						include: {
-							subject: true
+			/*
+			 * Revalidamos en el UPDATE para evitar que dos operaciones
+			 * simultáneas justifiquen el mismo registro.
+			 */
+			const result = await prisma.attendanceEntry.updateMany({
+				where: {
+					id: entry.id,
+					OR: [
+						{
+							status: 'ABSENT'
+						},
+						{
+							status: null,
+							present: false
 						}
-					}
-				}
-			});
-
-			await prisma.attendanceEntry.update({
-				where: { id: entryId },
+					]
+				},
 				data: {
+					present: false,
+					status: 'JUSTIFIED',
 					notes: justification
 				}
 			});
 
-			// Registrar en auditoría
+			if (result.count !== 1) {
+				return fail(409, {
+					error:
+						'La inasistencia cambió mientras la estabas justificando. Actualizá la página e intentá nuevamente.'
+				});
+			}
+
 			await auditLog({
-				userId: locals.user!.id,
+				userId: currentUser.id,
 				action: AuditAction.UPDATE,
 				entityType: 'ATTENDANCE_ENTRY',
-				entityId: entryId,
-				description: `Justificación de inasistencia: ${entry?.student.firstName} ${entry?.student.lastName} en ${entry?.attendance.subject.name} el ${entry?.attendance.classDate.toLocaleDateString()}`
+				entityId: entry.id,
+				description: `Justificación de inasistencia de ${entry.student.firstName} ${entry.student.lastName} en ${entry.attendance.subject.name} del ${entry.attendance.classDate.toLocaleDateString('es-AR')}`
 			});
 
-			return { success: 'Justificación registrada exitosamente' };
-		} catch (error) {
-			console.error('Error al registrar justificación:', error);
-			return { error: 'Error al registrar la justificación' };
+			return {
+				success: 'Justificación registrada exitosamente'
+			};
+		} catch (caught) {
+			console.error('Error al registrar justificación:', caught);
+
+			return fail(500, {
+				error: 'Error al registrar la justificación'
+			});
 		}
 	}
 };

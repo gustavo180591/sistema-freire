@@ -213,6 +213,8 @@ export const actions = {
 			redirectUrl = '/dashboard';
 		} else if (roles.includes('DOCENTE')) {
 			redirectUrl = '/docente';
+		} else if (roles.includes('PRECEPTOR')) {
+			redirectUrl = '/preceptor';
 		} else if (roles.includes('FINANZAS')) {
 			redirectUrl = '/finanzas';
 		} else if (roles.includes('ALUMNO')) {

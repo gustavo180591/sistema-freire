@@ -17,6 +17,22 @@
 	let userMenuOpen = $state(false);
 	let isScrolled = $state(false);
 
+	interface ImpersonationData {
+		active: true;
+		startedAt: Date;
+		originalUser: User;
+	}
+
+	const impersonation = $derived(
+		(
+			page.data as {
+				impersonation?: ImpersonationData | null;
+			}
+		).impersonation ?? null
+	);
+
+	const canImpersonate = $derived(Boolean(user?.roles.includes('SUPERADMIN')) && !impersonation);
+
 	const logoPath = '/logo.png';
 
 	// Determinar URL de inicio según rol
@@ -183,6 +199,25 @@
 										<span>Mi Perfil</span>
 									</a>
 
+									{#if canImpersonate}
+										<a
+											href="/impersonar"
+											onclick={() => (userMenuOpen = false)}
+											class="light-hover-contrast group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-indigo-600 transition-all hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/30"
+										>
+											<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+												/>
+											</svg>
+
+											<span>Impersonar usuario</span>
+										</a>
+									{/if}
+
 									<div class="my-1.5 border-t border-slate-200 dark:border-slate-800"></div>
 
 									<div class="px-3 py-2">
@@ -227,5 +262,42 @@
 	</div>
 </nav>
 
+{#if impersonation && user}
+	<div
+		class="fixed top-16 right-0 left-0 z-40 border-y border-indigo-500/50 bg-transparent px-4 py-2.5 text-slate-900 dark:text-white"
+	>
+		<div
+			class="mx-auto flex max-w-7xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+		>
+			<div class="min-w-0">
+				<p
+					class="flex items-center gap-2 text-xs font-semibold tracking-[0.16em] text-indigo-600 uppercase dark:text-indigo-400"
+				>
+					<span class="h-2 w-2 rounded-full bg-indigo-400 shadow-sm shadow-indigo-400/60"></span>
+					Modo impersonación
+				</p>
+
+				<p class="truncate text-sm">
+					Estás operando como
+					<strong>
+						{user.firstName}
+						{user.lastName}
+					</strong>
+					· {user.roles.join(' · ')}
+				</p>
+			</div>
+
+			<form method="POST" action="/api/impersonation/stop">
+				<button
+					type="submit"
+					class="rounded-lg border border-indigo-500/60 bg-transparent px-4 py-1.5 text-sm font-semibold text-indigo-700 transition hover:border-indigo-600 hover:bg-indigo-50 focus:ring-2 focus:ring-indigo-300 focus:outline-none dark:text-indigo-300 dark:hover:bg-indigo-950/30"
+				>
+					Volver a {impersonation.originalUser.firstName}
+				</button>
+			</form>
+		</div>
+	</div>
+{/if}
+
 <!-- Spacer -->
-<div class="h-16"></div>
+<div class={impersonation ? 'h-28' : 'h-16'}></div>

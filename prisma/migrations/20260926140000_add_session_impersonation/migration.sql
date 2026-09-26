@@ -1,0 +1,12 @@
+-- No-op migration.
+--
+-- Esta migración fue creada accidentalmente como duplicado de:
+-- 20260926154500_add_session_impersonation
+--
+-- La migración 20260926154500_add_session_impersonation es la que agrega:
+-- - sessions.impersonatedUserId
+-- - sessions.impersonationStartedAt
+-- - sessions_impersonatedUserId_idx
+--
+-- Se conserva este archivo para mantener consistente el historial
+-- de Prisma luego de haber sido registrado previamente como fallido.

@@ -78,17 +78,20 @@ model UserRole {
 }
 
 model Session {
-  id        String   @id @default(cuid())
-  userId    String
-  tokenHash String   @unique
-  expiresAt DateTime
-  ip        String?
-  userAgent String?
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                     String    @id @default(cuid())
+  userId                 String
+  tokenHash              String    @unique
+  expiresAt              DateTime
+  ip                     String?
+  userAgent              String?
+  createdAt              DateTime  @default(now())
+  impersonatedUserId     String?
+  impersonationStartedAt DateTime?
+  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
+  @@index([impersonatedUserId])
   @@map("sessions")
 }
 

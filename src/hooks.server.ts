@@ -2,13 +2,12 @@ import type { Handle } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/db/prisma';
 
-// Roles con acceso total al sistema institucional
 const FULL_ACCESS_ROLES = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'];
 
 const routePermissions: Record<string, string[]> = {
-	'/alumno': [...FULL_ACCESS_ROLES, 'ALUMNO'], // Solo alumnos - MÁS ESPECÍFICA primero
-	'/alumno/historial': [...FULL_ACCESS_ROLES, 'ALUMNO'], // Alumnos pueden ver su historial
-	'/alumnos': [...FULL_ACCESS_ROLES, 'FINANZAS'], // Solo personal institucional
+	'/alumno': [...FULL_ACCESS_ROLES, 'ALUMNO'],
+	'/alumno/historial': [...FULL_ACCESS_ROLES, 'ALUMNO'],
+	'/alumnos': [...FULL_ACCESS_ROLES, 'FINANZAS'],
 	'/dashboard': FULL_ACCESS_ROLES,
 	'/usuarios': FULL_ACCESS_ROLES,
 	'/carreras': FULL_ACCESS_ROLES,
@@ -16,26 +15,49 @@ const routePermissions: Record<string, string[]> = {
 	'/finanzas': [...FULL_ACCESS_ROLES, 'FINANZAS'],
 	'/recibos': [...FULL_ACCESS_ROLES, 'DOCENTE', 'FINANZAS'],
 	'/reportes': [...FULL_ACCESS_ROLES, 'FINANZAS'],
-	'/auditoria': ['SUPERADMIN', 'DIRECTOR'], // Solo admins pueden ver auditoría
-	'/permisos': ['SUPERADMIN'], // Solo SUPERADMIN puede gestionar permisos
-	'/configuracion': FULL_ACCESS_ROLES, // Configuración del sistema
-	'/docentes': FULL_ACCESS_ROLES, // Gestión de docentes
-	'/preceptores': FULL_ACCESS_ROLES, // Gestión de preceptores
-	'/secretarios': FULL_ACCESS_ROLES, // Gestión de secretarios
-	'/directores': FULL_ACCESS_ROLES, // Gestión de directores
-	'/comisiones': FULL_ACCESS_ROLES, // Gestión de comisiones
-	'/correlatividades': FULL_ACCESS_ROLES, // Gestión de correlatividades
-	'/asistencia': FULL_ACCESS_ROLES, // Gestión de asistencia administrativa
-	'/inscripciones': FULL_ACCESS_ROLES, // Gestión de inscripciones administrativa
-	'/preceptor': FULL_ACCESS_ROLES, // Panel de preceptor
-	'/docente': [...FULL_ACCESS_ROLES, 'DOCENTE'] // Panel de docente
+	'/auditoria': ['SUPERADMIN', 'DIRECTOR'],
+	'/permisos': ['SUPERADMIN'],
+	'/impersonar': ['SUPERADMIN'],
+	'/configuracion': FULL_ACCESS_ROLES,
+	'/docentes': FULL_ACCESS_ROLES,
+	'/preceptores': FULL_ACCESS_ROLES,
+	'/secretarios': FULL_ACCESS_ROLES,
+	'/directores': FULL_ACCESS_ROLES,
+	'/comisiones': FULL_ACCESS_ROLES,
+	'/correlatividades': FULL_ACCESS_ROLES,
+	'/asistencia': FULL_ACCESS_ROLES,
+	'/inscripciones': FULL_ACCESS_ROLES,
+	'/preceptor': [...FULL_ACCESS_ROLES, 'PRECEPTOR'],
+	'/docente': [...FULL_ACCESS_ROLES, 'DOCENTE']
 };
+
+type LoadedUser = {
+	id: string;
+	email: string;
+	firstName: string;
+	lastName: string;
+	status: string;
+	roles: Array<{
+		role: {
+			code: string;
+		};
+	}>;
+};
+
+function toSessionUser(user: LoadedUser): App.SessionUser {
+	return {
+		id: user.id,
+		email: user.email,
+		firstName: user.firstName,
+		lastName: user.lastName,
+		roles: user.roles.map(({ role }) => role.code)
+	};
+}
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const token = event.cookies.get('session');
 
 	if (!token) {
-		// Permitir acceso a rutas de autenticación sin sesión
 		if (event.url.pathname.startsWith('/login') || event.url.pathname.startsWith('/verify-2fa')) {
 			return resolve(event);
 		}
@@ -50,12 +72,25 @@ export const handle: Handle = async ({ event, resolve }) => {
 				gt: new Date()
 			}
 		},
-		include: {
+		select: {
+			id: true,
+			userId: true,
+			impersonatedUserId: true,
+			impersonationStartedAt: true,
 			user: {
-				include: {
+				select: {
+					id: true,
+					email: true,
+					firstName: true,
+					lastName: true,
+					status: true,
 					roles: {
-						include: {
-							role: true
+						select: {
+							role: {
+								select: {
+									code: true
+								}
+							}
 						}
 					}
 				}
@@ -64,7 +99,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 	});
 
 	if (!session) {
-		event.cookies.delete('session', { path: '/' });
+		event.cookies.delete('session', {
+			path: '/'
+		});
+
 		throw redirect(303, '/login');
 	}
 
@@ -75,29 +113,95 @@ export const handle: Handle = async ({ event, resolve }) => {
 			}
 		});
 
-		event.cookies.delete('session', { path: '/' });
+		event.cookies.delete('session', {
+			path: '/'
+		});
+
 		throw redirect(303, '/login');
 	}
 
-	const roles = session.user.roles.map((r) => r.role.code);
+	const authenticatedUser = toSessionUser(session.user);
 
-	event.locals.user = {
-		id: session.user.id,
-		email: session.user.email,
-		firstName: session.user.firstName,
-		lastName: session.user.lastName,
-		roles
-	};
+	event.locals.sessionId = session.id;
+	event.locals.authenticatedUser = authenticatedUser;
 
-	// Ordenar rutas por longitud descendente para evitar matching parcial
-	// Ej: /alumnos debe evaluarse antes que /alumno
+	let effectiveUser = authenticatedUser;
+
+	if (session.impersonatedUserId) {
+		const originalIsSuperadmin = authenticatedUser.roles.includes('SUPERADMIN');
+
+		if (!originalIsSuperadmin) {
+			await prisma.session.update({
+				where: {
+					id: session.id
+				},
+				data: {
+					impersonatedUserId: null,
+					impersonationStartedAt: null
+				}
+			});
+		} else {
+			const target = await prisma.user.findUnique({
+				where: {
+					id: session.impersonatedUserId
+				},
+				select: {
+					id: true,
+					email: true,
+					firstName: true,
+					lastName: true,
+					status: true,
+					roles: {
+						select: {
+							role: {
+								select: {
+									code: true
+								}
+							}
+						}
+					}
+				}
+			});
+
+			if (!target || target.status !== 'ACTIVE') {
+				await prisma.session.update({
+					where: {
+						id: session.id
+					},
+					data: {
+						impersonatedUserId: null,
+						impersonationStartedAt: null
+					}
+				});
+			} else {
+				effectiveUser = toSessionUser(target);
+
+				event.locals.impersonation = {
+					active: true,
+					startedAt: session.impersonationStartedAt ?? new Date(),
+					originalUser: authenticatedUser
+				};
+			}
+		}
+	}
+
+	/*
+	 * Desde este punto toda la aplicación utiliza
+	 * al usuario efectivo.
+	 *
+	 * Durante una impersonación, roles, permisos,
+	 * ownership y scopes pertenecen al usuario objetivo.
+	 */
+	event.locals.user = effectiveUser;
+
 	const sortedRoutes = Object.keys(routePermissions).sort((a, b) => b.length - a.length);
 
 	const matchedRoute = sortedRoutes.find((route) => event.url.pathname.startsWith(route));
 
 	if (matchedRoute) {
 		const allowedRoles = routePermissions[matchedRoute];
-		const hasAccess = roles.some((role) => allowedRoles.includes(role));
+
+		const hasAccess = effectiveUser.roles.some((role) => allowedRoles.includes(role));
 
 		if (!hasAccess) {
 			throw redirect(303, '/');

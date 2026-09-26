@@ -6,7 +6,7 @@ import { AuditAction } from '@prisma/client';
 
 export const actions: Actions = {
 	default: async ({ cookies, locals }) => {
-		const userId = locals.user?.id;
+		const userId = locals.authenticatedUser?.id ?? locals.user?.id;
 		const token = cookies.get('session');
 
 		// Eliminar la sesión de la base de datos

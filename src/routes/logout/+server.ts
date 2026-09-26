@@ -5,7 +5,7 @@ import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
 
 export const POST = async ({ cookies, locals }: RequestEvent) => {
-	const userId = locals.user?.id;
+	const userId = locals.authenticatedUser?.id ?? locals.user?.id;
 	const token = cookies.get('session');
 
 	// Eliminar la sesión de la base de datos

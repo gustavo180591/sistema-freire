@@ -1,6 +1,7 @@
 import type { Handle } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/db/prisma';
+import { runWithAuditRequestContext } from '$lib/server/audit-context';
 
 const FULL_ACCESS_ROLES = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'];
 
@@ -208,5 +209,19 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 	}
 
-	return resolve(event);
+	return runWithAuditRequestContext(
+		{
+			sessionId: session.id,
+			authenticatedUserId: authenticatedUser.id,
+			effectiveUserId: effectiveUser.id,
+			impersonation: event.locals.impersonation
+				? {
+						originalUserId: authenticatedUser.id,
+						effectiveUserId: effectiveUser.id,
+						startedAt: event.locals.impersonation.startedAt.toISOString()
+					}
+				: undefined
+		},
+		() => resolve(event)
+	);
 };

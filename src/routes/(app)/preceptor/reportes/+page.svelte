@@ -2,21 +2,53 @@
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
+
+	function followUpLabel(type: string): string {
+		const labels: Record<string, string> = {
+			INTERVIEW: 'Entrevista',
+			OBSERVATION: 'Observación',
+			WARNING: 'Advertencia',
+			MEETING: 'Reunión',
+			INCIDENT: 'Incidencia',
+			ACHIEVEMENT: 'Logro',
+			NOTE: 'Nota'
+		};
+
+		return labels[type] ?? type;
+	}
 </script>
 
 <svelte:head>
-	<title>Reportes Básicos | Preceptor</title>
+	<title>Reportes | Preceptor</title>
 </svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-8 p-6">
-	<!-- Header -->
 	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
 		<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Preceptor</p>
-		<h1 class="mt-2 text-3xl font-bold">Reportes Básicos</h1>
-		<p class="mt-2 text-slate-400">Estadísticas y métricas del sistema</p>
+
+		<h1 class="mt-2 text-3xl font-bold">Reportes</h1>
+
+		<p class="mt-2 text-slate-400">Métricas de los alumnos pertenecientes a tus sedes asignadas</p>
+
+		<div class="mt-5 flex flex-wrap gap-2">
+			{#each data.scope.locations as location}
+				<span
+					class="rounded-full border border-slate-700 bg-slate-950 px-3 py-1 text-xs font-medium text-slate-300"
+				>
+					{location.name}
+				</span>
+			{/each}
+		</div>
+
+		{#if data.scope.locations.length === 0}
+			<div class="mt-5 rounded-xl border border-amber-800/50 bg-amber-950/20 p-4">
+				<p class="text-sm text-amber-300">
+					No tenés sedes activas asignadas. Los reportes operativos permanecerán vacíos.
+				</p>
+			</div>
+		{/if}
 	</div>
 
-	<!-- Estadísticas Generales -->
 	<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
 			<div class="flex items-center gap-3">
@@ -30,13 +62,19 @@
 						/>
 					</svg>
 				</div>
+
 				<div>
 					<p class="text-sm text-slate-400">Tasa de Asistencia</p>
-					<p class="text-2xl font-bold">{data.stats.attendanceRate}%</p>
+
+					<p class="text-2xl font-bold">
+						{data.stats.attendanceRate}%
+					</p>
 				</div>
 			</div>
+
 			<p class="mt-4 text-xs text-slate-500">
-				{data.stats.presentAttendance}/{data.stats.totalAttendance} registros
+				{data.stats.presentAttendance}/{data.stats.totalAttendance}
+				registros · últimos 30 días
 			</p>
 		</div>
 
@@ -52,12 +90,17 @@
 						/>
 					</svg>
 				</div>
+
 				<div>
 					<p class="text-sm text-slate-400">Incidencias</p>
-					<p class="text-2xl font-bold">{data.stats.incidentCount}</p>
+
+					<p class="text-2xl font-bold">
+						{data.stats.incidentCount}
+					</p>
 				</div>
 			</div>
-			<p class="mt-4 text-xs text-slate-500">Últimos 30 días</p>
+
+			<p class="mt-4 text-xs text-slate-500">Últimos 30 días · dentro de tus sedes</p>
 		</div>
 
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
@@ -73,16 +116,21 @@
 							stroke-linecap="round"
 							stroke-linejoin="round"
 							stroke-width="2"
-							d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+							d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857M15 7a3 3 0 11-6 0 3 3 0 016 0z"
 						/>
 					</svg>
 				</div>
+
 				<div>
-					<p class="text-sm text-slate-400">Carreras Activas</p>
-					<p class="text-2xl font-bold">{data.careers.length}</p>
+					<p class="text-sm text-slate-400">Alumnos activos</p>
+
+					<p class="text-2xl font-bold">
+						{data.stats.activeStudentCount}
+					</p>
 				</div>
 			</div>
-			<p class="mt-4 text-xs text-slate-500">Total en el sistema</p>
+
+			<p class="mt-4 text-xs text-slate-500">Dentro de tus sedes asignadas</p>
 		</div>
 
 		<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
@@ -97,46 +145,84 @@
 						/>
 					</svg>
 				</div>
+
 				<div>
-					<p class="text-sm text-slate-400">Observaciones</p>
+					<p class="text-sm text-slate-400">Seguimientos</p>
+
 					<p class="text-2xl font-bold">
-						{data.stats.observationsByType.reduce((sum, o) => sum + o.count, 0)}
+						{data.stats.followUpsByType.reduce((sum, followUp) => sum + followUp.count, 0)}
 					</p>
 				</div>
 			</div>
-			<p class="mt-4 text-xs text-slate-500">Últimos 30 días</p>
+
+			<p class="mt-4 text-xs text-slate-500">Últimos 30 días · dentro de tus sedes</p>
 		</div>
 	</div>
 
-	<!-- Estudiantes por Carrera -->
 	<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-		<h2 class="mb-4 text-xl font-semibold">Estudiantes por Carrera</h2>
+		<div class="mb-4 flex items-center justify-between gap-4">
+			<div>
+				<h2 class="text-xl font-semibold">Estudiantes por Carrera</h2>
+
+				<p class="mt-1 text-sm text-slate-500">
+					Distribución de alumnos activos dentro de tus sedes
+				</p>
+			</div>
+		</div>
+
 		<div class="space-y-3">
 			{#each data.stats.careerStats as stat}
 				<div
 					class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-4"
 				>
-					<p class="font-semibold text-white">{stat.careerName}</p>
-					<p class="text-2xl font-bold text-blue-400">{stat.count}</p>
+					<p class="font-semibold text-white">
+						{stat.careerName}
+					</p>
+
+					<p class="text-2xl font-bold text-blue-400">
+						{stat.count}
+					</p>
 				</div>
 			{/each}
+
+			{#if data.stats.careerStats.length === 0}
+				<div class="rounded-xl border border-slate-800 bg-slate-950/50 p-8 text-center">
+					<p class="text-slate-400">
+						No hay alumnos activos para reportar dentro de tus sedes asignadas.
+					</p>
+				</div>
+			{/if}
 		</div>
 	</div>
 
-	<!-- Observaciones por Tipo -->
 	<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-		<h2 class="mb-4 text-xl font-semibold">Observaciones por Tipo (Últimos 30 días)</h2>
+		<div class="mb-4">
+			<h2 class="text-xl font-semibold">Seguimientos por Tipo</h2>
+
+			<p class="mt-1 text-sm text-slate-500">Registros realizados durante los últimos 30 días</p>
+		</div>
+
 		<div class="space-y-3">
-			{#each data.stats.observationsByType as obs}
+			{#each data.stats.followUpsByType as followUp}
 				<div
 					class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-4"
 				>
-					<p class="font-semibold text-white">{obs.type}</p>
-					<p class="text-2xl font-bold text-amber-400">{obs.count}</p>
+					<p class="font-semibold text-white">
+						{followUpLabel(followUp.type)}
+					</p>
+
+					<p class="text-2xl font-bold text-amber-400">
+						{followUp.count}
+					</p>
 				</div>
 			{/each}
-			{#if data.stats.observationsByType.length === 0}
-				<p class="text-center text-slate-400">No hay observaciones registradas</p>
+
+			{#if data.stats.followUpsByType.length === 0}
+				<div class="rounded-xl border border-slate-800 bg-slate-950/50 p-8 text-center">
+					<p class="text-slate-400">
+						No hay seguimientos registrados durante los últimos 30 días dentro de tus sedes.
+					</p>
+				</div>
 			{/if}
 		</div>
 	</div>

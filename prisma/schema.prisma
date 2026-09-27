@@ -53,6 +53,8 @@ model User {
   locationPermissions              UserLocationPermission[]
   roles                            UserRole[]
 
+  createdAttendanceEvents StudentAttendanceEvent[] @relation("AttendanceEventCreator")
+
   @@index([lastName, firstName])
   @@map("users")
 }
@@ -349,10 +351,38 @@ model AttendanceEntry {
   attendance AttendanceRecord @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
   student    Student          @relation(fields: [studentId], references: [id])
 
+  attendanceEvents StudentAttendanceEvent[]
+
   @@unique([attendanceId, studentId])
   @@index([studentId])
   @@index([status])
   @@map("attendance_entries")
+}
+
+model StudentAttendanceEvent {
+  id                  String              @id @default(cuid())
+  subjectEnrollmentId String
+  locationId          String
+  attendanceEntryId   String?
+  type                AttendanceEventType
+  eventDate           DateTime            @db.Date
+  eventTime           String              @db.VarChar(5)
+  notes               String?
+  createdByUserId     String
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  subjectEnrollment SubjectEnrollment @relation(fields: [subjectEnrollmentId], references: [id], onDelete: Restrict)
+  location          Location          @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  attendanceEntry   AttendanceEntry?  @relation(fields: [attendanceEntryId], references: [id], onDelete: SetNull)
+  createdByUser     User              @relation("AttendanceEventCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([subjectEnrollmentId, eventDate, eventTime, type])
+  @@index([locationId, eventDate])
+  @@index([type, eventDate])
+  @@index([createdByUserId])
+  @@index([attendanceEntryId])
+  @@map("student_attendance_events")
 }
 
 model Grade {
@@ -921,6 +951,8 @@ model Location {
   evaluations     Evaluation[]
   receipts        Receipt[]
 
+  attendanceEvents StudentAttendanceEvent[]
+
   @@index([active])
   @@map("locations")
 }
@@ -1202,6 +1234,8 @@ model SubjectEnrollment {
   grades             Grade[]
   courseResult       CourseResult?
 
+  attendanceEvents StudentAttendanceEvent[]
+
   @@unique([studentId, subjectId, academicTermId])
   @@index([studentId, status])
   @@index([subjectId, status])
@@ -1249,6 +1283,11 @@ model ExamRegistration {
   @@index([studentId, status])
   @@index([evaluationId, status])
   @@map("exam_registrations")
+}
+
+enum AttendanceEventType {
+  LATE_ARRIVAL
+  EARLY_DEPARTURE
 }
 
 enum UserStatus {

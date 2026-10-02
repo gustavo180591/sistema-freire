@@ -41,6 +41,7 @@
 
 	let selectedSubject = $state('');
 	let selectedCommission = $state('');
+	let selectedLocation = $state('');
 	let selectedDate = $state(getInstitutionDateInputValue());
 	let attendanceData = $state<AttendanceDraft[]>([]);
 	let submitting = $state(false);
@@ -55,6 +56,26 @@
 		)
 	);
 
+	let availableNoCommissionLocations = $derived.by(() => {
+		const locations = new SvelteMap<string, string>();
+
+		for (const enrollment of data.enrollments) {
+			if (
+				enrollment.subjectId !== selectedSubject ||
+				enrollment.commissionId !== null ||
+				!enrollment.student.locationId
+			) {
+				continue;
+			}
+
+			locations.set(enrollment.student.locationId, enrollment.student.locationName);
+		}
+
+		return [...locations.entries()]
+			.map(([id, name]) => ({ id, name }))
+			.sort((a, b) => a.name.localeCompare(b.name, 'es'));
+	});
+
 	let availableStudents = $derived.by(() => {
 		if (!selectedSubject || !selectedCommission) {
 			return [];
@@ -62,10 +83,18 @@
 
 		const commissionId = selectedCommission === NO_COMMISSION ? null : selectedCommission;
 
+		if (commissionId === null && !selectedLocation) {
+			return [];
+		}
+
 		const students = new SvelteMap<string, (typeof data.enrollments)[number]['student']>();
 
 		for (const enrollment of data.enrollments) {
 			if (enrollment.subjectId !== selectedSubject || enrollment.commissionId !== commissionId) {
+				continue;
+			}
+
+			if (commissionId === null && enrollment.student.locationId !== selectedLocation) {
 				continue;
 			}
 
@@ -86,10 +115,19 @@
 	function syncAttendanceData() {
 		const commissionId = selectedCommission === NO_COMMISSION ? null : selectedCommission;
 
+		if (commissionId === null && !selectedLocation) {
+			attendanceData = [];
+			return;
+		}
+
 		const students = new SvelteMap<string, (typeof data.enrollments)[number]['student']>();
 
 		for (const enrollment of data.enrollments) {
 			if (enrollment.subjectId !== selectedSubject || enrollment.commissionId !== commissionId) {
+				continue;
+			}
+
+			if (commissionId === null && enrollment.student.locationId !== selectedLocation) {
 				continue;
 			}
 
@@ -104,6 +142,8 @@
 	}
 
 	function handleSubjectChange() {
+		selectedLocation = '';
+
 		const subjectCommissions = data.commissions.filter(
 			(commission) => commission.subjectId === selectedSubject
 		);
@@ -124,6 +164,11 @@
 	}
 
 	function handleCommissionChange() {
+		selectedLocation = '';
+		syncAttendanceData();
+	}
+
+	function handleLocationChange() {
 		syncAttendanceData();
 	}
 
@@ -183,13 +228,17 @@
 
 			return async ({ result, update }) => {
 				try {
+					await update({
+						reset: false
+					});
+
 					if (result.type === 'success') {
 						selectedSubject = '';
 						selectedCommission = '';
+						selectedLocation = '';
+						selectedDate = getInstitutionDateInputValue();
 						attendanceData = [];
 					}
-
-					await update();
 				} finally {
 					submitting = false;
 				}
@@ -289,7 +338,35 @@
 				</div>
 			{/if}
 
-			{#if selectedCommission && attendanceData.length > 0}
+			{#if selectedCommission === NO_COMMISSION}
+				<div class="mt-4">
+					<label for="locationId" class="mb-2 block text-sm font-medium text-slate-300">
+						Sede
+					</label>
+
+					<select
+						id="locationId"
+						name="locationId"
+						bind:value={selectedLocation}
+						onchange={handleLocationChange}
+						disabled={submitting}
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500 disabled:opacity-60"
+						required
+					>
+						<option value="">Seleccionar sede</option>
+
+						{#each availableNoCommissionLocations as location (location.id)}
+							<option value={location.id}>{location.name}</option>
+						{/each}
+					</select>
+
+					<p class="mt-2 text-xs text-slate-500">
+						La sede define qué alumnos sin comisión forman parte de este registro.
+					</p>
+				</div>
+			{/if}
+
+			{#if selectedCommission && (selectedCommission !== NO_COMMISSION || selectedLocation) && attendanceData.length > 0}
 				<div class="mt-4 flex flex-wrap gap-3">
 					<button
 						type="button"
@@ -312,7 +389,7 @@
 			{/if}
 		</div>
 
-		{#if selectedSubject && selectedCommission}
+		{#if selectedSubject && selectedCommission && (selectedCommission !== NO_COMMISSION || selectedLocation)}
 			<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
 				<div class="mb-4 flex items-center justify-between gap-4">
 					<h2 class="text-xl font-semibold">Estudiantes</h2>
@@ -364,6 +441,7 @@
 										type="text"
 										placeholder="Notas (opcional)..."
 										value={entry.notes}
+										maxlength="500"
 										oninput={(event) => {
 											const target = event.target as HTMLInputElement;
 

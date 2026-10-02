@@ -318,22 +318,26 @@ model CareerSubject {
 }
 
 model AttendanceRecord {
-  id              String   @id @default(cuid())
-  subjectId       String
-  classDate       DateTime
-  createdByUserId String
-  createdAt       DateTime @default(now())
-  commissionId    String?
-  classScheduleId String?
+  id               String   @id @default(cuid())
+  subjectId        String
+  classDate        DateTime
+  createdByUserId  String
+  createdAt        DateTime @default(now())
+  commissionId     String?
+  classScheduleId  String?
+  locationId       String?
+  deduplicationKey String?  @unique @db.VarChar(255)
 
   entries       AttendanceEntry[]
   commission    SubjectCommission? @relation(fields: [commissionId], references: [id])
   subject       Subject            @relation(fields: [subjectId], references: [id])
   classSchedule ClassSchedule?     @relation(fields: [classScheduleId], references: [id], onDelete: SetNull)
+  location      Location?          @relation(fields: [locationId], references: [id], onDelete: Restrict)
 
   @@unique([classScheduleId, classDate])
   @@index([subjectId, commissionId, classDate])
   @@index([commissionId, classDate])
+  @@index([locationId, classDate])
   @@map("attendance_records")
 }
 
@@ -951,7 +955,8 @@ model Location {
   evaluations     Evaluation[]
   receipts        Receipt[]
 
-  attendanceEvents StudentAttendanceEvent[]
+  attendanceEvents  StudentAttendanceEvent[]
+  attendanceRecords AttendanceRecord[]
 
   @@index([active])
   @@map("locations")

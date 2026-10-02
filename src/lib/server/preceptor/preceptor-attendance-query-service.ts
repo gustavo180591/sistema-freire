@@ -1,4 +1,4 @@
-import { AttendanceStatus, EnrollmentStatus } from '@prisma/client';
+import { EnrollmentStatus } from '@prisma/client';
 
 import { prisma } from '$lib/server/db/prisma';
 import { getPreceptorScope } from '$lib/server/preceptor/preceptor-scope-service';
@@ -6,7 +6,7 @@ import { getPreceptorScope } from '$lib/server/preceptor/preceptor-scope-service
 export async function getPreceptorAttendancePageData(userId: string) {
 	const scope = await getPreceptorScope(userId);
 
-	const [enrollments, commissions, recentAttendance] = await Promise.all([
+	const [enrollments, commissions, locations] = await Promise.all([
 		prisma.subjectEnrollment.findMany({
 			where: {
 				status: EnrollmentStatus.ACTIVE,
@@ -133,79 +133,20 @@ export async function getPreceptorAttendancePageData(userId: string) {
 			}
 		}),
 
-		prisma.attendanceRecord.findMany({
+		prisma.location.findMany({
 			where: {
-				OR: [
-					{
-						locationId: {
-							in: scope.locationIds
-						}
-					},
-					{
-						locationId: null,
-						commission: {
-							is: {
-								locationId: {
-									in: scope.locationIds
-								}
-							}
-						}
-					},
-					{
-						locationId: null,
-						commissionId: null,
-						entries: {
-							some: {
-								student: {
-									locationId: {
-										in: scope.locationIds
-									}
-								}
-							}
-						}
-					}
-				]
+				id: {
+					in: scope.locationIds
+				},
+				active: true
 			},
 			select: {
 				id: true,
-				classDate: true,
-				createdAt: true,
-				location: {
-					select: {
-						name: true
-					}
-				},
-				subject: {
-					select: {
-						name: true
-					}
-				},
-				commission: {
-					select: {
-						code: true,
-						location: {
-							select: {
-								name: true
-							}
-						}
-					}
-				},
-				entries: {
-					where: {
-						student: {
-							locationId: {
-								in: scope.locationIds
-							}
-						}
-					},
-					select: {
-						present: true,
-						status: true
-					}
-				}
+				name: true
 			},
-			orderBy: [{ classDate: 'desc' }, { createdAt: 'desc' }],
-			take: 20
+			orderBy: {
+				name: 'asc'
+			}
 		})
 	]);
 
@@ -255,24 +196,6 @@ export async function getPreceptorAttendancePageData(userId: string) {
 			}
 		})),
 
-		recentAttendance: recentAttendance.map((record) => {
-			const presentStudents = record.entries.filter(
-				(entry) =>
-					entry.status === AttendanceStatus.PRESENT ||
-					entry.status === AttendanceStatus.LATE ||
-					(entry.status === null && entry.present)
-			).length;
-
-			return {
-				id: record.id,
-				date: record.classDate,
-				subject: record.subject.name,
-				commissionCode: record.commission?.code ?? null,
-				locationName:
-					record.location?.name ?? record.commission?.location?.name ?? 'Registro legacy',
-				totalStudents: record.entries.length,
-				presentStudents
-			};
-		})
+		locations
 	};
 }

@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { ActionData, PageData } from './$types';
+	import PreceptorAttendanceHistory from '$lib/components/preceptor/PreceptorAttendanceHistory.svelte';
 
 	const NO_COMMISSION = '__NO_COMMISSION__';
 
@@ -479,53 +480,12 @@
 		{/if}
 	</form>
 
-	<div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-		<h2 class="mb-4 text-xl font-semibold">Registros Recientes</h2>
-
-		<div class="space-y-3">
-			{#each data.recentAttendance as record (record.id)}
-				<div
-					class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-4"
-				>
-					<div>
-						<p class="font-semibold text-white">
-							{record.subject}
-						</p>
-
-						{#if record.commissionCode}
-							<p class="text-xs text-slate-400">
-								Comisión:
-								{record.commissionCode}
-							</p>
-						{/if}
-
-						<p class="text-xs text-slate-500">
-							{new Date(record.date).toLocaleDateString('es-AR', { timeZone: 'UTC' })}
-						</p>
-					</div>
-
-					<div class="text-right">
-						<p class="text-sm text-slate-400">
-							{record.presentStudents}/{record.totalStudents}
-							presentes
-						</p>
-
-						<p class="text-xs text-emerald-600 dark:text-emerald-400">
-							{record.totalStudents > 0
-								? Math.round((record.presentStudents / record.totalStudents) * 100)
-								: 0}% asistencia
-						</p>
-					</div>
-				</div>
-			{/each}
-
-			{#if data.recentAttendance.length === 0}
-				<p class="text-center text-slate-400">
-					No hay registros recientes dentro de tus sedes asignadas.
-				</p>
-			{/if}
-		</div>
-	</div>
+	<PreceptorAttendanceHistory
+		history={data.attendanceHistory}
+		subjects={data.subjects}
+		commissions={data.commissions}
+		locations={data.locations}
+	/>
 
 	<div class="flex justify-start">
 		<a

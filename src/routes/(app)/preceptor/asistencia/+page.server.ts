@@ -8,11 +8,12 @@ import {
 	createPreceptorAttendance,
 	PreceptorAttendanceError
 } from '$lib/server/preceptor/preceptor-attendance-service';
+import { getPreceptorAttendanceHistory } from '$lib/server/preceptor/preceptor-attendance-history-service';
 import { getPreceptorAttendancePageData } from '$lib/server/preceptor/preceptor-attendance-query-service';
 
 const NO_COMMISSION = '__NO_COMMISSION__';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	const currentUser = locals.user;
 
 	if (!currentUser) {
@@ -29,7 +30,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 		requirePermission(currentUser, 'SUBJECT_COMMISSION', 'read')
 	]);
 
-	return getPreceptorAttendancePageData(currentUser.id);
+	const [pageData, attendanceHistory] = await Promise.all([
+		getPreceptorAttendancePageData(currentUser.id),
+		getPreceptorAttendanceHistory(currentUser.id, url.searchParams)
+	]);
+
+	return {
+		...pageData,
+		attendanceHistory
+	};
 };
 
 export const actions: Actions = {

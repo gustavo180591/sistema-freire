@@ -105,6 +105,67 @@
 			]
 		},
 		{
+			category: 'Preceptoría',
+			collapsible: true,
+			items: [
+				{
+					label: 'Panel preceptor',
+					href: '/preceptor',
+					icon: 'dashboard',
+					roles: ['PRECEPTOR'],
+					exact: true
+				},
+				{
+					label: 'Asistencia',
+					href: '/preceptor/asistencia',
+					icon: 'clipboard-user',
+					roles: ['PRECEPTOR']
+				},
+				{
+					label: 'Llegadas / Retiros',
+					href: '/preceptor/llegadas-retiros',
+					icon: 'calendar',
+					roles: ['PRECEPTOR']
+				},
+				{
+					label: 'Calificaciones',
+					href: '/preceptor/calificaciones',
+					icon: 'book-open',
+					roles: ['PRECEPTOR']
+				},
+				{
+					label: 'Justificaciones',
+					href: '/preceptor/justificaciones',
+					icon: 'clipboard-list',
+					roles: ['PRECEPTOR']
+				},
+				{
+					label: 'Incidencias',
+					href: '/preceptor/incidencias',
+					icon: 'clipboard-list',
+					roles: ['PRECEPTOR']
+				},
+				{
+					label: 'Observaciones',
+					href: '/preceptor/observaciones',
+					icon: 'chat-bubble',
+					roles: ['PRECEPTOR']
+				},
+				{
+					label: 'Comunicados',
+					href: '/preceptor/comunicados',
+					icon: 'megaphone',
+					roles: ['PRECEPTOR']
+				},
+				{
+					label: 'Reportes',
+					href: '/preceptor/reportes',
+					icon: 'chart-line',
+					roles: ['PRECEPTOR']
+				}
+			]
+		},
+		{
 			category: 'Mis Estudios',
 			collapsible: true,
 			items: [

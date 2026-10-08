@@ -1,6 +1,7 @@
-import { AuditAction } from '@prisma/client';
+import { AuditAction, type RoleCode } from '@prisma/client';
 import { error } from '@sveltejs/kit';
 import { prisma } from '$lib/server/db/prisma';
+import { getRoleHomeRoute, resolveActiveRole } from '$lib/server/auth/active-role';
 
 type UserWithRoles = {
 	id: string;
@@ -10,21 +11,35 @@ type UserWithRoles = {
 	status: string;
 	roles: Array<{
 		role: {
-			code: string;
+			code: RoleCode;
 		};
 	}>;
 };
 
-function toSessionUser(user: UserWithRoles): App.SessionUser {
+function toSessionUser(
+	user: UserWithRoles,
+	storedActiveRole: RoleCode | null = null
+): App.SessionUser {
+	const assignedRoles = user.roles.map(({ role }) => role.code);
+
+	const activeRole = resolveActiveRole(assignedRoles, storedActiveRole);
+
 	return {
 		id: user.id,
 		email: user.email,
 		firstName: user.firstName,
 		lastName: user.lastName,
-		roles: user.roles.map(({ role }) => role.code)
+		roles: activeRole ? [activeRole] : [],
+		assignedRoles,
+		activeRole
 	};
 }
 
+/**
+ * Se conserva por compatibilidad con posibles consumidores existentes.
+ *
+ * La selección de rol activo ya no debe basarse en esta prioridad.
+ */
 export function getDefaultRouteForRoles(roles: readonly string[]): string {
 	if (roles.some((role) => ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'].includes(role))) {
 		return '/dashboard';
@@ -49,6 +64,18 @@ export function getDefaultRouteForRoles(roles: readonly string[]): string {
 	return '/';
 }
 
+function getSessionUserRedirect(user: App.SessionUser): string {
+	if (user.activeRole) {
+		return getRoleHomeRoute(user.activeRole);
+	}
+
+	if (user.assignedRoles.length > 1) {
+		return '/seleccionar-vista';
+	}
+
+	return '/';
+}
+
 interface StartImpersonationInput {
 	sessionId: string;
 	actorUserId: string;
@@ -67,7 +94,9 @@ export async function startImpersonation(input: StartImpersonationInput) {
 				id: true,
 				userId: true,
 				expiresAt: true,
+				activeRole: true,
 				impersonatedUserId: true,
+				impersonationPreviousActiveRole: true,
 				user: {
 					select: {
 						id: true,
@@ -93,11 +122,18 @@ export async function startImpersonation(input: StartImpersonationInput) {
 			throw error(403, 'Sesión no autorizada');
 		}
 
-		if (
-			session.user.status !== 'ACTIVE' ||
-			!session.user.roles.some(({ role }) => role.code === 'SUPERADMIN')
-		) {
+		const actorAssignedRoles = session.user.roles.map(({ role }) => role.code);
+
+		if (session.user.status !== 'ACTIVE' || !actorAssignedRoles.includes('SUPERADMIN')) {
 			throw error(403, 'Solo un SUPERADMIN autenticado puede impersonar usuarios');
+		}
+
+		/*
+		 * No basta con tener SUPERADMIN asignado.
+		 * Para iniciar una impersonación debe ser además el contexto activo.
+		 */
+		if (session.activeRole !== 'SUPERADMIN') {
+			throw error(403, 'Debes trabajar con el rol SUPERADMIN para iniciar una impersonación');
 		}
 
 		if (session.impersonatedUserId) {
@@ -139,6 +175,11 @@ export async function startImpersonation(input: StartImpersonationInput) {
 		}
 
 		const startedAt = new Date();
+
+		/*
+		 * Si el objetivo posee un único rol, queda activo automáticamente.
+		 * Si posee varios, activeRole queda en null y deberá elegir contexto.
+		 */
 		const targetUser = toSessionUser(target);
 
 		await tx.session.update({
@@ -147,7 +188,14 @@ export async function startImpersonation(input: StartImpersonationInput) {
 			},
 			data: {
 				impersonatedUserId: target.id,
-				impersonationStartedAt: startedAt
+				impersonationStartedAt: startedAt,
+
+				/*
+				 * Guardamos el contexto del propietario real antes de reutilizar
+				 * activeRole para el usuario impersonado.
+				 */
+				impersonationPreviousActiveRole: session.activeRole,
+				activeRole: targetUser.activeRole
 			}
 		});
 
@@ -161,9 +209,11 @@ export async function startImpersonation(input: StartImpersonationInput) {
 				metadata: {
 					event: 'IMPERSONATION_STARTED',
 					originalUserId: session.user.id,
+					originalActiveRole: session.activeRole,
 					targetUserId: target.id,
 					targetEmail: target.email,
-					targetRoles: targetUser.roles
+					targetAssignedRoles: targetUser.assignedRoles,
+					targetActiveRole: targetUser.activeRole
 				},
 				ip: input.ip ?? null,
 				userAgent: input.userAgent ?? null
@@ -173,7 +223,7 @@ export async function startImpersonation(input: StartImpersonationInput) {
 		return {
 			targetUser,
 			startedAt,
-			redirectTo: getDefaultRouteForRoles(targetUser.roles)
+			redirectTo: getSessionUserRedirect(targetUser)
 		};
 	});
 }
@@ -194,10 +244,14 @@ export async function stopImpersonation(input: StopImpersonationInput) {
 			select: {
 				id: true,
 				userId: true,
+				expiresAt: true,
+				activeRole: true,
 				impersonatedUserId: true,
+				impersonationPreviousActiveRole: true,
 				user: {
 					select: {
 						id: true,
+						email: true,
 						firstName: true,
 						lastName: true,
 						status: true,
@@ -215,14 +269,13 @@ export async function stopImpersonation(input: StopImpersonationInput) {
 			}
 		});
 
-		if (!session || session.userId !== input.actorUserId) {
+		if (!session || session.userId !== input.actorUserId || session.expiresAt <= new Date()) {
 			throw error(403, 'Sesión no autorizada');
 		}
 
-		if (
-			session.user.status !== 'ACTIVE' ||
-			!session.user.roles.some(({ role }) => role.code === 'SUPERADMIN')
-		) {
+		const actorAssignedRoles = session.user.roles.map(({ role }) => role.code);
+
+		if (session.user.status !== 'ACTIVE' || !actorAssignedRoles.includes('SUPERADMIN')) {
 			throw error(403, 'Solo el SUPERADMIN original puede finalizar la impersonación');
 		}
 
@@ -242,13 +295,30 @@ export async function stopImpersonation(input: StopImpersonationInput) {
 			}
 		});
 
+		/*
+		 * Compatibilidad con impersonaciones creadas antes de activeRole:
+		 * esas sesiones pueden no tener impersonationPreviousActiveRole.
+		 *
+		 * Como históricamente solo SUPERADMIN podía impersonar, SUPERADMIN es
+		 * el fallback seguro para esas sesiones si continúa asignado.
+		 */
+		const previousActiveRole =
+			session.impersonationPreviousActiveRole ??
+			(actorAssignedRoles.includes('SUPERADMIN') ? 'SUPERADMIN' : null);
+
+		const restoredActiveRole = resolveActiveRole(actorAssignedRoles, previousActiveRole);
+
+		const originalUser = toSessionUser(session.user, restoredActiveRole);
+
 		await tx.session.update({
 			where: {
 				id: session.id
 			},
 			data: {
+				activeRole: restoredActiveRole,
 				impersonatedUserId: null,
-				impersonationStartedAt: null
+				impersonationStartedAt: null,
+				impersonationPreviousActiveRole: null
 			}
 		});
 
@@ -264,7 +334,9 @@ export async function stopImpersonation(input: StopImpersonationInput) {
 				metadata: {
 					event: 'IMPERSONATION_ENDED',
 					originalUserId: session.user.id,
-					targetUserId
+					targetUserId,
+					previousActiveRole: session.impersonationPreviousActiveRole,
+					restoredActiveRole
 				},
 				ip: input.ip ?? null,
 				userAgent: input.userAgent ?? null
@@ -272,7 +344,8 @@ export async function stopImpersonation(input: StopImpersonationInput) {
 		});
 
 		return {
-			redirectTo: '/dashboard'
+			originalUser,
+			redirectTo: getSessionUserRedirect(originalUser)
 		};
 	});
 }

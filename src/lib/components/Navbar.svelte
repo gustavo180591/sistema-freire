@@ -10,12 +10,13 @@
 		firstName: string;
 		lastName: string;
 		roles: string[];
+		assignedRoles: string[];
+		activeRole: string | null;
 	}
 
 	let { user }: { user: User | null } = $props();
 
 	let userMenuOpen = $state(false);
-	let isScrolled = $state(false);
 
 	interface ImpersonationData {
 		active: true;
@@ -31,26 +32,49 @@
 		).impersonation ?? null
 	);
 
-	const canImpersonate = $derived(Boolean(user?.roles.includes('SUPERADMIN')) && !impersonation);
+	const canImpersonate = $derived(user?.activeRole === 'SUPERADMIN' && !impersonation);
 
 	const logoPath = '/logo.png';
 
-	// Determinar URL de inicio según rol
+	// Determinar URL de inicio según el rol activo
 	const homeUrl = $derived(() => {
-		if (!user) return '/';
-		if (user.roles.includes('ALUMNO')) return '/alumno';
-		if (user.roles.includes('DOCENTE')) return '/docente';
-		if (user.roles.includes('PRECEPTOR')) return '/preceptor';
-		return '/dashboard';
+		if (!user?.activeRole) return '/';
+
+		switch (user.activeRole) {
+			case 'SUPERADMIN':
+			case 'DIRECTOR':
+			case 'SECRETARIA':
+			case 'APODERADO':
+				return '/dashboard';
+			case 'DOCENTE':
+				return '/docente';
+			case 'PRECEPTOR':
+				return '/preceptor';
+			case 'FINANZAS':
+				return '/finanzas';
+			case 'ALUMNO':
+				return '/alumno';
+			case 'LIQUIDADOR':
+				return '/recibos';
+			default:
+				return '/';
+		}
 	});
 
-	// Determinar URL de perfil según rol
+	// Determinar URL de perfil según el rol activo
 	const profileUrl = $derived(() => {
 		if (!user) return '/login';
-		if (user.roles.includes('ALUMNO')) return '/alumno/perfil';
-		if (user.roles.includes('DOCENTE')) return '/docente';
-		if (user.roles.includes('PRECEPTOR')) return '/preceptor';
-		return '/perfil';
+
+		switch (user.activeRole) {
+			case 'ALUMNO':
+				return '/alumno/perfil';
+			case 'DOCENTE':
+				return '/docente';
+			case 'PRECEPTOR':
+				return '/preceptor';
+			default:
+				return '/perfil';
+		}
 	});
 
 	// Obtener nombre de la sección actual
@@ -86,11 +110,9 @@
 
 	onMount(() => {
 		if (browser) {
-			const handleScroll = () => (isScrolled = window.scrollY > 10);
-			window.addEventListener('scroll', handleScroll);
 			document.addEventListener('click', handleClickOutside);
+
 			return () => {
-				window.removeEventListener('scroll', handleScroll);
 				document.removeEventListener('click', handleClickOutside);
 			};
 		}

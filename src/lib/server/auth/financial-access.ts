@@ -27,7 +27,7 @@ export async function requireStudentFinancialReadAccess(
 
 	await requirePermission(user, 'STUDENT_CHARGE', 'read');
 
-	// Un usuario multirol conserva el scope más amplio que posea.
+	// El alcance financiero se evalúa únicamente con el rol activo de la sesión.
 	if (user.roles.some((role) => GLOBAL_FINANCIAL_ROLES.includes(role))) {
 		return;
 	}

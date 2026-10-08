@@ -1,3 +1,5 @@
+import type { RoleCode } from '@prisma/client';
+
 declare global {
 	namespace App {
 		interface SessionUser {
@@ -5,7 +7,25 @@ declare global {
 			email: string;
 			firstName: string;
 			lastName: string;
-			roles: string[];
+
+			/**
+			 * Roles efectivos para la petición actual.
+			 *
+			 * Cuando existe un activeRole contiene únicamente ese rol.
+			 * Se mantiene esta propiedad para conservar compatibilidad con
+			 * los controles de autorización existentes.
+			 */
+			roles: RoleCode[];
+
+			/**
+			 * Todos los roles realmente asignados al usuario.
+			 */
+			assignedRoles: RoleCode[];
+
+			/**
+			 * Rol con el que el usuario está trabajando actualmente.
+			 */
+			activeRole: RoleCode | null;
 		}
 
 		interface ImpersonationContext {

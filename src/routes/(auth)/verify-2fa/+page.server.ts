@@ -2,8 +2,9 @@ import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { redirect, fail } from '@sveltejs/kit';
 import { verifyTOTP } from '$lib/server/auth/totp';
+import { getSessionEntryRoute, resolveActiveRole } from '$lib/server/auth/active-role';
 
-export const load: PageServerLoad = async ({ cookies, url }) => {
+export const load: PageServerLoad = async ({ cookies }) => {
 	const pending2FA = cookies.get('pending_2fa');
 
 	if (!pending2FA) {
@@ -84,11 +85,15 @@ export const actions: Actions = {
 
 		// Crear sesión
 		const token = crypto.randomUUID();
+		const assignedRoles = user.roles.map(({ role }) => role.code);
+		const activeRole = resolveActiveRole(assignedRoles, null);
+
 		await prisma.session.create({
 			data: {
 				userId: user.id,
 				tokenHash: token,
-				expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30)
+				expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+				activeRole
 			}
 		});
 
@@ -103,21 +108,7 @@ export const actions: Actions = {
 			maxAge: 60 * 60 * 24 * 30
 		});
 
-		// Redirigir según rol
-		const roles = user.roles.map((r) => r.role.code);
-		let redirectUrl = '/';
-
-		if (roles.some((r) => ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'].includes(r))) {
-			redirectUrl = '/dashboard';
-		} else if (roles.includes('DOCENTE')) {
-			redirectUrl = '/docente';
-		} else if (roles.includes('PRECEPTOR')) {
-			redirectUrl = '/preceptor';
-		} else if (roles.includes('FINANZAS')) {
-			redirectUrl = '/finanzas';
-		} else if (roles.includes('ALUMNO')) {
-			redirectUrl = '/alumno';
-		}
+		const redirectUrl = getSessionEntryRoute(assignedRoles, activeRole);
 
 		throw redirect(303, redirectUrl);
 	}

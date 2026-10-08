@@ -11,7 +11,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	}
 
 	// Obtener localidades permitidas para el docente
-	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+	const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
 
 	// Obtener el docente asociado al usuario
 	const teacher = await prisma.teacher.findUnique({

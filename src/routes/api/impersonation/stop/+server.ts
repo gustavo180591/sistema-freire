@@ -9,7 +9,7 @@ export const POST: RequestHandler = async ({ locals, request, getClientAddress }
 		throw error(401, 'Sesión inválida');
 	}
 
-	if (!authenticatedUser.roles.includes('SUPERADMIN')) {
+	if (!authenticatedUser.assignedRoles.includes('SUPERADMIN')) {
 		throw error(403, 'No autorizado');
 	}
 

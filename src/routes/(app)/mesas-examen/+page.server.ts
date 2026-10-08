@@ -106,7 +106,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw error(403, 'No se encontró un docente activo asociado a tu usuario');
 	}
 
-	const allowedLocationIds = await getUserAllowedLocationIds(user.id, {
+	const allowedLocationIds = await getUserAllowedLocationIds(user, {
 		globalAccessRoles: INSTITUTIONAL_EXAM_GLOBAL_LOCATION_ROLES
 	});
 
@@ -425,7 +425,7 @@ export const actions: Actions = {
 			});
 		}
 
-		await requireLocationAccess(user.id, locationId, {
+		await requireLocationAccess(user, locationId, {
 			globalAccessRoles: INSTITUTIONAL_EXAM_GLOBAL_LOCATION_ROLES
 		});
 

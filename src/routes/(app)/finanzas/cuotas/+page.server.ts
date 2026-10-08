@@ -10,7 +10,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw error(401, 'Usuario no autenticado');
 	}
 
-	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+	const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
 
 	// Cargar datos necesarios para el formulario
 	const [students, concepts, academicTerms, existingCharges] = await Promise.all([

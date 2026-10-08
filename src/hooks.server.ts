@@ -1,20 +1,22 @@
 import type { Handle } from '@sveltejs/kit';
+import type { RoleCode } from '@prisma/client';
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/db/prisma';
 import { runWithAuditRequestContext } from '$lib/server/audit-context';
+import { getAssignedRoleCodes, resolveActiveRole } from '$lib/server/auth/active-role';
 
-const FULL_ACCESS_ROLES = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'];
+const FULL_ACCESS_ROLES: RoleCode[] = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'];
 
-const routePermissions: Record<string, string[]> = {
-	'/alumno': [...FULL_ACCESS_ROLES, 'ALUMNO'],
-	'/alumno/historial': [...FULL_ACCESS_ROLES, 'ALUMNO'],
+const routePermissions: Record<string, RoleCode[]> = {
+	'/alumno': ['ALUMNO'],
+	'/alumno/historial': ['ALUMNO'],
 	'/alumnos': [...FULL_ACCESS_ROLES, 'FINANZAS'],
 	'/dashboard': FULL_ACCESS_ROLES,
 	'/usuarios': FULL_ACCESS_ROLES,
 	'/carreras': FULL_ACCESS_ROLES,
 	'/materias': [...FULL_ACCESS_ROLES, 'DOCENTE'],
 	'/finanzas': [...FULL_ACCESS_ROLES, 'FINANZAS'],
-	'/recibos': [...FULL_ACCESS_ROLES, 'DOCENTE', 'FINANZAS'],
+	'/recibos': [...FULL_ACCESS_ROLES, 'DOCENTE', 'FINANZAS', 'LIQUIDADOR'],
 	'/reportes': [...FULL_ACCESS_ROLES, 'FINANZAS'],
 	'/auditoria': ['SUPERADMIN', 'DIRECTOR'],
 	'/permisos': ['SUPERADMIN'],
@@ -28,8 +30,8 @@ const routePermissions: Record<string, string[]> = {
 	'/correlatividades': FULL_ACCESS_ROLES,
 	'/asistencia': FULL_ACCESS_ROLES,
 	'/inscripciones': FULL_ACCESS_ROLES,
-	'/preceptor': [...FULL_ACCESS_ROLES, 'PRECEPTOR'],
-	'/docente': [...FULL_ACCESS_ROLES, 'DOCENTE']
+	'/preceptor': ['PRECEPTOR'],
+	'/docente': ['DOCENTE']
 };
 
 type LoadedUser = {
@@ -40,19 +42,45 @@ type LoadedUser = {
 	status: string;
 	roles: Array<{
 		role: {
-			code: string;
+			code: RoleCode;
 		};
 	}>;
 };
 
-function toSessionUser(user: LoadedUser): App.SessionUser {
+function toSessionUser(user: LoadedUser, activeRole: RoleCode | null): App.SessionUser {
+	const assignedRoles = getAssignedRoleCodes(user);
+
 	return {
 		id: user.id,
 		email: user.email,
 		firstName: user.firstName,
 		lastName: user.lastName,
-		roles: user.roles.map(({ role }) => role.code)
+
+		/*
+		 * Mantener roles como contexto efectivo permite que los controles
+		 * existentes user.roles.includes(...) continúen funcionando,
+		 * pero únicamente bajo el rol elegido.
+		 */
+		roles: activeRole ? [activeRole] : [],
+
+		assignedRoles,
+		activeRole
 	};
+}
+
+/**
+ * Rutas que deben poder utilizarse aunque un usuario con múltiples
+ * roles todavía no haya elegido su contexto de trabajo.
+ */
+function canAccessWithoutActiveRole(pathname: string): boolean {
+	return (
+		pathname === '/seleccionar-vista' ||
+		pathname.startsWith('/seleccionar-vista/') ||
+		pathname === '/api/session/active-role' ||
+		pathname === '/logout' ||
+		pathname.startsWith('/logout/') ||
+		pathname === '/api/impersonation/stop'
+	);
 }
 
 export const handle: Handle = async ({ event, resolve }) => {
@@ -76,8 +104,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 		select: {
 			id: true,
 			userId: true,
+			activeRole: true,
 			impersonatedUserId: true,
 			impersonationStartedAt: true,
+			impersonationPreviousActiveRole: true,
 			user: {
 				select: {
 					id: true,
@@ -121,7 +151,23 @@ export const handle: Handle = async ({ event, resolve }) => {
 		throw redirect(303, '/login');
 	}
 
-	const authenticatedUser = toSessionUser(session.user);
+	const authenticatedAssignedRoles = getAssignedRoleCodes(session.user);
+
+	/*
+	 * Durante una impersonación, activeRole pertenece al usuario objetivo.
+	 * El rol que tenía el propietario real antes de impersonar se conserva
+	 * por separado.
+	 */
+	const authenticatedStoredRole = session.impersonatedUserId
+		? session.impersonationPreviousActiveRole
+		: session.activeRole;
+
+	const authenticatedActiveRole = resolveActiveRole(
+		authenticatedAssignedRoles,
+		authenticatedStoredRole
+	);
+
+	const authenticatedUser = toSessionUser(session.user, authenticatedActiveRole);
 
 	event.locals.sessionId = session.id;
 	event.locals.authenticatedUser = authenticatedUser;
@@ -129,7 +175,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 	let effectiveUser = authenticatedUser;
 
 	if (session.impersonatedUserId) {
-		const originalIsSuperadmin = authenticatedUser.roles.includes('SUPERADMIN');
+		/*
+		 * La capacidad de mantener una impersonación depende de los roles
+		 * reales del propietario de la sesión, no de su activeRole.
+		 */
+		const originalIsSuperadmin = authenticatedUser.assignedRoles.includes('SUPERADMIN');
 
 		if (!originalIsSuperadmin) {
 			await prisma.session.update({
@@ -137,8 +187,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 					id: session.id
 				},
 				data: {
+					activeRole: authenticatedActiveRole,
 					impersonatedUserId: null,
-					impersonationStartedAt: null
+					impersonationStartedAt: null,
+					impersonationPreviousActiveRole: null
 				}
 			});
 		} else {
@@ -170,12 +222,33 @@ export const handle: Handle = async ({ event, resolve }) => {
 						id: session.id
 					},
 					data: {
+						activeRole: authenticatedActiveRole,
 						impersonatedUserId: null,
-						impersonationStartedAt: null
+						impersonationStartedAt: null,
+						impersonationPreviousActiveRole: null
 					}
 				});
 			} else {
-				effectiveUser = toSessionUser(target);
+				const targetAssignedRoles = getAssignedRoleCodes(target);
+
+				const targetActiveRole = resolveActiveRole(targetAssignedRoles, session.activeRole);
+
+				effectiveUser = toSessionUser(target, targetActiveRole);
+
+				/*
+				 * Si el usuario impersonado posee un único rol, se selecciona
+				 * automáticamente y se persiste en la sesión.
+				 */
+				if (session.activeRole !== targetActiveRole) {
+					await prisma.session.update({
+						where: {
+							id: session.id
+						},
+						data: {
+							activeRole: targetActiveRole
+						}
+					});
+				}
 
 				event.locals.impersonation = {
 					active: true,
@@ -184,16 +257,39 @@ export const handle: Handle = async ({ event, resolve }) => {
 				};
 			}
 		}
+	} else {
+		/*
+		 * Para usuarios con un solo rol, completamos automáticamente
+		 * activeRole incluso en sesiones creadas antes de esta funcionalidad.
+		 *
+		 * Si el rol almacenado ya no pertenece al usuario, también se limpia.
+		 */
+		if (session.activeRole !== authenticatedActiveRole) {
+			await prisma.session.update({
+				where: {
+					id: session.id
+				},
+				data: {
+					activeRole: authenticatedActiveRole
+				}
+			});
+		}
 	}
 
 	/*
-	 * Desde este punto toda la aplicación utiliza
-	 * al usuario efectivo.
+	 * Desde este punto toda la aplicación utiliza al usuario efectivo.
 	 *
-	 * Durante una impersonación, roles, permisos,
-	 * ownership y scopes pertenecen al usuario objetivo.
+	 * roles contiene únicamente el activeRole.
+	 * assignedRoles conserva todos los roles reales.
 	 */
 	event.locals.user = effectiveUser;
+
+	const requiresRoleSelection =
+		effectiveUser.assignedRoles.length > 1 && effectiveUser.activeRole === null;
+
+	if (requiresRoleSelection && !canAccessWithoutActiveRole(event.url.pathname)) {
+		throw redirect(303, '/seleccionar-vista');
+	}
 
 	const sortedRoutes = Object.keys(routePermissions).sort((a, b) => b.length - a.length);
 

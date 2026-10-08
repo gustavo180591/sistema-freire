@@ -117,7 +117,7 @@ async function getAccessibleMesa(
 	const isInstitutionalActor = hasRole(user, INSTITUTIONAL_EXAM_ROLES);
 
 	if (isInstitutionalActor) {
-		await requireLocationAccess(user.id, mesa.locationId, {
+		await requireLocationAccess(user, mesa.locationId, {
 			globalAccessRoles: INSTITUTIONAL_EXAM_GLOBAL_LOCATION_ROLES
 		});
 	} else {
@@ -235,7 +235,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const canClose =
 		canManageGrades && !mesa.isClosed && mesa.evaluationDate <= new Date() && pendingCount === 0;
 
-	const allowedLocationIds = await getUserAllowedLocationIds(user.id, {
+	const allowedLocationIds = await getUserAllowedLocationIds(user, {
 		globalAccessRoles: INSTITUTIONAL_EXAM_GLOBAL_LOCATION_ROLES
 	});
 

@@ -10,7 +10,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	}
 
 	// Obtener localidades permitidas para el usuario
-	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+	const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
 
 	// Comprobación segura por si los modelos financieros aún no existen en schema.prisma
 	const financialSummary =

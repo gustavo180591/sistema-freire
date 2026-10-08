@@ -11,7 +11,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) {
 		throw redirect(303, '/login');
 	}
-	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+	const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
 
 	const teacher = await prisma.teacher.findUnique({
 		where: { userId: locals.user.id }
@@ -261,7 +261,7 @@ export const actions: Actions = {
 				return { error: 'La fecha y hora de la mesa son obligatorias' };
 			}
 
-			const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+			const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
 
 			if (!allowedLocationIds.includes(locationId)) {
 				return { error: 'No tenés permiso para crear mesas en esa sede/localidad' };
@@ -277,7 +277,7 @@ export const actions: Actions = {
 		try {
 			const evaluationService = new EvaluationService(prisma);
 			if (commissionId) {
-				const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+				const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
 				const commission = await prisma.subjectCommission.findUnique({
 					where: { id: commissionId },
 					select: { locationId: true }

@@ -10,7 +10,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
 	const careerId = url.searchParams.get('carrera');
 	const locationIdParam = url.searchParams.get('localidad');
-	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+	const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
 
 	// Obtener todas las localidades activas
 	const allLocations = await prisma.location.findMany({

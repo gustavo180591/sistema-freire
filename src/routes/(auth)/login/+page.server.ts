@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad, ActionData } from './$types';
 import { prisma } from '$lib/server/db/prisma';
+import { getSessionEntryRoute, resolveActiveRole } from '$lib/server/auth/active-role';
 import { AuditAction } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
@@ -190,12 +191,15 @@ export const actions = {
 
 		// Crear sesión directamente (sin 2FA)
 		const token = crypto.randomUUID();
+		const assignedRoles = user.roles.map(({ role }) => role.code);
+		const activeRole = resolveActiveRole(assignedRoles, null);
 
 		await prisma.session.create({
 			data: {
 				userId: user.id,
 				tokenHash: token,
-				expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30)
+				expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+				activeRole
 			}
 		});
 
@@ -206,20 +210,7 @@ export const actions = {
 			maxAge: 60 * 60 * 24 * 30 // 30 días
 		});
 
-		const roles = user.roles.map((r) => r.role.code);
-		let redirectUrl = '/';
-
-		if (roles.some((r) => ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'].includes(r))) {
-			redirectUrl = '/dashboard';
-		} else if (roles.includes('DOCENTE')) {
-			redirectUrl = '/docente';
-		} else if (roles.includes('PRECEPTOR')) {
-			redirectUrl = '/preceptor';
-		} else if (roles.includes('FINANZAS')) {
-			redirectUrl = '/finanzas';
-		} else if (roles.includes('ALUMNO')) {
-			redirectUrl = '/alumno';
-		}
+		const redirectUrl = getSessionEntryRoute(assignedRoles, activeRole);
 
 		throw redirect(303, redirectUrl);
 	}

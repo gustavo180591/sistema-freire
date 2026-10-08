@@ -28,7 +28,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	}
 
 	// Obtener localidades permitidas para el usuario
-	const allowedLocationIds = await getUserAllowedLocationIds(user.id);
+	const allowedLocationIds = await getUserAllowedLocationIds(user);
 
 	// Verificar permisos según rol
 	const hasAccess = await checkCommissionAccess(user, commission, allowedLocationIds);

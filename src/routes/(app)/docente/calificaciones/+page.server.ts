@@ -13,7 +13,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	}
 
 	// Obtener localidades permitidas para el docente
-	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+	const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
 
 	// Obtener el docente asociado al usuario
 	const teacher = await prisma.teacher.findUnique({
@@ -210,7 +210,7 @@ export const actions: Actions = {
 				return { error: 'La evaluación no tiene una comisión asociada' };
 			}
 
-			const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+			const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
 			if (
 				evaluation.commission?.locationId &&
 				!allowedLocationIds.includes(evaluation.commission.locationId)

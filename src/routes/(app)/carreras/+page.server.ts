@@ -9,7 +9,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw new Error('Usuario no autenticado');
 	}
 
-	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+	const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
 
 	// Verificar si el usuario tiene acceso global a todas las localidades
 	const user = await prisma.user.findUnique({

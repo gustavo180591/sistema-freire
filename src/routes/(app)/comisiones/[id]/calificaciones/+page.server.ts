@@ -23,7 +23,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const commissionId = params.id;
 
 	// Obtener localidades permitidas para el usuario
-	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+	const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
 
 	// Obtener la comisión con todos sus datos
 	const commission = await prisma.subjectCommission.findUnique({

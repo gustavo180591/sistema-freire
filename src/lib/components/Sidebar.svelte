@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import RoleSwitcherSidebar from '$lib/components/RoleSwitcherSidebar.svelte';
 
 	interface User {
 		id: string;
@@ -7,6 +8,8 @@
 		firstName: string;
 		lastName: string;
 		roles: string[];
+		assignedRoles: string[];
+		activeRole: string | null;
 	}
 
 	interface NavItem {
@@ -478,6 +481,9 @@
 							{/each}
 						</ul>
 					{/if}
+					{#if group.category === 'Principal'}
+						<RoleSwitcherSidebar {user} />
+					{/if}
 				</div>
 			{/if}
 		{/each}
@@ -605,6 +611,9 @@
 										</li>
 									{/each}
 								</ul>
+							{/if}
+							{#if group.category === 'Principal'}
+								<RoleSwitcherSidebar {user} />
 							{/if}
 						</div>
 					{/if}

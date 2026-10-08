@@ -96,7 +96,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/dashboard');
 	}
 
-	const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+	const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
 
 	// Obtener TODAS las materias asignadas al docente mediante SubjectTeacher.
 	// Esto permite mostrarlas aunque todavía no tengan horario cargado.
@@ -349,7 +349,7 @@ export const actions: Actions = {
 				});
 			}
 
-			const allowedLocationIds = await getUserAllowedLocationIds(locals.user.id);
+			const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
 
 			const schedule = await prisma.classSchedule.findUnique({
 				where: {

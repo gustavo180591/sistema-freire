@@ -132,6 +132,8 @@ export type LocationAccessOptions = {
 	globalAccessRoles?: readonly string[];
 };
 
+type LocationAccessUser = Pick<App.SessionUser, 'id' | 'roles'>;
+
 const DEFAULT_GLOBAL_LOCATION_ACCESS_ROLES: readonly string[] = [
 	'SUPERADMIN',
 	'DIRECTOR',
@@ -140,76 +142,72 @@ const DEFAULT_GLOBAL_LOCATION_ACCESS_ROLES: readonly string[] = [
 ];
 
 /**
- * Obtiene los IDs de localidades permitidos para un usuario.
+ * Obtiene los IDs de localidades permitidos para el contexto activo.
  *
- * Por defecto algunos roles poseen alcance global institucional.
- * Cada módulo puede limitar qué roles otorgan alcance global mediante options.
+ * La decisión de alcance se realiza exclusivamente con user.roles,
+ * que representa el rol activo de la sesión.
+ *
+ * Nunca se vuelven a consultar aquí todos los roles asignados al usuario,
+ * porque eso permitiría heredar privilegios de un rol que no está activo.
  */
 export async function getUserAllowedLocationIds(
-	userId: string,
+	user: LocationAccessUser,
 	options: LocationAccessOptions = {}
 ): Promise<string[]> {
-	// Verificar roles del usuario
-	const user = await prisma.user.findUnique({
-		where: { id: userId },
+	const globalAccessRoles = options.globalAccessRoles ?? DEFAULT_GLOBAL_LOCATION_ACCESS_ROLES;
+
+	const hasGlobalAccess = user.roles.some((role) => globalAccessRoles.includes(role));
+
+	if (hasGlobalAccess) {
+		const locations = await prisma.location.findMany({
+			where: { active: true },
+			select: { id: true }
+		});
+
+		return locations.map((location) => location.id);
+	}
+
+	const permissions = await prisma.userLocationPermission.findMany({
+		where: {
+			userId: user.id
+		},
 		include: {
-			roles: {
-				include: {
-					role: true
+			location: {
+				select: {
+					id: true,
+					active: true
 				}
 			}
 		}
 	});
 
-	if (!user) return [];
-
-	const globalAccessRoles = options.globalAccessRoles ?? DEFAULT_GLOBAL_LOCATION_ACCESS_ROLES;
-
-	const hasGlobalAccess = user.roles.some((r) => globalAccessRoles.includes(r.role.code));
-
-	if (hasGlobalAccess) {
-		// Retornar todas las localidades activas
-		const locations = await prisma.location.findMany({
-			where: { active: true },
-			select: { id: true }
-		});
-		return locations.map((l) => l.id);
-	}
-
-	// Retornar localidades específicas asignadas
-	const permissions = await prisma.userLocationPermission.findMany({
-		where: { userId },
-		include: {
-			location: {
-				select: { id: true, active: true }
-			}
-		}
-	});
-
-	return permissions.filter((p) => p.location.active).map((p) => p.location.id);
+	return permissions
+		.filter((permission) => permission.location.active)
+		.map((permission) => permission.location.id);
 }
 
 /**
- * Verifica si un usuario tiene acceso a una localidad específica
+ * Verifica si el contexto activo tiene acceso a una localidad específica.
  */
 export async function hasLocationAccess(
-	userId: string,
+	user: LocationAccessUser,
 	locationId: string,
 	options: LocationAccessOptions = {}
 ): Promise<boolean> {
-	const allowedIds = await getUserAllowedLocationIds(userId, options);
+	const allowedIds = await getUserAllowedLocationIds(user, options);
+
 	return allowedIds.includes(locationId);
 }
 
 /**
- * Requiere que el usuario tenga acceso a la localidad especificada
+ * Requiere que el contexto activo tenga acceso a la localidad especificada.
  */
 export async function requireLocationAccess(
-	userId: string,
+	user: LocationAccessUser,
 	locationId: string,
 	options: LocationAccessOptions = {}
-) {
-	const hasAccess = await hasLocationAccess(userId, locationId, options);
+): Promise<void> {
+	const hasAccess = await hasLocationAccess(user, locationId, options);
 
 	if (!hasAccess) {
 		throw error(403, 'No tienes permisos para acceder a datos de esta localidad');

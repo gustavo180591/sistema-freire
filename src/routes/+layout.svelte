@@ -8,7 +8,12 @@
 	let { children, data } = $props();
 
 	// Solo mostrar sidebar en rutas de la app (no en login, etc.)
-	const showSidebar = $derived(data?.user && !page.url.pathname.startsWith('/login'));
+	const showSidebar = $derived(
+		data?.user &&
+			data.user.activeRole &&
+			!page.url.pathname.startsWith('/login') &&
+			!page.url.pathname.startsWith('/seleccionar-vista')
+	);
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>

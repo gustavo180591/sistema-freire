@@ -69,7 +69,9 @@
 						name="type"
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 					>
-						{#if data.isSecretary}
+						{#if data.isPreceptor}
+							<option value="ALUMNO">Alumno</option>
+						{:else if data.isSecretary}
 							<option value="ALUMNO">Alumno</option>
 							<option value="DOCENTE">Docente</option>
 							<option value="PRECEPTOR">Preceptor</option>

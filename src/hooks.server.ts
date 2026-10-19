@@ -10,8 +10,9 @@ const FULL_ACCESS_ROLES: RoleCode[] = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', '
 const routePermissions: Record<string, RoleCode[]> = {
 	'/alumno': ['ALUMNO'],
 	'/alumno/historial': ['ALUMNO'],
-	'/alumnos': [...FULL_ACCESS_ROLES, 'FINANZAS'],
+	'/alumnos': [...FULL_ACCESS_ROLES, 'FINANZAS', 'PRECEPTOR'],
 	'/dashboard': FULL_ACCESS_ROLES,
+	'/usuarios/nuevo': [...FULL_ACCESS_ROLES, 'PRECEPTOR'],
 	'/usuarios': FULL_ACCESS_ROLES,
 	'/carreras': FULL_ACCESS_ROLES,
 	'/materias': [...FULL_ACCESS_ROLES, 'DOCENTE'],

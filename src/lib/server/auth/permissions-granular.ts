@@ -323,7 +323,7 @@ export async function seedDefaultPermissions() {
 		},
 
 		PRECEPTOR: {
-			STUDENT: READ,
+			STUDENT: CR,
 			TEACHER: READ,
 			CAREER: READ,
 			SUBJECT: READ,

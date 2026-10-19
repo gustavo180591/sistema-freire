@@ -225,7 +225,7 @@
 					label: 'Alumnos',
 					href: '/alumnos',
 					icon: 'graduation-cap',
-					roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS']
+					roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS', 'PRECEPTOR']
 				},
 				{
 					label: 'Docentes',

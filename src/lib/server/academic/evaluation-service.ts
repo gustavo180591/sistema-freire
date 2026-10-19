@@ -7,6 +7,8 @@ import {
 	QualitativeGrade
 } from '@prisma/client';
 import { updateCourseResult, updateStudentSubjectStatus } from './plan-logic';
+import { calculateExamRegistrationDeadline } from './business-day-deadline';
+import { loadBusinessCalendar } from './business-calendar-service';
 import { auditLog } from '$lib/server/audit';
 
 export interface EvaluationValidationError {
@@ -740,11 +742,18 @@ export class EvaluationService {
 			}
 
 			registrationOpensAt = new Date();
-			registrationClosesAt = new Date(registrationOpensAt.getTime() + 72 * 60 * 60 * 1000);
 
-			if (data.evaluationDate <= registrationClosesAt) {
+			const businessCalendar = await loadBusinessCalendar(this.prisma);
+
+			registrationClosesAt = calculateExamRegistrationDeadline(
+				data.evaluationDate,
+				businessCalendar
+			);
+
+			if (registrationClosesAt <= registrationOpensAt) {
 				return {
-					error: 'La fecha de la mesa debe ser posterior al cierre de las 72 horas de inscripción'
+					error:
+						'La mesa debe crearse antes del cierre de inscripción, calculado 72 horas hábiles antes del examen'
 				};
 			}
 		}

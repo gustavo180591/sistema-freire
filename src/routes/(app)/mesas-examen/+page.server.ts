@@ -464,7 +464,7 @@ export const actions: Actions = {
 		}
 
 		return {
-			success: `Mesa "${result.title}" creada correctamente. La inscripción estará abierta durante 72 horas.`
+			success: `Mesa "${result.title}" creada correctamente. La inscripción permanecerá abierta hasta 72 horas hábiles antes del examen.`
 		};
 	}
 };

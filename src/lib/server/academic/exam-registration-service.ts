@@ -154,7 +154,7 @@ export async function getExamRegistrationEligibility({
 			evaluation,
 			existingRegistration,
 			canRegister: false,
-			reason: 'El período de inscripción de 72 horas se encuentra cerrado'
+			reason: 'El período de inscripción a esta mesa se encuentra cerrado'
 		};
 	}
 

@@ -123,7 +123,8 @@
 					automáticamente como docente responsable.
 				{:else}
 					Creá y consultá mesas institucionales definiendo carrera, sede, materia y docente
-					responsable. Cada nueva mesa habilita una ventana de inscripción de 72 horas.
+					responsable. Cada nueva mesa permite inscripciones hasta 72 horas hábiles antes de la
+					fecha del examen.
 				{/if}
 			</p>
 		</div>
@@ -146,7 +147,8 @@
 			<div class="mb-6">
 				<h2 class="text-xl font-semibold">Nueva mesa de examen</h2>
 				<p class="mt-1 text-sm text-slate-400">
-					La fecha del examen debe ser posterior al cierre de las 72 horas de inscripción.
+					La inscripción cierra automáticamente 72 horas hábiles antes de la fecha y hora del
+					examen.
 				</p>
 			</div>
 
@@ -341,8 +343,9 @@
 				</div>
 
 				<div class="rounded-xl border border-violet-300 bg-violet-50 p-4 text-sm text-violet-800">
-					La inscripción comienza en el momento de crear la mesa y permanece abierta durante
-					<strong>72 horas exactas</strong>.
+					La inscripción comienza al crear la mesa y cierra automáticamente
+					<strong>72 horas hábiles antes del examen</strong>, respetando los días laborables y
+					feriados configurados.
 				</div>
 
 				<div class="flex justify-end">

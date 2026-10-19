@@ -44,6 +44,13 @@
 		</div>
 	{/if}
 
+	{#if form?.warning}
+		<div class="rounded-2xl border border-amber-800 bg-amber-950/50 p-4 text-amber-200">
+			<strong>Atención:</strong>
+			{form.warning}
+		</div>
+	{/if}
+
 	<form
 		method="POST"
 		class="space-y-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-8"

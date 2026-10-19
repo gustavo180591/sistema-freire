@@ -5,7 +5,10 @@ import bcrypt from 'bcryptjs';
 import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
 import { generateAutomaticCharges } from '$lib/server/financial/charge-generator';
-import { autoEnrollStudentInYearSubjects } from '$lib/server/academic/enrollment-service';
+import {
+	autoEnrollStudentInYearSubjects,
+	type AutoEnrollmentResult
+} from '$lib/server/academic/enrollment-service';
 import { requireRole } from '$lib/server/auth/authorization';
 import { requirePermission } from '$lib/server/auth/permissions-granular';
 
@@ -266,6 +269,8 @@ export const actions: Actions = {
 
 		const isBecado = alumnoType === 'becado';
 		const isRecursante = alumnoType === 'recursante';
+		let skippedSubjects: AutoEnrollmentResult['skippedSubjects'] = [];
+
 		try {
 			// Verificar si el email ya existe
 			const existingUser = await prisma.user.findUnique({
@@ -433,13 +438,15 @@ export const actions: Actions = {
 					});
 
 					// Inscribir automáticamente en materias del año actual
-					await autoEnrollStudentInYearSubjects({
+					const autoEnrollmentResult = await autoEnrollStudentInYearSubjects({
 						studentId: student.id,
 						careerId,
 						currentYear,
 						locationId: location?.id,
 						tx
 					});
+
+					skippedSubjects = autoEnrollmentResult.skippedSubjects;
 				}
 
 				// Si es DOCENTE, crear el registro de docente solo cuando haya DNI.
@@ -545,7 +552,13 @@ export const actions: Actions = {
 			// TODO: Enviar email con la contraseña temporal
 
 			return {
-				success: `Usuario creado exitosamente. ID: ${result.id}, Contraseña temporal: 12345678`
+				success: `Usuario creado exitosamente. ID: ${result.id}, Contraseña temporal: 12345678`,
+				warning:
+					skippedSubjects.length > 0
+						? `El alumno fue creado correctamente, pero quedaron materias pendientes de inscripción automática: ${skippedSubjects
+								.map((subject) => `${subject.subjectName}: ${subject.reason}`)
+								.join('; ')}. Configurá una comisión con cupo y luego completá la inscripción.`
+						: undefined
 			};
 		} catch (error) {
 			console.error('Error al crear usuario:', error);

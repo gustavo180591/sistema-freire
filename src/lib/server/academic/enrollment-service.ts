@@ -9,6 +9,19 @@ interface AutoEnrollmentInput {
 	tx: Prisma.TransactionClient;
 }
 
+export interface AutoEnrollmentResult {
+	enrolledSubjects: Array<{
+		subjectId: string;
+		subjectName: string;
+		commissionId: string;
+	}>;
+	skippedSubjects: Array<{
+		subjectId: string;
+		subjectName: string;
+		reason: string;
+	}>;
+}
+
 /**
  * Inscribir automáticamente a un alumno en las materias de su año actual
  * Para alumnos de 1º año, inscribe todas las materias de 1º año del plan activo
@@ -19,7 +32,7 @@ export async function autoEnrollStudentInYearSubjects({
 	currentYear,
 	locationId,
 	tx
-}: AutoEnrollmentInput): Promise<void> {
+}: AutoEnrollmentInput): Promise<AutoEnrollmentResult> {
 	// Buscar el StudyPlan activo/default de la carrera
 	const studyPlan = await tx.studyPlan.findFirst({
 		where: {
@@ -83,6 +96,11 @@ export async function autoEnrollStudentInYearSubjects({
 		throw new Error('No hay un ciclo lectivo activo configurado');
 	}
 
+	const result: AutoEnrollmentResult = {
+		enrolledSubjects: [],
+		skippedSubjects: []
+	};
+
 	// Crear inscripciones para cada materia
 	for (const planSubject of yearSubjects) {
 		const subject = planSubject.subject;
@@ -122,15 +140,30 @@ export async function autoEnrollStudentInYearSubjects({
 		);
 
 		if (availableCommissions.length === 0) {
-			throw new Error(`No hay una comisión activa con cupo disponible para ${subject.name}`);
+			const reason =
+				commissions.length === 0
+					? 'No hay una comisión activa compatible con la carrera, ciclo lectivo y sede'
+					: 'Las comisiones activas no tienen cupo disponible';
+
+			result.skippedSubjects.push({
+				subjectId: subject.id,
+				subjectName: subject.name,
+				reason
+			});
+
+			continue;
 		}
 
 		// Si no conocemos la sede y existen varias comisiones posibles,
 		// no asignamos una arbitrariamente.
 		if (!locationId && availableCommissions.length > 1) {
-			throw new Error(
-				`Hay más de una comisión disponible para ${subject.name}; se debe definir la sede o comisión`
-			);
+			result.skippedSubjects.push({
+				subjectId: subject.id,
+				subjectName: subject.name,
+				reason: 'Hay más de una comisión disponible y no se puede determinar cuál corresponde'
+			});
+
+			continue;
 		}
 
 		const commission = availableCommissions[0];
@@ -184,5 +217,13 @@ export async function autoEnrollStudentInYearSubjects({
 				}
 			});
 		}
+
+		result.enrolledSubjects.push({
+			subjectId: subject.id,
+			subjectName: subject.name,
+			commissionId: commission.id
+		});
 	}
+
+	return result;
 }

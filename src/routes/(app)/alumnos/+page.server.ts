@@ -20,7 +20,8 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	});
 
 	// Determinar si el usuario tiene acceso global (todas las localidades)
-	const hasGlobalAccess = allowedLocationIds.length === allLocations.length;
+	const hasGlobalAccess =
+		allLocations.length > 0 && allowedLocationIds.length === allLocations.length;
 
 	// Filtrar localidades a mostrar en el selector
 	const filterableLocations = hasGlobalAccess
@@ -72,12 +73,16 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	// - Usuarios globales: se filtra únicamente cuando seleccionan una localidad.
 	let filteredUsers = usersWithAlumnoRole;
 
-	if (effectiveLocationIds.length > 0 && (!hasGlobalAccess || selectedLocationId !== null)) {
+	if (!hasGlobalAccess) {
 		filteredUsers = usersWithAlumnoRole.filter((user) => {
 			if (!user.student?.locationId) return false;
 
-			return effectiveLocationIds.includes(user.student.locationId);
+			return allowedLocationIds.includes(user.student.locationId);
 		});
+	} else if (selectedLocationId !== null) {
+		filteredUsers = usersWithAlumnoRole.filter(
+			(user) => user.student?.locationId === selectedLocationId
+		);
 	}
 
 	// Filtrar por carrera si se especificó

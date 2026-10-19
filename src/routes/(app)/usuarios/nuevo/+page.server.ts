@@ -12,6 +12,7 @@ import { requirePermission } from '$lib/server/auth/permissions-granular';
 import type { RoleCode } from '@prisma/client';
 
 const USER_MANAGEMENT_ROLES = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'];
+const STUDENT_CREATION_ROLES = [...USER_MANAGEMENT_ROLES, 'PRECEPTOR'];
 
 const ROLE_MAP: Record<string, RoleCode> = {
 	ALUMNO: 'ALUMNO',
@@ -38,8 +39,15 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		throw redirect(303, '/login');
 	}
 
-	requireRole(currentUser, [...USER_MANAGEMENT_ROLES]);
-	await requirePermission(currentUser, 'USER', 'read');
+	const isPreceptor = currentUser.roles.includes('PRECEPTOR');
+
+	requireRole(currentUser, STUDENT_CREATION_ROLES);
+
+	if (isPreceptor) {
+		await requirePermission(currentUser, 'STUDENT', 'read');
+	} else {
+		await requirePermission(currentUser, 'USER', 'read');
+	}
 
 	const careers = await prisma.career.findMany({
 		where: { active: true },
@@ -72,6 +80,22 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 				select: { id: true, name: true, code: true }
 			});
 		}
+	} else if (isPreceptor) {
+		const userWithPermissions = await prisma.user.findUnique({
+			where: { id: currentUser.id },
+			include: {
+				locationPermissions: {
+					include: {
+						location: true
+					}
+				}
+			}
+		});
+
+		locations =
+			userWithPermissions?.locationPermissions
+				.filter((permission) => permission.location.active)
+				.map((permission) => permission.location) ?? [];
 	} else {
 		locations = await prisma.location.findMany({
 			where: { active: true },
@@ -80,13 +104,15 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		});
 	}
 
-	const type = url.searchParams.get('type') || 'ALUMNO';
+	const requestedType = url.searchParams.get('type') || 'ALUMNO';
+	const type = isPreceptor ? 'ALUMNO' : requestedType;
 
 	return {
 		careers,
 		locations,
 		type,
 		isSecretary: currentUser.roles.includes('SECRETARIA'),
+		isPreceptor,
 		secretaryLocationCode
 	};
 };
@@ -98,8 +124,15 @@ export const actions: Actions = {
 			return fail(401, { error: 'No autorizado' });
 		}
 
-		requireRole(currentUser, [...USER_MANAGEMENT_ROLES]);
-		await requirePermission(currentUser, 'USER', 'create');
+		const isPreceptor = currentUser.roles.includes('PRECEPTOR');
+
+		requireRole(currentUser, STUDENT_CREATION_ROLES);
+
+		if (isPreceptor) {
+			await requirePermission(currentUser, 'STUDENT', 'create');
+		} else {
+			await requirePermission(currentUser, 'USER', 'create');
+		}
 
 		const data = await request.formData();
 		const submittedEmail = data.get('email')?.toString().trim() ?? '';
@@ -110,6 +143,13 @@ export const actions: Actions = {
 		const lastName = data.get('lastName')?.toString().trim() || 'Sin apellido';
 		const rawType = data.get('type')?.toString();
 		const type = (rawType && rawType in ROLE_MAP ? rawType : 'SIN_TIPO') as keyof typeof ROLE_MAP;
+
+		if (isPreceptor && type !== 'ALUMNO') {
+			return fail(403, {
+				error: 'Como PRECEPTOR solo puedes dar de alta ALUMNOS'
+			});
+		}
+
 		const dni = data.get('dni')?.toString().trim() ?? '';
 		const cuil = data.get('cuil')?.toString()?.trim();
 		const careerId = data.get('careerId')?.toString();
@@ -119,6 +159,7 @@ export const actions: Actions = {
 
 		// Verificar permisos: SECRETARIA solo puede crear DOCENTE, ALUMNO, PRECEPTOR
 		const isSecretary = currentUser.roles.includes('SECRETARIA');
+		const isLocationScopedCreator = isSecretary || isPreceptor;
 		const allowedRolesForSecretary = ['DOCENTE', 'ALUMNO', 'PRECEPTOR'];
 
 		if (isSecretary && type && !allowedRolesForSecretary.includes(type)) {
@@ -127,9 +168,9 @@ export const actions: Actions = {
 			});
 		}
 
-		// SECRETARIA opera únicamente dentro de las sedes que tiene asignadas.
-		// La sede se resuelve en el servidor para no confiar en el navegador.
-		if (isSecretary) {
+		// SECRETARIA y PRECEPTOR operan únicamente dentro de sus sedes asignadas.
+		// La sede se resuelve y valida en backend; nunca se confía en el navegador.
+		if (isLocationScopedCreator) {
 			const userWithPermissions = await prisma.user.findUnique({
 				where: { id: currentUser.id },
 				include: {
@@ -153,7 +194,7 @@ export const actions: Actions = {
 			}
 
 			if (allowedLocationCodes.length === 1) {
-				// Si SECRETARIA tiene una única sede, el servidor la impone.
+				// Si posee una única sede, el servidor la impone.
 				selectedLocality = allowedLocationCodes[0];
 			} else {
 				if (!selectedLocality) {
@@ -164,10 +205,16 @@ export const actions: Actions = {
 
 				if (!allowedLocationCodes.includes(selectedLocality)) {
 					return fail(403, {
-						error: 'Solo puedes crear usuarios de tus localidades asignadas'
+						error: 'Solo puedes crear registros dentro de tus localidades asignadas'
 					});
 				}
 			}
+		}
+
+		if (isPreceptor && (!dni || !careerId)) {
+			return fail(400, {
+				error: 'Para dar de alta un alumno debes indicar DNI y carrera'
+			});
 		}
 
 		if (type === 'PRECEPTOR' && !selectedLocality) {
@@ -191,6 +238,29 @@ export const actions: Actions = {
 				return fail(400, {
 					error: 'La localidad seleccionada no existe o no está activa'
 				});
+			}
+
+			if (isPreceptor && type === 'ALUMNO' && careerId) {
+				const careerAtLocation = await prisma.career.findFirst({
+					where: {
+						id: careerId,
+						active: true,
+						locations: {
+							some: {
+								locationId: selectedLocation.id
+							}
+						}
+					},
+					select: {
+						id: true
+					}
+				});
+
+				if (!careerAtLocation) {
+					return fail(403, {
+						error: 'La carrera seleccionada no pertenece a la localidad habilitada'
+					});
+				}
 			}
 		}
 

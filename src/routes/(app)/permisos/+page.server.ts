@@ -553,7 +553,7 @@ export const actions: Actions = {
 			}
 		> = {
 			USER: { canCreate: false, canRead: false, canUpdate: false, canDelete: false },
-			STUDENT: { canCreate: false, canRead: true, canUpdate: false, canDelete: false },
+			STUDENT: { canCreate: true, canRead: true, canUpdate: false, canDelete: false },
 			TEACHER: { canCreate: false, canRead: true, canUpdate: false, canDelete: false },
 			CAREER: { canCreate: false, canRead: true, canUpdate: false, canDelete: false },
 			SUBJECT: { canCreate: false, canRead: true, canUpdate: false, canDelete: false },

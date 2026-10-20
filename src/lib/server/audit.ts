@@ -1,6 +1,8 @@
-import type { AuditAction } from '@prisma/client';
+import type { AuditAction, PrismaClient } from '@prisma/client';
 import { getAuditRequestContext } from '$lib/server/audit-context';
 import { prisma } from '$lib/server/db/prisma';
+
+type AuditLogClient = Pick<PrismaClient, 'auditLog'>;
 
 type AuditLogInput = {
 	action: AuditAction;
@@ -13,7 +15,7 @@ type AuditLogInput = {
 	userAgent?: string;
 };
 
-export async function auditLog(data: AuditLogInput) {
+export async function auditLog(data: AuditLogInput, db: AuditLogClient = prisma) {
 	const requestContext = getAuditRequestContext();
 
 	let metadata = data.metadata;
@@ -31,7 +33,7 @@ export async function auditLog(data: AuditLogInput) {
 		};
 	}
 
-	return prisma.auditLog.create({
+	return db.auditLog.create({
 		data: {
 			action: data.action,
 			entityType: data.entityType,

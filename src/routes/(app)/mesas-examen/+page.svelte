@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatExamCallLabel } from '$lib/utils/exam-call-label';
 	let { data, form } = $props();
 
 	const isTeacherMode = $derived(data.examMode === 'TEACHER');
@@ -7,6 +8,8 @@
 	let selectedLocationId = $state('');
 	let selectedSubjectId = $state('');
 	let selectedTeacherId = $state('');
+	let firstCallDate = $state('');
+	let secondCallDate = $state('');
 
 	function resetTeacherSelection() {
 		selectedTeacherId = '';
@@ -123,13 +126,14 @@
 					automáticamente como docente responsable.
 				{:else}
 					Creá y consultá mesas institucionales definiendo carrera, sede, materia y docente
-					responsable. Cada nueva mesa habilita una ventana de inscripción de 72 horas.
+					responsable. Cada nueva mesa permite inscripciones hasta 72 horas hábiles antes de la
+					fecha del examen.
 				{/if}
 			</p>
 		</div>
 
 		{#if form?.error}
-			<div class="mb-6 rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-red-300">
+			<div class="mb-6 rounded-2xl border border-red-500/40 p-4 text-red-900">
 				{form.error}
 			</div>
 		{/if}
@@ -146,7 +150,8 @@
 			<div class="mb-6">
 				<h2 class="text-xl font-semibold">Nueva mesa de examen</h2>
 				<p class="mt-1 text-sm text-slate-400">
-					La fecha del examen debe ser posterior al cierre de las 72 horas de inscripción.
+					La inscripción de cada llamado cierra automáticamente 72 horas hábiles antes de su fecha y
+					hora.
 				</p>
 			</div>
 
@@ -292,17 +297,54 @@
 						></textarea>
 					</div>
 
-					<div>
-						<label for="evaluationDate" class="mb-2 block text-sm font-medium text-slate-300">
-							Fecha y hora del examen
-						</label>
-						<input
-							id="evaluationDate"
-							name="evaluationDate"
-							type="datetime-local"
-							required
-							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-indigo-500"
-						/>
+					<div class="md:col-span-2">
+						<div class="mb-3">
+							<p class="text-sm font-semibold text-slate-200">Fechas de examen</p>
+							<p class="mt-1 text-xs text-slate-500">
+								El primer llamado es obligatorio. Completá el segundo solamente si esta mesa tendrá
+								dos llamados.
+							</p>
+						</div>
+
+						<div class="grid gap-4 md:grid-cols-2">
+							<div class="rounded-xl border border-slate-700 bg-slate-950/60 p-4">
+								<p class="mb-3 text-sm font-semibold text-indigo-300">
+									{formatExamCallLabel(1, firstCallDate)}
+								</p>
+
+								<label for="firstCallDate" class="mb-2 block text-sm font-medium text-slate-300">
+									Fecha y hora del primer llamado
+								</label>
+
+								<input
+									id="firstCallDate"
+									name="firstCallDate"
+									type="datetime-local"
+									bind:value={firstCallDate}
+									required
+									class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-indigo-500"
+								/>
+							</div>
+
+							<div class="rounded-xl border border-slate-700 bg-slate-950/60 p-4">
+								<p class="mb-3 text-sm font-semibold text-violet-300">
+									{formatExamCallLabel(2, secondCallDate)}
+								</p>
+
+								<label for="secondCallDate" class="mb-2 block text-sm font-medium text-slate-300">
+									Fecha y hora del segundo llamado
+									<span class="font-normal text-slate-500">(opcional)</span>
+								</label>
+
+								<input
+									id="secondCallDate"
+									name="secondCallDate"
+									type="datetime-local"
+									bind:value={secondCallDate}
+									class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-indigo-500"
+								/>
+							</div>
+						</div>
 					</div>
 
 					<div class="grid grid-cols-2 gap-4">
@@ -341,8 +383,9 @@
 				</div>
 
 				<div class="rounded-xl border border-violet-300 bg-violet-50 p-4 text-sm text-violet-800">
-					La inscripción comienza en el momento de crear la mesa y permanece abierta durante
-					<strong>72 horas exactas</strong>.
+					Cada llamado tiene su propio período de inscripción. El cierre se calcula automáticamente
+					<strong>72 horas hábiles antes de cada examen</strong>, respetando los días laborables y
+					feriados configurados.
 				</div>
 
 				<div class="flex justify-end">
@@ -382,6 +425,14 @@
 								<div class="min-w-0">
 									<div class="flex flex-wrap items-center gap-2">
 										<h3 class="text-lg font-semibold text-white">{mesa.title}</h3>
+
+										{#if mesa.examCallNumber}
+											<span
+												class="rounded-full border border-indigo-500/40 bg-indigo-500/10 px-2.5 py-1 text-xs font-semibold text-indigo-300"
+											>
+												{formatExamCallLabel(mesa.examCallNumber, mesa.evaluationDate)}
+											</span>
+										{/if}
 										<span
 											class="rounded-full border px-2.5 py-1 text-xs font-semibold {statusClass(
 												mesa.status

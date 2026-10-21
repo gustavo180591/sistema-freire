@@ -1138,6 +1138,8 @@ model Evaluation {
   locationId            String?
   createdByUserId       String
   responsibleTeacherId  String?
+  examTableSeriesId     String?
+  examCallNumber        Int?
   evaluationDate        DateTime
   isClosed              Boolean            @default(false)
   minPassingScore       Decimal            @default(6) @db.Decimal(6, 2)
@@ -1158,6 +1160,7 @@ model Evaluation {
   location              Location?          @relation(fields: [locationId], references: [id], onDelete: Restrict)
   createdByUser         User               @relation("EvaluationCreator", fields: [createdByUserId], references: [id])
   responsibleTeacher    Teacher?           @relation("EvaluationResponsibleTeacher", fields: [responsibleTeacherId], references: [id], onDelete: Restrict)
+  examTableSeries       ExamTableSeries?   @relation(fields: [examTableSeriesId], references: [id], onDelete: Restrict)
   parentEvaluation      Evaluation?        @relation("EvaluationRecovery", fields: [parentEvaluationId], references: [id])
   recoveryEvaluations   Evaluation[]       @relation("EvaluationRecovery")
   reopenedByUser        User?              @relation("EvaluationReopener", fields: [reopenedByUserId], references: [id])
@@ -1165,6 +1168,7 @@ model Evaluation {
   grades                Grade[]
   examRegistrations     ExamRegistration[]
 
+  @@unique([examTableSeriesId, examCallNumber])
   @@index([subjectId])
   @@index([commissionId])
   @@index([createdByUserId])
@@ -1173,6 +1177,15 @@ model Evaluation {
   @@index([isClosed])
   @@index([parentEvaluationId])
   @@map("evaluations")
+}
+
+model ExamTableSeries {
+  id          String       @id @default(cuid())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  evaluations Evaluation[]
+
+  @@map("exam_table_series")
 }
 
 model SubjectCommission {

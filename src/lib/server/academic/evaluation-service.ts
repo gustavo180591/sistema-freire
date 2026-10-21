@@ -6,7 +6,10 @@ import {
 	GradingMode,
 	QualitativeGrade
 } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import { updateCourseResult, updateStudentSubjectStatus } from './plan-logic';
+import { calculateExamRegistrationDeadline } from './business-day-deadline';
+import { loadBusinessCalendar } from './business-calendar-service';
 import { auditLog } from '$lib/server/audit';
 
 export interface EvaluationValidationError {
@@ -31,6 +34,8 @@ export interface CreateEvaluationData {
 	careerId?: string;
 	locationId?: string;
 	responsibleTeacherId?: string;
+	examTableSeriesId?: string;
+	examCallNumber?: 1 | 2;
 	title: string;
 	description?: string;
 	type: EvaluationType;
@@ -519,8 +524,36 @@ export class EvaluationService {
 	/**
 	 * Crea una evaluación
 	 */
-	async createEvaluation(data: CreateEvaluationData) {
+	async createEvaluation(
+		data: CreateEvaluationData,
+		db: Prisma.TransactionClient | PrismaClient = this.prisma
+	) {
 		const gradingMode = data.gradingMode || GradingMode.NUMERIC;
+
+		const hasExamTableSeries = data.examTableSeriesId !== undefined;
+		const hasExamCallNumber = data.examCallNumber !== undefined;
+
+		if (hasExamTableSeries !== hasExamCallNumber) {
+			return {
+				error: 'La serie y el número de llamado deben informarse juntos'
+			};
+		}
+
+		if ((hasExamTableSeries || hasExamCallNumber) && data.type !== EvaluationType.MESA_EXAMEN) {
+			return {
+				error: 'Los llamados solo pueden asociarse a mesas de examen'
+			};
+		}
+
+		if (
+			data.examCallNumber !== undefined &&
+			data.examCallNumber !== 1 &&
+			data.examCallNumber !== 2
+		) {
+			return {
+				error: 'El número de llamado debe ser 1 o 2'
+			};
+		}
 		const courseTypes: EvaluationType[] = [
 			EvaluationType.PARCIAL,
 			EvaluationType.TRABAJO_PRACTICO,
@@ -535,7 +568,7 @@ export class EvaluationService {
 
 		if (data.type !== EvaluationType.MESA_EXAMEN) {
 			if (data.commissionId) {
-				const commission = await this.prisma.subjectCommission.findUnique({
+				const commission = await db.subjectCommission.findUnique({
 					where: { id: data.commissionId },
 					include: { teacher: { select: { userId: true } } }
 				});
@@ -550,7 +583,7 @@ export class EvaluationService {
 					return { error: 'No tenés permiso para crear evaluaciones en esta comisión' };
 				}
 			} else {
-				const teacherAssignment = await this.prisma.subjectTeacher.findFirst({
+				const teacherAssignment = await db.subjectTeacher.findFirst({
 					where: {
 						subjectId: data.subjectId,
 						teacher: { userId: data.userId }
@@ -568,7 +601,7 @@ export class EvaluationService {
 			return { error: 'El recuperatorio debe indicar la evaluación original' };
 		}
 		if (data.parentEvaluationId) {
-			const parentEvaluation = await this.prisma.evaluation.findUnique({
+			const parentEvaluation = await db.evaluation.findUnique({
 				where: { id: data.parentEvaluationId },
 				select: { subjectId: true, commissionId: true, type: true, gradingMode: true }
 			});
@@ -601,7 +634,7 @@ export class EvaluationService {
 				return { error: 'El recuperatorio debe usar la misma modalidad de calificación' };
 			}
 
-			const existingRecovery = await this.prisma.evaluation.findFirst({
+			const existingRecovery = await db.evaluation.findFirst({
 				where: { parentEvaluationId: data.parentEvaluationId },
 				select: { id: true }
 			});
@@ -634,7 +667,7 @@ export class EvaluationService {
 			responsibleTeacherId = data.responsibleTeacherId ?? null;
 
 			if (!responsibleTeacherId) {
-				const creatorTeacher = await this.prisma.teacher.findUnique({
+				const creatorTeacher = await db.teacher.findUnique({
 					where: { userId: data.userId },
 					select: {
 						id: true,
@@ -651,7 +684,7 @@ export class EvaluationService {
 				responsibleTeacherId = creatorTeacher.id;
 			}
 
-			const responsibleTeacher = await this.prisma.teacher.findUnique({
+			const responsibleTeacher = await db.teacher.findUnique({
 				where: { id: responsibleTeacherId },
 				select: {
 					id: true,
@@ -684,7 +717,7 @@ export class EvaluationService {
 				};
 			}
 
-			const subjectAssignment = await this.prisma.subjectTeacher.findUnique({
+			const subjectAssignment = await db.subjectTeacher.findUnique({
 				where: {
 					subjectId_teacherId: {
 						subjectId: data.subjectId,
@@ -702,7 +735,7 @@ export class EvaluationService {
 				};
 			}
 
-			const careerSubject = await this.prisma.careerSubject.findFirst({
+			const careerSubject = await db.careerSubject.findFirst({
 				where: {
 					careerId: data.careerId,
 					subjectId: data.subjectId
@@ -718,7 +751,7 @@ export class EvaluationService {
 				};
 			}
 
-			const careerAtLocation = await this.prisma.career.findFirst({
+			const careerAtLocation = await db.career.findFirst({
 				where: {
 					id: data.careerId,
 					active: true,
@@ -740,11 +773,18 @@ export class EvaluationService {
 			}
 
 			registrationOpensAt = new Date();
-			registrationClosesAt = new Date(registrationOpensAt.getTime() + 72 * 60 * 60 * 1000);
 
-			if (data.evaluationDate <= registrationClosesAt) {
+			const businessCalendar = await loadBusinessCalendar(this.prisma);
+
+			registrationClosesAt = calculateExamRegistrationDeadline(
+				data.evaluationDate,
+				businessCalendar
+			);
+
+			if (registrationClosesAt <= registrationOpensAt) {
 				return {
-					error: 'La fecha de la mesa debe ser posterior al cierre de las 72 horas de inscripción'
+					error:
+						'La mesa debe crearse antes del cierre de inscripción, calculado 72 horas hábiles antes del examen'
 				};
 			}
 		}
@@ -758,13 +798,17 @@ export class EvaluationService {
 			gradingMode === GradingMode.NUMERIC &&
 			averageTypes.includes(data.type) &&
 			(data.participatesInAverage ?? true);
-		const evaluation = await this.prisma.evaluation.create({
+		const evaluation = await db.evaluation.create({
 			data: {
 				subjectId: data.subjectId,
 				commissionId: data.type === EvaluationType.MESA_EXAMEN ? null : data.commissionId,
 				careerId: data.type === EvaluationType.MESA_EXAMEN ? data.careerId : null,
 				locationId: data.type === EvaluationType.MESA_EXAMEN ? data.locationId : null,
 				responsibleTeacherId,
+				examTableSeriesId:
+					data.type === EvaluationType.MESA_EXAMEN ? (data.examTableSeriesId ?? null) : null,
+				examCallNumber:
+					data.type === EvaluationType.MESA_EXAMEN ? (data.examCallNumber ?? null) : null,
 				title: data.title,
 				description: data.description,
 				type: data.type,
@@ -784,28 +828,33 @@ export class EvaluationService {
 		});
 
 		// Auditoría
-		await auditLog({
-			action: AuditAction.CREATE,
-			entityType: 'Evaluation',
-			entityId: evaluation.id,
-			description: `Creó evaluación "${evaluation.title}" (${evaluation.type})`,
-			userId: data.userId,
-			metadata: {
-				subjectId: data.subjectId,
-				commissionId: data.commissionId,
-				careerId: data.careerId ?? null,
-				locationId: data.locationId ?? null,
-				responsibleTeacherId,
-				registrationOpensAt: registrationOpensAt?.toISOString() ?? null,
-				registrationClosesAt: registrationClosesAt?.toISOString() ?? null,
-				type: data.type,
-				gradingMode,
-				participatesInAverage,
-				mandatory: data.mandatory ?? true,
-				maxScore: data.maxScore,
-				evaluationDate: data.evaluationDate
-			}
-		});
+		await auditLog(
+			{
+				action: AuditAction.CREATE,
+				entityType: 'Evaluation',
+				entityId: evaluation.id,
+				description: `Creó evaluación "${evaluation.title}" (${evaluation.type})`,
+				userId: data.userId,
+				metadata: {
+					subjectId: data.subjectId,
+					commissionId: data.commissionId,
+					careerId: data.careerId ?? null,
+					locationId: data.locationId ?? null,
+					responsibleTeacherId,
+					examTableSeriesId: data.examTableSeriesId ?? null,
+					examCallNumber: data.examCallNumber ?? null,
+					registrationOpensAt: registrationOpensAt?.toISOString() ?? null,
+					registrationClosesAt: registrationClosesAt?.toISOString() ?? null,
+					type: data.type,
+					gradingMode,
+					participatesInAverage,
+					mandatory: data.mandatory ?? true,
+					maxScore: data.maxScore,
+					evaluationDate: data.evaluationDate
+				}
+			},
+			db
+		);
 
 		return evaluation;
 	}

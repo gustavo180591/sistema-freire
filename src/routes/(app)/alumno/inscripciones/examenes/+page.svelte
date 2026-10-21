@@ -2,6 +2,8 @@
 	import type { ActionData, PageData } from './$types';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import { formatExamCallLabel } from '$lib/utils/exam-call-label';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -41,7 +43,7 @@
 			</div>
 
 			<a
-				href="/alumno/inscripciones"
+				href={resolve('/alumno/inscripciones')}
 				class="inline-flex items-center justify-center rounded-xl border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
 			>
 				Ver mis materias
@@ -73,8 +75,9 @@
 		<h2 class="font-semibold text-indigo-200">Mesas habilitadas para vos</h2>
 		<p class="mt-1 text-sm text-slate-400">
 			Solo se muestran mesas correspondientes a tu carrera, sede y materias en las que tenés una
-			inscripción activa. El sistema vuelve a validar todas las condiciones al confirmar la
-			inscripción.
+			inscripción activa. Si una mesa tiene dos llamados, cada fecha se muestra por separado y cada
+			llamado tiene su propio cierre de inscripción. El sistema vuelve a validar todas las
+			condiciones al confirmar la inscripción.
 		</p>
 	</div>
 
@@ -87,7 +90,7 @@
 		</div>
 	{:else}
 		<div class="grid gap-5">
-			{#each data.examTables as exam}
+			{#each data.examTables as exam (exam.id)}
 				<article class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
 					<div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
 						<div class="min-w-0 flex-1">
@@ -97,6 +100,14 @@
 								>
 									Mesa de examen
 								</span>
+
+								{#if exam.examCallNumber}
+									<span
+										class="rounded-full border border-violet-500/40 bg-violet-500/10 px-3 py-1 text-xs font-semibold text-violet-300"
+									>
+										{formatExamCallLabel(exam.examCallNumber, exam.evaluationDate)}
+									</span>
+								{/if}
 
 								{#if exam.registration?.status === 'REGISTERED'}
 									<span

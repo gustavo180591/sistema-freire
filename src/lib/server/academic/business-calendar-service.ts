@@ -1,4 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
+
+type BusinessCalendarClient = Pick<PrismaClient, 'calendarConfig' | 'holiday'>;
 import type { BusinessCalendar, BusinessHoliday } from './business-day-deadline';
 
 export const DEFAULT_WORKING_DAYS = [1, 2, 3, 4, 5];
@@ -56,7 +58,9 @@ export function buildBusinessCalendar(input: {
 	};
 }
 
-export async function loadBusinessCalendar(prisma: PrismaClient): Promise<BusinessCalendar> {
+export async function loadBusinessCalendar(
+	prisma: BusinessCalendarClient
+): Promise<BusinessCalendar> {
 	const [workingDaysConfig, holidays] = await Promise.all([
 		prisma.calendarConfig.findUnique({
 			where: {

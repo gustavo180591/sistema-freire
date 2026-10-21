@@ -1,8 +1,8 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { EvaluationType, GradingMode } from '@prisma/client';
+import { EvaluationType } from '@prisma/client';
 import type { Actions, PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db/prisma';
-import { EvaluationService } from '$lib/server/academic/evaluation-service';
+import { ExamTableSeriesService } from '$lib/server/academic/exam-table-series-service';
 import {
 	getUserAllowedLocationIds,
 	hasRole,
@@ -231,6 +231,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 					id: true,
 					title: true,
 					description: true,
+					examTableSeriesId: true,
+					examCallNumber: true,
 					evaluationDate: true,
 					createdAt: true,
 					registrationOpensAt: true,
@@ -336,6 +338,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 				id: evaluation.id,
 				title: evaluation.title,
 				description: evaluation.description,
+				examTableSeriesId: evaluation.examTableSeriesId,
+				examCallNumber: evaluation.examCallNumber,
 				evaluationDate: evaluation.evaluationDate,
 				registrationOpensAt: opensAt,
 				registrationClosesAt: closesAt,
@@ -387,7 +391,8 @@ export const actions: Actions = {
 		const responsibleTeacherId = currentTeacher?.id ?? requestedResponsibleTeacherId;
 		const title = formData.get('title')?.toString().trim();
 		const description = formData.get('description')?.toString().trim();
-		const evaluationDateValue = formData.get('evaluationDate')?.toString().trim();
+		const firstCallDateValue = formData.get('firstCallDate')?.toString().trim();
+		const secondCallDateValue = formData.get('secondCallDate')?.toString().trim();
 
 		const maxScoreValue = Number(formData.get('maxScore') ?? 10);
 		const minPassingScoreValue = Number(formData.get('minPassingScore') ?? 6);
@@ -398,20 +403,27 @@ export const actions: Actions = {
 			!subjectId ||
 			!responsibleTeacherId ||
 			!title ||
-			!evaluationDateValue
+			!firstCallDateValue
 		) {
 			return fail(400, {
-				error: 'Completá carrera, sede, materia, docente responsable, título y fecha de la mesa'
+				error:
+					'Completá carrera, sede, materia, docente responsable, título y fecha del primer llamado'
 			});
 		}
 
-		const evaluationDate = new Date(evaluationDateValue);
+		const firstCallDate = new Date(firstCallDateValue);
+		const secondCallDate = secondCallDateValue ? new Date(secondCallDateValue) : null;
 
-		if (Number.isNaN(evaluationDate.getTime())) {
+		if (
+			Number.isNaN(firstCallDate.getTime()) ||
+			(secondCallDate !== null && Number.isNaN(secondCallDate.getTime()))
+		) {
 			return fail(400, {
-				error: 'La fecha y hora de la mesa no son válidas'
+				error: 'Revisá las fechas y horas de los llamados'
 			});
 		}
+
+		const evaluationDates = secondCallDate ? [firstCallDate, secondCallDate] : [firstCallDate];
 
 		if (
 			!Number.isFinite(maxScoreValue) ||
@@ -438,22 +450,18 @@ export const actions: Actions = {
 			});
 		}
 
-		const evaluationService = new EvaluationService(prisma);
+		const examTableSeriesService = new ExamTableSeriesService(prisma);
 
-		const result = await evaluationService.createEvaluation({
+		const result = await examTableSeriesService.createSeries({
 			subjectId,
 			careerId,
 			locationId,
 			responsibleTeacherId,
 			title,
 			description: description || undefined,
-			type: EvaluationType.MESA_EXAMEN,
-			evaluationDate,
+			evaluationDates,
 			maxScore: maxScoreValue,
 			minPassingScore: minPassingScoreValue,
-			gradingMode: GradingMode.NUMERIC,
-			participatesInAverage: false,
-			mandatory: true,
 			userId: user.id
 		});
 
@@ -463,8 +471,13 @@ export const actions: Actions = {
 			});
 		}
 
+		const callCount = result.evaluations.length;
+
 		return {
-			success: `Mesa "${result.title}" creada correctamente. La inscripción permanecerá abierta hasta 72 horas hábiles antes del examen.`
+			success:
+				callCount === 1
+					? `Mesa "${title}" creada correctamente con 1 llamado.`
+					: `Mesa "${title}" creada correctamente con 2 llamados.`
 		};
 	}
 };

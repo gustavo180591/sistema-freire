@@ -308,6 +308,7 @@ export async function getAvailableExamTablesForStudent(studentId: string) {
 			title: evaluation.title,
 			description: evaluation.description,
 			type: evaluation.type,
+			examCallNumber: evaluation.examCallNumber,
 			evaluationDate: evaluation.evaluationDate,
 			registrationOpensAt: opensAt,
 			registrationClosesAt: closesAt,

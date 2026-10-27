@@ -110,7 +110,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		globalAccessRoles: INSTITUTIONAL_EXAM_GLOBAL_LOCATION_ROLES
 	});
 
-	const [locations, careers, careerLocations, careerSubjects, teachers, evaluations] =
+	const [locations, careers, careerLocations, careerSubjects, teachers, examTableSeries] =
 		await Promise.all([
 			prisma.location.findMany({
 				where: {
@@ -192,8 +192,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 			prisma.teacher.findMany({
 				where: {
-					status: 'ACTIVE',
-					...(currentTeacher ? { id: currentTeacher.id } : {})
+					status: 'ACTIVE'
 				},
 				select: {
 					id: true,
@@ -219,66 +218,107 @@ export const load: PageServerLoad = async ({ locals }) => {
 				orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
 			}),
 
-			prisma.evaluation.findMany({
+			prisma.examTableSeries.findMany({
 				where: {
-					type: EvaluationType.MESA_EXAMEN,
-					locationId: {
-						in: allowedLocationIds
-					},
-					...(currentTeacher ? { responsibleTeacherId: currentTeacher.id } : {})
-				},
-				select: {
-					id: true,
-					title: true,
-					description: true,
-					examTableSeriesId: true,
-					examCallNumber: true,
-					evaluationDate: true,
-					createdAt: true,
-					registrationOpensAt: true,
-					registrationClosesAt: true,
-					isClosed: true,
-					maxScore: true,
-					minPassingScore: true,
-					subject: {
-						select: {
-							id: true,
-							code: true,
-							name: true
-						}
-					},
-					career: {
-						select: {
-							id: true,
-							name: true
-						}
-					},
-					location: {
-						select: {
-							id: true,
-							name: true
-						}
-					},
-					responsibleTeacher: {
-						select: {
-							id: true,
-							firstName: true,
-							lastName: true
-						}
-					},
-					createdByUser: {
-						select: {
-							firstName: true,
-							lastName: true
-						}
-					},
-					examRegistrations: {
-						select: {
-							status: true
+					evaluations: {
+						some: {
+							type: EvaluationType.MESA_EXAMEN,
+							locationId: {
+								in: allowedLocationIds
+							},
+							...(currentTeacher ? { responsibleTeacherId: currentTeacher.id } : {})
 						}
 					}
 				},
-				orderBy: [{ evaluationDate: 'desc' }, { createdAt: 'desc' }],
+				select: {
+					id: true,
+					isHidden: true,
+					presidentTeacher: {
+						select: {
+							id: true,
+							firstName: true,
+							lastName: true
+						}
+					},
+					firstVocalTeacher: {
+						select: {
+							id: true,
+							firstName: true,
+							lastName: true
+						}
+					},
+					secondVocalTeacher: {
+						select: {
+							id: true,
+							firstName: true,
+							lastName: true
+						}
+					},
+					evaluations: {
+						where: {
+							type: EvaluationType.MESA_EXAMEN,
+							locationId: {
+								in: allowedLocationIds
+							},
+							...(currentTeacher ? { responsibleTeacherId: currentTeacher.id } : {})
+						},
+						select: {
+							id: true,
+							title: true,
+							description: true,
+							examCallNumber: true,
+							evaluationDate: true,
+							createdAt: true,
+							registrationOpensAt: true,
+							registrationClosesAt: true,
+							isClosed: true,
+							maxScore: true,
+							minPassingScore: true,
+							subject: {
+								select: {
+									id: true,
+									code: true,
+									name: true,
+									yearLevel: true
+								}
+							},
+							career: {
+								select: {
+									id: true,
+									name: true
+								}
+							},
+							location: {
+								select: {
+									id: true,
+									name: true
+								}
+							},
+							responsibleTeacher: {
+								select: {
+									id: true,
+									firstName: true,
+									lastName: true
+								}
+							},
+							createdByUser: {
+								select: {
+									firstName: true,
+									lastName: true
+								}
+							},
+							examRegistrations: {
+								select: {
+									status: true
+								}
+							}
+						},
+						orderBy: [{ examCallNumber: 'asc' }, { evaluationDate: 'asc' }]
+					}
+				},
+				orderBy: {
+					updatedAt: 'desc'
+				},
 				take: 100
 			})
 		]);
@@ -331,31 +371,61 @@ export const load: PageServerLoad = async ({ locals }) => {
 			subjectIds: teacher.subjects.map((assignment) => assignment.subjectId),
 			locationIds: teacher.user.locationPermissions.map((permission) => permission.locationId)
 		})),
-		mesas: evaluations.map((evaluation) => {
-			const { opensAt, closesAt } = getRegistrationWindow(evaluation);
+		mesas: examTableSeries.flatMap((series) => {
+			const firstEvaluation =
+				series.evaluations.find((evaluation) => evaluation.examCallNumber === 1) ??
+				series.evaluations[0];
 
-			return {
-				id: evaluation.id,
-				title: evaluation.title,
-				description: evaluation.description,
-				examTableSeriesId: evaluation.examTableSeriesId,
-				examCallNumber: evaluation.examCallNumber,
-				evaluationDate: evaluation.evaluationDate,
-				registrationOpensAt: opensAt,
-				registrationClosesAt: closesAt,
-				isClosed: evaluation.isClosed,
-				status: getExamTableStatus(evaluation),
-				maxScore: Number(evaluation.maxScore),
-				minPassingScore: Number(evaluation.minPassingScore),
-				subject: evaluation.subject,
-				career: evaluation.career,
-				location: evaluation.location,
-				responsibleTeacher: evaluation.responsibleTeacher,
-				createdBy: `${evaluation.createdByUser.firstName} ${evaluation.createdByUser.lastName}`,
-				registeredCount: evaluation.examRegistrations.filter(
-					(registration) => registration.status === 'REGISTERED'
-				).length
+			if (!firstEvaluation) {
+				return [];
+			}
+
+			const secondEvaluation = series.evaluations.find(
+				(evaluation) => evaluation.examCallNumber === 2
+			);
+
+			const mapCall = (evaluation: (typeof series.evaluations)[number]) => {
+				const { opensAt, closesAt } = getRegistrationWindow(evaluation);
+
+				return {
+					id: evaluation.id,
+					examCallNumber: evaluation.examCallNumber,
+					evaluationDate: evaluation.evaluationDate,
+					registrationOpensAt: opensAt,
+					registrationClosesAt: closesAt,
+					status: getExamTableStatus(evaluation),
+					isClosed: evaluation.isClosed,
+					registeredCount: evaluation.examRegistrations.filter(
+						(registration) => registration.status === 'REGISTERED'
+					).length
+				};
 			};
+
+			return [
+				{
+					id: series.id,
+					isHidden: series.isHidden,
+					title: firstEvaluation.title,
+					description: firstEvaluation.description,
+					subject: firstEvaluation.subject,
+					career: firstEvaluation.career,
+					location: firstEvaluation.location,
+					presidentTeacher: series.presidentTeacher ?? firstEvaluation.responsibleTeacher,
+					firstVocalTeacher: series.firstVocalTeacher,
+					secondVocalTeacher: series.secondVocalTeacher,
+					firstCall: mapCall(firstEvaluation),
+					secondCall: secondEvaluation ? mapCall(secondEvaluation) : null,
+					registeredCount: series.evaluations.reduce(
+						(total, evaluation) =>
+							total +
+							evaluation.examRegistrations.filter(
+								(registration) => registration.status === 'REGISTERED'
+							).length,
+						0
+					),
+					createdBy: `${firstEvaluation.createdByUser.firstName} ${firstEvaluation.createdByUser.lastName}`
+				}
+			];
 		})
 	};
 };
@@ -387,6 +457,9 @@ export const actions: Actions = {
 		const locationId = formData.get('locationId')?.toString().trim();
 		const subjectId = formData.get('subjectId')?.toString().trim();
 		const requestedResponsibleTeacherId = formData.get('responsibleTeacherId')?.toString().trim();
+		const firstVocalTeacherId = formData.get('firstVocalTeacherId')?.toString().trim() || undefined;
+		const secondVocalTeacherId =
+			formData.get('secondVocalTeacherId')?.toString().trim() || undefined;
 
 		const responsibleTeacherId = currentTeacher?.id ?? requestedResponsibleTeacherId;
 		const title = formData.get('title')?.toString().trim();
@@ -457,6 +530,8 @@ export const actions: Actions = {
 			careerId,
 			locationId,
 			responsibleTeacherId,
+			firstVocalTeacherId,
+			secondVocalTeacherId,
 			title,
 			description: description || undefined,
 			evaluationDates,
@@ -478,6 +553,100 @@ export const actions: Actions = {
 				callCount === 1
 					? `Mesa "${title}" creada correctamente con 1 llamado.`
 					: `Mesa "${title}" creada correctamente con 2 llamados.`
+		};
+	},
+	visibility: async ({ request, locals }) => {
+		const user = locals.user;
+
+		if (!user) {
+			return fail(401, {
+				error: 'No autenticado'
+			});
+		}
+
+		await requireExamManagementAccess(user, 'update');
+
+		const formData = await request.formData();
+
+		const seriesId = formData.get('seriesId')?.toString().trim();
+		const isHiddenValue = formData.get('isHidden')?.toString().trim();
+
+		if (!seriesId || !['true', 'false'].includes(isHiddenValue ?? '')) {
+			return fail(400, {
+				error: 'Solicitud de visibilidad inválida'
+			});
+		}
+
+		const series = await prisma.examTableSeries.findUnique({
+			where: {
+				id: seriesId
+			},
+			select: {
+				id: true,
+				evaluations: {
+					select: {
+						id: true,
+						locationId: true,
+						responsibleTeacherId: true
+					},
+					orderBy: {
+						examCallNumber: 'asc'
+					}
+				}
+			}
+		});
+
+		if (!series || series.evaluations.length === 0) {
+			return fail(404, {
+				error: 'Mesa de examen no encontrada'
+			});
+		}
+
+		const firstEvaluation = series.evaluations[0];
+
+		if (!firstEvaluation.locationId) {
+			return fail(409, {
+				error: 'La mesa no tiene una sede asociada'
+			});
+		}
+
+		const isInstitutionalActor = hasRole(user, INSTITUTIONAL_EXAM_ROLES);
+
+		if (isInstitutionalActor) {
+			await requireLocationAccess(user, firstEvaluation.locationId, {
+				globalAccessRoles: INSTITUTIONAL_EXAM_GLOBAL_LOCATION_ROLES
+			});
+		} else {
+			const currentTeacher = await getActiveTeacherForUser(user.id);
+
+			if (
+				!currentTeacher ||
+				!series.evaluations.some(
+					(evaluation) => evaluation.responsibleTeacherId === currentTeacher.id
+				)
+			) {
+				return fail(403, {
+					error: 'No tenés permiso para modificar esta mesa'
+				});
+			}
+		}
+
+		const examTableSeriesService = new ExamTableSeriesService(prisma);
+
+		const result = await examTableSeriesService.setVisibility({
+			seriesId,
+			isHidden: isHiddenValue === 'true',
+			userId: user.id
+		});
+
+		if ('error' in result) {
+			return fail(400, {
+				error: result.error
+			});
+		}
+
+		return {
+			success: result.isHidden ? 'Mesa ocultada correctamente.' : 'Mesa publicada nuevamente.'
 		};
 	}
 };

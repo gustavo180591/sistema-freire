@@ -7,12 +7,16 @@
 	let selectedCareerId = $state('');
 	let selectedLocationId = $state('');
 	let selectedSubjectId = $state('');
-	let selectedTeacherId = $state('');
+	let selectedPresidentTeacherId = $state('');
+	let firstVocalTeacherId = $state('');
+	let secondVocalTeacherId = $state('');
 	let firstCallDate = $state('');
 	let secondCallDate = $state('');
 
 	function resetTeacherSelection() {
-		selectedTeacherId = '';
+		selectedPresidentTeacherId = '';
+		firstVocalTeacherId = '';
+		secondVocalTeacherId = '';
 	}
 
 	/**
@@ -69,12 +73,16 @@
 			});
 	});
 
-	const availableTeachers = $derived(
+	const availablePresidentTeachers = $derived(
 		data.teachers.filter(
 			(teacher) =>
 				teacher.subjectIds.includes(selectedSubjectId) &&
 				teacher.locationIds.includes(selectedLocationId)
 		)
+	);
+
+	const availableTribunalTeachers = $derived(
+		data.teachers.filter((teacher) => teacher.locationIds.includes(selectedLocationId))
 	);
 
 	function formatDate(value: Date | string) {
@@ -231,7 +239,7 @@
 
 					<div>
 						<label for="responsibleTeacherId" class="mb-2 block text-sm font-medium text-slate-300">
-							Docente responsable
+							Presidente
 						</label>
 
 						{#if isTeacherMode && data.currentTeacher}
@@ -243,33 +251,77 @@
 									· DNI {data.currentTeacher.dni}
 								</p>
 								<p class="mt-1 text-xs text-slate-500">
-									Quedarás asignado automáticamente como responsable de esta mesa.
+									Quedarás asignado automáticamente como Presidente de esta mesa.
 								</p>
 							</div>
 						{:else}
 							<select
 								id="responsibleTeacherId"
 								name="responsibleTeacherId"
-								bind:value={selectedTeacherId}
+								bind:value={selectedPresidentTeacherId}
 								disabled={!selectedSubjectId || !selectedLocationId}
 								required
 								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
 							>
 								<option value="">Seleccionar docente...</option>
-								{#each availableTeachers as teacher (teacher.id)}
+								{#each availablePresidentTeachers as teacher (teacher.id)}
 									<option value={teacher.id}>
 										{teacher.lastName}, {teacher.firstName} · DNI {teacher.dni}
 									</option>
 								{/each}
 							</select>
 
-							{#if selectedSubjectId && selectedLocationId && availableTeachers.length === 0}
+							{#if selectedSubjectId && selectedLocationId && availablePresidentTeachers.length === 0}
 								<p class="mt-2 text-xs text-amber-300">
 									No hay docentes activos asignados a esta materia en la sede seleccionada.
 								</p>
 							{/if}
 						{/if}
 					</div>
+					<div>
+						<label for="firstVocalTeacherId" class="mb-2 block text-sm font-medium text-slate-300">
+							1.er vocal
+							<span class="font-normal text-slate-500">(opcional)</span>
+						</label>
+
+						<select
+							id="firstVocalTeacherId"
+							name="firstVocalTeacherId"
+							bind:value={firstVocalTeacherId}
+							disabled={!selectedLocationId}
+							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							<option value="">Sin asignar...</option>
+							{#each availableTribunalTeachers as teacher (teacher.id)}
+								<option value={teacher.id}>
+									{teacher.lastName}, {teacher.firstName} · DNI {teacher.dni}
+								</option>
+							{/each}
+						</select>
+					</div>
+
+					<div>
+						<label for="secondVocalTeacherId" class="mb-2 block text-sm font-medium text-slate-300">
+							2.º vocal
+							<span class="font-normal text-slate-500">(opcional)</span>
+						</label>
+
+						<select
+							id="secondVocalTeacherId"
+							name="secondVocalTeacherId"
+							bind:value={secondVocalTeacherId}
+							disabled={!selectedLocationId}
+							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							<option value="">Sin asignar...</option>
+							{#each availableTribunalTeachers as teacher (teacher.id)}
+								<option value={teacher.id}>
+									{teacher.lastName}, {teacher.firstName} · DNI {teacher.dni}
+								</option>
+							{/each}
+						</select>
+					</div>
+
 					<div class="md:col-span-2">
 						<label for="title" class="mb-2 block text-sm font-medium text-slate-300">
 							Título
@@ -400,17 +452,11 @@
 		</section>
 
 		<section>
-			<div class="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-				<div>
-					<h2 class="text-xl font-semibold">Mesas registradas</h2>
-					<p class="mt-1 text-sm text-slate-400">
-						{#if isTeacherMode}
-							Últimas {data.mesas.length} mesas en las que figurás como docente responsable.
-						{:else}
-							Últimas {data.mesas.length} mesas visibles según tu alcance institucional.
-						{/if}
-					</p>
-				</div>
+			<div class="mb-5">
+				<h2 class="text-xl font-semibold">Mesas de examen registradas</h2>
+				<p class="mt-1 text-sm text-slate-400">
+					Cada fila representa una mesa completa. El primer y segundo llamado se muestran juntos.
+				</p>
 			</div>
 
 			{#if data.mesas.length === 0}
@@ -418,98 +464,199 @@
 					<p class="font-medium text-slate-300">Todavía no hay mesas de examen registradas.</p>
 				</div>
 			{:else}
-				<div class="space-y-4">
-					{#each data.mesas as mesa (mesa.id)}
-						<article class="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-							<div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-								<div class="min-w-0">
-									<div class="flex flex-wrap items-center gap-2">
-										<h3 class="text-lg font-semibold text-white">{mesa.title}</h3>
+				{@const careerLocationKeys = [
+					...new Set(
+						data.mesas.map((mesa) => `${mesa.career?.id ?? 'none'}:${mesa.location?.id ?? 'none'}`)
+					)
+				]}
 
-										{#if mesa.examCallNumber}
-											<span
-												class="rounded-full border border-indigo-500/40 bg-indigo-500/10 px-2.5 py-1 text-xs font-semibold text-indigo-300"
-											>
-												{formatExamCallLabel(mesa.examCallNumber, mesa.evaluationDate)}
-											</span>
-										{/if}
-										<span
-											class="rounded-full border px-2.5 py-1 text-xs font-semibold {statusClass(
-												mesa.status
-											)}"
-										>
-											{statusLabel(mesa.status)}
-										</span>
-									</div>
+				<div class="space-y-10">
+					{#each careerLocationKeys as groupKey (groupKey)}
+						{@const groupMesas = data.mesas.filter(
+							(mesa) => `${mesa.career?.id ?? 'none'}:${mesa.location?.id ?? 'none'}` === groupKey
+						)}
+						{@const groupFirst = groupMesas[0]}
+						{@const yearLevels = [
+							...new Set(groupMesas.map((mesa) => mesa.subject.yearLevel))
+						].sort((a, b) => a - b)}
 
-									<p class="mt-2 text-sm text-slate-300">
-										{mesa.subject.code} · {mesa.subject.name}
-									</p>
-
-									<p class="mt-1 text-sm text-slate-400">
-										{mesa.career?.name ?? 'Sin carrera'} · {mesa.location?.name ?? 'Sin sede'}
-									</p>
-
-									{#if mesa.description}
-										<p class="mt-3 max-w-3xl text-sm text-slate-500">
-											{mesa.description}
-										</p>
-									{/if}
-								</div>
-
-								<div class="grid shrink-0 gap-3 text-sm sm:grid-cols-2 lg:min-w-[420px]">
-									<div class="rounded-xl bg-slate-950 p-3">
-										<p class="text-xs text-slate-500">Examen</p>
-										<p class="mt-1 font-medium text-slate-200">
-											{formatDate(mesa.evaluationDate)}
-										</p>
-									</div>
-
-									<div class="rounded-xl bg-slate-950 p-3">
-										<p class="text-xs text-slate-500">Inscriptos activos</p>
-										<p class="mt-1 font-medium text-slate-200">
-											{mesa.registeredCount}
-										</p>
-									</div>
-
-									<div class="rounded-xl bg-slate-950 p-3">
-										<p class="text-xs text-slate-500">Docente responsable</p>
-										<p class="mt-1 font-medium text-slate-200">
-											{mesa.responsibleTeacher
-												? `${mesa.responsibleTeacher.lastName}, ${mesa.responsibleTeacher.firstName}`
-												: 'Sin responsable explícito'}
-										</p>
-									</div>
-
-									<div class="rounded-xl bg-slate-950 p-3">
-										<p class="text-xs text-slate-500">Creada por</p>
-										<p class="mt-1 font-medium text-slate-200">{mesa.createdBy}</p>
-									</div>
-								</div>
-							</div>
-
-							<div
-								class="mt-4 grid gap-2 border-t border-slate-800 pt-4 text-xs text-slate-500 sm:grid-cols-2"
-							>
-								<p>
-									Inscripción: {formatDate(mesa.registrationOpensAt)} → {formatDate(
-										mesa.registrationClosesAt
-									)}
+						<section class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
+							<header class="border-b border-slate-800 bg-slate-950/70 px-5 py-4">
+								<p class="text-xs font-semibold tracking-[0.15em] text-indigo-400 uppercase">
+									Mesas de exámenes
 								</p>
-								<div class="flex items-center justify-end gap-4">
-									<span>
-										Escala: {mesa.minPassingScore} / {mesa.maxScore}
-									</span>
+								<h3 class="mt-1 text-xl font-bold text-white">
+									{groupFirst.career?.name ?? 'Sin carrera'}
+								</h3>
+								<p class="mt-1 text-sm text-slate-400">
+									Localidad / sede: {groupFirst.location?.name ?? 'Sin sede'}
+								</p>
+							</header>
 
-									<a
-										href={`/mesas-examen/${mesa.id}`}
-										class="font-semibold text-indigo-600 hover:text-indigo-500"
-									>
-										Ver mesa
-									</a>
-								</div>
+							<div class="space-y-8 p-4 sm:p-5">
+								{#each yearLevels as yearLevel (yearLevel)}
+									{@const yearMesas = groupMesas
+										.filter((mesa) => mesa.subject.yearLevel === yearLevel)
+										.sort((a, b) => a.subject.name.localeCompare(b.subject.name, 'es'))}
+
+									<div>
+										<div class="mb-3 flex items-center justify-between gap-3">
+											<h4 class="text-lg font-semibold text-slate-100">
+												{yearLevel}º año
+											</h4>
+
+											<span
+												class="rounded-full border border-slate-700 bg-slate-950 px-3 py-1 text-xs text-slate-400"
+											>
+												{yearMesas.length} mesas
+											</span>
+										</div>
+
+										<div class="overflow-x-auto rounded-xl border border-slate-800">
+											<table class="w-full min-w-[1280px] border-collapse text-sm">
+												<thead class="bg-slate-950">
+													<tr>
+														<th class="border-b border-slate-800 px-3 py-3 text-left">Año</th>
+														<th class="border-b border-slate-800 px-3 py-3 text-left">
+															Unidad Curricular
+														</th>
+														<th class="border-b border-slate-800 px-3 py-3 text-left">
+															1.º llamado
+														</th>
+														<th class="border-b border-slate-800 px-3 py-3 text-left">
+															2.º llamado
+														</th>
+														<th class="border-b border-slate-800 px-3 py-3 text-left">
+															Presidente
+														</th>
+														<th class="border-b border-slate-800 px-3 py-3 text-left">
+															1.er vocal
+														</th>
+														<th class="border-b border-slate-800 px-3 py-3 text-left">
+															2.º vocal
+														</th>
+														<th class="border-b border-slate-800 px-3 py-3 text-left">
+															Acciones
+														</th>
+													</tr>
+												</thead>
+
+												<tbody class="divide-y divide-slate-800">
+													{#each yearMesas as mesa (mesa.id)}
+														<tr
+															class={mesa.isHidden ? 'bg-slate-950/70 opacity-65' : 'bg-slate-900'}
+														>
+															<td class="px-3 py-4 font-semibold text-slate-300">
+																{mesa.subject.yearLevel}º
+															</td>
+
+															<td class="px-3 py-4">
+																<p class="font-semibold text-white">{mesa.subject.name}</p>
+																<p class="mt-1 text-xs text-slate-500">
+																	{mesa.subject.code}
+																</p>
+																{#if mesa.isHidden}
+																	<span
+																		class="mt-2 inline-flex rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-300"
+																	>
+																		Oculta
+																	</span>
+																{/if}
+															</td>
+
+															<td class="px-3 py-4 text-slate-300">
+																<p class="font-medium">
+																	{formatDate(mesa.firstCall.evaluationDate)}
+																</p>
+																<p class="mt-1 text-xs text-slate-500">
+																	Cierra: {formatDate(mesa.firstCall.registrationClosesAt)}
+																</p>
+															</td>
+
+															<td class="px-3 py-4 text-slate-300">
+																{#if mesa.secondCall}
+																	<p class="font-medium">
+																		{formatDate(mesa.secondCall.evaluationDate)}
+																	</p>
+																	<p class="mt-1 text-xs text-slate-500">
+																		Cierra: {formatDate(mesa.secondCall.registrationClosesAt)}
+																	</p>
+																{:else}
+																	<span class="text-slate-600">—</span>
+																{/if}
+															</td>
+
+															<td class="px-3 py-4 text-slate-300">
+																{#if mesa.presidentTeacher}
+																	{mesa.presidentTeacher.lastName},
+																	{mesa.presidentTeacher.firstName}
+																{:else}
+																	<span class="text-slate-600">Sin asignar</span>
+																{/if}
+															</td>
+
+															<td class="px-3 py-4 text-slate-300">
+																{#if mesa.firstVocalTeacher}
+																	{mesa.firstVocalTeacher.lastName},
+																	{mesa.firstVocalTeacher.firstName}
+																{:else}
+																	<span class="text-slate-600">Sin asignar</span>
+																{/if}
+															</td>
+
+															<td class="px-3 py-4 text-slate-300">
+																{#if mesa.secondVocalTeacher}
+																	{mesa.secondVocalTeacher.lastName},
+																	{mesa.secondVocalTeacher.firstName}
+																{:else}
+																	<span class="text-slate-600">Sin asignar</span>
+																{/if}
+															</td>
+
+															<td class="px-3 py-4">
+																<div class="flex flex-wrap gap-2">
+																	<a
+																		href={`/mesas-examen/${mesa.firstCall.id}`}
+																		class="rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-3 py-2 text-xs font-semibold text-indigo-300 hover:bg-indigo-500/20"
+																	>
+																		Ver
+																	</a>
+
+																	<button
+																		type="button"
+																		disabled
+																		title="La edición de la serie se habilita en el siguiente bloque"
+																		class="cursor-not-allowed rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-500"
+																	>
+																		Editar
+																	</button>
+
+																	<form method="POST" action="?/visibility">
+																		<input type="hidden" name="seriesId" value={mesa.id} />
+																		<input
+																			type="hidden"
+																			name="isHidden"
+																			value={mesa.isHidden ? 'false' : 'true'}
+																		/>
+
+																		<button
+																			type="submit"
+																			class="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-500/20"
+																		>
+																			{mesa.isHidden ? 'Mostrar' : 'Ocultar'}
+																		</button>
+																	</form>
+																</div>
+															</td>
+														</tr>
+													{/each}
+												</tbody>
+											</table>
+										</div>
+									</div>
+								{/each}
 							</div>
-						</article>
+						</section>
 					{/each}
 				</div>
 			{/if}

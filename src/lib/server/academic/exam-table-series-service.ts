@@ -73,6 +73,12 @@ export class ExamTableSeriesService {
 
 		const uniqueTribunalTeacherIds = [...new Set(tribunalTeacherIds)];
 
+		if (uniqueTribunalTeacherIds.length !== tribunalTeacherIds.length) {
+			return {
+				error: 'Presidente, 1.er vocal y 2.º vocal deben ser docentes diferentes'
+			};
+		}
+
 		const tribunalTeachers = await this.prisma.teacher.findMany({
 			where: {
 				id: {

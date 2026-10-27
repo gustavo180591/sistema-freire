@@ -212,22 +212,25 @@ model AcademicYearHistory {
 }
 
 model Teacher {
-  id                     String              @id @default(cuid())
-  userId                 String              @unique
-  dni                    String              @unique
-  firstName              String
-  lastName               String
-  status                 TeacherStatus       @default(ACTIVE)
-  hireDate               DateTime?
-  observations           String?
-  createdAt              DateTime            @default(now())
-  updatedAt              DateTime            @updatedAt
-  payslips               Payslip[]
-  commissions            SubjectCommission[]
-  subjects               SubjectTeacher[]
-  classSchedules         ClassSchedule[]
-  responsibleEvaluations Evaluation[]        @relation("EvaluationResponsibleTeacher")
-  user                   User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                           String              @id @default(cuid())
+  userId                       String              @unique
+  dni                          String              @unique
+  firstName                    String
+  lastName                     String
+  status                       TeacherStatus       @default(ACTIVE)
+  hireDate                     DateTime?
+  observations                 String?
+  createdAt                    DateTime            @default(now())
+  updatedAt                    DateTime            @updatedAt
+  payslips                     Payslip[]
+  commissions                  SubjectCommission[]
+  subjects                     SubjectTeacher[]
+  classSchedules               ClassSchedule[]
+  responsibleEvaluations       Evaluation[]        @relation("EvaluationResponsibleTeacher")
+  examTableSeriesAsPresident   ExamTableSeries[]   @relation("ExamTableSeriesPresident")
+  examTableSeriesAsFirstVocal  ExamTableSeries[]   @relation("ExamTableSeriesFirstVocal")
+  examTableSeriesAsSecondVocal ExamTableSeries[]   @relation("ExamTableSeriesSecondVocal")
+  user                         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([lastName, firstName])
   @@index([status])
@@ -1180,11 +1183,23 @@ model Evaluation {
 }
 
 model ExamTableSeries {
-  id          String       @id @default(cuid())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  evaluations Evaluation[]
+  id                   String   @id @default(cuid())
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  isHidden             Boolean  @default(false)
+  presidentTeacherId   String?
+  firstVocalTeacherId  String?
+  secondVocalTeacherId String?
 
+  presidentTeacher   Teacher?     @relation("ExamTableSeriesPresident", fields: [presidentTeacherId], references: [id], onDelete: Restrict)
+  firstVocalTeacher  Teacher?     @relation("ExamTableSeriesFirstVocal", fields: [firstVocalTeacherId], references: [id], onDelete: Restrict)
+  secondVocalTeacher Teacher?     @relation("ExamTableSeriesSecondVocal", fields: [secondVocalTeacherId], references: [id], onDelete: Restrict)
+  evaluations        Evaluation[]
+
+  @@index([isHidden])
+  @@index([presidentTeacherId])
+  @@index([firstVocalTeacherId])
+  @@index([secondVocalTeacherId])
   @@map("exam_table_series")
 }
 

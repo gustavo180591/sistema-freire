@@ -1,7 +1,87 @@
 import { prisma } from '$lib/server/db/prisma';
+import { getUserAllowedLocationIds } from '$lib/server/auth/authorization';
 import type { Prisma } from '@prisma/client';
 import type { PageServerLoad } from './$types';
-import { getUserAllowedLocationIds } from '$lib/server/auth/authorization';
+
+const PAGE_SIZE = 25;
+
+function parsePage(value: string | null) {
+	if (!value) return 1;
+
+	const page = Number.parseInt(value, 10);
+
+	return Number.isInteger(page) && page > 0 ? page : 1;
+}
+
+function buildSearchFilters(searchQuery: string): Prisma.StudentWhereInput[] {
+	const terms = searchQuery
+		.split(/\s+/)
+		.map((term) => term.trim())
+		.filter(Boolean);
+
+	return terms.map((term) => ({
+		OR: [
+			{
+				dni: {
+					contains: term,
+					mode: 'insensitive'
+				}
+			},
+			{
+				firstName: {
+					contains: term,
+					mode: 'insensitive'
+				}
+			},
+			{
+				lastName: {
+					contains: term,
+					mode: 'insensitive'
+				}
+			},
+			{
+				user: {
+					is: {
+						firstName: {
+							contains: term,
+							mode: 'insensitive'
+						}
+					}
+				}
+			},
+			{
+				user: {
+					is: {
+						lastName: {
+							contains: term,
+							mode: 'insensitive'
+						}
+					}
+				}
+			},
+			{
+				user: {
+					is: {
+						email: {
+							contains: term,
+							mode: 'insensitive'
+						}
+					}
+				}
+			},
+			{
+				location: {
+					is: {
+						name: {
+							contains: term,
+							mode: 'insensitive'
+						}
+					}
+				}
+			}
+		]
+	}));
+}
 
 export const load: PageServerLoad = async ({ url, locals }) => {
 	if (!locals.user) {
@@ -10,145 +90,248 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
 	const careerId = url.searchParams.get('carrera');
 	const locationIdParam = url.searchParams.get('localidad');
+	const searchQuery = url.searchParams.get('q')?.trim() ?? '';
+	const requestedPage = parsePage(url.searchParams.get('page'));
+
 	const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
 
-	// Obtener todas las localidades activas
 	const allLocations = await prisma.location.findMany({
-		where: { active: true },
-		select: { id: true, name: true, code: true },
-		orderBy: { name: 'asc' }
+		where: {
+			active: true
+		},
+		select: {
+			id: true,
+			name: true,
+			code: true
+		},
+		orderBy: {
+			name: 'asc'
+		}
 	});
 
-	// Determinar si el usuario tiene acceso global (todas las localidades)
 	const hasGlobalAccess =
 		allLocations.length > 0 && allowedLocationIds.length === allLocations.length;
 
-	// Filtrar localidades a mostrar en el selector
 	const filterableLocations = hasGlobalAccess
 		? allLocations
-		: allLocations.filter((l) => allowedLocationIds.includes(l.id));
+		: allLocations.filter((location) => allowedLocationIds.includes(location.id));
 
-	// Determinar localidades a usar en el filtro
 	let effectiveLocationIds = allowedLocationIds;
 	let selectedLocationId: string | null = null;
 
-	// Si el usuario tiene acceso global y seleccionó una localidad específica
 	if (hasGlobalAccess && locationIdParam) {
-		const selectedLocation = allLocations.find((l) => l.id === locationIdParam);
+		const selectedLocation = allLocations.find((location) => location.id === locationIdParam);
+
 		if (selectedLocation) {
 			effectiveLocationIds = [selectedLocation.id];
 			selectedLocationId = selectedLocation.id;
 		}
 	}
 
-	// Obtener usuarios con rol ALUMNO
-	const usersWithAlumnoRole = await prisma.user.findMany({
-		where: {
-			roles: {
-				some: {
-					role: {
-						code: 'ALUMNO'
+	/*
+	 * Alcance institucional:
+	 * - usuarios limitados: únicamente sus localidades autorizadas;
+	 * - usuarios globales: todas las localidades, salvo filtro explícito;
+	 * - carrera: se aplica cuando fue seleccionada.
+	 */
+	const studentScopeWhere: Prisma.StudentWhereInput = {
+		user: {
+			is: {
+				roles: {
+					some: {
+						role: {
+							code: 'ALUMNO'
+						}
 					}
 				}
 			}
-		},
-		include: {
-			roles: {
-				include: {
-					role: true
-				}
-			},
-			student: {
-				include: {
-					career: true,
-					location: true
-				}
-			}
-		},
-		orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
-	});
-
-	// Filtrar alumnos por su localidad/sede académica.
-	// - Usuarios con acceso limitado: solo ven sus localidades permitidas.
-	// - Usuarios globales: se filtra únicamente cuando seleccionan una localidad.
-	let filteredUsers = usersWithAlumnoRole;
+		}
+	};
 
 	if (!hasGlobalAccess) {
-		filteredUsers = usersWithAlumnoRole.filter((user) => {
-			if (!user.student?.locationId) return false;
-
-			return allowedLocationIds.includes(user.student.locationId);
-		});
-	} else if (selectedLocationId !== null) {
-		filteredUsers = usersWithAlumnoRole.filter(
-			(user) => user.student?.locationId === selectedLocationId
-		);
+		studentScopeWhere.locationId = {
+			in: allowedLocationIds
+		};
+	} else if (selectedLocationId) {
+		studentScopeWhere.locationId = selectedLocationId;
 	}
 
-	// Filtrar por carrera si se especificó
 	if (careerId) {
-		filteredUsers = filteredUsers.filter((user) => {
-			return user.student && user.student.careerId === careerId;
-		});
+		studentScopeWhere.careerId = careerId;
 	}
 
-	const careers = await prisma.career.findMany({
-		where: {
-			active: true,
-			locations: {
-				some: {
-					locationId: { in: effectiveLocationIds }
+	const searchFilters = buildSearchFilters(searchQuery);
+
+	const studentWhere: Prisma.StudentWhereInput =
+		searchFilters.length > 0
+			? {
+					AND: [studentScopeWhere, ...searchFilters]
+				}
+			: studentScopeWhere;
+
+	/*
+	 * Las métricas conservan el comportamiento anterior:
+	 * respetan carrera/localidad, pero no se reducen por el texto del buscador.
+	 */
+	const [
+		totalItems,
+		totalStudents,
+		activeStudents,
+		scholarshipStudents,
+		repeatingStudents,
+		careers
+	] = await Promise.all([
+		prisma.student.count({
+			where: studentWhere
+		}),
+		prisma.student.count({
+			where: studentScopeWhere
+		}),
+		prisma.student.count({
+			where: {
+				AND: [studentScopeWhere, { status: 'ACTIVE' }]
+			}
+		}),
+		prisma.student.count({
+			where: {
+				AND: [studentScopeWhere, { isBecado: true }]
+			}
+		}),
+		prisma.student.count({
+			where: {
+				AND: [studentScopeWhere, { isRecursante: true }]
+			}
+		}),
+		prisma.career.findMany({
+			where: {
+				active: true,
+				locations: {
+					some: {
+						locationId: {
+							in: effectiveLocationIds
+						}
+					}
+				}
+			},
+			orderBy: {
+				name: 'asc'
+			},
+			select: {
+				id: true,
+				name: true
+			}
+		})
+	]);
+
+	const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+	const page = Math.min(requestedPage, totalPages);
+	const skip = (page - 1) * PAGE_SIZE;
+
+	const students = await prisma.student.findMany({
+		where: studentWhere,
+		include: {
+			user: {
+				select: {
+					id: true,
+					email: true,
+					firstName: true,
+					lastName: true,
+					createdAt: true
+				}
+			},
+			career: {
+				select: {
+					id: true,
+					name: true
+				}
+			},
+			location: {
+				select: {
+					id: true,
+					name: true
 				}
 			}
 		},
-		orderBy: { name: 'asc' },
-		select: { id: true, name: true }
+		orderBy: [
+			{
+				user: {
+					lastName: 'asc'
+				}
+			},
+			{
+				user: {
+					firstName: 'asc'
+				}
+			},
+			{
+				id: 'asc'
+			}
+		],
+		skip,
+		take: PAGE_SIZE
 	});
 
-	// Get career name if filtering by career
-	let careerName = null;
-	if (careerId && filteredUsers.length > 0) {
-		const userWithCareer = filteredUsers.find((u) => u.student && u.student.careerId === careerId);
-		if (userWithCareer && userWithCareer.student) {
-			careerName = userWithCareer.student.career.name;
-		}
-	}
+	const careerName = careerId
+		? (careers.find((career) => career.id === careerId)?.name ?? null)
+		: null;
+
+	const from = totalItems === 0 ? 0 : skip + 1;
+	const to = totalItems === 0 ? 0 : Math.min(skip + students.length, totalItems);
 
 	return {
-		students: filteredUsers.map((user) => ({
-			id: user.student?.id || user.id,
-			userId: user.id,
-			dni: user.student?.dni || '',
-			firstName: user.firstName,
-			lastName: user.lastName,
-			email: user.email,
-			career: user.student?.career?.name || 'Sin carrera',
-			careerId: user.student?.careerId || '',
-			academicLocation: user.student?.location?.name || 'Sin asignar',
-			academicLocationId: user.student?.locationId || '',
-			status: user.student?.status || 'ACTIVE',
-			isBecado: user.student?.isBecado || false,
-			isRecursante: user.student?.isRecursante || false,
-			currentYear: user.student?.currentYear || 1,
-			createdAt: user.createdAt,
-			// Campos extendidos - usar null en lugar de undefined
-			birthDate: user.student?.birthDate ?? null,
-			bloodType: user.student?.bloodType ?? null,
-			phone: user.student?.phone ?? null,
-			address: user.student?.address ?? null,
-			locality: user.student?.locality ?? null,
-			postalCode: user.student?.postalCode ?? null,
-			highSchool: user.student?.highSchool ?? null,
-			highSchoolYear: user.student?.highSchoolYear ?? null,
-			instituteYear: user.student?.instituteYear ?? null,
-			familyContactName: user.student?.familyContactName ?? null,
-			familyContactPhone: user.student?.familyContactPhone ?? null,
-			familyRelationship: user.student?.familyRelationship ?? null
+		students: students.map((student) => ({
+			id: student.id,
+			userId: student.userId,
+			dni: student.dni,
+			firstName: student.user.firstName,
+			lastName: student.user.lastName,
+			email: student.user.email,
+			career: student.career.name,
+			careerId: student.careerId,
+			academicLocation: student.location?.name ?? 'Sin asignar',
+			academicLocationId: student.locationId ?? '',
+			status: student.status,
+			isBecado: student.isBecado,
+			isRecursante: student.isRecursante,
+			currentYear: student.currentYear,
+			createdAt: student.user.createdAt,
+			birthDate: student.birthDate,
+			bloodType: student.bloodType,
+			phone: student.phone,
+			address: student.address,
+			locality: student.locality,
+			postalCode: student.postalCode,
+			highSchool: student.highSchool,
+			highSchoolYear: student.highSchoolYear,
+			instituteYear: student.instituteYear,
+			familyContactName: student.familyContactName,
+			familyContactPhone: student.familyContactPhone,
+			familyRelationship: student.familyRelationship
 		})),
 		careers,
 		locations: filterableLocations,
 		hasGlobalAccess,
 		selectedLocationId,
-		filter: careerId ? { careerId, careerName } : null
+		searchQuery,
+		metrics: {
+			total: totalStudents,
+			active: activeStudents,
+			scholarship: scholarshipStudents,
+			repeating: repeatingStudents
+		},
+		pagination: {
+			page,
+			pageSize: PAGE_SIZE,
+			totalItems,
+			totalPages,
+			from,
+			to
+		},
+		filter: careerId
+			? {
+					careerId,
+					careerName
+				}
+			: null
 	};
 };

@@ -1,11 +1,13 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
+	import { untrack } from 'svelte';
 
 	let { data }: { data: PageData } = $props();
 	let editingStudent = $state<Student | null>(null);
 	let deletingStudent = $state<Student | null>(null);
-	let searchQuery = $state('');
+	let searchQuery = $state(untrack(() => data.searchQuery ?? ''));
+	let searchTimer: number | undefined;
 	let dischargeReason = $state('');
 	let dischargeNotes = $state('');
 
@@ -13,21 +15,6 @@
 	// We use it as initial value for the mutable state selectedLocation
 	// svelte-ignore state_referenced_locally
 	let selectedLocation = $state(data.selectedLocationId || '');
-
-	// Filtrar estudiantes según búsqueda
-	const filteredStudents = $derived(
-		data.students.filter((student: any) => {
-			if (!searchQuery.trim()) return true;
-			const query = searchQuery.toLowerCase();
-			const fullName = `${student.lastName} ${student.firstName}`.toLowerCase();
-			return (
-				fullName.includes(query) ||
-				student.email.toLowerCase().includes(query) ||
-				student.dni.toLowerCase().includes(query) ||
-				student.academicLocation.toLowerCase().includes(query)
-			);
-		})
-	);
 
 	// Actualizar URL cuando cambia la localidad seleccionada
 	function updateLocationFilter(event: Event) {
@@ -39,7 +26,63 @@
 		} else {
 			url.searchParams.delete('localidad');
 		}
+
+		url.searchParams.delete('page');
 		window.location.href = url.toString();
+	}
+
+	function scheduleSearchFilter() {
+		if (searchTimer) {
+			window.clearTimeout(searchTimer);
+		}
+
+		searchTimer = window.setTimeout(() => {
+			const url = new URL(window.location.href);
+			const query = searchQuery.trim();
+
+			if (query) {
+				url.searchParams.set('q', query);
+			} else {
+				url.searchParams.delete('q');
+			}
+
+			url.searchParams.delete('page');
+			window.location.href = url.toString();
+		}, 500);
+	}
+
+	function buildPageUrl(targetPage: number) {
+		const url = new URL('/alumnos', window.location.origin);
+
+		if (data.filter?.careerId) {
+			url.searchParams.set('carrera', data.filter.careerId);
+		}
+
+		if (data.selectedLocationId) {
+			url.searchParams.set('localidad', data.selectedLocationId);
+		}
+
+		if (data.searchQuery) {
+			url.searchParams.set('q', data.searchQuery);
+		}
+
+		if (targetPage > 1) {
+			url.searchParams.set('page', String(targetPage));
+		}
+
+		return `${url.pathname}${url.search}`;
+	}
+
+	function goToPage(targetPage: number) {
+		if (
+			targetPage < 1 ||
+			targetPage > data.pagination.totalPages ||
+			targetPage === data.pagination.page
+		) {
+			return;
+		}
+
+		window.location.href = buildPageUrl(targetPage);
 	}
 
 	interface Student {
@@ -90,11 +133,40 @@
 	// Type assertion for filter data
 	const filter = $derived((data as { filter?: FilterData | null }).filter ?? null);
 
+	const hasDatasetFilters = $derived(
+		Boolean(filter || data.searchQuery || data.selectedLocationId)
+	);
+
+	const paginationItems = $derived.by(() => {
+		const current = data.pagination.page;
+		const total = data.pagination.totalPages;
+
+		if (total <= 7) {
+			return Array.from({ length: total }, (_, index) => index + 1);
+		}
+
+		const items: Array<number | 'start-ellipsis' | 'end-ellipsis'> = [];
+
+		if (current <= 4) {
+			items.push(1, 2, 3, 4, 5, 'end-ellipsis', total);
+			return items;
+		}
+
+		if (current >= total - 3) {
+			items.push(1, 'start-ellipsis', total - 4, total - 3, total - 2, total - 1, total);
+			return items;
+		}
+
+		items.push(1, 'start-ellipsis', current - 1, current, current + 1, 'end-ellipsis', total);
+
+		return items;
+	});
+
 	// Métricas configuradas
 	const metrics = $derived<MetricCard[]>([
 		{
 			title: 'Total Alumnos',
-			value: data.students.length,
+			value: data.metrics.total,
 			description: 'Total de alumnos registrados',
 			icon: 'users',
 			color: 'text-slate-400',
@@ -102,7 +174,7 @@
 		},
 		{
 			title: 'Activos',
-			value: data.students.filter((s: Student) => s.status === 'ACTIVE').length,
+			value: data.metrics.active,
 			description: 'Alumnos con estado activo',
 			icon: 'user-check',
 			color: 'text-emerald-400',
@@ -110,7 +182,7 @@
 		},
 		{
 			title: 'Becados',
-			value: data.students.filter((s: Student) => s.isBecado).length,
+			value: data.metrics.scholarship,
 			description: 'Alumnos con beca activa',
 			icon: 'graduation-cap',
 			color: 'text-blue-400',
@@ -118,7 +190,7 @@
 		},
 		{
 			title: 'Recursantes',
-			value: data.students.filter((s: Student) => s.isRecursante).length,
+			value: data.metrics.repeating,
 			description: 'Alumnos en condición de recursante',
 			icon: 'arrow-path',
 			color: 'text-amber-400',
@@ -191,11 +263,15 @@
 
 	function clearFilters() {
 		searchQuery = '';
-		if (selectedLocation) {
-			const url = new URL(window.location.href);
-			url.searchParams.delete('localidad');
-			window.location.href = url.toString();
-		}
+		selectedLocation = '';
+
+		const url = new URL(window.location.href);
+
+		url.searchParams.delete('q');
+		url.searchParams.delete('localidad');
+		url.searchParams.delete('page');
+
+		window.location.href = url.toString();
 	}
 </script>
 
@@ -338,6 +414,7 @@
 						type="text"
 						placeholder="Buscar por nombre, email, DNI o localidad"
 						bind:value={searchQuery}
+						oninput={scheduleSearchFilter}
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 py-2 pr-4 pl-10 text-sm text-slate-300 placeholder-slate-500 transition outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
 					/>
 				</div>
@@ -406,7 +483,7 @@
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-slate-800">
-					{#if filteredStudents.length === 0}
+					{#if !hasDatasetFilters && data.metrics.total === 0}
 						<tr>
 							<td colspan="7" class="px-4 py-12">
 								<div class="flex flex-col items-center justify-center text-center">
@@ -428,22 +505,22 @@
 										</svg>
 									</div>
 									<h3 class="text-lg font-semibold text-white">
-										{#if data.students.length === 0}
+										{#if !hasDatasetFilters && data.metrics.total === 0}
 											No hay alumnos registrados
 										{:else}
 											No se encontraron alumnos
 										{/if}
 									</h3>
 									<p class="mt-1 text-sm text-slate-400">
-										{#if data.students.length === 0}
+										{#if !hasDatasetFilters && data.metrics.total === 0}
 											Comienza agregando el primer alumno al sistema.
-										{:else if hasActiveFilters()}
+										{:else if hasDatasetFilters}
 											No hay alumnos que coincidan con los filtros aplicados.
 										{:else}
-											No hay alumnos que coincidan con "{searchQuery}".
+											No se encontraron alumnos.
 										{/if}
 									</p>
-									{#if data.students.length === 0}
+									{#if !hasDatasetFilters && data.metrics.total === 0}
 										<a
 											href="/usuarios/nuevo"
 											class="mt-4 inline-flex items-center gap-2 rounded-xl border-2 border-indigo-600 bg-white px-4 py-2 text-sm font-medium text-indigo-600 transition hover:bg-indigo-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 focus:outline-none"
@@ -478,7 +555,7 @@
 							</td>
 						</tr>
 					{:else}
-						{#each filteredStudents as student}
+						{#each data.students as student}
 							<tr class="transition-colors hover:bg-slate-800/30">
 								<td class="px-4 py-3 text-sm whitespace-nowrap text-slate-300">
 									{student.dni}
@@ -573,6 +650,62 @@
 				</tbody>
 			</table>
 		</div>
+
+		{#if data.pagination.totalItems > 0}
+			<div
+				class="flex flex-col gap-4 border-t border-slate-800 px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+			>
+				<p class="text-sm text-slate-400">
+					Mostrando
+					<span class="font-semibold text-slate-200">{data.pagination.from}</span>
+					–
+					<span class="font-semibold text-slate-200">{data.pagination.to}</span>
+					de
+					<span class="font-semibold text-slate-200">{data.pagination.totalItems}</span>
+					alumnos
+				</p>
+
+				{#if data.pagination.totalPages > 1}
+					<nav class="flex flex-wrap items-center gap-2" aria-label="Paginación de alumnos">
+						<button
+							type="button"
+							disabled={data.pagination.page === 1}
+							onclick={() => goToPage(data.pagination.page - 1)}
+							class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-medium text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+						>
+							Anterior
+						</button>
+
+						{#each paginationItems as item (item)}
+							{#if typeof item === 'number'}
+								<button
+									type="button"
+									aria-current={item === data.pagination.page ? 'page' : undefined}
+									onclick={() => goToPage(item)}
+									class="min-w-10 rounded-lg border px-3 py-2 text-sm font-semibold transition {item ===
+									data.pagination.page
+										? 'border-indigo-500 bg-indigo-500 text-white'
+										: 'border-slate-700 bg-slate-950 text-slate-300 hover:border-slate-600 hover:bg-slate-800'}"
+								>
+									{item}
+								</button>
+							{:else}
+								<span class="px-1 text-sm text-slate-500" aria-hidden="true">…</span>
+							{/if}
+						{/each}
+
+						<button
+							type="button"
+							disabled={data.pagination.page === data.pagination.totalPages}
+							onclick={() => goToPage(data.pagination.page + 1)}
+							class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-medium text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+						>
+							Siguiente
+						</button>
+					</nav>
+				{/if}
+			</div>
+		{/if}
 	</div>
 
 	<!-- Modal de Edición -->

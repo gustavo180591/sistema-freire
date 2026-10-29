@@ -10,10 +10,9 @@
 	} = $props();
 
 	type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'JUSTIFIED';
+	type RecentAttendance = PageData['recentAttendance'][number];
 
 	let selectedSubject = $state('');
-	let selectedCommission = $state('');
-	let selectedSchedule = $state('');
 
 	let selectedDate = $state(
 		new Intl.DateTimeFormat('en-CA', {
@@ -24,19 +23,9 @@
 	let statuses = $state<Record<string, AttendanceStatus>>({});
 	let notes = $state<Record<string, string>>({});
 
-	let editingAttendance = $state<any>(null);
+	let editingAttendance = $state<RecentAttendance | null>(null);
 	let editStatuses = $state<Record<string, AttendanceStatus>>({});
 	let editNotes = $state<Record<string, string>>({});
-
-	const dayLabels: Record<string, string> = {
-		MONDAY: 'Lunes',
-		TUESDAY: 'Martes',
-		WEDNESDAY: 'Miércoles',
-		THURSDAY: 'Jueves',
-		FRIDAY: 'Viernes',
-		SATURDAY: 'Sábado',
-		SUNDAY: 'Domingo'
-	};
 
 	const statusLabels: Record<AttendanceStatus, string> = {
 		PRESENT: 'Presente',
@@ -45,59 +34,36 @@
 		JUSTIFIED: 'Justificada'
 	};
 
-	let availableCommissions = $derived.by(() => {
-		return data.commissions.filter((commission) => commission.subjectId === selectedSubject);
-	});
-
-	let availableSchedules = $derived.by(() => {
-		return data.schedules.filter(
-			(schedule) =>
-				schedule.subjectId === selectedSubject && schedule.commissionId === selectedCommission
-		);
-	});
-
 	let currentStudents = $derived.by(() => {
-		if (!selectedCommission) return [];
+		if (!selectedSubject) return [];
 
-		return (
-			data.studentsByCommission[selectedCommission as keyof typeof data.studentsByCommission] ?? []
-		);
+		return data.studentsBySubject[selectedSubject as keyof typeof data.studentsBySubject] ?? [];
 	});
 
 	let presentCount = $derived.by(
 		() =>
-			currentStudents.filter((student: any) => (statuses[student.id] ?? 'PRESENT') === 'PRESENT')
-				.length
+			currentStudents.filter((student) => (statuses[student.id] ?? 'PRESENT') === 'PRESENT').length
 	);
 
 	let lateCount = $derived.by(
-		() => currentStudents.filter((student: any) => statuses[student.id] === 'LATE').length
+		() => currentStudents.filter((student) => statuses[student.id] === 'LATE').length
 	);
 
 	let absentCount = $derived.by(
-		() => currentStudents.filter((student: any) => statuses[student.id] === 'ABSENT').length
+		() => currentStudents.filter((student) => statuses[student.id] === 'ABSENT').length
 	);
 
 	let justifiedCount = $derived.by(
-		() => currentStudents.filter((student: any) => statuses[student.id] === 'JUSTIFIED').length
+		() => currentStudents.filter((student) => statuses[student.id] === 'JUSTIFIED').length
 	);
 
 	function changeSubject() {
-		selectedCommission = '';
-		selectedSchedule = '';
-		statuses = {};
-		notes = {};
-	}
-
-	function changeCommission() {
-		selectedSchedule = '';
-
 		const students =
-			data.studentsByCommission[selectedCommission as keyof typeof data.studentsByCommission] ?? [];
+			data.studentsBySubject[selectedSubject as keyof typeof data.studentsBySubject] ?? [];
 
-		statuses = Object.fromEntries(students.map((student: any) => [student.id, 'PRESENT']));
+		statuses = Object.fromEntries(students.map((student) => [student.id, 'PRESENT']));
 
-		notes = Object.fromEntries(students.map((student: any) => [student.id, '']));
+		notes = Object.fromEntries(students.map((student) => [student.id, '']));
 	}
 
 	function setAll(status: AttendanceStatus) {
@@ -112,7 +78,7 @@
 
 	function attendanceData() {
 		return JSON.stringify(
-			currentStudents.map((student: any) => ({
+			currentStudents.map((student) => ({
 				studentId: student.id,
 				status: statuses[student.id] ?? 'PRESENT',
 				notes: notes[student.id] ?? ''
@@ -120,15 +86,15 @@
 		);
 	}
 
-	function startEdit(record: any) {
+	function startEdit(record: RecentAttendance) {
 		editingAttendance = record;
 
 		editStatuses = Object.fromEntries(
-			record.entries.map((entry: any) => [entry.studentId, entry.status])
+			record.entries.map((entry) => [entry.studentId, entry.status])
 		);
 
 		editNotes = Object.fromEntries(
-			record.entries.map((entry: any) => [entry.studentId, entry.notes ?? ''])
+			record.entries.map((entry) => [entry.studentId, entry.notes ?? ''])
 		);
 	}
 
@@ -136,7 +102,7 @@
 		if (!editingAttendance) return '[]';
 
 		return JSON.stringify(
-			editingAttendance.entries.map((entry: any) => ({
+			editingAttendance.entries.map((entry) => ({
 				studentId: entry.studentId,
 				status: editStatuses[entry.studentId] ?? entry.status,
 				notes: editNotes[entry.studentId] ?? entry.notes ?? ''
@@ -153,7 +119,7 @@
 	<header class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
 		<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Docente</p>
 		<h1 class="mt-2 text-3xl font-bold">Asistencia por materia</h1>
-		<p class="mt-2 text-slate-400">Seleccioná la materia, comisión y clase programada.</p>
+		<p class="mt-2 text-slate-400">Seleccioná la materia y la fecha para tomar asistencia.</p>
 	</header>
 
 	{#if form?.error}
@@ -170,7 +136,7 @@
 
 	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 		<form method="POST" class="space-y-6">
-			<div class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+			<div class="grid gap-5 md:grid-cols-2">
 				<div>
 					<label for="subjectId" class="mb-2 block text-sm font-medium text-slate-300">
 						Materia
@@ -184,62 +150,11 @@
 						required
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-indigo-500"
 					>
-						<option value=""> Seleccionar materia... </option>
+						<option value="">Seleccionar materia...</option>
 
-						{#each data.subjects as subject}
+						{#each data.subjects as subject (subject.id)}
 							<option value={subject.id}>
 								{subject.code} - {subject.name}
-							</option>
-						{/each}
-					</select>
-				</div>
-
-				<div>
-					<label for="commissionId" class="mb-2 block text-sm font-medium text-slate-300">
-						Comisión
-					</label>
-
-					<select
-						id="commissionId"
-						name="commissionId"
-						bind:value={selectedCommission}
-						onchange={changeCommission}
-						disabled={!selectedSubject}
-						required
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-indigo-500 disabled:opacity-50"
-					>
-						<option value=""> Seleccionar comisión... </option>
-
-						{#each availableCommissions as commission}
-							<option value={commission.id}>
-								{commission.code}
-								{commission.career ? ` · ${commission.career}` : ''}
-								{commission.location ? ` · ${commission.location}` : ''}
-							</option>
-						{/each}
-					</select>
-				</div>
-
-				<div>
-					<label for="classScheduleId" class="mb-2 block text-sm font-medium text-slate-300">
-						Clase programada
-					</label>
-
-					<select
-						id="classScheduleId"
-						name="classScheduleId"
-						bind:value={selectedSchedule}
-						disabled={!selectedCommission}
-						required
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-indigo-500 disabled:opacity-50"
-					>
-						<option value=""> Seleccionar horario... </option>
-
-						{#each availableSchedules as schedule}
-							<option value={schedule.id}>
-								{dayLabels[schedule.dayOfWeek]}
-								· {schedule.startTime} - {schedule.endTime}
-								{schedule.classroom ? ` · ${schedule.classroom}` : ''}
 							</option>
 						{/each}
 					</select>
@@ -259,7 +174,7 @@
 				</div>
 			</div>
 
-			{#if selectedCommission && currentStudents.length > 0}
+			{#if selectedSubject && currentStudents.length > 0}
 				<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 					<div class="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
 						<p class="text-sm text-emerald-300">Presentes</p>
@@ -310,14 +225,15 @@
 
 				<div class="overflow-hidden rounded-2xl border border-slate-800">
 					<div class="border-b border-slate-800 bg-slate-950 px-5 py-4">
-						<h2 class="font-semibold">Alumnos de la comisión</h2>
+						<h2 class="font-semibold">Alumnos que cursan la materia</h2>
 						<p class="mt-1 text-sm text-slate-400">
-							{currentStudents.length} alumnos activos
+							{currentStudents.length}
+							{currentStudents.length === 1 ? 'alumno activo' : 'alumnos activos'}
 						</p>
 					</div>
 
 					<div class="divide-y divide-slate-800">
-						{#each currentStudents as student}
+						{#each currentStudents as student (student.id)}
 							<div class="grid gap-4 p-4 lg:grid-cols-[1fr_220px_1fr] lg:items-center">
 								<div>
 									<p class="font-medium">
@@ -368,15 +284,15 @@
 				<div class="flex justify-end">
 					<button
 						type="submit"
-						disabled={!selectedSchedule}
+						disabled={!selectedSubject || currentStudents.length === 0}
 						class="rounded-2xl bg-white px-7 py-3 font-semibold text-slate-950 transition hover:scale-[1.02] disabled:opacity-40"
 					>
 						Guardar asistencia
 					</button>
 				</div>
-			{:else if selectedCommission}
+			{:else if selectedSubject}
 				<div class="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-6 text-amber-200">
-					Esta comisión no tiene alumnos con inscripción activa.
+					No hay alumnos con inscripción activa cursando esta materia.
 				</div>
 			{/if}
 		</form>
@@ -388,7 +304,7 @@
 			<p class="text-sm text-slate-400">Historial registrado por este docente.</p>
 		</div>
 
-		{#each data.recentAttendance as record}
+		{#each data.recentAttendance as record (record.id)}
 			<article class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
 				<div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
 					<div>
@@ -469,7 +385,7 @@
 				<input type="hidden" name="attendanceData" value={editAttendanceData()} />
 
 				<div class="divide-y divide-slate-800 rounded-2xl border border-slate-800">
-					{#each editingAttendance.entries as entry}
+					{#each editingAttendance.entries as entry (entry.studentId)}
 						<div class="grid gap-4 p-4 lg:grid-cols-[1fr_220px_1fr] lg:items-center">
 							<div>
 								<p class="font-medium">
@@ -491,7 +407,7 @@
 								}}
 								class="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2"
 							>
-								{#each Object.entries(statusLabels) as [value, label]}
+								{#each Object.entries(statusLabels) as [value, label] (value)}
 									<option {value}>
 										{label}
 									</option>

@@ -43,22 +43,6 @@ function parseClassDate(value: string): Date {
 	return date;
 }
 
-function getWeekDay(value: string) {
-	const date = parseClassDate(value);
-
-	const days = [
-		'SUNDAY',
-		'MONDAY',
-		'TUESDAY',
-		'WEDNESDAY',
-		'THURSDAY',
-		'FRIDAY',
-		'SATURDAY'
-	] as const;
-
-	return days[date.getUTCDay()];
-}
-
 function todayInArgentina(): string {
 	const parts = new Intl.DateTimeFormat('en-CA', {
 		timeZone: 'America/Argentina/Buenos_Aires',
@@ -114,66 +98,33 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	const schedules = await prisma.classSchedule.findMany({
-		where: {
-			teacherId: teacher.id,
-			active: true,
-			commissionId: {
-				not: null
-			},
-			OR: [
-				{
-					locationId: null
-				},
-				{
-					locationId: {
-						in: allowedLocationIds
-					}
-				}
-			]
-		},
-		include: {
-			subject: true,
-			commission: {
-				include: {
-					career: true,
-					location: true,
-					academicTerm: true
-				}
-			},
-			career: true,
-			location: true
-		},
-		orderBy: [
-			{
-				subject: {
-					name: 'asc'
-				}
-			},
-			{
-				dayOfWeek: 'asc'
-			},
-			{
-				startTime: 'asc'
-			}
-		]
-	});
+	const assignedSubjectIds = subjectAssignments.map((assignment) => assignment.subjectId);
 
-	const commissionIds = [
-		...new Set(
-			schedules.map((schedule) => schedule.commissionId).filter((id): id is string => Boolean(id))
-		)
-	];
-
-	const enrollments = commissionIds.length
+	const enrollments = assignedSubjectIds.length
 		? await prisma.subjectEnrollment.findMany({
 				where: {
-					commissionId: {
-						in: commissionIds
+					subjectId: {
+						in: assignedSubjectIds
 					},
 					status: 'ACTIVE',
 					student: {
 						status: 'ACTIVE'
+					},
+					commission: {
+						is: {
+							teacherId: teacher.id,
+							active: true,
+							OR: [
+								{
+									locationId: null
+								},
+								{
+									locationId: {
+										in: allowedLocationIds
+									}
+								}
+							]
+						}
 					}
 				},
 				include: {
@@ -198,14 +149,29 @@ export const load: PageServerLoad = async ({ locals }) => {
 			})
 		: [];
 
-	const studentsByCommission: Record<string, any[]> = {};
+	type AttendanceStudent = {
+		id: string;
+		enrollmentId: string;
+		dni: string;
+		firstName: string;
+		lastName: string;
+		career: string;
+		currentYear: number;
+	};
+
+	const studentsBySubject: Record<string, AttendanceStudent[]> = {};
+	const studentIdsBySubject = new Map<string, Set<string>>();
 
 	for (const enrollment of enrollments) {
-		if (!enrollment.commissionId) continue;
+		studentsBySubject[enrollment.subjectId] ??= [];
 
-		studentsByCommission[enrollment.commissionId] ??= [];
+		const seenStudentIds = studentIdsBySubject.get(enrollment.subjectId) ?? new Set<string>();
 
-		studentsByCommission[enrollment.commissionId].push({
+		if (seenStudentIds.has(enrollment.studentId)) {
+			continue;
+		}
+
+		studentsBySubject[enrollment.subjectId].push({
 			id: enrollment.student.id,
 			enrollmentId: enrollment.id,
 			dni: enrollment.student.dni,
@@ -214,31 +180,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 			career: enrollment.student.career.name,
 			currentYear: enrollment.student.currentYear
 		});
-	}
 
-	const commissionsMap = new Map<
-		string,
-		{
-			id: string;
-			code: string;
-			subjectId: string;
-			career: string | null;
-			location: string | null;
-			academicTerm: string | null;
-		}
-	>();
-
-	for (const schedule of schedules) {
-		if (schedule.commission) {
-			commissionsMap.set(schedule.commission.id, {
-				id: schedule.commission.id,
-				code: schedule.commission.code,
-				subjectId: schedule.subjectId,
-				career: schedule.commission.career?.name ?? null,
-				location: schedule.commission.location?.name ?? null,
-				academicTerm: schedule.commission.academicTerm?.name ?? null
-			});
-		}
+		seenStudentIds.add(enrollment.studentId);
+		studentIdsBySubject.set(enrollment.subjectId, seenStudentIds);
 	}
 
 	const recentAttendance = await prisma.attendanceRecord.findMany({
@@ -268,19 +212,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			code: assignment.subject.code,
 			name: assignment.subject.name
 		})),
-		commissions: [...commissionsMap.values()],
-		schedules: schedules.map((schedule) => ({
-			id: schedule.id,
-			subjectId: schedule.subjectId,
-			commissionId: schedule.commissionId,
-			dayOfWeek: schedule.dayOfWeek,
-			startTime: schedule.startTime,
-			endTime: schedule.endTime,
-			classroom: schedule.classroom,
-			location: schedule.location?.name ?? null,
-			career: schedule.career.name
-		})),
-		studentsByCommission,
+		studentsBySubject,
 		recentAttendance: recentAttendance.map((record) => {
 			const entries = record.entries.map((entry) => ({
 				studentId: entry.studentId,
@@ -321,18 +253,12 @@ export const actions: Actions = {
 		const formData = await request.formData();
 
 		const subjectId = formData.get('subjectId')?.toString();
-
-		const commissionId = formData.get('commissionId')?.toString();
-
-		const classScheduleId = formData.get('classScheduleId')?.toString();
-
 		const date = formData.get('date')?.toString();
-
 		const rawAttendance = formData.get('attendanceData')?.toString();
 
-		if (!subjectId || !commissionId || !classScheduleId || !date || !rawAttendance) {
+		if (!subjectId || !date || !rawAttendance) {
 			return fail(400, {
-				error: 'Completá materia, comisión, clase y fecha'
+				error: 'Completá la materia y la fecha'
 			});
 		}
 
@@ -340,6 +266,9 @@ export const actions: Actions = {
 			const teacher = await prisma.teacher.findUnique({
 				where: {
 					userId: locals.user.id
+				},
+				select: {
+					id: true
 				}
 			});
 
@@ -349,34 +278,25 @@ export const actions: Actions = {
 				});
 			}
 
-			const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
-
-			const schedule = await prisma.classSchedule.findUnique({
+			const subjectAssignment = await prisma.subjectTeacher.findUnique({
 				where: {
-					id: classScheduleId
+					subjectId_teacherId: {
+						subjectId,
+						teacherId: teacher.id
+					}
 				},
-				include: {
-					subject: true,
-					commission: true
+				select: {
+					subject: {
+						select: {
+							name: true
+						}
+					}
 				}
 			});
 
-			if (
-				!schedule ||
-				!schedule.active ||
-				!schedule.commission ||
-				schedule.teacherId !== teacher.id ||
-				schedule.subjectId !== subjectId ||
-				schedule.commissionId !== commissionId
-			) {
+			if (!subjectAssignment) {
 				return fail(403, {
-					error: 'La clase seleccionada no corresponde al docente, materia o comisión'
-				});
-			}
-
-			if (schedule.locationId && !allowedLocationIds.includes(schedule.locationId)) {
-				return fail(403, {
-					error: 'No tenés permiso para registrar asistencia en esa sede'
+					error: 'No tenés permiso para tomar asistencia en esta materia'
 				});
 			}
 
@@ -386,21 +306,15 @@ export const actions: Actions = {
 				});
 			}
 
-			if (getWeekDay(date) !== schedule.dayOfWeek) {
-				return fail(400, {
-					error: 'La fecha seleccionada no coincide con el día programado de esta clase'
-				});
-			}
-
 			const attendance = JSON.parse(rawAttendance) as Array<{
 				studentId: string;
 				status: AttendanceStatus;
 				notes?: string;
 			}>;
 
-			if (!Array.isArray(attendance)) {
+			if (!Array.isArray(attendance) || attendance.length === 0) {
 				return fail(400, {
-					error: 'Datos de asistencia inválidos'
+					error: 'La materia no tiene alumnos activos para registrar'
 				});
 			}
 
@@ -410,12 +324,30 @@ export const actions: Actions = {
 				});
 			}
 
+			const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
+
 			const activeEnrollments = await prisma.subjectEnrollment.findMany({
 				where: {
-					commissionId,
+					subjectId,
 					status: 'ACTIVE',
 					student: {
 						status: 'ACTIVE'
+					},
+					commission: {
+						is: {
+							teacherId: teacher.id,
+							active: true,
+							OR: [
+								{
+									locationId: null
+								},
+								{
+									locationId: {
+										in: allowedLocationIds
+									}
+								}
+							]
+						}
 					}
 				},
 				select: {
@@ -433,7 +365,7 @@ export const actions: Actions = {
 				attendance.some((entry) => !validStudentIds.has(entry.studentId))
 			) {
 				return fail(400, {
-					error: 'La nómina enviada no coincide con los alumnos activos de la comisión'
+					error: 'La nómina enviada no coincide con los alumnos que cursan actualmente la materia'
 				});
 			}
 
@@ -441,14 +373,18 @@ export const actions: Actions = {
 
 			const existingRecord = await prisma.attendanceRecord.findFirst({
 				where: {
-					classScheduleId,
-					classDate
+					subjectId,
+					classDate,
+					createdByUserId: locals.user.id
+				},
+				select: {
+					id: true
 				}
 			});
 
 			if (existingRecord) {
 				return fail(400, {
-					error: 'Ya existe asistencia registrada para esta clase y fecha'
+					error: 'Ya existe asistencia registrada para esta materia y fecha'
 				});
 			}
 
@@ -456,8 +392,6 @@ export const actions: Actions = {
 				const attendanceRecord = await tx.attendanceRecord.create({
 					data: {
 						subjectId,
-						commissionId,
-						classScheduleId,
 						classDate,
 						createdByUserId: locals.user!.id
 					}
@@ -494,8 +428,7 @@ export const actions: Actions = {
 				entityType: 'ATTENDANCE_RECORD',
 				entityId: record.id,
 				description:
-					`Asistencia ${schedule.subject.name} - ` +
-					`${schedule.commission.code}: ` +
+					`Asistencia ${subjectAssignment.subject.name}: ` +
 					`${presentCount} presentes, ` +
 					`${lateCount} tarde, ` +
 					`${absentCount} ausentes, ` +

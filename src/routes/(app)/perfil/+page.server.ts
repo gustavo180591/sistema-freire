@@ -199,11 +199,14 @@ export const actions: Actions = {
 		const newPassword = data.get('newPassword')?.toString();
 
 		if (!currentPassword || !newPassword) {
-			return fail(400, { error: 'Todos los campos son requeridos' });
+			return fail(400, { action: 'changePassword', error: 'Todos los campos son requeridos' });
 		}
 
 		if (newPassword.length < 8) {
-			return fail(400, { error: 'La nueva contraseña debe tener al menos 8 caracteres' });
+			return fail(400, {
+				action: 'changePassword',
+				error: 'La nueva contraseña debe tener al menos 8 caracteres'
+			});
 		}
 
 		const dbUser = await prisma.user.findUnique({
@@ -212,21 +215,24 @@ export const actions: Actions = {
 		});
 
 		if (!dbUser) {
-			return fail(404, { error: 'Usuario no encontrado' });
+			return fail(404, { action: 'changePassword', error: 'Usuario no encontrado' });
 		}
 
 		// Verificar contraseña actual
 		const isCurrentPasswordValid = await bcrypt.compare(currentPassword, dbUser.passwordHash);
 
 		if (!isCurrentPasswordValid) {
-			return fail(400, { error: 'La contraseña actual es incorrecta' });
+			return fail(400, { action: 'changePassword', error: 'La contraseña actual es incorrecta' });
 		}
 
 		// Verificar que la nueva contraseña sea diferente a la actual
 		const isSamePassword = await bcrypt.compare(newPassword, dbUser.passwordHash);
 
 		if (isSamePassword) {
-			return fail(400, { error: 'La nueva contraseña debe ser diferente a la actual' });
+			return fail(400, {
+				action: 'changePassword',
+				error: 'La nueva contraseña debe ser diferente a la actual'
+			});
 		}
 
 		// Hashear y actualizar la nueva contraseña
@@ -237,6 +243,10 @@ export const actions: Actions = {
 			data: { passwordHash: newPasswordHash }
 		});
 
-		return { success: true, message: 'Contraseña cambiada correctamente' };
+		return {
+			action: 'changePassword',
+			success: true,
+			message: 'Contraseña cambiada correctamente'
+		};
 	}
 };

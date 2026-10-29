@@ -51,17 +51,6 @@
 			}
 		};
 	}
-
-	function handleChangePassword() {
-		return async ({ result }: { result: any }) => {
-			if (result.type === 'success') {
-				await invalidateAll();
-				changingPassword = false;
-				currentPassword = '';
-				newPassword = '';
-			}
-		};
-	}
 </script>
 
 <svelte:head>
@@ -89,9 +78,9 @@
 			<div class="md:text-right">
 				<p class="text-xs text-slate-400 md:text-sm">Estado</p>
 				<div
-					class="mt-1 inline-flex items-center gap-2 rounded-full bg-emerald-950/50 px-3 py-1 text-xs text-emerald-400 md:px-4 md:py-1.5 md:text-sm"
+					class="mt-1 inline-flex items-center gap-2 rounded-full border border-emerald-700 px-3 py-1 text-xs text-emerald-700 md:px-4 md:py-1.5 md:text-sm"
 				>
-					<span class="h-1.5 w-1.5 rounded-full bg-emerald-400 md:h-2 md:w-2"></span>
+					<span class="h-1.5 w-1.5 rounded-full bg-emerald-700 md:h-2 md:w-2"></span>
 					{data.user.status}
 				</div>
 			</div>
@@ -158,7 +147,7 @@
 				class="group rounded-2xl border border-slate-800 bg-slate-800/50 p-4 transition hover:border-slate-700"
 			>
 				<div class="flex items-center gap-3">
-					<div class="rounded-xl bg-blue-950/50 p-2">
+					<div class="rounded-xl p-2">
 						<svg
 							class="h-5 w-5 text-blue-400"
 							fill="none"
@@ -185,7 +174,7 @@
 				class="group rounded-2xl border border-slate-800 bg-slate-800/50 p-4 transition hover:border-slate-700"
 			>
 				<div class="flex items-center gap-3">
-					<div class="rounded-xl bg-emerald-950/50 p-2">
+					<div class="rounded-xl p-2">
 						<svg
 							class="h-5 w-5 text-emerald-400"
 							fill="none"
@@ -212,7 +201,7 @@
 				class="group rounded-2xl border border-slate-800 bg-slate-800/50 p-4 transition hover:border-slate-700"
 			>
 				<div class="flex items-center gap-3">
-					<div class="rounded-xl bg-purple-950/50 p-2">
+					<div class="rounded-xl p-2">
 						<svg
 							class="h-5 w-5 text-purple-400"
 							fill="none"
@@ -239,7 +228,7 @@
 				class="group rounded-2xl border border-slate-800 bg-slate-800/50 p-4 transition hover:border-slate-700"
 			>
 				<div class="flex items-center gap-3">
-					<div class="rounded-xl bg-orange-950/50 p-2">
+					<div class="rounded-xl p-2">
 						<svg
 							class="h-5 w-5 text-orange-400"
 							fill="none"
@@ -266,7 +255,7 @@
 				class="group rounded-2xl border border-slate-800 bg-slate-800/50 p-4 transition hover:border-slate-700"
 			>
 				<div class="flex items-center gap-3">
-					<div class="rounded-xl bg-green-950/50 p-2">
+					<div class="rounded-xl p-2">
 						<svg
 							class="h-5 w-5 text-green-400"
 							fill="none"
@@ -293,7 +282,7 @@
 				class="group rounded-2xl border border-slate-800 bg-slate-800/50 p-4 transition hover:border-slate-700"
 			>
 				<div class="flex items-center gap-3">
-					<div class="rounded-xl bg-pink-950/50 p-2">
+					<div class="rounded-xl p-2">
 						<svg
 							class="h-5 w-5 text-pink-400"
 							fill="none"
@@ -355,16 +344,14 @@
 			{/if}
 		</div>
 
-		{#if form?.error}
+		{#if form?.error && form?.action !== 'changePassword'}
 			<div class="mb-4 rounded-xl border border-red-800 bg-red-950/30 p-4 text-sm text-red-400">
 				✗ {form.error}
 			</div>
 		{/if}
 
-		{#if form?.success && form?.message}
-			<div
-				class="mb-4 rounded-xl border border-emerald-800 bg-emerald-950/30 p-4 text-sm text-emerald-400"
-			>
+		{#if form?.success && form?.message && form?.action !== 'changePassword'}
+			<div class="mb-4 rounded-xl border border-emerald-700 p-4 text-sm text-emerald-700">
 				✓ {form.message}
 			</div>
 		{/if}
@@ -379,7 +366,7 @@
 				<form method="POST" action="?/setup2FA" use:enhance>
 					<button
 						type="submit"
-						class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500"
+						class="cursor-pointer rounded-xl border border-violet-700 bg-white px-4 py-2 text-sm font-medium text-violet-700 transition hover:bg-violet-50"
 					>
 						Activar 2FA
 					</button>
@@ -518,7 +505,7 @@
 	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-4 md:p-6">
 		<div class="mb-4 flex flex-col gap-4 md:mb-6 md:flex-row md:items-center md:justify-between">
 			<div class="flex items-center gap-3">
-				<div class="rounded-xl bg-amber-950/50 p-2">
+				<div class="rounded-xl p-2">
 					<svg class="h-5 w-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
 							stroke-linecap="round"
@@ -538,19 +525,19 @@
 			</p>
 			<button
 				onclick={() => (changingPassword = true)}
-				class="rounded-xl bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-500"
+				class="cursor-pointer rounded-xl border border-orange-700 bg-white px-4 py-2 text-sm font-medium text-orange-700 transition hover:bg-orange-50"
 			>
 				Cambiar Contraseña
 			</button>
 		{:else}
 			<div class="rounded-2xl border border-slate-700 bg-slate-800/50 p-4 md:p-6">
-				{#if form?.error && form?.error.includes('contraseña')}
+				{#if form?.action === 'changePassword' && form?.error}
 					<div class="mb-4 rounded-xl border border-red-800 bg-red-950/30 p-4 text-sm text-red-400">
 						✗ {form.error}
 					</div>
 				{/if}
 
-				{#if form?.success && form?.message && form?.message.includes('contraseña')}
+				{#if form?.action === 'changePassword' && form?.success && form?.message}
 					<div
 						class="mb-4 rounded-xl border border-emerald-800 bg-emerald-950/30 p-4 text-sm text-emerald-400"
 					>
@@ -558,12 +545,7 @@
 					</div>
 				{/if}
 
-				<form
-					method="POST"
-					action="?/changePassword"
-					use:enhance={handleChangePassword}
-					class="space-y-4"
-				>
+				<form method="POST" action="?/changePassword" use:enhance class="space-y-4">
 					<div>
 						<label for="currentPassword" class="mb-2 block text-sm font-medium text-slate-300"
 							>Contraseña Actual</label
@@ -573,6 +555,7 @@
 								id="currentPassword"
 								name="currentPassword"
 								type={showCurrentPassword ? 'text' : 'password'}
+								autocomplete="current-password"
 								bind:value={currentPassword}
 								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 pr-10 transition outline-none focus:border-amber-500"
 								required
@@ -620,6 +603,7 @@
 								id="newPassword"
 								name="newPassword"
 								type={showNewPassword ? 'text' : 'password'}
+								autocomplete="new-password"
 								bind:value={newPassword}
 								class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 pr-10 transition outline-none focus:border-amber-500"
 								required
@@ -663,8 +647,7 @@
 					<div class="flex gap-3">
 						<button
 							type="submit"
-							disabled={!currentPassword || !newPassword || newPassword.length < 8}
-							class="rounded-xl bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-50"
+							class="rounded-xl bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-500"
 						>
 							Cambiar Contraseña
 						</button>
@@ -674,6 +657,8 @@
 								changingPassword = false;
 								currentPassword = '';
 								newPassword = '';
+								showCurrentPassword = false;
+								showNewPassword = false;
 							}}
 							class="rounded-xl border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-700"
 						>

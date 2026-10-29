@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { canManageUsers } from '$lib/client/permissions';
+	import { untrack } from 'svelte';
+	import type { PageData } from './$types';
 
-	let { data } = $props();
+	let { data }: { data: PageData } = $props();
 
-	const users = $derived(data.users);
-	let search = $state('');
+	let search = $state(untrack(() => data.searchQuery ?? ''));
+	let searchTimer: number | undefined;
 	let deletingUser = $state<User | null>(null);
 
 	interface User {
@@ -33,17 +35,74 @@
 		status: string;
 	}
 
-	const filtered = $derived(
-		users.filter((user) => {
-			const q = search.toLowerCase();
-			return (
-				user.fullName.toLowerCase().includes(q) ||
-				user.email.toLowerCase().includes(q) ||
-				user.role.toLowerCase().includes(q) ||
-				user.dni.toLowerCase().includes(q)
-			);
-		})
-	);
+	function scheduleSearch() {
+		if (searchTimer) {
+			window.clearTimeout(searchTimer);
+		}
+
+		searchTimer = window.setTimeout(() => {
+			const url = new URL(window.location.href);
+			const query = search.trim();
+
+			if (query) {
+				url.searchParams.set('q', query);
+			} else {
+				url.searchParams.delete('q');
+			}
+
+			url.searchParams.delete('page');
+			window.location.href = url.toString();
+		}, 500);
+	}
+
+	function buildPageUrl(targetPage: number) {
+		const url = new URL('/usuarios', window.location.origin);
+
+		if (data.searchQuery) {
+			url.searchParams.set('q', data.searchQuery);
+		}
+
+		if (targetPage > 1) {
+			url.searchParams.set('page', String(targetPage));
+		}
+
+		return `${url.pathname}${url.search}`;
+	}
+
+	function goToPage(targetPage: number) {
+		if (
+			targetPage < 1 ||
+			targetPage > data.pagination.totalPages ||
+			targetPage === data.pagination.page
+		) {
+			return;
+		}
+
+		window.location.href = buildPageUrl(targetPage);
+	}
+
+	const paginationItems = $derived.by(() => {
+		const current = data.pagination.page;
+		const total = data.pagination.totalPages;
+
+		if (total <= 7) {
+			return Array.from({ length: total }, (_, index) => index + 1);
+		}
+
+		const items: Array<number | 'start-ellipsis' | 'end-ellipsis'> = [];
+
+		if (current <= 4) {
+			return [1, 2, 3, 4, 5, 'end-ellipsis', total] as const;
+		}
+
+		if (current >= total - 3) {
+			return [1, 'start-ellipsis', total - 4, total - 3, total - 2, total - 1, total] as const;
+		}
+
+		items.push(1, 'start-ellipsis', current - 1, current, current + 1, 'end-ellipsis', total);
+
+		return items;
+	});
 </script>
 
 <svelte:head>
@@ -73,6 +132,7 @@
 	<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 		<input
 			bind:value={search}
+			oninput={scheduleSearch}
 			type="text"
 			placeholder="Buscar por nombre, email, rol o DNI"
 			class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
@@ -93,7 +153,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each filtered as user}
+				{#each data.users as user (user.id)}
 					<tr
 						class="border-b border-slate-800 transition-colors last:border-none hover:bg-slate-800/50"
 					>
@@ -176,7 +236,7 @@
 
 	<!-- Vista Mobile: Cards -->
 	<div class="space-y-3 md:hidden">
-		{#each filtered as user}
+		{#each data.users as user (user.id)}
 			<div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
 				<div class="flex items-start justify-between gap-3">
 					<div class="min-w-0 flex-1">
@@ -253,12 +313,67 @@
 				</div>
 			</div>
 		{/each}
-		{#if filtered.length === 0}
+		{#if data.users.length === 0}
 			<div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-8 text-center">
 				<p class="text-slate-400">No se encontraron usuarios</p>
 			</div>
 		{/if}
 	</div>
+	{#if data.pagination.totalItems > 0}
+		<div
+			class="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+		>
+			<p class="text-sm text-slate-400">
+				Mostrando
+				<span class="font-semibold text-slate-200">{data.pagination.from}</span>
+				–
+				<span class="font-semibold text-slate-200">{data.pagination.to}</span>
+				de
+				<span class="font-semibold text-slate-200">{data.pagination.totalItems}</span>
+				usuarios
+			</p>
+
+			{#if data.pagination.totalPages > 1}
+				<nav class="flex flex-wrap items-center gap-2" aria-label="Paginación de usuarios">
+					<button
+						type="button"
+						disabled={data.pagination.page === 1}
+						onclick={() => goToPage(data.pagination.page - 1)}
+						class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+					>
+						Anterior
+					</button>
+
+					{#each paginationItems as item (item)}
+						{#if typeof item === 'number'}
+							<button
+								type="button"
+								aria-current={item === data.pagination.page ? 'page' : undefined}
+								onclick={() => goToPage(item)}
+								class="min-w-10 rounded-lg border px-3 py-2 text-sm font-semibold transition {item ===
+								data.pagination.page
+									? 'border-indigo-500 bg-indigo-500 text-white'
+									: 'border-slate-700 bg-slate-950 text-slate-300 hover:bg-slate-800'}"
+							>
+								{item}
+							</button>
+						{:else}
+							<span class="px-1 text-slate-500" aria-hidden="true">…</span>
+						{/if}
+					{/each}
+
+					<button
+						type="button"
+						disabled={data.pagination.page === data.pagination.totalPages}
+						onclick={() => goToPage(data.pagination.page + 1)}
+						class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+					>
+						Siguiente
+					</button>
+				</nav>
+			{/if}
+		</div>
+	{/if}
 </div>
 
 <!-- Modal de desactivación -->

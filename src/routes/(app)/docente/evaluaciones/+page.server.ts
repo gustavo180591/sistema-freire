@@ -239,33 +239,11 @@ export const actions: Actions = {
 			return { error: 'La modalidad de calificación no es válida' };
 		}
 
-		/*
-		 * EXAMEN_FINAL queda reservado para compatibilidad académica/legado.
-		 * Desde la interfaz docente, todo examen final con inscripción
-		 * debe crearse como MESA_EXAMEN.
-		 */
-		if (type === 'EXAMEN_FINAL') {
-			return {
-				error: 'Para crear un examen final seleccioná "Mesa de examen final".'
-			};
-		}
-
 		if (type === 'MESA_EXAMEN') {
-			if (!careerId || !locationId) {
-				return {
-					error: 'Para crear una mesa tenés que seleccionar carrera y sede/localidad'
-				};
-			}
-
-			if (!evaluationDate) {
-				return { error: 'La fecha y hora de la mesa son obligatorias' };
-			}
-
-			const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
-
-			if (!allowedLocationIds.includes(locationId)) {
-				return { error: 'No tenés permiso para crear mesas en esa sede/localidad' };
-			}
+			return {
+				error:
+					'Las mesas de examen deben gestionarse desde el módulo Mesas de examen, donde se definen llamados, sede y tribunal.'
+			};
 		}
 
 		if (!evaluationDate) {

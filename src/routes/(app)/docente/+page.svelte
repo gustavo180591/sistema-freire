@@ -37,6 +37,15 @@
 			{:else}
 				<p class="text-slate-400">Panel de control docente</p>
 			{/if}
+
+			<p class="mt-2 text-sm text-slate-500">
+				{data.locations.length === 1 ? 'Localidad' : 'Localidades'}:
+				<span class="font-semibold text-slate-300">
+					{data.locations.length > 0
+						? data.locations.map((location) => location.name).join(', ')
+						: 'Sin localidad asignada'}
+				</span>
+			</p>
 		</div>
 
 		<!-- Stats Cards -->

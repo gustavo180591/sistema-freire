@@ -7,8 +7,8 @@ export interface CreateExamTableSeriesData {
 	careerId: string;
 	locationId: string;
 	responsibleTeacherId: string;
-	firstVocalTeacherId?: string;
-	secondVocalTeacherId?: string;
+	firstVocalTeacherId: string;
+	secondVocalTeacherId: string;
 	title: string;
 	description?: string;
 	evaluationDates: Date[];
@@ -65,6 +65,12 @@ export class ExamTableSeriesService {
 			return { error: dateError };
 		}
 
+		if (!data.responsibleTeacherId || !data.firstVocalTeacherId || !data.secondVocalTeacherId) {
+			return {
+				error: 'La mesa requiere Presidente, 1.er vocal y 2.º vocal'
+			};
+		}
+
 		const tribunalTeacherIds = [
 			data.responsibleTeacherId,
 			data.firstVocalTeacherId,
@@ -73,49 +79,40 @@ export class ExamTableSeriesService {
 
 		const uniqueTribunalTeacherIds = [...new Set(tribunalTeacherIds)];
 
-		if (uniqueTribunalTeacherIds.length !== tribunalTeacherIds.length) {
-			return {
-				error: 'Presidente, 1.er vocal y 2.º vocal deben ser docentes diferentes'
-			};
-		}
-
-		const tribunalTeachers = await this.prisma.teacher.findMany({
+		const activeTribunalTeachers = await this.prisma.teacher.count({
 			where: {
 				id: {
 					in: uniqueTribunalTeacherIds
 				},
 				status: 'ACTIVE'
-			},
-			select: {
-				id: true,
+			}
+		});
+
+		if (activeTribunalTeachers !== uniqueTribunalTeacherIds.length) {
+			return {
+				error: 'Uno o más integrantes del tribunal no existen o no se encuentran activos'
+			};
+		}
+
+		const tribunalTeachersAtLocation = await this.prisma.teacher.count({
+			where: {
+				id: {
+					in: uniqueTribunalTeacherIds
+				},
+				status: 'ACTIVE',
 				user: {
-					select: {
-						locationPermissions: {
-							select: {
-								locationId: true
-							}
+					locationPermissions: {
+						some: {
+							locationId: data.locationId
 						}
 					}
 				}
 			}
 		});
 
-		if (tribunalTeachers.length !== uniqueTribunalTeacherIds.length) {
+		if (tribunalTeachersAtLocation !== uniqueTribunalTeacherIds.length) {
 			return {
-				error: 'Uno o más integrantes del tribunal no existen o no se encuentran activos'
-			};
-		}
-
-		const teacherOutsideLocation = tribunalTeachers.some(
-			(teacher) =>
-				!teacher.user.locationPermissions.some(
-					(permission) => permission.locationId === data.locationId
-				)
-		);
-
-		if (teacherOutsideLocation) {
-			return {
-				error: 'Todos los integrantes del tribunal deben estar asignados a la sede seleccionada'
+				error: 'Todos los integrantes del tribunal deben estar asignados a la localidad de la mesa'
 			};
 		}
 

@@ -1182,6 +1182,19 @@ model Evaluation {
   @@map("evaluations")
 }
 
+model ExamTableYearConfig {
+  id                      String   @id @default(cuid())
+  year                    Int      @unique
+  active                  Boolean  @default(true)
+  julyEnabled             Boolean  @default(true)
+  novemberDecemberEnabled Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([active, year])
+  @@map("exam_table_year_configs")
+}
+
 model ExamTableSeries {
   id                   String   @id @default(cuid())
   createdAt            DateTime @default(now())

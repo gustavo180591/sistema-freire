@@ -119,11 +119,11 @@
 			<p class="text-sm tracking-[0.2em] text-slate-500 uppercase">Institucional</p>
 			<h2 class="mt-1 text-xl font-bold text-white">Configuración general</h2>
 			<p class="mt-1 text-sm text-slate-400">
-				Administrá sedes, calendario, ciclos lectivos, cuotas, cargos y recibos.
+				Administrá sedes, calendario, ciclos lectivos, mesas de examen, cuotas, cargos y recibos.
 			</p>
 		</div>
 
-		<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+		<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
 			<a
 				href="/configuracion/calendario"
 				class="group rounded-3xl border border-slate-800 bg-slate-900/70 p-6 transition hover:border-indigo-500 hover:bg-slate-800/50 dark:border-slate-700 dark:hover:border-indigo-400"
@@ -215,6 +215,30 @@
 				<h3 class="mb-2 text-xl font-bold text-white">Ciclos Lectivos</h3>
 				<p class="text-sm text-slate-400">
 					Gestionar ciclos lectivos activos y períodos académicos.
+				</p>
+			</a>
+
+			<a
+				href="/configuracion/mesas-examen"
+				class="group rounded-3xl border border-slate-800 bg-slate-900/70 p-6 transition hover:border-indigo-500 hover:bg-slate-800/50 dark:border-slate-700 dark:hover:border-indigo-400"
+			>
+				<div
+					class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400 transition group-hover:bg-violet-500 group-hover:text-white"
+				>
+					<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M8 7V3m8 4V3M5 11h14M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+						/>
+					</svg>
+				</div>
+
+				<h3 class="mb-2 text-xl font-bold text-white">Mesas de examen</h3>
+
+				<p class="text-sm text-slate-400">
+					Configurar los años y turnos habilitados para las mesas de examen.
 				</p>
 			</a>
 

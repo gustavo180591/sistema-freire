@@ -688,50 +688,13 @@ export class EvaluationService {
 				where: { id: responsibleTeacherId },
 				select: {
 					id: true,
-					status: true,
-					user: {
-						select: {
-							locationPermissions: {
-								select: {
-									locationId: true
-								}
-							}
-						}
-					}
+					status: true
 				}
 			});
 
 			if (!responsibleTeacher || responsibleTeacher.status !== 'ACTIVE') {
 				return {
-					error: 'El docente responsable seleccionado no existe o no se encuentra activo'
-				};
-			}
-
-			const teacherHasLocationAccess = responsibleTeacher.user.locationPermissions.some(
-				(permission) => permission.locationId === data.locationId
-			);
-
-			if (!teacherHasLocationAccess) {
-				return {
-					error: 'El docente responsable no está asignado a la sede seleccionada'
-				};
-			}
-
-			const subjectAssignment = await db.subjectTeacher.findUnique({
-				where: {
-					subjectId_teacherId: {
-						subjectId: data.subjectId,
-						teacherId: responsibleTeacherId
-					}
-				},
-				select: {
-					subjectId: true
-				}
-			});
-
-			if (!subjectAssignment) {
-				return {
-					error: 'El docente responsable no tiene asignada la materia seleccionada'
+					error: 'El Presidente seleccionado no existe o no se encuentra activo'
 				};
 			}
 

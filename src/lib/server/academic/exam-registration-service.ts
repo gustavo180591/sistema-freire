@@ -51,6 +51,11 @@ export async function getExamRegistrationEligibility({
 				subject: true,
 				career: true,
 				location: true,
+				examTableSeries: {
+					select: {
+						isHidden: true
+					}
+				},
 				examRegistrations: {
 					where: {
 						studentId
@@ -91,6 +96,15 @@ export async function getExamRegistrationEligibility({
 	}
 
 	const existingRegistration = evaluation.examRegistrations[0] ?? null;
+
+	if (evaluation.examTableSeries?.isHidden) {
+		return {
+			evaluation,
+			existingRegistration,
+			canRegister: false,
+			reason: 'Esta mesa de examen no se encuentra publicada'
+		};
+	}
 
 	if (evaluation.type !== 'MESA_EXAMEN') {
 		return {
@@ -253,7 +267,19 @@ export async function getAvailableExamTablesForStudent(studentId: string) {
 			},
 			evaluationDate: {
 				gt: now
-			}
+			},
+			OR: [
+				{
+					examTableSeriesId: null
+				},
+				{
+					examTableSeries: {
+						is: {
+							isHidden: false
+						}
+					}
+				}
+			]
 		},
 		include: {
 			subject: true,
@@ -382,7 +408,12 @@ export async function registerStudentForExam(
 					id: evaluationId
 				},
 				include: {
-					subject: true
+					subject: true,
+					examTableSeries: {
+						select: {
+							isHidden: true
+						}
+					}
 				}
 			})
 		]);
@@ -401,6 +432,10 @@ export async function registerStudentForExam(
 
 		if (evaluation.type !== 'MESA_EXAMEN') {
 			throw new Error('La evaluación seleccionada no corresponde a una mesa de examen');
+		}
+
+		if (evaluation.examTableSeries?.isHidden) {
+			throw new Error('Esta mesa de examen no se encuentra publicada');
 		}
 
 		if (!evaluation.careerId || !evaluation.locationId) {

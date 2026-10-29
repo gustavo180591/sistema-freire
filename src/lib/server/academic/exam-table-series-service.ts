@@ -1,4 +1,5 @@
-import { EvaluationType, GradingMode, PrismaClient } from '@prisma/client';
+import { AuditAction, EvaluationType, GradingMode, PrismaClient } from '@prisma/client';
+import { auditLog } from '$lib/server/audit';
 import { EvaluationService } from './evaluation-service';
 
 export interface CreateExamTableSeriesData {
@@ -6,6 +7,8 @@ export interface CreateExamTableSeriesData {
 	careerId: string;
 	locationId: string;
 	responsibleTeacherId: string;
+	firstVocalTeacherId: string;
+	secondVocalTeacherId: string;
 	title: string;
 	description?: string;
 	evaluationDates: Date[];
@@ -62,12 +65,67 @@ export class ExamTableSeriesService {
 			return { error: dateError };
 		}
 
+		if (!data.responsibleTeacherId || !data.firstVocalTeacherId || !data.secondVocalTeacherId) {
+			return {
+				error: 'La mesa requiere Presidente, 1.er vocal y 2.º vocal'
+			};
+		}
+
+		const tribunalTeacherIds = [
+			data.responsibleTeacherId,
+			data.firstVocalTeacherId,
+			data.secondVocalTeacherId
+		].filter((teacherId): teacherId is string => Boolean(teacherId));
+
+		const uniqueTribunalTeacherIds = [...new Set(tribunalTeacherIds)];
+
+		const activeTribunalTeachers = await this.prisma.teacher.count({
+			where: {
+				id: {
+					in: uniqueTribunalTeacherIds
+				},
+				status: 'ACTIVE'
+			}
+		});
+
+		if (activeTribunalTeachers !== uniqueTribunalTeacherIds.length) {
+			return {
+				error: 'Uno o más integrantes del tribunal no existen o no se encuentran activos'
+			};
+		}
+
+		const tribunalTeachersAtLocation = await this.prisma.teacher.count({
+			where: {
+				id: {
+					in: uniqueTribunalTeacherIds
+				},
+				status: 'ACTIVE',
+				user: {
+					locationPermissions: {
+						some: {
+							locationId: data.locationId
+						}
+					}
+				}
+			}
+		});
+
+		if (tribunalTeachersAtLocation !== uniqueTribunalTeacherIds.length) {
+			return {
+				error: 'Todos los integrantes del tribunal deben estar asignados a la localidad de la mesa'
+			};
+		}
+
 		const evaluationService = new EvaluationService(this.prisma);
 
 		try {
 			return await this.prisma.$transaction(async (tx) => {
 				const series = await tx.examTableSeries.create({
-					data: {},
+					data: {
+						presidentTeacherId: data.responsibleTeacherId,
+						firstVocalTeacherId: data.firstVocalTeacherId ?? null,
+						secondVocalTeacherId: data.secondVocalTeacherId ?? null
+					},
 					select: {
 						id: true
 					}
@@ -131,5 +189,76 @@ export class ExamTableSeriesService {
 
 			throw error;
 		}
+	}
+
+	async setVisibility(data: {
+		seriesId: string;
+		isHidden: boolean;
+		userId: string;
+	}): Promise<ExamTableSeriesValidationError | { id: string; isHidden: boolean }> {
+		const series = await this.prisma.examTableSeries.findUnique({
+			where: {
+				id: data.seriesId
+			},
+			select: {
+				id: true,
+				isHidden: true,
+				evaluations: {
+					orderBy: {
+						examCallNumber: 'asc'
+					},
+					take: 1,
+					select: {
+						title: true
+					}
+				}
+			}
+		});
+
+		if (!series) {
+			return {
+				error: 'Mesa de examen no encontrada'
+			};
+		}
+
+		if (series.isHidden === data.isHidden) {
+			return {
+				id: series.id,
+				isHidden: series.isHidden
+			};
+		}
+
+		const updated = await this.prisma.examTableSeries.update({
+			where: {
+				id: data.seriesId
+			},
+			data: {
+				isHidden: data.isHidden
+			},
+			select: {
+				id: true,
+				isHidden: true
+			}
+		});
+
+		await auditLog({
+			action: AuditAction.UPDATE,
+			entityType: 'ExamTableSeries',
+			entityId: series.id,
+			description: data.isHidden
+				? `Ocultó mesa de examen "${series.evaluations[0]?.title ?? series.id}"`
+				: `Volvió a mostrar mesa de examen "${series.evaluations[0]?.title ?? series.id}"`,
+			userId: data.userId,
+			metadata: {
+				before: {
+					isHidden: series.isHidden
+				},
+				after: {
+					isHidden: updated.isHidden
+				}
+			}
+		});
+
+		return updated;
 	}
 }

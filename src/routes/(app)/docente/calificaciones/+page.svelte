@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData | null } = $props();
@@ -21,6 +22,8 @@
 		data.commissions.find((commission) => commission.id === selectedCommission)
 	);
 	const dirtyCount = $derived(Object.keys(studentGrades).length);
+
+	const hasOpenEvaluations = $derived(data.evaluations.some((evaluation) => !evaluation.isClosed));
 
 	$effect(() => {
 		if (
@@ -158,80 +161,117 @@
 			</div>
 		{/if}
 
-		<section class="mb-8 rounded-3xl border border-slate-800 bg-slate-900/80 p-6">
-			<h2 class="text-xl font-semibold">Contexto de la carga</h2>
-			<p class="mt-1 text-sm text-slate-400">
-				Seleccioná expresamente la comisión y luego una evaluación abierta.
-			</p>
+		{#if hasOpenEvaluations}
+			<section class="mb-8 rounded-3xl border border-slate-800 bg-slate-900/80 p-6">
+				<h2 class="text-xl font-semibold">Contexto de la carga</h2>
+				<p class="mt-1 text-sm text-slate-400">
+					Seleccioná expresamente la comisión y luego una evaluación abierta.
+				</p>
 
-			<div class="mt-6 grid gap-6 lg:grid-cols-2">
-				<div>
-					<label for="commission" class="mb-2 block text-sm font-medium text-slate-300">
-						Comisión
-					</label>
-					<select
-						id="commission"
-						bind:value={selectedCommission}
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-indigo-400"
-					>
-						<option value="">Seleccionar comisión...</option>
-						{#each data.commissions as commission (commission.id)}
-							<option value={commission.id}>
-								{commission.name} · {commission.subject} · {commission.career} · {commission.location}
-							</option>
-						{/each}
-					</select>
+				<div class="mt-6 grid gap-6 lg:grid-cols-2">
+					<div>
+						<label for="commission" class="mb-2 block text-sm font-medium text-slate-300">
+							Comisión
+						</label>
+						<select
+							id="commission"
+							bind:value={selectedCommission}
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-indigo-400"
+						>
+							<option value="">Seleccionar comisión...</option>
+							{#each data.commissions as commission (commission.id)}
+								<option value={commission.id}>
+									{commission.name} · {commission.subject} · {commission.career} · {commission.location}
+								</option>
+							{/each}
+						</select>
+					</div>
+
+					<div>
+						<label for="evaluation" class="mb-2 block text-sm font-medium text-slate-300">
+							Evaluación abierta
+						</label>
+						<select
+							id="evaluation"
+							bind:value={selectedEvaluation}
+							disabled={!selectedCommission}
+							class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							<option value="">Seleccionar evaluación...</option>
+							{#each getCommissionEvaluations() as evaluation (evaluation.id)}
+								<option value={evaluation.id}>
+									{evaluation.title} · {evaluation.type} · {new Date(
+										evaluation.evaluationDate
+									).toLocaleDateString('es-AR')}
+								</option>
+							{/each}
+						</select>
+					</div>
 				</div>
 
-				<div>
-					<label for="evaluation" class="mb-2 block text-sm font-medium text-slate-300">
-						Evaluación abierta
-					</label>
-					<select
-						id="evaluation"
-						bind:value={selectedEvaluation}
-						disabled={!selectedCommission}
-						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
-					>
-						<option value="">Seleccionar evaluación...</option>
-						{#each getCommissionEvaluations() as evaluation (evaluation.id)}
-							<option value={evaluation.id}>
-								{evaluation.title} · {evaluation.type} · {new Date(
-									evaluation.evaluationDate
-								).toLocaleDateString('es-AR')}
-							</option>
-						{/each}
-					</select>
-				</div>
-			</div>
+				{#if selectedCommissionData}
+					<div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+						<div class="rounded-2xl bg-slate-950 p-4">
+							<p class="text-xs text-slate-500 uppercase">Sede</p>
+							<p class="mt-1 font-semibold">{selectedCommissionData.location}</p>
+						</div>
+						<div class="rounded-2xl bg-slate-950 p-4">
+							<p class="text-xs text-slate-500 uppercase">Carrera</p>
+							<p class="mt-1 font-semibold">{selectedCommissionData.career}</p>
+						</div>
+						<div class="rounded-2xl bg-slate-950 p-4">
+							<p class="text-xs text-slate-500 uppercase">Período</p>
+							<p class="mt-1 font-semibold">{selectedCommissionData.academicTerm}</p>
+						</div>
+						<div class="rounded-2xl bg-slate-950 p-4">
+							<p class="text-xs text-slate-500 uppercase">Alumnos activos</p>
+							<p class="mt-1 text-2xl font-bold">{getCommissionStudents().length}</p>
+						</div>
+					</div>
+				{/if}
+			</section>
 
-			{#if selectedCommissionData}
-				<div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-					<div class="rounded-2xl bg-slate-950 p-4">
-						<p class="text-xs text-slate-500 uppercase">Sede</p>
-						<p class="mt-1 font-semibold">{selectedCommissionData.location}</p>
-					</div>
-					<div class="rounded-2xl bg-slate-950 p-4">
-						<p class="text-xs text-slate-500 uppercase">Carrera</p>
-						<p class="mt-1 font-semibold">{selectedCommissionData.career}</p>
-					</div>
-					<div class="rounded-2xl bg-slate-950 p-4">
-						<p class="text-xs text-slate-500 uppercase">Período</p>
-						<p class="mt-1 font-semibold">{selectedCommissionData.academicTerm}</p>
-					</div>
-					<div class="rounded-2xl bg-slate-950 p-4">
-						<p class="text-xs text-slate-500 uppercase">Alumnos activos</p>
-						<p class="mt-1 text-2xl font-bold">{getCommissionStudents().length}</p>
-					</div>
+			{#if selectedCommission && getCommissionEvaluations().length === 0}
+				<div class="mb-8 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-amber-100">
+					Esta comisión no tiene evaluaciones abiertas. Creá o reabrí una evaluación desde el módulo
+					Evaluaciones.
 				</div>
 			{/if}
-		</section>
+		{:else}
+			<section
+				class="mb-8 rounded-3xl border border-amber-500/30 bg-amber-500/10 px-6 py-10 text-center"
+			>
+				<div
+					class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/15 text-2xl"
+				>
+					📝
+				</div>
 
-		{#if selectedCommission && getCommissionEvaluations().length === 0}
-			<div class="mb-8 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-amber-100">
-				Esta comisión no tiene evaluaciones abiertas. Creá o reabrí una evaluación desde el módulo
-				Evaluaciones.
-			</div>
+				<h2 class="mt-5 text-xl font-semibold text-white">
+					No hay evaluaciones abiertas para cargar calificaciones
+				</h2>
+
+				<p class="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+					Actualmente no tenés evaluaciones abiertas asociadas a tus comisiones. Creá una evaluación
+					para poder registrar notas, resultados y ausencias.
+				</p>
+
+				<div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+					<a
+						href={resolve('/docente/evaluaciones')}
+						class="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-100"
+					>
+						Crear evaluación
+					</a>
+
+					<a
+						href={resolve('/mesas-examen')}
+						class="rounded-xl border border-slate-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+					>
+						Ver mesas de examen
+					</a>
+				</div>
+			</section>
 		{/if}
 
 		{#if selectedEvaluationData}

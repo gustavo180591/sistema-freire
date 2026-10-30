@@ -22,6 +22,23 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/dashboard');
 	}
 
+	const teacherLocations = await prisma.location.findMany({
+		where: {
+			id: {
+				in: allowedLocationIds
+			},
+			active: true
+		},
+		select: {
+			id: true,
+			name: true,
+			code: true
+		},
+		orderBy: {
+			name: 'asc'
+		}
+	});
+
 	// Obtener las materias asignadas al docente, filtrando por localidades permitidas
 	const subjectTeachers = await prisma.subjectTeacher.findMany({
 		where: { teacherId: teacher.id },
@@ -110,6 +127,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			lastName: teacher.lastName,
 			dni: teacher.dni
 		},
+		locations: teacherLocations,
 		subjects: subjects.map((s) => ({
 			id: s.id,
 			code: s.code,
@@ -131,7 +149,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			studentName: `${g.student.lastName}, ${g.student.firstName}`,
 			subject: g.evaluation?.subject.name || 'Sin materia',
 			evaluationTitle: g.evaluation?.title || 'Sin evaluación',
-			value: g.value,
+			value: g.value === null ? null : Number(g.value),
 			status: g.status,
 			createdAt: g.createdAt
 		})),

@@ -559,6 +559,7 @@ export class EvaluationService {
 			EvaluationType.TRABAJO_PRACTICO,
 			EvaluationType.INTEGRADOR,
 			EvaluationType.RECUPERATORIO,
+			EvaluationType.EXAMEN_FINAL,
 			EvaluationType.OTRO
 		];
 

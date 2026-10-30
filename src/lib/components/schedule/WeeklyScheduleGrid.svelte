@@ -176,13 +176,6 @@
 	let loadingCommissions = $state(false);
 	let returnTo = $state('/configuracion/horarios');
 
-	const institutionalStartTimes = ['18:00', '18:45', '19:30', '20:30', '21:15', '22:00'];
-
-	const institutionalBlocks = [
-		['18:00', '18:45', '19:30', '20:15'],
-		['20:30', '21:15', '22:00', '22:45']
-	];
-
 	const PX_PER_MINUTE = 1.22;
 
 	/*
@@ -315,53 +308,6 @@
 
 	function getMarkerTop(marker: number): number {
 		return (marker - getStartMinute()) * PX_PER_MINUTE;
-	}
-
-	function getStartOptions(): string[] {
-		const options = [...institutionalStartTimes];
-
-		if (
-			selectedSchedule &&
-			selectedSchedule.startTime &&
-			!options.includes(selectedSchedule.startTime)
-		) {
-			options.push(selectedSchedule.startTime);
-		}
-
-		return options.sort();
-	}
-
-	function getEndOptions(startTime: string): string[] {
-		const block = institutionalBlocks.find((times) => times.includes(startTime));
-
-		let options: string[] = [];
-
-		if (block) {
-			const startIndex = block.indexOf(startTime);
-
-			if (startIndex >= 0) {
-				options = block.slice(startIndex + 1);
-			}
-		}
-
-		if (
-			selectedSchedule &&
-			startTime === selectedSchedule.startTime &&
-			selectedSchedule.endTime &&
-			!options.includes(selectedSchedule.endTime)
-		) {
-			options.push(selectedSchedule.endTime);
-		}
-
-		return options.sort();
-	}
-
-	function handleStartTimeChange() {
-		const availableEndTimes = getEndOptions(modalStartTime);
-
-		if (!availableEndTimes.includes(modalEndTime)) {
-			modalEndTime = availableEndTimes[0] ?? '';
-		}
 	}
 
 	async function loadSubjects(
@@ -712,7 +658,7 @@
 		onclick={handleBackdropClick}
 	>
 		<div
-			class="w-full max-w-2xl overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl"
+			class="max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="schedule-modal-title"
@@ -842,18 +788,15 @@
 							Hora de inicio
 						</label>
 
-						<select
+						<input
 							id="modalStartTime"
 							name="startTime"
+							type="time"
+							step="60"
 							bind:value={modalStartTime}
-							onchange={handleStartTimeChange}
 							required
 							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
-						>
-							{#each getStartOptions() as time}
-								<option value={time}>{time}</option>
-							{/each}
-						</select>
+						/>
 					</div>
 
 					<!-- Fin -->
@@ -862,17 +805,15 @@
 							Hora de finalización
 						</label>
 
-						<select
+						<input
 							id="modalEndTime"
 							name="endTime"
+							type="time"
+							step="60"
 							bind:value={modalEndTime}
 							required
 							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
-						>
-							{#each getEndOptions(modalStartTime) as time}
-								<option value={time}>{time}</option>
-							{/each}
-						</select>
+						/>
 					</div>
 
 					<!-- Comisión -->

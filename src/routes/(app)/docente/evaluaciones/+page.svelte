@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData | null } = $props();
@@ -108,7 +109,14 @@
 		}
 	] as const;
 
-	const courseTypes = ['PARCIAL', 'RECUPERATORIO', 'TRABAJO_PRACTICO', 'INTEGRADOR', 'OTRO'];
+	const courseTypes = [
+		'PARCIAL',
+		'RECUPERATORIO',
+		'TRABAJO_PRACTICO',
+		'INTEGRADOR',
+		'EXAMEN_FINAL',
+		'OTRO'
+	];
 	const averageTypes = ['PARCIAL', 'TRABAJO_PRACTICO', 'INTEGRADOR'];
 
 	// Comisiones filtradas por materia seleccionada
@@ -219,8 +227,6 @@
 						</div>
 
 						<div class="md:col-span-2">
-							<input type="hidden" name="type" value={selectedType} />
-
 							<div class="rounded-2xl border border-indigo-900/70 bg-indigo-950/20 p-5">
 								<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 									<div>
@@ -234,9 +240,9 @@
 									<span
 										class="w-fit shrink-0 rounded-full bg-indigo-500/15 px-3 py-1.5 text-xs font-semibold text-indigo-300"
 									>
-										{selectedType === 'MESA_EXAMEN'
-											? 'Inscripción · 72 hs'
-											: 'Evaluación de cursada'}
+										{selectedType
+											? getEvaluationTypeLabel(selectedType)
+											: 'Sin instancia seleccionada'}
 									</span>
 								</div>
 							</div>
@@ -257,22 +263,26 @@
 									</p>
 
 									<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-										{#each evaluationTypeOptions.filter((option) => option.group === 'CURSADA') as option}
-											<button
-												type="button"
-												aria-pressed={selectedType === option.value}
-												onclick={() => (selectedType = option.value)}
-												class="rounded-2xl border bg-slate-950 p-4 text-left transition hover:border-indigo-500"
+										{#each evaluationTypeOptions.filter((option) => option.group === 'CURSADA') as option (option.value)}
+											<label
+												class="cursor-pointer rounded-2xl border bg-slate-950 p-4 text-left transition hover:border-indigo-500"
 												class:border-indigo-500={selectedType === option.value}
 												class:ring-1={selectedType === option.value}
 												class:ring-indigo-500={selectedType === option.value}
 												class:border-slate-700={selectedType !== option.value}
 											>
+												<input
+													type="radio"
+													name="type"
+													value={option.value}
+													bind:group={selectedType}
+													class="sr-only"
+												/>
 												<p class="font-semibold text-white">{option.label}</p>
 												<p class="mt-1 text-xs text-slate-500">
 													{option.description}
 												</p>
-											</button>
+											</label>
 										{/each}
 									</div>
 								</div>
@@ -283,42 +293,59 @@
 									</p>
 
 									<div class="grid gap-3 sm:grid-cols-2">
-										{#each evaluationTypeOptions.filter((option) => option.group === 'EXAMEN') as option}
-											<button
-												type="button"
-												aria-pressed={selectedType === option.value}
-												onclick={() => (selectedType = option.value)}
-												class="rounded-2xl border p-4 text-left transition hover:border-indigo-500 {selectedType ===
-												option.value
-													? 'border-indigo-500 bg-indigo-950/20 ring-1 ring-indigo-500'
-													: 'border-slate-700 bg-slate-950'}"
-											>
-												<div class="flex items-start justify-between gap-3">
-													<div>
-														<p class="font-semibold text-white">
-															{option.label}
-														</p>
-														<p class="mt-1 text-sm text-slate-400">
-															{option.description}
-														</p>
-													</div>
-												</div>
-											</button>
+										{#each evaluationTypeOptions.filter((option) => option.group === 'EXAMEN') as option (option.value)}
+											{#if option.value === 'MESA_EXAMEN'}
+												<a
+													href={resolve('/mesas-examen')}
+													class="rounded-2xl border border-slate-700 bg-slate-950 p-4 text-left transition hover:border-indigo-500 hover:bg-indigo-950/20"
+												>
+													<p class="font-semibold text-white">{option.label}</p>
+													<p class="mt-1 text-sm text-slate-400">
+														{option.description}
+													</p>
+													<p class="mt-3 text-xs font-semibold text-indigo-300">
+														Gestionar llamados y tribunal →
+													</p>
+												</a>
+											{:else}
+												<label
+													class="cursor-pointer rounded-2xl border p-4 text-left transition hover:border-indigo-500 {selectedType ===
+													option.value
+														? 'border-indigo-500 bg-indigo-950/20 ring-1 ring-indigo-500'
+														: 'border-slate-700 bg-slate-950'}"
+												>
+													<input
+														type="radio"
+														name="type"
+														value={option.value}
+														bind:group={selectedType}
+														class="sr-only"
+													/>
+													<p class="font-semibold text-white">{option.label}</p>
+													<p class="mt-1 text-sm text-slate-400">
+														{option.description}
+													</p>
+												</label>
+											{/if}
 										{/each}
 									</div>
 								</div>
 
 								<div>
-									{#each evaluationTypeOptions.filter((option) => option.group === 'OTRO') as option}
-										<button
-											type="button"
-											aria-pressed={selectedType === option.value}
-											onclick={() => (selectedType = option.value)}
-											class="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-400 transition hover:border-indigo-500 hover:text-white"
+									{#each evaluationTypeOptions.filter((option) => option.group === 'OTRO') as option (option.value)}
+										<label
+											class="inline-flex cursor-pointer rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-400 transition hover:border-indigo-500 hover:text-white"
 											class:border-indigo-500={selectedType === option.value}
 										>
+											<input
+												type="radio"
+												name="type"
+												value={option.value}
+												bind:group={selectedType}
+												class="sr-only"
+											/>
 											{option.label}
-										</button>
+										</label>
 									{/each}
 								</div>
 							</div>

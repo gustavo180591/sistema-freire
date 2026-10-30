@@ -33,6 +33,7 @@ model User {
   createdGrades                    Grade[]                  @relation("GradeCreator")
   updatedGrades                    Grade[]                  @relation("GradeUpdater")
   confirmedCourseResults           CourseResult[]           @relation("CourseResultConfirmer")
+  createdSubjectAccreditations     SubjectAccreditation[]   @relation("SubjectAccreditationCreator")
   payments                         Payment[]
   deletedPayslips                  Payslip[]                @relation("PayslipDeleter")
   uploadedPayslips                 Payslip[]                @relation("PayslipUploader")
@@ -184,6 +185,7 @@ model Student {
   documents               StudentDocument[]
   followUps               StudentFollowUp[]
   subjectStatuses         StudentSubjectStatus[]
+  subjectAccreditations   SubjectAccreditation[]
   career                  Career                   @relation(fields: [careerId], references: [id])
   user                    User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   location                Location?                @relation(fields: [locationId], references: [id], onDelete: Restrict)
@@ -261,6 +263,7 @@ model Subject {
   evaluations        Evaluation[]
   planSubjects       PlanSubject[]
   statuses           StudentSubjectStatus[]
+  accreditations     SubjectAccreditation[]
   commissions        SubjectCommission[]
   requiredBy         SubjectCorrelative[]   @relation("subject_required")
   correlatives       SubjectCorrelative[]   @relation("subject_correlatives")
@@ -1124,13 +1127,13 @@ model ClassMaterial {
 }
 
 model Evaluation {
-  id                    String             @id @default(cuid())
+  id                    String                 @id @default(cuid())
   subjectId             String
   title                 String
   description           String?
-  maxScore              Decimal            @default(10) @db.Decimal(6, 2)
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
+  maxScore              Decimal                @default(10) @db.Decimal(6, 2)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
   closedAt              DateTime?
   registrationOpensAt   DateTime?
   registrationClosesAt  DateTime?
@@ -1144,32 +1147,33 @@ model Evaluation {
   examTableSeriesId     String?
   examCallNumber        Int?
   evaluationDate        DateTime
-  isClosed              Boolean            @default(false)
-  minPassingScore       Decimal            @default(6) @db.Decimal(6, 2)
+  isClosed              Boolean                @default(false)
+  minPassingScore       Decimal                @default(6) @db.Decimal(6, 2)
   observations          String?
   parentEvaluationId    String?
   reopenReason          String?
   reopenedAt            DateTime?
   reopenedByUserId      String?
-  weight                Decimal            @default(1) @db.Decimal(6, 2)
+  weight                Decimal                @default(1) @db.Decimal(6, 2)
   type                  EvaluationType
-  gradingMode           GradingMode        @default(NUMERIC)
-  participatesInAverage Boolean            @default(true)
-  mandatory             Boolean            @default(true)
-  displayOrder          Int                @default(0)
-  closedByUser          User?              @relation("EvaluationCloser", fields: [closedByUserId], references: [id])
-  commission            SubjectCommission? @relation(fields: [commissionId], references: [id], onDelete: Restrict)
-  career                Career?            @relation(fields: [careerId], references: [id], onDelete: Restrict)
-  location              Location?          @relation(fields: [locationId], references: [id], onDelete: Restrict)
-  createdByUser         User               @relation("EvaluationCreator", fields: [createdByUserId], references: [id])
-  responsibleTeacher    Teacher?           @relation("EvaluationResponsibleTeacher", fields: [responsibleTeacherId], references: [id], onDelete: Restrict)
-  examTableSeries       ExamTableSeries?   @relation(fields: [examTableSeriesId], references: [id], onDelete: Restrict)
-  parentEvaluation      Evaluation?        @relation("EvaluationRecovery", fields: [parentEvaluationId], references: [id])
-  recoveryEvaluations   Evaluation[]       @relation("EvaluationRecovery")
-  reopenedByUser        User?              @relation("EvaluationReopener", fields: [reopenedByUserId], references: [id])
-  subject               Subject            @relation(fields: [subjectId], references: [id])
+  gradingMode           GradingMode            @default(NUMERIC)
+  participatesInAverage Boolean                @default(true)
+  mandatory             Boolean                @default(true)
+  displayOrder          Int                    @default(0)
+  closedByUser          User?                  @relation("EvaluationCloser", fields: [closedByUserId], references: [id])
+  commission            SubjectCommission?     @relation(fields: [commissionId], references: [id], onDelete: Restrict)
+  career                Career?                @relation(fields: [careerId], references: [id], onDelete: Restrict)
+  location              Location?              @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  createdByUser         User                   @relation("EvaluationCreator", fields: [createdByUserId], references: [id])
+  responsibleTeacher    Teacher?               @relation("EvaluationResponsibleTeacher", fields: [responsibleTeacherId], references: [id], onDelete: Restrict)
+  examTableSeries       ExamTableSeries?       @relation(fields: [examTableSeriesId], references: [id], onDelete: Restrict)
+  parentEvaluation      Evaluation?            @relation("EvaluationRecovery", fields: [parentEvaluationId], references: [id])
+  recoveryEvaluations   Evaluation[]           @relation("EvaluationRecovery")
+  reopenedByUser        User?                  @relation("EvaluationReopener", fields: [reopenedByUserId], references: [id])
+  subject               Subject                @relation(fields: [subjectId], references: [id])
   grades                Grade[]
   examRegistrations     ExamRegistration[]
+  accreditations        SubjectAccreditation[]
 
   @@unique([examTableSeriesId, examCallNumber])
   @@index([subjectId])
@@ -1252,15 +1256,18 @@ model SubjectCommission {
 }
 
 model SubjectEnrollment {
-  id                 String             @id @default(cuid())
+  id                 String                 @id @default(cuid())
   studentId          String
   subjectId          String
   commissionId       String?
   careerId           String
   studyPlanId        String?
   academicTermId     String?
-  status             EnrollmentStatus   @default(PENDING)
-  enrolledAt         DateTime           @default(now())
+  academicYear       Int?
+  attemptType        EnrollmentAttemptType?
+  recordSource       AcademicRecordSource   @default(SYSTEM)
+  status             EnrollmentStatus       @default(PENDING)
+  enrolledAt         DateTime               @default(now())
   confirmedAt        DateTime?
   cancelledAt        DateTime?
   rejectedAt         DateTime?
@@ -1271,16 +1278,17 @@ model SubjectEnrollment {
   confirmedBy        String?
   cancelledBy        String?
   rejectedBy         String?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
-  academicTerm       AcademicTerm?      @relation(fields: [academicTermId], references: [id])
-  career             Career             @relation(fields: [careerId], references: [id])
-  commission         SubjectCommission? @relation(fields: [commissionId], references: [id])
-  student            Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studyPlan          StudyPlan?         @relation(fields: [studyPlanId], references: [id])
-  subject            Subject            @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  academicTerm       AcademicTerm?          @relation(fields: [academicTermId], references: [id])
+  career             Career                 @relation(fields: [careerId], references: [id])
+  commission         SubjectCommission?     @relation(fields: [commissionId], references: [id])
+  student            Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studyPlan          StudyPlan?             @relation(fields: [studyPlanId], references: [id])
+  subject            Subject                @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   grades             Grade[]
   courseResult       CourseResult?
+  accreditations     SubjectAccreditation[]
 
   attendanceEvents StudentAttendanceEvent[]
 
@@ -1289,6 +1297,8 @@ model SubjectEnrollment {
   @@index([subjectId, status])
   @@index([commissionId])
   @@index([academicTermId, status])
+  @@index([studentId, subjectId, academicYear])
+  @@index([attemptType])
   @@map("subject_enrollments")
 }
 
@@ -1301,6 +1311,8 @@ model CourseResult {
   approved            Boolean           @default(false)
   promoted            Boolean           @default(false)
   finalGrade          Decimal?          @db.Decimal(5, 2)
+  regularizedAt       DateTime?
+  regularityExpiresAt DateTime?
   calculatedAt        DateTime          @default(now())
   confirmedAt         DateTime?
   confirmedByUserId   String?
@@ -1311,7 +1323,39 @@ model CourseResult {
 
   @@index([courseStatus])
   @@index([academicStatus])
+  @@index([regularityExpiresAt])
   @@map("course_results")
+}
+
+model SubjectAccreditation {
+  id                  String                   @id @default(cuid())
+  studentId           String
+  subjectId           String
+  subjectEnrollmentId String?
+  evaluationId        String?
+  type                SubjectAccreditationType
+  source              AcademicRecordSource     @default(SYSTEM)
+  accreditedAt        DateTime?
+  academicYear        Int?
+  grade               Decimal?                 @db.Decimal(5, 2)
+  observations        String?
+  createdByUserId     String?
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+
+  student           Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject           Subject            @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  subjectEnrollment SubjectEnrollment? @relation(fields: [subjectEnrollmentId], references: [id], onDelete: Restrict)
+  evaluation        Evaluation?        @relation(fields: [evaluationId], references: [id], onDelete: Restrict)
+  createdByUser     User?              @relation("SubjectAccreditationCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([studentId, subjectId])
+  @@index([studentId, accreditedAt])
+  @@index([subjectId])
+  @@index([subjectEnrollmentId])
+  @@index([evaluationId])
+  @@index([type, source])
+  @@map("subject_accreditations")
 }
 
 model ExamRegistration {
@@ -1409,8 +1453,26 @@ enum AcademicYearStatus {
 enum EnrollmentStatus {
   PENDING
   ACTIVE
+  COMPLETED
   REJECTED
   CANCELLED
+}
+
+enum EnrollmentAttemptType {
+  FIRST_TIME
+  REPEAT
+}
+
+enum AcademicRecordSource {
+  SYSTEM
+  MANUAL
+  IMPORT
+}
+
+enum SubjectAccreditationType {
+  FINAL_EXAM
+  PROMOTION
+  EQUIVALENCE
 }
 
 enum RegularityStatus {

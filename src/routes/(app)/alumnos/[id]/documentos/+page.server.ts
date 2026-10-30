@@ -1,5 +1,6 @@
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
+import { requireStudentAccess } from '$lib/server/auth/student-access';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { auditLog } from '$lib/server/audit';
 import { checkPermission } from '$lib/server/auth/permissions-granular';
@@ -20,6 +21,8 @@ const DOCUMENT_TYPE_LABELS: Record<string, string> = {
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const user = locals.user;
 	if (!user) throw redirect(303, '/login');
+
+	await requireStudentAccess(user, params.id);
 
 	// Verificar permiso de lectura
 	const canRead = await checkPermission(user, 'STUDENT', 'read');
@@ -82,6 +85,8 @@ export const actions: Actions = {
 	upload: async ({ request, params, locals }) => {
 		const user = locals.user;
 		if (!user) return fail(401, { error: 'No autenticado' });
+
+		await requireStudentAccess(user, params.id);
 
 		const canUpdate = await checkPermission(user, 'STUDENT', 'update');
 		if (!canUpdate) {
@@ -166,6 +171,8 @@ export const actions: Actions = {
 		const user = locals.user;
 		if (!user) return fail(401, { error: 'No autenticado' });
 
+		await requireStudentAccess(user, params.id);
+
 		const canUpdate = await checkPermission(user, 'STUDENT', 'update');
 		if (!canUpdate) {
 			return fail(403, { error: 'No tenés permiso para verificar documentos' });
@@ -214,6 +221,8 @@ export const actions: Actions = {
 	delete: async ({ request, params, locals }) => {
 		const user = locals.user;
 		if (!user) return fail(401, { error: 'No autenticado' });
+
+		await requireStudentAccess(user, params.id);
 
 		const canDelete = await checkPermission(user, 'STUDENT', 'delete');
 		if (!canDelete) {

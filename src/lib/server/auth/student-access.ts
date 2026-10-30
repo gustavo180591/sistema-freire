@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { prisma } from '$lib/server/db/prisma';
+import { requirePreceptorStudentAccess } from '$lib/server/preceptor/preceptor-scope-service';
 import { hasRole } from './authorization';
 
 export async function requireStudentAccess(user: App.Locals['user'], studentId: string) {
@@ -9,6 +10,12 @@ export async function requireStudentAccess(user: App.Locals['user'], studentId: 
 
 	// Acceso global institucional (incluye APODERADO con acceso total)
 	if (hasRole(user, ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'FINANZAS', 'APODERADO'])) {
+		return;
+	}
+
+	// Preceptor: acceso únicamente a alumnos de sus sedes asignadas.
+	if (hasRole(user, ['PRECEPTOR'])) {
+		await requirePreceptorStudentAccess(user.id, studentId);
 		return;
 	}
 

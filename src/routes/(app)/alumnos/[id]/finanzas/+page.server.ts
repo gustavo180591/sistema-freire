@@ -7,7 +7,6 @@ import {
 	calculateChargeBenefit
 } from '$lib/server/financial/benefit-calculator';
 import { Prisma } from '@prisma/client';
-import * as DecimalHelpers from '$lib/server/financial/decimal-helpers';
 import {
 	updateStudentFinancialBlockStatus,
 	shouldBlockStudent
@@ -19,155 +18,22 @@ import {
 import { studentFinancialSummaryService } from '$lib/server/financial/student-financial-summary-service';
 import { studentTypeService } from '$lib/server/financial/student-type-service';
 import {
+	listStudentFinancialHistory,
+	registerHistoricalPaidEntry
+} from '$lib/server/financial/student-financial-history-service';
+import {
 	getScholarshipLifecycle,
 	reinstateScholarshipManually,
 	startScholarshipNegotiation,
 	resolveScholarshipNegotiation
 } from '$lib/server/financial/scholarship-lifecycle-service';
 import { checkPermission, requirePermission } from '$lib/server/auth/permissions-granular';
+import { generateMissingMonthlyCharges } from '$lib/server/financial/monthly-charge-generation-service';
+import { recalculatePendingStudentCharges } from '$lib/server/financial/pending-charge-recalculation-service';
 
 /**
  * Genera cuotas mensuales faltantes desde el inicio del ciclo lectivo hasta el mes actual
  */
-async function generateMissingMonthlyCharges(
-	studentId: string,
-	studentFirstName: string,
-	studentLastName: string,
-	isBecado: boolean,
-	isRecursante: boolean,
-	academicTermId: string,
-	userId: string
-): Promise<{ created: number; skipped: number }> {
-	const benefitsConfig = await getBenefitsConfig(prisma);
-	const monthlyConcept = await prisma.chargeConcept.findUnique({
-		where: { code: 'CUOTA_MENSUAL' }
-	});
-
-	if (!monthlyConcept) {
-		throw new Error('Concepto de cuota mensual no encontrado');
-	}
-
-	// Obtener el ciclo lectivo para usar su fecha de inicio
-	const academicTerm = await prisma.academicTerm.findUnique({
-		where: { id: academicTermId }
-	});
-
-	if (!academicTerm) {
-		throw new Error('Ciclo lectivo no encontrado');
-	}
-
-	// Usar la fecha de inicio del ciclo lectivo
-	const startDate = new Date(academicTerm.startDate);
-	const startMonth = startDate.getMonth() + 1; // 1-12
-	const startYear = startDate.getFullYear();
-
-	// Mes actual
-	const currentDate = new Date();
-	const currentMonth = currentDate.getMonth() + 1;
-	const currentYear = currentDate.getFullYear();
-
-	let created = 0;
-	let skipped = 0;
-
-	// Calcular cuotas a generar
-	let installmentNumber = 1;
-	for (let year = startYear; year <= currentYear; year++) {
-		const monthStart = year === startYear ? startMonth : 1;
-		const monthEnd = year === currentYear ? currentMonth : 12;
-
-		for (let month = monthStart; month <= monthEnd; month++) {
-			// Verificar si este mes está en los meses de beneficios
-			const monthInBenefits = benefitsConfig.benefitsMonths.includes(month);
-
-			// Determinar el monto base: siempre usar normalFeeAmount como amount
-			// La beca se aplica como descuento en finalAmount
-			const baseAmount = benefitsConfig.normalFeeAmount;
-
-			// Formatear periodLabel como YYYY-MM
-			const periodLabel = `${year}-${month.toString().padStart(2, '0')}`;
-
-			// Verificar si ya existe un cargo para este período
-			const existingCharge = await prisma.studentCharge.findUnique({
-				where: {
-					studentId_conceptId_periodLabel_academicTermId: {
-						studentId,
-						conceptId: monthlyConcept.id,
-						periodLabel,
-						academicTermId
-					}
-				}
-			});
-
-			if (existingCharge) {
-				installmentNumber++;
-				skipped++;
-				continue;
-			}
-
-			// Calcular beneficios usando el sistema existente
-			const benefitCalculation = calculateChargeBenefit(
-				new Decimal(baseAmount),
-				{ isBecado, isRecursante },
-				installmentNumber,
-				month,
-				benefitsConfig
-			);
-
-			// Crear cuota mensual
-			const monthlyCharge = await prisma.studentCharge.create({
-				data: {
-					studentId,
-					conceptId: monthlyConcept.id,
-					periodLabel,
-					amount: new Decimal(baseAmount),
-					dueDate: null,
-					academicTermId,
-					notes: `Cuota mensual - ${periodLabel}`,
-					userId,
-					lateFeeApplied: DecimalHelpers.zero(),
-					discountApplied: benefitCalculation.discountApplied,
-					scholarshipApplied: benefitCalculation.scholarshipApplied,
-					finalAmount: benefitCalculation.finalAmount,
-					status: 'PENDING',
-					installmentNumber,
-					benefitType: benefitCalculation.benefitType,
-					benefitReason: benefitCalculation.benefitReason,
-					ruleSnapshot: benefitCalculation.ruleSnapshot as Prisma.InputJsonValue
-				}
-			});
-
-			// Crear movimiento financiero
-			const currentCharges = await prisma.studentCharge.findMany({
-				where: { studentId }
-			});
-			const currentBalance = currentCharges.reduce(
-				(acc: Decimal, c: Prisma.StudentChargeGetPayload<{}>) =>
-					DecimalHelpers.add(acc, DecimalHelpers.subtract(c.finalAmount, c.paidAmount)),
-				DecimalHelpers.zero()
-			);
-
-			await prisma.financialMovement.create({
-				data: {
-					studentId,
-					movementType: 'CHARGE',
-					entityType: 'StudentCharge',
-					entityId: monthlyCharge.id,
-					description: `Cuota: ${monthlyConcept.name} - ${periodLabel}`,
-					amount: benefitCalculation.finalAmount,
-					balanceBefore: currentBalance,
-					balanceAfter: DecimalHelpers.add(currentBalance, benefitCalculation.finalAmount),
-					userId
-				}
-			});
-
-			created++;
-			installmentNumber++;
-		}
-	}
-
-	return { created, skipped };
-}
-
 export const load: PageServerLoad = async ({ params, locals }) => {
 	await requireStudentFinancialReadAccess(locals.user, params.id);
 
@@ -176,6 +42,14 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		include: {
 			career: true,
 			location: true,
+			academicHistory: {
+				select: {
+					year: true
+				},
+				orderBy: {
+					year: 'desc'
+				}
+			},
 			studentCharges: {
 				include: {
 					concept: true
@@ -189,6 +63,53 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	});
 
 	const benefitsConfig = await getBenefitsConfig(prisma);
+
+	const financialHistory = await listStudentFinancialHistory(student.id);
+
+	const chargeYears = student.studentCharges
+		.map((charge) => {
+			const match = charge.periodLabel.match(/^(\d{4})-/);
+
+			return match ? Number(match[1]) : null;
+		})
+		.filter((year): year is number => year !== null);
+
+	const knownInstitutionYears = [
+		...new Set([...student.academicHistory.map((history) => history.year), ...chargeYears])
+	];
+
+	const currentInstitutionYear = Number(
+		new Intl.DateTimeFormat('en-US', {
+			year: 'numeric',
+			timeZone: 'America/Argentina/Cordoba'
+		}).format(new Date())
+	);
+
+	const firstInstitutionYear =
+		knownInstitutionYears.length > 0 ? Math.min(...knownInstitutionYears) : currentInstitutionYear;
+
+	const lastKnownInstitutionYear =
+		knownInstitutionYears.length > 0 ? Math.max(...knownInstitutionYears) : currentInstitutionYear;
+
+	/*
+	 * Un alumno ACTIVE pertenece a la institución
+	 * hasta el año institucional actual, aunque todavía
+	 * no tenga cargos o historial cargados en cada año.
+	 *
+	 * Para alumnos inactivos/graduados conservamos como
+	 * último año el último año efectivamente conocido.
+	 */
+	const lastInstitutionYear =
+		student.status === 'ACTIVE'
+			? Math.max(currentInstitutionYear, lastKnownInstitutionYear)
+			: lastKnownInstitutionYear;
+
+	const institutionYears = Array.from(
+		{
+			length: lastInstitutionYear - firstInstitutionYear + 1
+		},
+		(_, index) => lastInstitutionYear - index
+	);
 
 	const charges = await Promise.all(
 		student.studentCharges.map(async (charge) => {
@@ -355,6 +276,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const canManageScholarship = await checkPermission(locals.user, 'SCHOLARSHIP', 'update');
 
+	const canManageFinancialHistory = await checkPermission(locals.user, 'STUDENT_CHARGE', 'update');
+
 	const [canCreateCharges, canUpdateFinancialBlock] = await Promise.all([
 		checkPermission(locals.user, 'STUDENT_CHARGE', 'create'),
 		checkPermission(locals.user, 'FINANCIAL_BLOCK', 'update')
@@ -434,7 +357,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			blockingThreshold: blockingStatus.blockingThreshold,
 			blockingReason: blockingStatus.reason
 		},
+		institutionYears,
 		charges,
+		financialHistory,
+		canManageFinancialHistory,
 		feeAmounts: {
 			NORMAL: benefitsConfig.normalFeeAmount,
 			BECADO: benefitsConfig.becadoFeeAmount,
@@ -447,6 +373,76 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 };
 
 export const actions: Actions = {
+	saveHistoricalPayment: async ({ params, locals, request }) => {
+		await requireStudentFinancialReadAccess(locals.user, params.id);
+
+		if (!locals.user) {
+			return {
+				error: 'No autenticado'
+			};
+		}
+
+		await requirePermission(locals.user, 'STUDENT_CHARGE', 'update');
+
+		const formData = await request.formData();
+
+		const academicYear = Number(formData.get('academicYear'));
+
+		const concept = formData.get('concept')?.toString() as 'INSCRIPCION' | 'CUOTA_MENSUAL';
+
+		const monthRaw = formData.get('month')?.toString();
+
+		const month = monthRaw ? Number(monthRaw) : null;
+
+		const amount = Number(formData.get('amount'));
+
+		const paidAt = formData.get('paidAt')?.toString().trim() || null;
+
+		const paymentMethodRaw = formData.get('paymentMethod')?.toString().trim();
+
+		const paymentMethod = paymentMethodRaw
+			? (paymentMethodRaw as
+					| 'CASH'
+					| 'BANK_TRANSFER'
+					| 'DEBIT_CARD'
+					| 'CREDIT_CARD'
+					| 'QR'
+					| 'SCHOLARSHIP')
+			: null;
+
+		const notes = formData.get('notes')?.toString().trim() || null;
+
+		try {
+			const result = await registerHistoricalPaidEntry(
+				{
+					studentId: params.id,
+					academicYear,
+					concept,
+					month,
+					amount,
+					paidAt,
+					paymentMethod,
+					notes
+				},
+				{
+					userId: locals.user.id,
+					userName: `${locals.user.firstName} ${locals.user.lastName}`
+				}
+			);
+
+			return {
+				success: true,
+				message: `Pago histórico ${result.periodKey} registrado correctamente`
+			};
+		} catch (error) {
+			console.error('Error al guardar pago histórico:', error);
+
+			return {
+				error: error instanceof Error ? error.message : 'No se pudo registrar el pago histórico'
+			};
+		}
+	},
+
 	synchronizeFinancialState: async ({ params, locals }) => {
 		await requireStudentFinancialReadAccess(locals.user, params.id);
 
@@ -725,7 +721,6 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const newType = data.get('newType')?.toString() as 'NORMAL' | 'BECADO' | 'RECURSANTE';
 		const reason = data.get('reason')?.toString();
-		const recalculateCharges = data.get('recalculateCharges')?.toString() === 'true';
 
 		if (!newType || !reason) {
 			return { error: 'Tipo de alumno y motivo son requeridos' };
@@ -755,6 +750,14 @@ export const actions: Actions = {
 						userName: `${locals.user.firstName} ${locals.user.lastName}`
 					});
 
+					await recalculatePendingStudentCharges({
+						studentId: params.id,
+						userId: locals.user.id,
+						userName: `${locals.user.firstName} ${locals.user.lastName}`,
+						source: 'SCHOLARSHIP_REINSTATEMENT',
+						reason
+					});
+
 					return {
 						success: true,
 						message: 'La beca fue reactivada correctamente'
@@ -767,8 +770,7 @@ export const actions: Actions = {
 				newType,
 				reason,
 				userId: locals.user.id,
-				userName: `${locals.user.firstName} ${locals.user.lastName}`,
-				recalculateCharges
+				userName: `${locals.user.firstName} ${locals.user.lastName}`
 			});
 
 			return { success: true, message: 'Tipo de alumno actualizado correctamente' };
@@ -776,151 +778,6 @@ export const actions: Actions = {
 			console.error('Error al cambiar tipo de alumno:', error);
 			return { error: 'Error al cambiar tipo de alumno' };
 		}
-	},
-
-	recalculateCharges: async ({ params, locals }) => {
-		await requireStudentFinancialReadAccess(locals.user, params.id);
-		await requirePermission(locals.user, 'STUDENT_CHARGE', 'update');
-
-		const student = await prisma.student.findUniqueOrThrow({
-			where: { id: params.id },
-			include: {
-				studentCharges: {
-					include: {
-						concept: true,
-						allocations: true
-					}
-				}
-			}
-		});
-
-		const benefitsConfig = await getBenefitsConfig(prisma);
-
-		let updatedCount = 0;
-		let skippedCount = 0;
-
-		for (const charge of student.studentCharges) {
-			// Skip if not monthly fee
-			if (charge.concept.code !== 'CUOTA_MENSUAL') {
-				skippedCount++;
-				continue;
-			}
-
-			// Skip if already paid
-			if (charge.status === 'PAID') {
-				skippedCount++;
-				continue;
-			}
-
-			// Skip if not PENDING or PARTIAL
-			if (charge.status !== 'PENDING' && charge.status !== 'PARTIAL') {
-				skippedCount++;
-				continue;
-			}
-
-			// Parse period label to get month
-			const periodParts = charge.periodLabel.split('-');
-			if (periodParts.length !== 2) {
-				skippedCount++;
-				continue;
-			}
-
-			const month = parseInt(periodParts[1], 10);
-			if (isNaN(month)) {
-				skippedCount++;
-				continue;
-			}
-
-			// Check if month is in benefits months
-			const monthInBenefits = benefitsConfig.benefitsMonths.includes(month);
-
-			// Calculate correct base amount: always use normalFeeAmount
-			// The scholarship is applied as discount in finalAmount
-			const correctBaseAmount = benefitsConfig.normalFeeAmount;
-
-			// Calculate benefit
-			const benefitCalculation = calculateChargeBenefit(
-				new Decimal(correctBaseAmount),
-				{ isBecado: student.isBecado, isRecursante: student.isRecursante },
-				charge.installmentNumber,
-				month,
-				benefitsConfig
-			);
-
-			const currentAmount = Number(charge.amount);
-			const currentFinalAmount = Number(charge.finalAmount);
-			const correctFinalAmount = Number(benefitCalculation.finalAmount);
-
-			// Check if update is needed
-			if (currentAmount === correctBaseAmount && currentFinalAmount === correctFinalAmount) {
-				skippedCount++;
-				continue;
-			}
-
-			// Update the charge
-			await prisma.studentCharge.update({
-				where: { id: charge.id },
-				data: {
-					amount: new Decimal(correctBaseAmount),
-					finalAmount: benefitCalculation.finalAmount,
-					discountApplied: benefitCalculation.discountApplied,
-					scholarshipApplied: benefitCalculation.scholarshipApplied,
-					benefitType: benefitCalculation.benefitType,
-					benefitReason: benefitCalculation.benefitReason,
-					ruleSnapshot: benefitCalculation.ruleSnapshot as Prisma.InputJsonValue
-				}
-			});
-
-			// Log recalculation for audit
-			await prisma.financialMovement.create({
-				data: {
-					studentId: student.id,
-					movementType: 'ADJUSTMENT',
-					entityType: 'StudentCharge',
-					entityId: charge.id,
-					description: `Recálculo manual de cuota pendiente. Tipo actual: ${student.isBecado ? 'BECADO' : student.isRecursante ? 'RECURSANTE' : 'NORMAL'}`,
-					amount: 0,
-					balanceBefore: currentFinalAmount,
-					balanceAfter: correctFinalAmount,
-					metadata: {
-						previousAmount: currentAmount,
-						newAmount: correctBaseAmount,
-						previousFinalAmount: currentFinalAmount,
-						newFinalAmount: correctFinalAmount,
-						periodLabel: charge.periodLabel,
-						isBecado: student.isBecado,
-						isRecursante: student.isRecursante
-					},
-					userId: locals.user?.id || 'system'
-				}
-			});
-
-			// Update financial movement
-			const movement = await prisma.financialMovement.findFirst({
-				where: {
-					entityType: 'StudentCharge',
-					entityId: charge.id,
-					movementType: 'CHARGE'
-				}
-			});
-
-			if (movement) {
-				await prisma.financialMovement.update({
-					where: { id: movement.id },
-					data: {
-						amount: benefitCalculation.finalAmount
-					}
-				});
-			}
-
-			updatedCount++;
-		}
-
-		return {
-			success: true,
-			updatedCount,
-			skippedCount
-		};
 	},
 
 	editCharge: async ({ params, locals, request }) => {

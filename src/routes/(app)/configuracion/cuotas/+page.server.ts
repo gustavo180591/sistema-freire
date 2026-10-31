@@ -1,5 +1,6 @@
 import { prisma } from '$lib/server/db/prisma';
 import { error, redirect } from '@sveltejs/kit';
+import { recalculatePendingChargesForAllStudents } from '$lib/server/financial/pending-charge-recalculation-service';
 
 const MONTHS = [
 	{ value: 1, name: 'Enero' },
@@ -165,6 +166,20 @@ export const actions = {
 			});
 		}
 
-		return { success: true };
+		const recalculation = await recalculatePendingChargesForAllStudents({
+			userId: locals.user.id,
+			userName: `${locals.user.firstName} ${locals.user.lastName}`,
+			reason: 'Actualización de Configuración → Cuotas'
+		});
+
+		return {
+			success: true,
+			recalculation: {
+				processedStudents: recalculation.processedStudents,
+				updatedCount: recalculation.updatedCount,
+				skippedCount: recalculation.skippedCount,
+				errorCount: recalculation.errors.length
+			}
+		};
 	}
 };

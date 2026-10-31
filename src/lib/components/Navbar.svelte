@@ -17,6 +17,34 @@
 	let { user }: { user: User | null } = $props();
 
 	let userMenuOpen = $state(false);
+	let currentDate = $state(new Date());
+
+	const INSTITUTION_TIME_ZONE = 'America/Argentina/Cordoba';
+
+	function capitalize(value: string): string {
+		if (!value) return value;
+
+		return value.charAt(0).toUpperCase() + value.slice(1);
+	}
+
+	function formatInstitutionalDate(value: Date): string {
+		const parts = new Intl.DateTimeFormat('es-AR', {
+			weekday: 'long',
+			day: 'numeric',
+			month: 'long',
+			year: 'numeric',
+			timeZone: INSTITUTION_TIME_ZONE
+		}).formatToParts(value);
+
+		const part = (type: Intl.DateTimeFormatPartTypes): string =>
+			parts.find((item) => item.type === type)?.value ?? '';
+
+		return `${capitalize(part('weekday'))} ${part('day')} de ${capitalize(
+			part('month')
+		)} del ${part('year')}`;
+	}
+
+	const institutionalDate = $derived(formatInstitutionalDate(currentDate));
 
 	interface ImpersonationData {
 		active: true;
@@ -112,7 +140,12 @@
 		if (browser) {
 			document.addEventListener('click', handleClickOutside);
 
+			const dateTimer = window.setInterval(() => {
+				currentDate = new Date();
+			}, 60_000);
+
 			return () => {
+				window.clearInterval(dateTimer);
 				document.removeEventListener('click', handleClickOutside);
 			};
 		}
@@ -142,6 +175,13 @@
 
 			<!-- Actions -->
 			<div class="flex items-center gap-4">
+				<div
+					class="hidden items-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium whitespace-nowrap text-slate-600 xl:flex dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300"
+					title="Fecha actual"
+				>
+					{institutionalDate}
+				</div>
+
 				{#if user}
 					<!-- User Menu -->
 					<div class="user-menu relative">

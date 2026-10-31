@@ -5,52 +5,74 @@
 
 	const student = $derived(data.student);
 	const metrics = $derived(data.metrics);
+
+	const institutionYears = $derived(data.institutionYears ?? []);
+
+	let selectedFinancialYear = $state<number | null>(null);
+
+	const effectiveFinancialYear = $derived(selectedFinancialYear ?? institutionYears[0] ?? null);
+
+	function getFinancialYear(period: string | null | undefined): number | null {
+		if (!period) return null;
+
+		const match = period.match(/^(\d{4})-/);
+
+		return match ? Number(match[1]) : null;
+	}
 	const charges = $derived.by(() => {
-		return [...data.charges].sort((a, b) => {
-			const aConcept = String(a.concept ?? '').toUpperCase();
-			const bConcept = String(b.concept ?? '').toUpperCase();
-
-			const aPeriod = String(a.period ?? '').toUpperCase();
-			const bPeriod = String(b.period ?? '').toUpperCase();
-
-			// La inscripción siempre debe quedar al final.
-			const aIsEnrollment = aConcept.includes('INSCRIP') || aPeriod.includes('INSCRIPCION');
-
-			const bIsEnrollment = bConcept.includes('INSCRIP') || bPeriod.includes('INSCRIPCION');
-
-			if (aIsEnrollment !== bIsEnrollment) {
-				return aIsEnrollment ? 1 : -1;
-			}
-
-			// Para períodos mensuales YYYY-MM:
-			// el más reciente debe mostrarse primero.
-			const periodValue = (period: string) => {
-				const match = period.match(/^(\d{4})-(\d{2})$/);
-
-				if (!match) {
-					return 0;
+		return [...data.charges]
+			.filter((charge) => {
+				if (effectiveFinancialYear === null) {
+					return true;
 				}
 
-				const year = Number(match[1]);
-				const month = Number(match[2]);
+				return getFinancialYear(charge.period) === effectiveFinancialYear;
+			})
+			.sort((a, b) => {
+				const aConcept = String(a.concept ?? '').toUpperCase();
+				const bConcept = String(b.concept ?? '').toUpperCase();
 
-				return year * 100 + month;
-			};
+				const aPeriod = String(a.period ?? '').toUpperCase();
+				const bPeriod = String(b.period ?? '').toUpperCase();
 
-			const monthlyDifference = periodValue(bPeriod) - periodValue(aPeriod);
+				// La inscripción siempre debe quedar al final.
+				const aIsEnrollment = aConcept.includes('INSCRIP') || aPeriod.includes('INSCRIPCION');
 
-			if (monthlyDifference !== 0) {
-				return monthlyDifference;
-			}
+				const bIsEnrollment = bConcept.includes('INSCRIP') || bPeriod.includes('INSCRIPCION');
 
-			// Para otros cargos, si poseen fecha, mostrar
-			// también el más reciente primero.
-			const aDate = new Date(a.dueDate ?? 0).getTime();
+				if (aIsEnrollment !== bIsEnrollment) {
+					return aIsEnrollment ? 1 : -1;
+				}
 
-			const bDate = new Date(b.dueDate ?? 0).getTime();
+				// Para períodos mensuales YYYY-MM:
+				// el más reciente debe mostrarse primero.
+				const periodValue = (period: string) => {
+					const match = period.match(/^(\d{4})-(\d{2})$/);
 
-			return bDate - aDate;
-		});
+					if (!match) {
+						return 0;
+					}
+
+					const year = Number(match[1]);
+					const month = Number(match[2]);
+
+					return year * 100 + month;
+				};
+
+				const monthlyDifference = periodValue(bPeriod) - periodValue(aPeriod);
+
+				if (monthlyDifference !== 0) {
+					return monthlyDifference;
+				}
+
+				// Para otros cargos, si poseen fecha, mostrar
+				// también el más reciente primero.
+				const aDate = new Date(a.dueDate ?? 0).getTime();
+
+				const bDate = new Date(b.dueDate ?? 0).getTime();
+
+				return bDate - aDate;
+			});
 	});
 
 	const scholarshipLifecycle = $derived(data.scholarshipLifecycle);
@@ -65,7 +87,6 @@
 	let showTypeChangeModal = $state(false);
 	let selectedType = $state<'NORMAL' | 'BECADO' | 'RECURSANTE'>('NORMAL');
 	let changeReason = $state('');
-	let recalculateCharges = $state(false);
 	type EditChargeType = 'NORMAL' | 'BECADO' | 'RECURSANTE';
 
 	let selectedCharge = $state<any>(null);
@@ -110,7 +131,6 @@
 		if (form?.success && showTypeChangeModal) {
 			showTypeChangeModal = false;
 			changeReason = '';
-			recalculateCharges = false;
 		}
 	});
 
@@ -157,6 +177,64 @@
 	};
 
 	const translateStatus = (status: string) => statusTranslations[status] || status;
+
+	const MONTH_NAMES = [
+		'Enero',
+		'Febrero',
+		'Marzo',
+		'Abril',
+		'Mayo',
+		'Junio',
+		'Julio',
+		'Agosto',
+		'Septiembre',
+		'Octubre',
+		'Noviembre',
+		'Diciembre'
+	];
+
+	function formatChargeConcept(value: string | null | undefined): string {
+		if (!value) return '—';
+
+		const labels: Record<string, string> = {
+			CUOTA_MENSUAL: 'Cuota mensual',
+			INSCRIPCION: 'Inscripción'
+		};
+
+		const normalized = value.trim().toUpperCase();
+
+		if (labels[normalized]) {
+			return labels[normalized];
+		}
+
+		const readable = value.replaceAll('_', ' ').toLowerCase();
+
+		return readable.charAt(0).toUpperCase() + readable.slice(1);
+	}
+
+	function formatChargePeriod(value: string | null | undefined): string {
+		if (!value) return '—';
+
+		const monthlyMatch = value.match(/^(\d{4})-(\d{2})$/);
+
+		if (monthlyMatch) {
+			const year = Number(monthlyMatch[1]);
+
+			const month = Number(monthlyMatch[2]);
+
+			if (Number.isInteger(month) && month >= 1 && month <= 12) {
+				return `${MONTH_NAMES[month - 1]} ${year}`;
+			}
+		}
+
+		const enrollmentMatch = value.match(/^(\d{4})-INSCRIPCION$/i);
+
+		if (enrollmentMatch) {
+			return `Inscripción ${enrollmentMatch[1]}`;
+		}
+
+		return value;
+	}
 
 	function formatPaymentMethod(value: string | null | undefined): string {
 		if (!value) return '—';
@@ -222,7 +300,7 @@
 	</section>
 
 	<!-- KPIs -->
-	<section class="grid gap-4 md:grid-cols-4">
+	<section class="grid gap-4 md:grid-cols-3">
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<p class="text-sm text-slate-400">{metrics.financialLabel}</p>
 			<h2 class="mt-3 text-4xl font-bold">
@@ -238,6 +316,32 @@
 			<h2 class="mt-3 text-4xl font-bold">
 				{currency.format(metrics.totalPaid)}
 			</h2>
+
+			{#if institutionYears.length > 0}
+				<div class="mt-5 border-t border-slate-800 pt-4">
+					<p class="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+						Años en la institución
+					</p>
+
+					<div class="mt-3 flex flex-wrap gap-2">
+						{#each institutionYears as year}
+							<button
+								type="button"
+								onclick={() => {
+									selectedFinancialYear = year;
+								}}
+								class={`rounded-xl border px-3 py-1.5 text-sm font-semibold transition ${
+									effectiveFinancialYear === year
+										? 'border-indigo-500 bg-indigo-500/15 text-indigo-300'
+										: 'border-slate-700 bg-slate-950 text-slate-400 hover:border-slate-500 hover:text-white'
+								}`}
+							>
+								{year}
+							</button>
+						{/each}
+					</div>
+				</div>
+			{/if}
 		</div>
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
@@ -245,19 +349,6 @@
 			<h2 class="mt-3 text-4xl font-bold">
 				{metrics.pendingCharges}
 			</h2>
-		</div>
-
-		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<p class="text-sm text-slate-400">Estado de beca</p>
-			<h2 class="mt-3 text-2xl font-bold">
-				{getScholarshipStatusLabel(scholarshipLifecycle.status)}
-			</h2>
-
-			{#if scholarship}
-				<p class="mt-2 text-sm text-slate-500">
-					{scholarship.percentage}% registrado
-				</p>
-			{/if}
 		</div>
 	</section>
 
@@ -415,14 +506,14 @@
 	<section class="flex flex-wrap gap-3">
 		<a
 			href={`/alumnos/${student.id}/historial`}
-			class="rounded-2xl border border-slate-700 px-5 py-3 text-sm font-semibold transition hover:border-slate-500"
+			class="rounded-2xl border border-green-300 bg-white px-5 py-3 text-sm font-semibold text-green-800 transition hover:border-green-400 hover:bg-green-50 hover:text-green-900 hover:shadow-md"
 		>
 			Ver historial académico
 		</a>
 
 		<a
 			href={`/alumnos/${student.id}/certificados`}
-			class="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.02]"
+			class="rounded-2xl border border-sky-300 bg-white px-5 py-3 text-sm font-semibold text-sky-800 transition hover:border-sky-400 hover:bg-sky-50 hover:text-sky-900 hover:shadow-md"
 		>
 			Generar certificado
 		</a>
@@ -432,19 +523,10 @@
 				selectedType = getCurrentType();
 				showTypeChangeModal = true;
 			}}
-			class="cursor-pointer rounded-2xl border border-amber-700 bg-amber-950/50 px-5 py-3 text-sm font-semibold text-amber-300 transition hover:border-amber-500 hover:bg-amber-950 hover:shadow-lg"
+			class="cursor-pointer rounded-2xl border border-[#d6b08c] bg-white px-5 py-3 text-sm font-semibold text-[#6b3f22] transition hover:border-[#b9855a] hover:bg-[#fffaf5] hover:text-[#4f2d18] hover:shadow-md"
 		>
 			Cambiar tipo de alumno
 		</button>
-
-		<form method="POST" action="?/recalculateCharges">
-			<button
-				type="submit"
-				class="cursor-pointer rounded-2xl border border-indigo-700 bg-indigo-950/50 px-5 py-3 text-sm font-semibold text-indigo-300 transition hover:border-indigo-500 hover:bg-indigo-950 hover:shadow-lg"
-			>
-				Recalcular cargos pendientes
-			</button>
-		</form>
 	</section>
 
 	{#if showSuccess}
@@ -452,8 +534,7 @@
 			class="rounded-2xl border border-green-600 bg-green-950/30 px-4 py-3 text-sm text-black transition-opacity duration-500"
 			style="opacity: {successOpacity}"
 		>
-			✓ {form?.message ||
-				`Cargos recalculados: ${form?.updatedCount} actualizados, ${form?.skippedCount} omitidos`}
+			✓ {form?.message ?? 'Operación realizada correctamente'}
 		</div>
 	{/if}
 
@@ -505,19 +586,14 @@
 						></textarea>
 					</div>
 
-					<div class="mb-6">
-						<label class="flex items-center gap-2">
-							<input
-								type="checkbox"
-								name="recalculateCharges"
-								bind:checked={recalculateCharges}
-								class="h-4 w-4 rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-indigo-500"
-							/>
-							<span class="text-sm text-slate-300">Recalcular cuotas pendientes con nuevo tipo</span
-							>
-						</label>
+					<div class="mb-6 rounded-xl border border-indigo-800/60 bg-indigo-950/30 px-4 py-3">
+						<p class="text-sm text-indigo-200">
+							Las cuotas mensuales pendientes se recalcularán automáticamente según el nuevo tipo de
+							alumno.
+						</p>
+
 						<p class="mt-1 text-xs text-slate-500">
-							Solo aplica a cuotas PENDING/PARTIAL. No modifica pagos históricos.
+							Los cargos ya pagados y el historial financiero no se modifican.
 						</p>
 					</div>
 
@@ -527,7 +603,6 @@
 							onclick={() => {
 								showTypeChangeModal = false;
 								changeReason = '';
-								recalculateCharges = false;
 							}}
 							class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-slate-800"
 						>
@@ -546,28 +621,50 @@
 	{/if}
 
 	<!-- Tabla financiera -->
-	<section class="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70">
-		<table class="w-full text-left">
+	<section class="overflow-x-auto rounded-3xl border border-slate-800 bg-slate-900/70">
+		<div class="flex items-center justify-between border-b border-slate-800 px-5 py-4">
+			<div>
+				<p class="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+					Detalle financiero
+				</p>
+
+				<h2 class="mt-1 text-xl font-bold text-white">
+					{#if effectiveFinancialYear}
+						Año {effectiveFinancialYear}
+					{:else}
+						Historial financiero
+					{/if}
+				</h2>
+			</div>
+
+			<span class="text-sm text-slate-500">
+				{charges.length}
+				{charges.length === 1 ? ' movimiento' : ' movimientos'}
+			</span>
+		</div>
+		<table class="w-full min-w-max text-left text-sm whitespace-nowrap">
 			<thead class="border-b border-slate-800 bg-slate-900">
 				<tr>
-					<th class="px-4 py-4 text-sm font-semibold">Concepto</th>
-					<th class="px-4 py-4 text-sm font-semibold">Período</th>
-					<th class="px-4 py-4 text-sm font-semibold">Tipo de cuota</th>
-					<th class="px-4 py-4 text-right text-sm font-semibold">Importe a cobrar</th>
-					<th class="px-4 py-4 text-right text-sm font-semibold">Pagado</th>
-					<th class="px-4 py-4 text-sm font-semibold">Fecha de pago</th>
-					<th class="px-4 py-4 text-right text-sm font-semibold">Pendiente</th>
-					<th class="px-4 py-4 text-sm font-semibold">Estado</th>
-					<th class="px-4 py-4 text-sm font-semibold">Vencimiento</th>
-					<th class="px-4 py-4 text-sm font-semibold">Acción</th>
+					<th class="px-3 py-3 text-sm font-semibold">Concepto</th>
+					<th class="px-3 py-3 text-sm font-semibold">Período</th>
+					<th class="px-3 py-3 text-sm font-semibold">Tipo de cuota</th>
+					<th class="px-3 py-3 text-right text-sm font-semibold">Importe a cobrar</th>
+					<th class="px-3 py-3 text-right text-sm font-semibold">Pagado</th>
+					<th class="px-3 py-3 text-sm font-semibold">Fecha de pago</th>
+					<th class="px-3 py-3 text-right text-sm font-semibold">Pendiente</th>
+					<th class="px-3 py-3 text-sm font-semibold">Estado</th>
+					<th class="px-3 py-3 text-sm font-semibold">Vencimiento</th>
+					<th class="px-3 py-3 text-sm font-semibold">Acciones</th>
 				</tr>
 			</thead>
 			<tbody>
 				{#each charges as charge}
-					<tr class="border-b border-slate-800 last:border-none">
-						<td class="px-4 py-4 font-medium">{charge.concept}</td>
-						<td class="px-4 py-4">{charge.period}</td>
-						<td class="px-4 py-4">
+					<tr class="border-b border-slate-800 transition last:border-none hover:bg-slate-800/35">
+						<td class="px-3 py-3 font-semibold text-slate-200"
+							>{formatChargeConcept(charge.concept)}</td
+						>
+						<td class="px-3 py-3">{formatChargePeriod(charge.period)}</td>
+						<td class="px-3 py-3">
 							{#if charge.benefitType === 'SCHOLARSHIP'}
 								<span
 									class="inline-flex items-center rounded-full border border-emerald-500 bg-white px-2 py-1 text-xs font-medium text-black"
@@ -588,13 +685,13 @@
 								</span>
 							{/if}
 						</td>
-						<td class="px-4 py-4 text-right font-semibold">
+						<td class="px-3 py-3 text-right font-semibold">
 							{currency.format(charge.finalAmount)}
 						</td>
-						<td class="px-4 py-4 text-right">
+						<td class="px-3 py-3 text-right">
 							{currency.format(charge.paid)}
 						</td>
-						<td class="px-4 py-4 whitespace-nowrap">
+						<td class="px-3 py-3 whitespace-nowrap">
 							{#if charge.paymentDate}
 								<span class="text-sm text-slate-300">
 									{formatDate(charge.paymentDate)}
@@ -603,19 +700,19 @@
 								<span class="text-sm text-slate-500">—</span>
 							{/if}
 						</td>
-						<td class="px-4 py-4 text-right">
+						<td class="px-3 py-3 text-right">
 							{#if charge.pending > 0}
 								<span class="text-red-400">{currency.format(charge.pending)}</span>
 							{:else}
 								<span class="text-emerald-400">{currency.format(charge.pending)}</span>
 							{/if}
 						</td>
-						<td class="px-4 py-4">
+						<td class="px-3 py-3">
 							<span class="rounded-full border border-slate-700 px-2 py-1 text-xs">
 								{translateStatus(charge.status)}
 							</span>
 						</td>
-						<td class="px-4 py-4">
+						<td class="px-3 py-3">
 							{#if charge.conceptCode === 'CUOTA_MENSUAL' && charge.dueDate}
 								{#if charge.isOverdue}
 									<span
@@ -634,29 +731,29 @@
 								<span class="text-xs text-slate-500">-</span>
 							{/if}
 						</td>
-						<td class="px-4 py-4">
-							<div class="flex flex-wrap gap-2">
+						<td class="px-3 py-3">
+							<div class="flex flex-nowrap items-center gap-2">
 								<button
 									type="button"
 									onclick={() => {
 										selectedCharge = charge;
 										showViewModal = true;
 									}}
-									class="text-sm text-slate-400 hover:text-white"
+									class="cursor-pointer rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white"
 								>
 									Ver
 								</button>
 								<button
 									type="button"
 									onclick={() => openEditChargeModal(charge)}
-									class="text-sm text-indigo-400 hover:text-indigo-300"
+									class="cursor-pointer rounded-lg border border-indigo-700 px-2.5 py-1.5 text-xs font-semibold text-indigo-300 transition hover:border-indigo-500 hover:bg-indigo-950/40"
 								>
 									Editar
 								</button>
 								{#if charge.status !== 'PAID'}
 									<a
 										href={`/finanzas/pagos/nuevo?studentId=${student.id}`}
-										class="text-sm text-emerald-400 hover:text-emerald-300"
+										class="rounded-lg border border-emerald-700 px-2.5 py-1.5 text-xs font-semibold text-emerald-300 transition hover:border-emerald-500 hover:bg-emerald-950/30"
 									>
 										Registrar pago
 									</a>
@@ -688,8 +785,14 @@
 				</button>
 			</div>
 			<div class="space-y-3 text-sm">
-				<p><span class="text-slate-400">Concepto:</span> {selectedCharge.concept}</p>
-				<p><span class="text-slate-400">Período:</span> {selectedCharge.period}</p>
+				<p>
+					<span class="text-slate-400">Concepto:</span>
+					{formatChargeConcept(selectedCharge.concept)}
+				</p>
+				<p>
+					<span class="text-slate-400">Período:</span>
+					{formatChargePeriod(selectedCharge.period)}
+				</p>
 				<p>
 					<span class="text-slate-400">Importe a cobrar:</span>
 					{currency.format(selectedCharge.finalAmount)}

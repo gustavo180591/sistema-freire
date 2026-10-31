@@ -1,0 +1,2 @@
+ALTER TYPE "SubjectAccreditationType"
+ADD VALUE IF NOT EXISTS 'UNSPECIFIED';

@@ -19,15 +19,15 @@ La administración académica suele distribuir información entre planillas, doc
 
 Los siguientes módulos tienen representación en las rutas y/o en el modelo de datos del repositorio:
 
-| Área | Alcance |
-| --- | --- |
-| Académica | Carreras, materias, planes de estudio, correlatividades, comisiones e inscripciones |
-| Alumnos y docentes | Legajos, estados, asignaciones y vistas específicas |
-| Asistencia y evaluaciones | Registros de asistencia, calificaciones, evaluaciones y mesas de examen |
-| Gestión documental | Documentos asociados a personas y procesos institucionales |
-| Finanzas | Cargos, pagos, becas, recibos, movimientos, acuerdos de pago y reportes |
-| Administración | Usuarios, roles, permisos, auditoría y configuración |
-| Seguimiento | Dashboard, reportes e indicadores operativos |
+| Área                      | Alcance                                                                             |
+| ------------------------- | ----------------------------------------------------------------------------------- |
+| Académica                 | Carreras, materias, planes de estudio, correlatividades, comisiones e inscripciones |
+| Alumnos y docentes        | Legajos, estados, asignaciones y vistas específicas                                 |
+| Asistencia y evaluaciones | Registros de asistencia, calificaciones, evaluaciones y mesas de examen             |
+| Gestión documental        | Documentos asociados a personas y procesos institucionales                          |
+| Finanzas                  | Cargos, pagos, becas, recibos, movimientos, acuerdos de pago y reportes             |
+| Administración            | Usuarios, roles, permisos, auditoría y configuración                                |
+| Seguimiento               | Dashboard, reportes e indicadores operativos                                        |
 
 La presencia de un módulo en el código no implica que todas sus funcionalidades estén habilitadas para cualquier usuario: el acceso depende de autenticación, permisos y configuración institucional.
 

@@ -310,7 +310,7 @@
 					label: 'Configuración',
 					href: '/configuracion',
 					icon: 'gear',
-					roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS', 'PRECEPTOR']
+					roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO']
 				},
 				{ label: 'Contacto', href: '/contacto', icon: 'envelope', roles: [] }
 			]

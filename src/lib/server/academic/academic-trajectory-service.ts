@@ -2,75 +2,14 @@ import { prisma } from '$lib/server/db/prisma';
 import {
 	deriveAcademicTrajectoryState,
 	hasLegacyAcademicEvidence,
-	type AcademicTrajectorySubjectState
+	applyCurrentYearProgression
 } from './academic-trajectory';
-
-type ApprovalMethod = 'FINAL_EXAM' | 'PROMOTION' | 'EQUIVALENCE' | 'LEGACY';
-
-type CourseAttempt = {
-	id: string;
-	academicYear: number | null;
-	attemptType: 'FIRST_TIME' | 'REPEAT' | null;
-	recordSource: 'SYSTEM' | 'MANUAL' | 'IMPORT';
-	status: string;
-	enrolledAt: Date;
-	commissionCode: string | null;
-	courseResult: {
-		courseAverage: number | null;
-		courseStatus: string;
-		academicStatus: string;
-		approved: boolean;
-		promoted: boolean;
-		finalGrade: number | null;
-		regularizedAt: Date | null;
-		regularityExpiresAt: Date | null;
-	} | null;
-};
-
-type FinalExamAttempt = {
-	gradeId: string;
-	evaluationId: string;
-	evaluationType: string;
-	evaluationDate: Date;
-	callNumber: number | null;
-	status: string;
-	grade: number | null;
-	passed: boolean | null;
-	observations: string | null;
-};
-
-export interface AcademicTrajectorySubject {
-	id: string;
-	code: string;
-	name: string;
-	yearLevel: number;
-	sortOrder: number;
-	active: boolean;
-	state: AcademicTrajectorySubjectState;
-	approval: {
-		method: ApprovalMethod;
-		source: 'SYSTEM' | 'MANUAL' | 'IMPORT' | 'LEGACY';
-		accreditedAt: Date | null;
-		academicYear: number | null;
-		grade: number | null;
-		observations: string | null;
-	} | null;
-	currentEnrollment: {
-		id: string;
-		academicYear: number | null;
-		attemptType: 'FIRST_TIME' | 'REPEAT' | null;
-		recordSource: 'SYSTEM' | 'MANUAL' | 'IMPORT';
-		commissionCode: string | null;
-	} | null;
-	regularity: {
-		status: 'REGULAR' | 'LIBRE' | null;
-		regularizedAt: Date | null;
-		expiresAt: Date | null;
-		expired: boolean;
-	} | null;
-	courseAttempts: CourseAttempt[];
-	finalExamAttempts: FinalExamAttempt[];
-}
+import type {
+	AcademicTrajectoryCourseAttempt,
+	AcademicTrajectoryFinalExamAttempt,
+	AcademicTrajectorySubject,
+	ApprovalMethod
+} from '$lib/types/academic-trajectory';
 
 function numberOrNull(value: unknown): number | null {
 	if (value === null || value === undefined) return null;
@@ -116,6 +55,8 @@ export async function getStudentAcademicTrajectory(studentId: string) {
 			},
 			subjectStatuses: {
 				select: {
+					manualTrajectoryState: true,
+					manualTrajectoryStateUpdatedAt: true,
 					subjectId: true,
 					regularityStatus: true,
 					approved: true,
@@ -439,7 +380,7 @@ export async function getStudentAcademicTrajectory(studentId: string) {
 				enrollments.length > 0 ||
 				(finalsBySubject.get(subject.id)?.length ?? 0) > 0;
 
-			const state = deriveAcademicTrajectoryState(
+			const derivedState = deriveAcademicTrajectoryState(
 				{
 					accreditationType: accreditation?.type ?? null,
 					hasActiveEnrollment: Boolean(activeEnrollment),
@@ -454,6 +395,9 @@ export async function getStudentAcademicTrajectory(studentId: string) {
 				},
 				now
 			);
+
+			const state = (legacyStatus?.manualTrajectoryState ??
+				derivedState) as AcademicTrajectorySubject['state'];
 
 			const approval = accreditation
 				? {
@@ -478,7 +422,7 @@ export async function getStudentAcademicTrajectory(studentId: string) {
 						}
 					: null;
 
-			const courseAttempts: CourseAttempt[] = enrollments
+			const courseAttempts: AcademicTrajectoryCourseAttempt[] = enrollments
 				.map((enrollment) => ({
 					id: enrollment.id,
 					academicYear:
@@ -511,33 +455,33 @@ export async function getStudentAcademicTrajectory(studentId: string) {
 					return b.enrolledAt.getTime() - a.enrolledAt.getTime();
 				});
 
-			const finalExamAttempts: FinalExamAttempt[] = (finalsBySubject.get(subject.id) ?? []).map(
-				(grade) => {
-					const numericGrade = numberOrNull(grade.value);
+			const finalExamAttempts: AcademicTrajectoryFinalExamAttempt[] = (
+				finalsBySubject.get(subject.id) ?? []
+			).map((grade) => {
+				const numericGrade = numberOrNull(grade.value);
 
-					let passed: boolean | null = null;
+				let passed: boolean | null = null;
 
-					if (grade.status === 'PRESENT') {
-						if (grade.evaluation.gradingMode === 'QUALITATIVE') {
-							passed = grade.qualitativeValue === 'APPROVED';
-						} else if (numericGrade !== null) {
-							passed = numericGrade >= Number(grade.evaluation.minPassingScore);
-						}
+				if (grade.status === 'PRESENT') {
+					if (grade.evaluation.gradingMode === 'QUALITATIVE') {
+						passed = grade.qualitativeValue === 'APPROVED';
+					} else if (numericGrade !== null) {
+						passed = numericGrade >= Number(grade.evaluation.minPassingScore);
 					}
-
-					return {
-						gradeId: grade.id,
-						evaluationId: grade.evaluation.id,
-						evaluationType: grade.evaluation.type,
-						evaluationDate: grade.evaluation.evaluationDate,
-						callNumber: grade.evaluation.examCallNumber,
-						status: grade.status,
-						grade: numericGrade,
-						passed,
-						observations: grade.observations
-					};
 				}
-			);
+
+				return {
+					gradeId: grade.id,
+					evaluationId: grade.evaluation.id,
+					evaluationType: grade.evaluation.type,
+					evaluationDate: grade.evaluation.evaluationDate,
+					callNumber: grade.evaluation.examCallNumber,
+					status: grade.status,
+					grade: numericGrade,
+					passed,
+					observations: grade.observations
+				};
+			});
 
 			return {
 				id: subject.id,
@@ -586,21 +530,25 @@ export async function getStudentAcademicTrajectory(studentId: string) {
 			return a.name.localeCompare(b.name, 'es');
 		});
 
-	const subjectsByYear = [...new Set(subjects.map((subject) => subject.yearLevel))]
+	const subjectsWithProgression = applyCurrentYearProgression(subjects, student.currentYear);
+
+	const subjectsByYear = [...new Set(subjectsWithProgression.map((subject) => subject.yearLevel))]
 		.sort((a, b) => a - b)
 		.map((yearLevel) => ({
 			yearLevel,
-			subjects: subjects.filter((subject) => subject.yearLevel === yearLevel)
+			subjects: subjectsWithProgression.filter((subject) => subject.yearLevel === yearLevel)
 		}));
 
 	const metrics = {
-		totalSubjects: subjects.length,
-		approved: subjects.filter((subject) => subject.state === 'APPROVED').length,
-		taking: subjects.filter((subject) => subject.state === 'TAKING').length,
-		retaking: subjects.filter((subject) => subject.state === 'RETAKING').length,
-		pendingFinals: subjects.filter((subject) => subject.state === 'REGULAR').length,
-		expiredRegularities: subjects.filter((subject) => subject.state === 'REGULAR_EXPIRED').length,
-		free: subjects.filter((subject) => subject.state === 'FREE').length
+		totalSubjects: subjectsWithProgression.length,
+		approved: subjectsWithProgression.filter((subject) => subject.state === 'APPROVED').length,
+		taking: subjectsWithProgression.filter((subject) => subject.state === 'TAKING').length,
+		retaking: subjectsWithProgression.filter((subject) => subject.state === 'RETAKING').length,
+		pendingFinals: subjectsWithProgression.filter((subject) => subject.state === 'REGULAR').length,
+		expiredRegularities: subjectsWithProgression.filter(
+			(subject) => subject.state === 'REGULAR_EXPIRED'
+		).length,
+		free: subjectsWithProgression.filter((subject) => subject.state === 'FREE').length
 	};
 
 	return {
@@ -617,7 +565,7 @@ export async function getStudentAcademicTrajectory(studentId: string) {
 		metrics,
 		hasCurrentCoursework: metrics.taking + metrics.retaking > 0,
 		hasPendingFinals: metrics.pendingFinals > 0,
-		subjects,
+		subjects: subjectsWithProgression,
 		subjectsByYear
 	};
 }

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 
 	let { data }: { data: PageData } = $props();
 	let showResetModal = $state(false);
@@ -139,6 +140,13 @@
 
 	<!-- CTA -->
 	<section class="flex flex-wrap gap-3">
+		<a
+			href={resolve(`/alumnos/${student.id}/trayectoria`)}
+			class="rounded-2xl border-2 border-emerald-700 bg-white px-5 py-3 text-sm font-semibold text-emerald-700 transition hover:scale-[1.02]"
+		>
+			Trayectoria Académica
+		</a>
+
 		<a
 			href={`/alumnos/${student.id}/historial-anual`}
 			class="rounded-2xl border-2 border-violet-700 bg-white px-5 py-3 text-sm font-semibold text-violet-700 transition hover:scale-[1.02]"

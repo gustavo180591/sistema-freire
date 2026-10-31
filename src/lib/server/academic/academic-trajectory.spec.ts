@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { deriveAcademicTrajectoryState, hasLegacyAcademicEvidence } from './academic-trajectory';
+import {
+	deriveAcademicTrajectoryState,
+	hasLegacyAcademicEvidence,
+	applyCurrentYearProgression
+} from './academic-trajectory';
 
 const baseInput = {
 	accreditationType: null,
@@ -150,5 +154,75 @@ describe('deriveAcademicTrajectoryState', () => {
 				courseAverage: 7
 			})
 		).toBe(true);
+	});
+});
+
+describe('applyCurrentYearProgression', () => {
+	it('marca como cursando las materias del primer año para un alumno de primer año', () => {
+		const result = applyCurrentYearProgression(
+			[
+				{
+					yearLevel: 1,
+					state: 'NOT_STARTED' as const
+				},
+				{
+					yearLevel: 1,
+					state: 'NOT_STARTED' as const
+				}
+			],
+			1
+		);
+
+		expect(result.map((subject) => subject.state)).toEqual(['TAKING', 'TAKING']);
+	});
+
+	it('marca el año actual como cursando cuando todos los años anteriores están aprobados', () => {
+		const result = applyCurrentYearProgression(
+			[
+				{ yearLevel: 1, state: 'APPROVED' as const },
+				{ yearLevel: 1, state: 'APPROVED' as const },
+				{ yearLevel: 2, state: 'APPROVED' as const },
+				{ yearLevel: 3, state: 'APPROVED' as const },
+				{ yearLevel: 4, state: 'NOT_STARTED' as const },
+				{ yearLevel: 4, state: 'NOT_STARTED' as const }
+			],
+			4
+		);
+
+		expect(
+			result.filter((subject) => subject.yearLevel === 4).map((subject) => subject.state)
+		).toEqual(['TAKING', 'TAKING']);
+	});
+
+	it('no habilita automáticamente el año actual si queda una materia anterior sin aprobar', () => {
+		const result = applyCurrentYearProgression(
+			[
+				{ yearLevel: 1, state: 'APPROVED' as const },
+				{ yearLevel: 2, state: 'REGULAR' as const },
+				{ yearLevel: 3, state: 'NOT_STARTED' as const }
+			],
+			3
+		);
+
+		expect(result[2].state).toBe('NOT_STARTED');
+	});
+
+	it('preserva los estados reales existentes del año actual', () => {
+		const result = applyCurrentYearProgression(
+			[
+				{ yearLevel: 1, state: 'APPROVED' as const },
+				{ yearLevel: 2, state: 'APPROVED' as const },
+				{ yearLevel: 3, state: 'APPROVED' as const },
+				{ yearLevel: 4, state: 'REGULAR' as const },
+				{ yearLevel: 4, state: 'FREE' as const },
+				{ yearLevel: 4, state: 'APPROVED' as const },
+				{ yearLevel: 4, state: 'NOT_STARTED' as const }
+			],
+			4
+		);
+
+		expect(
+			result.filter((subject) => subject.yearLevel === 4).map((subject) => subject.state)
+		).toEqual(['REGULAR', 'FREE', 'APPROVED', 'TAKING']);
 	});
 });

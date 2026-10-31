@@ -10,6 +10,25 @@
 		maximumFractionDigits: 0
 	});
 
+	function formatConceptLabel(value: string | null | undefined): string {
+		if (!value) return '—';
+
+		const labels: Record<string, string> = {
+			CUOTA_MENSUAL: 'Cuota mensual',
+			INSCRIPCION: 'Inscripción'
+		};
+
+		const normalized = value.trim().toUpperCase();
+
+		if (labels[normalized]) {
+			return labels[normalized];
+		}
+
+		const readable = value.replaceAll('_', ' ').toLowerCase();
+
+		return readable.charAt(0).toUpperCase() + readable.slice(1);
+	}
+
 	const formatDate = (date: Date | undefined) => {
 		if (!date) return '-';
 		return new Date(date).toLocaleDateString('es-AR');
@@ -104,20 +123,28 @@
 
 	<!-- Summary -->
 	<section class="grid gap-4 md:grid-cols-3">
-		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<p class="text-sm text-slate-400">Total alumnos</p>
-			<h2 class="mt-3 text-4xl font-bold">{data.total}</h2>
+		<div
+			class="rounded-3xl border border-sky-500/20 bg-sky-500/5 p-6 transition hover:border-sky-500/40"
+		>
+			<p class="text-sm font-medium text-sky-300">Total alumnos</p>
+			<h2 class="mt-3 text-4xl font-bold text-white">{data.total}</h2>
 			<p class="mt-2 text-sm text-slate-500">Resultados encontrados</p>
 		</div>
 
-		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<p class="text-sm text-slate-400">Deuda total</p>
-			<h2 class="mt-3 text-4xl font-bold">{currency.format(data.summary.totalDebt)}</h2>
+		<div
+			class="rounded-3xl border border-amber-500/20 bg-amber-500/5 p-6 transition hover:border-amber-500/40"
+		>
+			<p class="text-sm font-medium text-amber-300">Deuda total</p>
+			<h2 class="mt-3 text-4xl font-bold text-white">
+				{currency.format(data.summary.totalDebt)}
+			</h2>
 			<p class="mt-2 text-sm text-slate-500">Saldo pendiente consolidado</p>
 		</div>
 
-		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<p class="text-sm text-slate-400">Deuda vencida</p>
+		<div
+			class="rounded-3xl border border-red-500/20 bg-red-500/5 p-6 transition hover:border-red-500/40"
+		>
+			<p class="text-sm font-medium text-red-300">Deuda vencida</p>
 			<h2 class="mt-3 text-4xl font-bold text-red-400">
 				{currency.format(data.summary.totalOverdueDebt)}
 			</h2>
@@ -126,8 +153,16 @@
 	</section>
 
 	<!-- Filters -->
-	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-		<h3 class="mb-4 text-lg font-semibold">Filtros</h3>
+	<section class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-sm">
+		<div class="mb-5">
+			<p class="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">
+				Búsqueda avanzada
+			</p>
+			<h3 class="mt-1 text-xl font-bold text-white">Filtros</h3>
+			<p class="mt-1 text-sm text-slate-500">
+				Filtrá alumnos por carrera, sede, tipo y situación financiera.
+			</p>
+		</div>
 		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 			<div>
 				<label for="search" class="mb-2 block text-sm font-medium text-slate-300">Buscar</label>
@@ -136,7 +171,7 @@
 					type="text"
 					bind:value={search}
 					placeholder="Nombre, DNI, email..."
-					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
+					class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white transition outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/30"
 				/>
 			</div>
 
@@ -145,7 +180,7 @@
 				<select
 					id="career"
 					bind:value={careerId}
-					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
+					class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white transition outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/30"
 				>
 					<option value="">Todas</option>
 					{#each data.filterOptions.careers as career}
@@ -159,7 +194,7 @@
 				<select
 					id="location"
 					bind:value={locationId}
-					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
+					class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white transition outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/30"
 				>
 					<option value="">Todas</option>
 					{#each data.filterOptions.locations as location}
@@ -175,7 +210,7 @@
 				<select
 					id="studentType"
 					bind:value={studentType}
-					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
+					class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white transition outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/30"
 				>
 					<option value="">Todos</option>
 					<option value="NORMAL">Normal</option>
@@ -191,7 +226,7 @@
 				<select
 					id="financialStatus"
 					bind:value={financialStatus}
-					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
+					class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white transition outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/30"
 				>
 					<option value="">Todos</option>
 					<option value="with_debt">Con deuda</option>
@@ -209,7 +244,7 @@
 				<select
 					id="academicStatus"
 					bind:value={academicStatus}
-					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
+					class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white transition outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/30"
 				>
 					<option value="">Todos</option>
 					<option value="ACTIVE">Activo</option>
@@ -224,11 +259,13 @@
 				<select
 					id="concept"
 					bind:value={conceptCode}
-					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
+					class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white transition outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/30"
 				>
 					<option value="">Todos</option>
 					{#each data.filterOptions.concepts as concept}
-						<option value={concept.code}>{concept.name}</option>
+						<option value={concept.code}>
+							{formatConceptLabel(concept.name || concept.code)}
+						</option>
 					{/each}
 				</select>
 			</div>
@@ -240,7 +277,7 @@
 				<select
 					id="overdueCharges"
 					bind:value={overdueCharges}
-					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
+					class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white transition outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/30"
 				>
 					<option value="">Todas</option>
 					<option value="1_or_more">1 o más</option>
@@ -258,7 +295,7 @@
 					type="text"
 					bind:value={periodFrom}
 					placeholder="Ej: 2026-01"
-					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
+					class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white transition outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/30"
 				/>
 			</div>
 
@@ -271,7 +308,7 @@
 					type="text"
 					bind:value={periodTo}
 					placeholder="Ej: 2026-12"
-					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
+					class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white transition outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/30"
 				/>
 			</div>
 
@@ -284,7 +321,7 @@
 					type="number"
 					bind:value={minDebt}
 					placeholder="0"
-					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
+					class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white transition outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/30"
 				/>
 			</div>
 
@@ -297,7 +334,7 @@
 					type="number"
 					bind:value={maxDebt}
 					placeholder="Sin límite"
-					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
+					class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white transition outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/30"
 				/>
 			</div>
 
@@ -308,7 +345,7 @@
 				<select
 					id="pageSize"
 					bind:value={pageSize}
-					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
+					class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white transition outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/30"
 				>
 					<option value="10">10</option>
 					<option value="25">25</option>
@@ -323,7 +360,7 @@
 				<select
 					id="sortBy"
 					bind:value={sortBy}
-					class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-indigo-500"
+					class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white transition outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/30"
 				>
 					<option value="">Nombre (A-Z)</option>
 					<option value="debt_desc">Mayor deuda</option>
@@ -339,13 +376,13 @@
 		<div class="mt-6 flex gap-3">
 			<button
 				onclick={applyFilters}
-				class="rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.02]"
+				class="cursor-pointer rounded-2xl border border-indigo-500 bg-indigo-500/10 px-6 py-3 text-sm font-semibold text-indigo-200 transition hover:bg-indigo-500/20"
 			>
 				Aplicar filtros
 			</button>
 			<button
 				onclick={clearFilters}
-				class="rounded-2xl border border-slate-700 px-6 py-3 text-sm font-semibold transition hover:border-slate-500"
+				class="cursor-pointer rounded-2xl border border-slate-700 px-6 py-3 text-sm font-semibold text-slate-300 transition hover:border-slate-500 hover:bg-slate-800/50 hover:text-white"
 			>
 				Limpiar filtros
 			</button>
@@ -353,43 +390,66 @@
 	</section>
 
 	<!-- Table -->
-	<section class="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70">
+	<section class="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70 shadow-sm">
 		{#if data.students.length === 0}
 			<div class="p-12 text-center">
 				<p class="text-slate-400">No hay alumnos con deuda pendiente con los filtros actuales.</p>
 			</div>
 		{:else}
+			<div
+				class="flex flex-col gap-2 border-b border-slate-800 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+			>
+				<div>
+					<p class="text-xs font-semibold tracking-[0.18em] text-slate-500 uppercase">Resultados</p>
+					<h3 class="mt-1 text-lg font-bold text-white">Alumnos encontrados</h3>
+				</div>
+
+				<span
+					class="w-fit rounded-full border border-slate-700 bg-slate-950/60 px-3 py-1 text-xs font-semibold text-slate-400"
+				>
+					{data.students.length}
+					{data.students.length === 1 ? 'alumno' : 'alumnos'}
+				</span>
+			</div>
+
 			<div class="overflow-x-auto">
-				<table class="w-full text-left">
-					<thead class="border-b border-slate-800 bg-slate-900">
+				<table class="w-full min-w-[1400px] text-left text-sm whitespace-nowrap">
+					<thead class="border-b border-slate-800 bg-slate-950/60">
 						<tr>
-							<th class="px-4 py-4 text-sm font-semibold">Alumno</th>
-							<th class="px-4 py-4 text-sm font-semibold">DNI</th>
-							<th class="px-4 py-4 text-sm font-semibold">Carrera</th>
-							<th class="px-4 py-4 text-sm font-semibold">Sede</th>
-							<th class="px-4 py-4 text-sm font-semibold">Año</th>
-							<th class="px-4 py-4 text-sm font-semibold">Tipo</th>
-							<th class="px-4 py-4 text-sm font-semibold">Deuda total</th>
-							<th class="px-4 py-4 text-sm font-semibold">Deuda vencida</th>
-							<th class="px-4 py-4 text-sm font-semibold">Cargos</th>
-							<th class="px-4 py-4 text-sm font-semibold">Vencidas</th>
-							<th class="px-4 py-4 text-sm font-semibold">Vencimiento</th>
-							<th class="px-4 py-4 text-sm font-semibold">Estado</th>
-							<th class="px-4 py-4 text-sm font-semibold">Acciones</th>
+							<th class="px-3 py-3 text-sm font-semibold">Alumno</th>
+							<th class="px-3 py-3 text-sm font-semibold">DNI</th>
+							<th class="px-3 py-3 text-sm font-semibold">Carrera</th>
+							<th class="px-3 py-3 text-sm font-semibold">Sede</th>
+							<th class="px-3 py-3 text-sm font-semibold">Año</th>
+							<th class="px-3 py-3 text-sm font-semibold">Tipo</th>
+							<th class="px-3 py-3 text-sm font-semibold">Deuda total</th>
+							<th class="px-3 py-3 text-sm font-semibold">Deuda vencida</th>
+							<th class="px-3 py-3 text-sm font-semibold">Cargos</th>
+							<th class="px-3 py-3 text-sm font-semibold">Vencidas</th>
+							<th class="px-3 py-3 text-sm font-semibold">Vencimiento</th>
+							<th class="px-3 py-3 text-sm font-semibold">Estado</th>
+							<th class="px-3 py-3 text-sm font-semibold">Acciones</th>
 						</tr>
 					</thead>
 					<tbody>
 						{#each data.students as student}
-							<tr class="border-b border-slate-800 last:border-none">
-								<td class="px-4 py-4 font-medium">
+							<tr
+								class="border-b border-slate-800 transition last:border-none hover:bg-slate-800/35"
+							>
+								<td class="px-3 py-3 font-semibold text-slate-100">
 									{student.firstName}
 									{student.lastName}
 								</td>
-								<td class="px-4 py-4">{student.dni}</td>
-								<td class="px-4 py-4">{student.careerName || '-'}</td>
-								<td class="px-4 py-4">{student.locationName || '-'}</td>
-								<td class="px-4 py-4">{student.currentYear || '-'}</td>
-								<td class="px-4 py-4">
+								<td class="px-3 py-3">{student.dni}</td>
+								<td
+									class="max-w-[260px] truncate px-3 py-3 text-slate-300"
+									title={student.careerName || '-'}
+								>
+									{student.careerName || '-'}
+								</td>
+								<td class="px-3 py-3">{student.locationName || '-'}</td>
+								<td class="px-3 py-3">{student.currentYear || '-'}</td>
+								<td class="px-3 py-3">
 									{#if student.isBecado}
 										<span
 											class="rounded-full border border-emerald-600 bg-emerald-950/20 px-2 py-1 text-xs text-emerald-400"
@@ -410,10 +470,10 @@
 										</span>
 									{/if}
 								</td>
-								<td class="px-4 py-4 font-semibold">
+								<td class="px-3 py-3 text-right font-bold text-amber-300">
 									{currency.format(student.totalDebt)}
 								</td>
-								<td class="px-4 py-4">
+								<td class="px-3 py-3 text-right">
 									{#if student.overdueDebt > 0}
 										<span class="font-semibold text-red-400">
 											{currency.format(student.overdueDebt)}
@@ -422,16 +482,16 @@
 										<span class="text-slate-500">-</span>
 									{/if}
 								</td>
-								<td class="px-4 py-4">{student.pendingCharges}</td>
-								<td class="px-4 py-4">
+								<td class="px-3 py-3 text-center font-semibold">{student.pendingCharges}</td>
+								<td class="px-3 py-3 text-center">
 									{#if student.overdueCharges > 0}
 										<span class="font-semibold text-red-400">{student.overdueCharges}</span>
 									{:else}
 										<span class="text-slate-500">-</span>
 									{/if}
 								</td>
-								<td class="px-4 py-4">{formatDate(student.oldestDueDate)}</td>
-								<td class="px-4 py-4">
+								<td class="px-3 py-3">{formatDate(student.oldestDueDate)}</td>
+								<td class="px-3 py-3">
 									{#if student.isBlocked}
 										<span
 											class="rounded-full border border-red-600 bg-red-950/20 px-2 py-1 text-xs text-red-400"
@@ -446,17 +506,17 @@
 										</span>
 									{/if}
 								</td>
-								<td class="px-4 py-4">
-									<div class="flex gap-2">
+								<td class="px-3 py-3">
+									<div class="flex flex-nowrap items-center gap-2">
 										<a
 											href={`/alumnos/${student.id}/finanzas`}
-											class="rounded-xl border border-slate-700 px-3 py-2 text-sm font-semibold transition hover:border-slate-500"
+											class="rounded-xl border border-sky-500/50 bg-sky-500/5 px-3 py-2 text-xs font-semibold text-sky-300 transition hover:border-sky-400 hover:bg-sky-500/10"
 										>
 											Ver finanzas
 										</a>
 										<a
 											href={`/finanzas/pagos/nuevo?studentId=${student.id}`}
-											class="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-950 transition hover:scale-[1.02]"
+											class="rounded-xl border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 transition hover:border-emerald-400 hover:bg-emerald-500/20"
 										>
 											Pagar
 										</a>

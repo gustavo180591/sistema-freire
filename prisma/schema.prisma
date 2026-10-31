@@ -8,56 +8,92 @@ datasource db {
 }
 
 model User {
-  id                               String                   @id @default(cuid())
-  email                            String                   @unique
+  id                               String                    @id @default(cuid())
+  email                            String                    @unique
   passwordHash                     String
   firstName                        String
   lastName                         String
-  status                           UserStatus               @default(ACTIVE)
+  status                           UserStatus                @default(ACTIVE)
   phone                            String?
   dni                              String?
   cuil                             String?
-  createdAt                        DateTime                 @default(now())
-  updatedAt                        DateTime                 @updatedAt
-  failedLoginAttempts              Int                      @default(0)
+  createdAt                        DateTime                  @default(now())
+  updatedAt                        DateTime                  @updatedAt
+  failedLoginAttempts              Int                       @default(0)
   lockedUntil                      DateTime?
   lastFailedAttempt                DateTime?
   totpSecret                       String?
-  totpEnabled                      Boolean                  @default(false)
-  totpVerified                     Boolean                  @default(false)
+  totpEnabled                      Boolean                   @default(false)
+  totpVerified                     Boolean                   @default(false)
   auditLogs                        AuditLog[]
-  uploadedMaterials                ClassMaterial[]          @relation("MaterialUploader")
-  closedEvaluations                Evaluation[]             @relation("EvaluationCloser")
-  createdEvaluations               Evaluation[]             @relation("EvaluationCreator")
-  reopenedEvaluations              Evaluation[]             @relation("EvaluationReopener")
-  createdGrades                    Grade[]                  @relation("GradeCreator")
-  updatedGrades                    Grade[]                  @relation("GradeUpdater")
-  confirmedCourseResults           CourseResult[]           @relation("CourseResultConfirmer")
-  createdSubjectAccreditations     SubjectAccreditation[]   @relation("SubjectAccreditationCreator")
+  uploadedMaterials                ClassMaterial[]           @relation("MaterialUploader")
+  closedEvaluations                Evaluation[]              @relation("EvaluationCloser")
+  createdEvaluations               Evaluation[]              @relation("EvaluationCreator")
+  reopenedEvaluations              Evaluation[]              @relation("EvaluationReopener")
+  createdGrades                    Grade[]                   @relation("GradeCreator")
+  updatedGrades                    Grade[]                   @relation("GradeUpdater")
+  confirmedCourseResults           CourseResult[]            @relation("CourseResultConfirmer")
+  createdSubjectAccreditations     SubjectAccreditation[]    @relation("SubjectAccreditationCreator")
   payments                         Payment[]
-  deletedPayslips                  Payslip[]                @relation("PayslipDeleter")
-  uploadedPayslips                 Payslip[]                @relation("PayslipUploader")
+  deletedPayslips                  Payslip[]                 @relation("PayslipDeleter")
+  uploadedPayslips                 Payslip[]                 @relation("PayslipUploader")
   scholarships                     Scholarship[]
-  scholarshipHistoryChanges        ScholarshipHistory[]     @relation("ScholarshipHistoryChangedBy")
-  scholarshipNegotiationsRequested ScholarshipNegotiation[] @relation("ScholarshipNegotiationRequestedBy")
-  scholarshipNegotiationsResolved  ScholarshipNegotiation[] @relation("ScholarshipNegotiationResolvedBy")
+  scholarshipHistoryChanges        ScholarshipHistory[]      @relation("ScholarshipHistoryChangedBy")
+  scholarshipNegotiationsRequested ScholarshipNegotiation[]  @relation("ScholarshipNegotiationRequestedBy")
+  scholarshipNegotiationsResolved  ScholarshipNegotiation[]  @relation("ScholarshipNegotiationResolvedBy")
   sessions                         Session[]
   charges                          StudentCharge[]
-  uploadedDocs                     StudentDocument[]        @relation("UploadedBy")
-  verifiedDocs                     StudentDocument[]        @relation("VerifiedBy")
-  createdFollowUps                 StudentFollowUp[]        @relation("FollowUpCreator")
-  resolvedFollowUps                StudentFollowUp[]        @relation("FollowUpResolver")
-  uploadedDocuments                Document[]               @relation("DocumentUploader")
-  documentAccessLogs               DocumentAccessLog[]      @relation("DocumentAccessLogUser")
+  createdFinancialHistory          StudentFinancialHistory[] @relation("FinancialHistoryCreator")
+  uploadedDocs                     StudentDocument[]         @relation("UploadedBy")
+  verifiedDocs                     StudentDocument[]         @relation("VerifiedBy")
+  createdFollowUps                 StudentFollowUp[]         @relation("FollowUpCreator")
+  resolvedFollowUps                StudentFollowUp[]         @relation("FollowUpResolver")
+  uploadedDocuments                Document[]                @relation("DocumentUploader")
+  documentAccessLogs               DocumentAccessLog[]       @relation("DocumentAccessLogUser")
   student                          Student?
   teacher                          Teacher?
   locationPermissions              UserLocationPermission[]
   roles                            UserRole[]
+  requestedSupportTickets          SupportTicket[]           @relation("SupportTicketRequester")
+  assignedSupportTickets           SupportTicket[]           @relation("SupportTicketAssignee")
+  reviewedSupportTickets           SupportTicket[]           @relation("SupportTicketReviewer")
 
   createdAttendanceEvents StudentAttendanceEvent[] @relation("AttendanceEventCreator")
 
   @@index([lastName, firstName])
   @@map("users")
+}
+
+model SupportTicket {
+  id                String                @id @default(cuid())
+  number            Int                   @unique @default(autoincrement())
+  type              SupportTicketType
+  status            SupportTicketStatus   @default(OPEN)
+  priority          SupportTicketPriority @default(NORMAL)
+  title             String
+  description       String
+  entityType        String?
+  entityId          String?
+  context           Json?
+  requestedByUserId String
+  assignedToUserId  String?
+  reviewedByUserId  String?
+  resolutionNote    String?
+  reviewedAt        DateTime?
+  resolvedAt        DateTime?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  requestedBy User  @relation("SupportTicketRequester", fields: [requestedByUserId], references: [id], onDelete: Restrict)
+  assignedTo  User? @relation("SupportTicketAssignee", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  reviewedBy  User? @relation("SupportTicketReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([type, status])
+  @@index([requestedByUserId, createdAt])
+  @@index([assignedToUserId, status])
+  @@index([entityType, entityId])
+  @@map("support_tickets")
 }
 
 model Role {
@@ -143,19 +179,19 @@ model AuditLog {
 }
 
 model Student {
-  id                      String                   @id @default(cuid())
-  userId                  String                   @unique
-  dni                     String                   @unique
+  id                      String                    @id @default(cuid())
+  userId                  String                    @unique
+  dni                     String                    @unique
   firstName               String
   lastName                String
-  status                  StudentStatus            @default(ACTIVE)
-  createdAt               DateTime                 @default(now())
-  updatedAt               DateTime                 @updatedAt
+  status                  StudentStatus             @default(ACTIVE)
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
   careerId                String
-  currentYear             Int                      @default(1)
-  isBecado                Boolean                  @default(false)
-  isRecursante            Boolean                  @default(false)
-  financialBlocked        Boolean                  @default(false)
+  currentYear             Int                       @default(1)
+  isBecado                Boolean                   @default(false)
+  isRecursante            Boolean                   @default(false)
+  financialBlocked        Boolean                   @default(false)
   birthDate               DateTime?
   bloodType               String?
   phone                   String?
@@ -182,13 +218,14 @@ model Student {
   scholarshipHistory      ScholarshipHistory[]
   scholarshipNegotiations ScholarshipNegotiation[]
   studentCharges          StudentCharge[]
+  financialHistory        StudentFinancialHistory[]
   documents               StudentDocument[]
   followUps               StudentFollowUp[]
   subjectStatuses         StudentSubjectStatus[]
   subjectAccreditations   SubjectAccreditation[]
-  career                  Career                   @relation(fields: [careerId], references: [id])
-  user                    User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  location                Location?                @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  career                  Career                    @relation(fields: [careerId], references: [id])
+  user                    User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location                Location?                 @relation(fields: [locationId], references: [id], onDelete: Restrict)
   enrollments             SubjectEnrollment[]
 
   @@index([lastName, firstName])
@@ -425,29 +462,33 @@ model Grade {
 }
 
 model StudentSubjectStatus {
-  id                String           @id @default(cuid())
-  studentId         String
-  subjectId         String
-  attendancePercent Decimal          @default(0) @db.Decimal(5, 2)
-  regularityStatus  RegularityStatus @default(LIBRE)
-  approved          Boolean          @default(false)
-  promoted          Boolean          @default(false)
-  finalGrade        Decimal?         @db.Decimal(5, 2)
-  promotionDate     DateTime?
-  updatedAt         DateTime         @updatedAt
-  academicStatus    AcademicStatus   @default(EN_COURSE)
-  courseAverage     Decimal?         @db.Decimal(5, 2)
-  courseStatus      CourseStatus     @default(IN_PROGRESS)
-  finalApprovalDate DateTime?
-  finalExamScore    Decimal?         @db.Decimal(5, 2)
-  finalExamStatus   FinalExamStatus  @default(PENDING)
-  student           Student          @relation(fields: [studentId], references: [id])
-  subject           Subject          @relation(fields: [subjectId], references: [id])
+  id        String @id @default(cuid())
+  studentId String
+  subjectId String
+
+  manualTrajectoryState          AcademicTrajectoryManualState?
+  manualTrajectoryStateUpdatedAt DateTime?
+  attendancePercent              Decimal                        @default(0) @db.Decimal(5, 2)
+  regularityStatus               RegularityStatus               @default(LIBRE)
+  approved                       Boolean                        @default(false)
+  promoted                       Boolean                        @default(false)
+  finalGrade                     Decimal?                       @db.Decimal(5, 2)
+  promotionDate                  DateTime?
+  updatedAt                      DateTime                       @updatedAt
+  academicStatus                 AcademicStatus                 @default(EN_COURSE)
+  courseAverage                  Decimal?                       @db.Decimal(5, 2)
+  courseStatus                   CourseStatus                   @default(IN_PROGRESS)
+  finalApprovalDate              DateTime?
+  finalExamScore                 Decimal?                       @db.Decimal(5, 2)
+  finalExamStatus                FinalExamStatus                @default(PENDING)
+  student                        Student                        @relation(fields: [studentId], references: [id])
+  subject                        Subject                        @relation(fields: [subjectId], references: [id])
 
   @@unique([studentId, subjectId])
   @@index([studentId, regularityStatus])
   @@index([studentId, courseStatus])
   @@index([studentId, academicStatus])
+  @@index([studentId, manualTrajectoryState])
   @@map("student_subject_status")
 }
 
@@ -480,6 +521,33 @@ model PlanSubject {
 
   @@id([planId, subjectId])
   @@map("plan_subjects")
+}
+
+model StudentFinancialHistory {
+  id              String                  @id @default(cuid())
+  studentId       String
+  academicYear    Int
+  periodKey       String
+  concept         FinancialHistoryConcept
+  month           Int?
+  amount          Decimal                 @db.Decimal(12, 2)
+  paidAmount      Decimal                 @default(0) @db.Decimal(12, 2)
+  status          FinancialHistoryStatus  @default(UNKNOWN)
+  paidAt          DateTime?
+  paymentMethod   PaymentMethod?
+  notes           String?
+  createdByUserId String
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  student       Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdByUser User    @relation("FinancialHistoryCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([studentId, periodKey])
+  @@index([studentId, academicYear])
+  @@index([academicYear, status])
+  @@index([createdByUserId])
+  @@map("student_financial_history")
 }
 
 model ChargeConcept {
@@ -1473,6 +1541,7 @@ enum SubjectAccreditationType {
   FINAL_EXAM
   PROMOTION
   EQUIVALENCE
+  UNSPECIFIED
 }
 
 enum RegularityStatus {
@@ -1532,6 +1601,18 @@ enum AcademicStatus {
   LIBRE
   APROBADO
   PROMOCIONADO
+}
+
+enum FinancialHistoryConcept {
+  INSCRIPCION
+  CUOTA_MENSUAL
+}
+
+enum FinancialHistoryStatus {
+  UNKNOWN
+  PENDING
+  PARTIAL
+  PAID
 }
 
 enum ChargeStatus {
@@ -2111,4 +2192,36 @@ enum AttendanceStatus {
   ABSENT
   LATE
   JUSTIFIED
+}
+
+enum SupportTicketType {
+  DELETE_REQUEST
+  DATA_CORRECTION
+  BUG
+  CHANGE_REQUEST
+  OTHER
+}
+
+enum SupportTicketStatus {
+  OPEN
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  RESOLVED
+  CANCELLED
+}
+
+enum SupportTicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum AcademicTrajectoryManualState {
+  TAKING
+  RETAKING
+  REGULAR
+  FREE
+  APPROVED
 }

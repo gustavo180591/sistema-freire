@@ -1,5 +1,6 @@
 import { prisma } from '$lib/server/db/prisma';
 import type { Prisma } from '@prisma/client';
+import { recalculatePendingStudentChargesWithClient } from '$lib/server/financial/pending-charge-recalculation-service';
 
 export type StudentType = 'NORMAL' | 'BECADO' | 'RECURSANTE';
 
@@ -9,7 +10,6 @@ export interface StudentTypeChangeInput {
 	reason: string;
 	userId: string;
 	userName: string;
-	recalculateCharges?: boolean;
 }
 
 /**
@@ -59,17 +59,13 @@ export class StudentTypeService {
 				data: updateData
 			});
 
-			// Si se solicitó recalcular cuotas y el cambio afecta beneficios
-			if (input.recalculateCharges) {
-				await this.recalculateChargesForTypeChange(
-					tx,
-					input.studentId,
-					currentType,
-					input.newType,
-					input.userId,
-					input.userName
-				);
-			}
+			await recalculatePendingStudentChargesWithClient(tx, {
+				studentId: input.studentId,
+				userId: input.userId,
+				userName: input.userName,
+				source: 'STUDENT_TYPE_CHANGE',
+				reason: input.reason
+			});
 
 			// Registrar seguimiento de auditoría
 			await tx.studentFollowUp.create({
@@ -86,131 +82,6 @@ export class StudentTypeService {
 					resolvedBy: input.userId
 				}
 			});
-
-			// Registrar movimiento financiero si afecta cuotas
-			if (input.recalculateCharges) {
-				await tx.financialMovement.create({
-					data: {
-						studentId: input.studentId,
-						movementType: 'ADJUSTMENT',
-						entityType: 'Student',
-						entityId: input.studentId,
-						description: `Cambio de tipo de alumno: ${currentType} -> ${input.newType}`,
-						amount: 0,
-						balanceBefore: 0,
-						balanceAfter: 0,
-						metadata: {
-							previousType: currentType,
-							newType: input.newType,
-							reason: input.reason,
-							recalculateCharges: input.recalculateCharges,
-							userName: input.userName
-						},
-						userId: input.userId
-					}
-				});
-			}
-		});
-	}
-
-	/**
-	 * Recalcula cuotas cuando cambia el tipo de alumno
-	 */
-	private async recalculateChargesForTypeChange(
-		tx: Prisma.TransactionClient,
-		studentId: string,
-		previousType: StudentType,
-		newType: StudentType,
-		userId: string,
-		userName: string
-	): Promise<void> {
-		// Solo recalcular si el cambio afecta beneficios
-		const affectsBenefits =
-			(previousType === 'BECADO' && newType !== 'BECADO') ||
-			(previousType !== 'BECADO' && newType === 'BECADO') ||
-			(previousType === 'RECURSANTE' && newType !== 'RECURSANTE') ||
-			(previousType !== 'RECURSANTE' && newType === 'RECURSANTE');
-
-		if (!affectsBenefits) {
-			return;
-		}
-
-		// Obtener cuotas pendientes de mensualidades
-		const pendingCharges = await tx.studentCharge.findMany({
-			where: {
-				studentId,
-				status: { in: ['PENDING', 'PARTIAL'] },
-				concept: { code: 'CUOTA_MENSUAL' }
-			},
-			include: { concept: true }
-		});
-
-		if (pendingCharges.length === 0) {
-			return;
-		}
-
-		// Importar dependencias
-		const { getBenefitsConfig, calculateChargeBenefit } = await import('./benefit-calculator');
-		const { Decimal } = await import('@prisma/client/runtime/library');
-
-		const benefitsConfig = await getBenefitsConfig(tx);
-		let recalculatedCount = 0;
-
-		for (const charge of pendingCharges) {
-			const periodParts = charge.periodLabel.split('-');
-			if (periodParts.length !== 2) continue;
-
-			const month = parseInt(periodParts[1], 10);
-			if (isNaN(month)) continue;
-
-			// Determinar nuevo tipo para cálculo
-			const isBecado = newType === 'BECADO';
-			const isRecursante = newType === 'RECURSANTE';
-
-			// Calcular nuevo beneficio
-			const benefitCalculation = calculateChargeBenefit(
-				new Decimal(Number(charge.amount)),
-				{ isBecado, isRecursante },
-				charge.installmentNumber || 1,
-				month,
-				benefitsConfig
-			);
-
-			// Actualizar cuota
-			await tx.studentCharge.update({
-				where: { id: charge.id },
-				data: {
-					scholarshipApplied: benefitCalculation.scholarshipApplied,
-					discountApplied: benefitCalculation.discountApplied,
-					finalAmount: benefitCalculation.finalAmount,
-					benefitType: benefitCalculation.benefitType,
-					benefitReason: benefitCalculation.benefitReason,
-					ruleSnapshot: benefitCalculation.ruleSnapshot as Prisma.InputJsonValue
-				}
-			});
-
-			recalculatedCount++;
-		}
-
-		// Registrar movimiento de ajuste
-		await tx.financialMovement.create({
-			data: {
-				studentId,
-				movementType: 'ADJUSTMENT',
-				entityType: 'StudentCharge',
-				entityId: studentId,
-				description: `Recálculo de cuotas por cambio de tipo: ${previousType} -> ${newType}`,
-				amount: 0,
-				balanceBefore: 0,
-				balanceAfter: 0,
-				metadata: {
-					previousType,
-					newType,
-					recalculatedCharges: recalculatedCount,
-					userName
-				},
-				userId
-			}
 		});
 	}
 

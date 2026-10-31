@@ -1,16 +1,10 @@
-export type AcademicTrajectorySubjectState =
-	| 'APPROVED'
-	| 'TAKING'
-	| 'RETAKING'
-	| 'REGULAR'
-	| 'REGULAR_EXPIRED'
-	| 'FREE'
-	| 'NOT_STARTED';
-
-export type TrajectoryAccreditationType = 'FINAL_EXAM' | 'PROMOTION' | 'EQUIVALENCE' | null;
+import type {
+	AcademicTrajectorySubjectState,
+	TrajectoryAccreditationType
+} from '$lib/types/academic-trajectory';
 
 export interface DeriveAcademicTrajectoryStateInput {
-	accreditationType: TrajectoryAccreditationType;
+	accreditationType: TrajectoryAccreditationType | null;
 	hasActiveEnrollment: boolean;
 	activeEnrollmentAttemptType: 'FIRST_TIME' | 'REPEAT' | null;
 	hasPriorEnrollment: boolean;
@@ -100,4 +94,46 @@ export function deriveAcademicTrajectoryState(
 	}
 
 	return 'NOT_STARTED';
+}
+
+/**
+ * Aplica la progresión académica implícita del año administrativo actual.
+ *
+ * Regla:
+ * - Si TODAS las materias de años anteriores al currentYear están aprobadas,
+ *   las materias del currentYear que todavía no poseen estado académico real
+ *   se consideran cursando.
+ * - No crea inscripciones ni modifica historial persistido.
+ * - Cualquier estado académico real prevalece.
+ */
+export function applyCurrentYearProgression<
+	T extends {
+		yearLevel: number;
+		state: AcademicTrajectorySubjectState;
+	}
+>(subjects: T[], currentYear: number): T[] {
+	if (!Number.isInteger(currentYear) || currentYear < 1) {
+		return subjects;
+	}
+
+	const previousYearSubjects = subjects.filter((subject) => subject.yearLevel < currentYear);
+
+	const previousYearsFullyApproved = previousYearSubjects.every(
+		(subject) => subject.state === 'APPROVED'
+	);
+
+	if (!previousYearsFullyApproved) {
+		return subjects;
+	}
+
+	return subjects.map((subject) => {
+		if (subject.yearLevel === currentYear && subject.state === 'NOT_STARTED') {
+			return {
+				...subject,
+				state: 'TAKING' as AcademicTrajectorySubjectState
+			};
+		}
+
+		return subject;
+	});
 }

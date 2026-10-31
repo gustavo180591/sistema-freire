@@ -17,7 +17,8 @@
 		"test:e2e": "playwright test",
 		"db:seed": "tsx prisma/seed.ts",
 		"db:seed:alumnos-tipos": "tsx prisma/seed-alumnos-tipos.ts",
-		"db:seed:recibos": "tsx prisma/seed-recibos.ts"
+		"db:seed:recibos": "tsx prisma/seed-recibos.ts",
+		"financial:generate-monthly-charges": "tsx scripts/generate-monthly-charges.ts"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "^20.5.0",

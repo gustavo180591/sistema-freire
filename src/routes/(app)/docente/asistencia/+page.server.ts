@@ -142,7 +142,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, locals }) => {
+	saveAttendance: async ({ request, locals }) => {
 		requireRole(locals.user, ['DOCENTE']);
 
 		if (!locals.user) {

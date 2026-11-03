@@ -152,13 +152,13 @@
 	{/if}
 
 	{#if form?.success}
-		<div class="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-300">
+		<div class="rounded-2xl border border-emerald-700 bg-white p-4 font-medium text-emerald-800">
 			{form.success}
 		</div>
 	{/if}
 
 	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-		<form method="POST" class="space-y-6">
+		<form method="POST" action="?/saveAttendance" class="space-y-6">
 			<div class="grid gap-5 md:grid-cols-3">
 				<div>
 					<label for="subjectId" class="mb-2 block text-sm font-medium text-slate-300">

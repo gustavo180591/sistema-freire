@@ -6,6 +6,7 @@ import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
 import type { StudentStatus } from '@prisma/client';
 import { checkPermission } from '$lib/server/auth/permissions-granular';
+import { getDniLookupVariants, isValidDni, normalizeDni } from '$lib/utils/dni';
 
 export const actions: Actions = {
 	default: async ({ request, locals }) => {
@@ -20,10 +21,10 @@ export const actions: Actions = {
 
 		const data = await request.formData();
 		const id = data.get('id')?.toString();
-		const userId = data.get('userId')?.toString();
 		const email = data.get('email')?.toString();
 		const firstName = data.get('firstName')?.toString();
 		const lastName = data.get('lastName')?.toString();
+		const rawDni = data.get('dni')?.toString().trim() ?? '';
 		const alumnoType = data.get('alumnoType')?.toString() || 'normal';
 		const newPassword = data.get('newPassword')?.toString();
 		const careerId = data.get('careerId')?.toString();
@@ -47,7 +48,7 @@ export const actions: Actions = {
 		const familyContactPhone = data.get('familyContactPhone')?.toString();
 		const familyRelationship = data.get('familyRelationship')?.toString();
 
-		if (!id || !userId || !email || !firstName || !lastName) {
+		if (!id || !rawDni || !email || !firstName || !lastName) {
 			return fail(400, { error: 'Por favor completá todos los campos requeridos' });
 		}
 
@@ -66,11 +67,68 @@ export const actions: Actions = {
 			// Obtener estado actual del alumno para auditoría
 			const currentStudent = await prisma.student.findUnique({
 				where: { id },
-				select: { status: true }
+				select: {
+					status: true,
+					dni: true,
+					userId: true
+				}
 			});
 
 			if (!currentStudent) {
 				return fail(404, { error: 'Alumno no encontrado' });
+			}
+
+			const normalizedSubmittedDni = normalizeDni(rawDni);
+			const normalizedCurrentDni = normalizeDni(currentStudent.dni);
+
+			const isSameDni =
+				rawDni === currentStudent.dni ||
+				(normalizedSubmittedDni !== '' && normalizedSubmittedDni === normalizedCurrentDni);
+
+			if (!isSameDni && !isValidDni(rawDni)) {
+				return fail(400, {
+					error: 'El DNI debe contener entre 7 y 9 dígitos. Podés ingresarlo con o sin puntos.'
+				});
+			}
+
+			const dni = isSameDni && !isValidDni(rawDni) ? currentStudent.dni : normalizedSubmittedDni;
+
+			if (!dni) {
+				return fail(400, { error: 'El DNI es obligatorio' });
+			}
+
+			if (!isSameDni) {
+				const dniVariants = getDniLookupVariants(dni);
+
+				const [existingUserDni, existingStudentDni, existingTeacherDni] = await Promise.all([
+					prisma.user.findFirst({
+						where: {
+							dni: { in: dniVariants },
+							id: { not: currentStudent.userId }
+						},
+						select: { id: true }
+					}),
+					prisma.student.findFirst({
+						where: {
+							dni: { in: dniVariants },
+							id: { not: id }
+						},
+						select: { id: true }
+					}),
+					prisma.teacher.findFirst({
+						where: {
+							dni: { in: dniVariants },
+							userId: { not: currentStudent.userId }
+						},
+						select: { id: true }
+					})
+				]);
+
+				if (existingUserDni || existingStudentDni || existingTeacherDni) {
+					return fail(400, {
+						error: 'El DNI ya está registrado por otra persona'
+					});
+				}
 			}
 
 			const statusChanged = status && status !== currentStudent.status;
@@ -110,7 +168,8 @@ export const actions: Actions = {
 				const userUpdateData: any = {
 					email,
 					firstName,
-					lastName
+					lastName,
+					dni
 				};
 
 				// Si se proporcionó una nueva contraseña, hashearla y actualizarla
@@ -120,7 +179,7 @@ export const actions: Actions = {
 
 				// Actualizar usuario
 				await tx.user.update({
-					where: { id: userId },
+					where: { id: currentStudent.userId },
 					data: userUpdateData
 				});
 
@@ -132,6 +191,7 @@ export const actions: Actions = {
 				await tx.student.update({
 					where: { id },
 					data: {
+						dni,
 						firstName,
 						lastName,
 						isBecado,
@@ -152,6 +212,12 @@ export const actions: Actions = {
 						familyContactPhone: familyContactPhone || null,
 						familyRelationship: familyRelationship || null
 					}
+				});
+
+				// Mantener sincronizado el DNI si la misma persona también tiene perfil docente.
+				await tx.teacher.updateMany({
+					where: { userId: currentStudent.userId },
+					data: { dni }
 				});
 			});
 

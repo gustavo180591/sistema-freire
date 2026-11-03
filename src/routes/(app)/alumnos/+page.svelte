@@ -2,11 +2,13 @@
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
 	import { untrack } from 'svelte';
-	import { formatDni } from '$lib/utils/dni';
+	import { DNI_MAX_DIGITS, formatDni, isValidDni, normalizeDni } from '$lib/utils/dni';
 
 	let { data }: { data: PageData } = $props();
 	let editingStudent = $state<Student | null>(null);
 	let deletingStudent = $state<Student | null>(null);
+	let editDni = $state('');
+	let editError = $state('');
 	let searchQuery = $state(untrack(() => data.searchQuery ?? ''));
 	let searchTimer: number | undefined;
 	let dischargeReason = $state('');
@@ -273,6 +275,24 @@
 		url.searchParams.delete('page');
 
 		window.location.href = url.toString();
+	}
+	function openStudentEditor(student: Student) {
+		editDni = isValidDni(student.dni) ? formatDni(student.dni) : student.dni;
+		editError = '';
+		editingStudent = student;
+	}
+
+	function closeStudentEditor() {
+		editingStudent = null;
+		editDni = '';
+		editError = '';
+	}
+
+	function handleEditDniInput(event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		const normalized = normalizeDni(input.value).slice(0, DNI_MAX_DIGITS);
+
+		editDni = formatDni(normalized);
 	}
 </script>
 
@@ -616,7 +636,7 @@
 											</svg>
 										</a>
 										<button
-											onclick={() => (editingStudent = student)}
+											onclick={() => openStudentEditor(student)}
 											class="inline-flex items-center justify-center rounded-lg p-2 text-blue-400 transition hover:bg-blue-950/30 hover:text-blue-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900 focus:outline-none"
 											aria-label="Editar alumno"
 										>
@@ -718,7 +738,7 @@
 				<div class="mb-6 flex items-center justify-between">
 					<h2 class="text-2xl font-bold text-white">Editar Alumno</h2>
 					<button
-						onclick={() => (editingStudent = null)}
+						onclick={closeStudentEditor}
 						class="text-slate-400 transition-colors hover:text-white"
 						aria-label="Cerrar modal de edición"
 					>
@@ -733,19 +753,43 @@
 					</button>
 				</div>
 
+				{#if editError}
+					<div
+						class="mb-6 rounded-xl border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-300"
+						role="alert"
+					>
+						{editError}
+					</div>
+				{/if}
+
 				<form
 					method="POST"
 					action="/alumnos/editar"
 					class="space-y-6"
 					use:enhance={() => {
-						return async ({ update }) => {
-							await update();
-							editingStudent = null;
+						editError = '';
+
+						return async ({ result, update }) => {
+							await update({ reset: false });
+
+							if (result.type === 'success') {
+								closeStudentEditor();
+								return;
+							}
+
+							if (result.type === 'failure') {
+								const resultData = result.data as { error?: string } | undefined;
+								editError = resultData?.error ?? 'No se pudo actualizar el alumno.';
+								return;
+							}
+
+							if (result.type === 'error') {
+								editError = 'Ocurrió un error al actualizar el alumno.';
+							}
 						};
 					}}
 				>
 					<input type="hidden" name="id" value={editingStudent.id} />
-					<input type="hidden" name="userId" value={editingStudent.userId} />
 
 					<div class="grid gap-6 md:grid-cols-2">
 						<div>
@@ -754,9 +798,13 @@
 								id="dni"
 								type="text"
 								name="dni"
-								value={formatDni(editingStudent.dni)}
+								inputmode="numeric"
+								placeholder="Ej.: 46.732.006"
+								value={editDni}
+								oninput={handleEditDniInput}
+								autocomplete="off"
+								required
 								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
-								readonly
 							/>
 						</div>
 						<div>
@@ -1156,7 +1204,7 @@
 					<div class="flex justify-end space-x-4">
 						<button
 							type="button"
-							onclick={() => (editingStudent = null)}
+							onclick={closeStudentEditor}
 							class="rounded-2xl border border-slate-700 px-6 py-3 font-semibold text-white transition hover:bg-slate-800"
 						>
 							Cancelar

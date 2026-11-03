@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
 	import { canManagePreceptors } from '$lib/client/permissions';
@@ -377,7 +378,9 @@
 											>
 												{preceptor.lastName}, {preceptor.firstName}
 											</p>
-											<p class="text-xs text-slate-500">DNI: {preceptor.dni || 'Sin DNI'}</p>
+											<p class="text-xs text-slate-500">
+												DNI: {formatDni(preceptor.dni) || 'Sin DNI'}
+											</p>
 										</div>
 									</div>
 								</td>

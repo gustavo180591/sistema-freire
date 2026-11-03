@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -64,7 +65,7 @@
 								<option value="">Seleccionar alumno...</option>
 								{#each data.students as student}
 									<option value={student.id}>
-										{student.lastName}, {student.firstName} ({student.dni})
+										{student.lastName}, {student.firstName} ({formatDni(student.dni)})
 									</option>
 								{/each}
 							</select>

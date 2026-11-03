@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import { enhance } from '$app/forms';
 	import type { PageData } from './$types';
 	import { canManageCareers } from '$lib/client/permissions';
@@ -247,7 +248,7 @@
 									{teacher.lastName}, {teacher.firstName}
 								</td>
 								<td class="px-6 py-4">{teacher.email}</td>
-								<td class="px-6 py-4">{teacher.dni}</td>
+								<td class="px-6 py-4">{formatDni(teacher.dni) || 'Sin DNI'}</td>
 							</tr>
 						{/each}
 					{/if}

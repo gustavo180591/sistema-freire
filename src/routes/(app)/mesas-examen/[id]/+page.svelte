@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	let { data, form } = $props();
 
 	function formatDate(value: Date | string | null) {
@@ -253,7 +254,7 @@
 										</p>
 
 										<p class="mt-1 text-xs text-slate-500">
-											DNI {registration.student.dni}
+											DNI {formatDni(registration.student.dni)}
 										</p>
 									</td>
 
@@ -365,7 +366,7 @@
 										{registration.student.firstName}
 									</p>
 									<p class="text-xs text-slate-500">
-										DNI {registration.student.dni}
+										DNI {formatDni(registration.student.dni)}
 									</p>
 								</td>
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni, isValidDni } from '$lib/utils/dni';
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
 
@@ -18,6 +19,12 @@
 	);
 
 	const hasStudentOrTeacher = $derived(data.user.student || data.user.teacher);
+
+	const currentDni = $derived(
+		data.user.dni ?? data.user.student?.dni ?? data.user.teacher?.dni ?? ''
+	);
+
+	const dniInputValue = $derived(isValidDni(currentDni) ? formatDni(currentDni) : currentDni);
 
 	function getInitialStudentSelection() {
 		return {
@@ -142,7 +149,9 @@
 						id="dni"
 						name="dni"
 						type="text"
-						value={data.user.dni || data.user.student?.dni || data.user.teacher?.dni || ''}
+						inputmode="numeric"
+						placeholder="Ej.: 46.732.006"
+						value={dniInputValue}
 						class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
 					/>
 				</div>

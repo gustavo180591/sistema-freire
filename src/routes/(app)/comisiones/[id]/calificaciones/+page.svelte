@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -170,7 +171,7 @@
 						{#each data.students as student}
 							<tr class="hover:bg-slate-800/50">
 								<td class="px-4 py-3 text-sm text-white">{student.name}</td>
-								<td class="px-4 py-3 text-sm text-slate-300">{student.dni}</td>
+								<td class="px-4 py-3 text-sm text-slate-300">{formatDni(student.dni)}</td>
 								<td class="px-4 py-3 text-sm font-semibold text-white">{student.average}</td>
 								<td class="px-4 py-3 text-sm text-green-400">{student.present}</td>
 								<td class="px-4 py-3 text-sm text-red-400">{student.absent}</td>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 
@@ -96,7 +97,7 @@
 					<option value={student.id}>
 						{student.lastName},
 						{student.firstName}
-						- {student.dni}
+						- {formatDni(student.dni)}
 					</option>
 				{/each}
 			</select>
@@ -231,7 +232,7 @@
 							<p class="mt-1 text-sm text-slate-400">
 								{followUp.studentName}
 								- DNI:
-								{followUp.studentDni}
+								{formatDni(followUp.studentDni)}
 							</p>
 
 							<p class="mt-2 text-sm text-slate-300">

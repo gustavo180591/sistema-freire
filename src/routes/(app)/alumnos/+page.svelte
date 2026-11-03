@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
 	import { untrack } from 'svelte';
+	import { formatDni } from '$lib/utils/dni';
 
 	let { data }: { data: PageData } = $props();
 	let editingStudent = $state<Student | null>(null);
@@ -558,7 +559,7 @@
 						{#each data.students as student}
 							<tr class="transition-colors hover:bg-slate-800/30">
 								<td class="px-4 py-3 text-sm whitespace-nowrap text-slate-300">
-									{student.dni}
+									{formatDni(student.dni)}
 								</td>
 								<td class="px-4 py-3 whitespace-nowrap">
 									<div class="text-sm font-medium text-white">
@@ -753,7 +754,7 @@
 								id="dni"
 								type="text"
 								name="dni"
-								value={editingStudent.dni}
+								value={formatDni(editingStudent.dni)}
 								class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 								readonly
 							/>
@@ -1197,7 +1198,7 @@
 					<p class="font-medium text-white">
 						{deletingStudent.lastName}, {deletingStudent.firstName}
 					</p>
-					<p class="text-sm text-slate-400">DNI: {deletingStudent.dni}</p>
+					<p class="text-sm text-slate-400">DNI: {formatDni(deletingStudent.dni)}</p>
 					<p class="text-sm text-slate-400">Email: {deletingStudent.email}</p>
 				</div>
 

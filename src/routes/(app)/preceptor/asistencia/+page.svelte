@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -414,7 +415,7 @@
 										</p>
 
 										<p class="text-sm text-slate-400">
-											DNI: {student.dni}
+											DNI: {formatDni(student.dni)}
 										</p>
 
 										<p class="text-xs text-slate-500">

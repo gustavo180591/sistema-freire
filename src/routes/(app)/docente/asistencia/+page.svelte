@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import type { ActionData, PageData } from './$types';
 
 	let {
@@ -241,7 +242,7 @@
 										{student.firstName}
 									</p>
 									<p class="mt-1 text-sm text-slate-500">
-										DNI {student.dni} · {student.career}
+										DNI {formatDni(student.dni)} · {student.career}
 									</p>
 								</div>
 
@@ -392,7 +393,7 @@
 									{entry.studentName}
 								</p>
 								<p class="text-sm text-slate-500">
-									DNI {entry.studentDni}
+									DNI {formatDni(entry.studentDni)}
 								</p>
 							</div>
 

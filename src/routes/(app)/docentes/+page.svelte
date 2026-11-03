@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
 	import { canManageTeachers } from '$lib/client/permissions';
+	import { formatDni, normalizeDni } from '$lib/utils/dni';
 
 	let { data, form }: { data: PageData; form?: ActionData } = $props();
 
@@ -28,10 +29,14 @@
 			const fullName = `${teacher.lastName} ${teacher.firstName}`.toLowerCase();
 			const roles = teacher.roles.join(' ').toLowerCase();
 
+			const isDniSearch = /^[\d.\s]+$/.test(searchQuery.trim());
+
+			const normalizedDniQuery = isDniSearch ? normalizeDni(searchQuery) : '';
+
 			return (
 				fullName.includes(query) ||
 				teacher.email.toLowerCase().includes(query) ||
-				teacher.dni.toLowerCase().includes(query) ||
+				(normalizedDniQuery.length > 0 && normalizeDni(teacher.dni).includes(normalizedDniQuery)) ||
 				roles.includes(query)
 			);
 		})
@@ -325,7 +330,7 @@
 												{teacher.lastName}, {teacher.firstName}
 											</p>
 											<p class="text-xs text-slate-500">
-												DNI: {teacher.dni || 'Sin DNI'}
+												DNI: {formatDni(teacher.dni) || 'Sin DNI'}
 											</p>
 										</div>
 									</div>

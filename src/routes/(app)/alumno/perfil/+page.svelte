@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -69,7 +70,7 @@
 				<input
 					id="dni"
 					type="text"
-					value={data.student.dni || 'No cargado'}
+					value={formatDni(data.student.dni) || 'No cargado'}
 					disabled
 					class="w-full rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-slate-500"
 				/>

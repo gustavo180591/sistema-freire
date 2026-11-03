@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -78,7 +79,7 @@
 					{student.fullName}
 				</h1>
 				<p class="mt-3 text-sm text-slate-400">
-					DNI: {student.dni} · {student.career} · {student.currentYear}° Año
+					DNI: {formatDni(student.dni)} · {student.career} · {student.currentYear}° Año
 					{#if student.location}
 						· {student.location}
 					{/if}

@@ -2,6 +2,7 @@ import { prisma } from '$lib/server/db/prisma';
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { TeacherStatus } from '@prisma/client';
+import { formatDni } from '$lib/utils/dni';
 
 export const load: PageServerLoad = async () => {
 	const teacherUsers = await prisma.user.findMany({
@@ -169,7 +170,7 @@ export const actions: Actions = {
 				action: AuditAction.CREATE,
 				entityType: 'TEACHER',
 				entityId: teacher.id,
-				description: `Creación automática de perfil docente: ${teacher.lastName}, ${teacher.firstName} (DNI: ${teacher.dni})`
+				description: `Creación automática de perfil docente: ${teacher.lastName}, ${teacher.firstName} (DNI: ${formatDni(teacher.dni)})`
 			});
 
 			throw redirect(303, `/docentes/${teacher.id}`);
@@ -214,7 +215,7 @@ export const actions: Actions = {
 					action: AuditAction.DELETE,
 					entityType: 'TEACHER',
 					entityId: id,
-					description: `Eliminación de perfil docente: ${teacher.lastName}, ${teacher.firstName} (DNI: ${teacher.dni})`
+					description: `Eliminación de perfil docente: ${teacher.lastName}, ${teacher.firstName} (DNI: ${formatDni(teacher.dni)})`
 				});
 			}
 

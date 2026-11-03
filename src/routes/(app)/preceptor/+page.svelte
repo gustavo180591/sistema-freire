@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -297,7 +298,7 @@
 				<tbody>
 					{#each filteredStudents as student (student.id)}
 						<tr class="border-b border-slate-800/50 hover:bg-slate-800/30">
-							<td class="px-4 py-3 text-sm">{student.dni}</td>
+							<td class="px-4 py-3 text-sm">{formatDni(student.dni)}</td>
 							<td class="px-4 py-3 text-sm">{student.firstName}</td>
 							<td class="px-4 py-3 text-sm">{student.lastName}</td>
 							<td class="px-4 py-3 text-sm">{student.career}</td>

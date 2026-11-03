@@ -1,6 +1,7 @@
 import { prisma } from '../db/prisma';
 import { Decimal } from '@prisma/client/runtime/library';
 import * as DecimalHelpers from './decimal-helpers';
+import { normalizeDni } from '$lib/utils/dni';
 
 export type DebtStudentFilters = {
 	search?: string;
@@ -76,12 +77,37 @@ export class DebtQueryService {
 		const studentWhere: any = {};
 
 		// Search filter (name, last name, DNI, email)
-		if (filters.search) {
+		const searchTerm = filters.search?.trim();
+
+		if (searchTerm) {
+			const dniSearch = /^[\d.\s]+$/.test(searchTerm) ? normalizeDni(searchTerm) : searchTerm;
+
 			studentWhere.OR = [
-				{ firstName: { contains: filters.search, mode: 'insensitive' } },
-				{ lastName: { contains: filters.search, mode: 'insensitive' } },
-				{ dni: { contains: filters.search } },
-				{ user: { email: { contains: filters.search, mode: 'insensitive' } } }
+				{
+					firstName: {
+						contains: searchTerm,
+						mode: 'insensitive'
+					}
+				},
+				{
+					lastName: {
+						contains: searchTerm,
+						mode: 'insensitive'
+					}
+				},
+				{
+					dni: {
+						contains: dniSearch
+					}
+				},
+				{
+					user: {
+						email: {
+							contains: searchTerm,
+							mode: 'insensitive'
+						}
+					}
+				}
 			];
 		}
 

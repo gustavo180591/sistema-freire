@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import { untrack } from 'svelte';
 	import { page } from '$app/stores';
 	import type { PageData } from './$types';
@@ -146,7 +147,11 @@
 
 		for (const item of data.reportData.data) {
 			const values = headers.map((header) => {
-				const value = item[header];
+				const rawValue = item[header];
+
+				const value =
+					header === 'studentDni' && typeof rawValue === 'string' ? formatDni(rawValue) : rawValue;
+
 				if (value === null || value === undefined) return '';
 				if (typeof value === 'string') {
 					const escaped = value.replace(/"/g, '""');
@@ -653,7 +658,7 @@
 								{#if selectedReportType === 'payments'}
 									<td class="px-4 py-3">{formatDate(item.date)}</td>
 									<td class="px-4 py-3">{item.studentName}</td>
-									<td class="px-4 py-3">{item.studentDni}</td>
+									<td class="px-4 py-3">{formatDni(item.studentDni)}</td>
 									<td class="px-4 py-3">{translatePaymentMethod(item.method)}</td>
 									<td class="px-4 py-3">{currency.format(item.amount)}</td>
 									<td class="px-4 py-3">
@@ -682,7 +687,7 @@
 											{item.studentName}
 										</a>
 									</td>
-									<td class="px-4 py-3">{item.studentDni}</td>
+									<td class="px-4 py-3">{formatDni(item.studentDni)}</td>
 									<td class="px-4 py-3">{item.careerName}</td>
 									<td class="px-4 py-3">
 										<span

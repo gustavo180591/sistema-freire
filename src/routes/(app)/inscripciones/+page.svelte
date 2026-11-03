@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import type { PageData, ActionData } from './$types';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
@@ -200,7 +201,7 @@
 						<tr class="border-b border-slate-800 last:border-none">
 							<td class="px-6 py-4">
 								<p class="font-medium">{enrollment.student.fullName}</p>
-								<p class="text-sm text-slate-400">{enrollment.student.dni}</p>
+								<p class="text-sm text-slate-400">{formatDni(enrollment.student.dni)}</p>
 							</td>
 							<td class="px-6 py-4">
 								<p class="font-medium">{enrollment.subject.name}</p>

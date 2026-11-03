@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import { page } from '$app/stores';
 	import type { PageData } from './$types';
 
@@ -410,7 +411,9 @@
 					<tbody class="divide-y divide-slate-800">
 						{#each filteredStudents as student (student.id)}
 							<tr class="transition-colors hover:bg-slate-800/50">
-								<td class="px-6 py-4 text-sm whitespace-nowrap text-slate-300">{student.dni}</td>
+								<td class="px-6 py-4 text-sm whitespace-nowrap text-slate-300"
+									>{formatDni(student.dni)}</td
+								>
 								<td class="px-6 py-4 text-sm whitespace-nowrap text-white">{student.lastName}</td>
 								<td class="px-6 py-4 text-sm whitespace-nowrap text-white">{student.firstName}</td>
 								<td class="px-6 py-4 text-sm whitespace-nowrap text-slate-300">{student.career}</td>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { formatDni } from '$lib/utils/dni';
 
 	let { data } = $props();
 	const initialFilters = untrack(() => data.filters);
@@ -440,7 +441,9 @@
 									{student.firstName}
 									{student.lastName}
 								</td>
-								<td class="px-3 py-3">{student.dni}</td>
+								<td class="px-3 py-3">
+									{formatDni(student.dni)}
+								</td>
 								<td
 									class="max-w-[260px] truncate px-3 py-3 text-slate-300"
 									title={student.careerName || '-'}

@@ -134,6 +134,8 @@
 					<input
 						id="dni"
 						name="dni"
+						inputmode="numeric"
+						placeholder="Ej.: 46.732.006"
 						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 transition outline-none focus:border-slate-500"
 					/>
 				</div>

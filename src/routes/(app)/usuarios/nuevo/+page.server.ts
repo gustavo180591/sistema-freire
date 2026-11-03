@@ -11,6 +11,7 @@ import {
 } from '$lib/server/academic/enrollment-service';
 import { requireRole } from '$lib/server/auth/authorization';
 import { requirePermission } from '$lib/server/auth/permissions-granular';
+import { getDniLookupVariants, isValidDni, normalizeDni } from '$lib/utils/dni';
 
 import type { RoleCode } from '@prisma/client';
 
@@ -153,7 +154,15 @@ export const actions: Actions = {
 			});
 		}
 
-		const dni = data.get('dni')?.toString().trim() ?? '';
+		const rawDni = data.get('dni')?.toString().trim() ?? '';
+
+		if (rawDni && !isValidDni(rawDni)) {
+			return fail(400, {
+				error: 'El DNI debe contener entre 7 y 9 dígitos. Podés ingresarlo con o sin puntos.'
+			});
+		}
+
+		const dni = normalizeDni(rawDni);
 		const cuil = data.get('cuil')?.toString()?.trim();
 		const careerId = data.get('careerId')?.toString();
 		const alumnoType = data.get('alumnoType')?.toString() || 'normal';
@@ -281,22 +290,49 @@ export const actions: Actions = {
 				return fail(400, { error: 'El correo ya está registrado', exists: true });
 			}
 
-			// Verificar si el DNI ya existe (para alumnos y docentes)
-			if ((type === 'ALUMNO' || type === 'DOCENTE') && dni) {
-				const existingDni =
-					(await prisma.student
-						.findUnique({
-							where: { dni }
-						})
-						.catch(() => null)) ||
-					(await prisma.teacher
-						.findUnique({
-							where: { dni }
-						})
-						.catch(() => null));
+			// El DNI identifica a una persona independientemente
+			// del rol/perfil en el que se encuentre.
+			if (dni) {
+				const dniVariants = getDniLookupVariants(dni);
 
-				if (existingDni) {
-					return fail(400, { error: 'El DNI ya está registrado', exists: true });
+				const [existingUserDni, existingStudentDni, existingTeacherDni] = await Promise.all([
+					prisma.user.findFirst({
+						where: {
+							dni: {
+								in: dniVariants
+							}
+						},
+						select: {
+							id: true
+						}
+					}),
+					prisma.student.findFirst({
+						where: {
+							dni: {
+								in: dniVariants
+							}
+						},
+						select: {
+							id: true
+						}
+					}),
+					prisma.teacher.findFirst({
+						where: {
+							dni: {
+								in: dniVariants
+							}
+						},
+						select: {
+							id: true
+						}
+					})
+				]);
+
+				if (existingUserDni || existingStudentDni || existingTeacherDni) {
+					return fail(400, {
+						error: 'El DNI ya está registrado',
+						exists: true
+					});
 				}
 			}
 

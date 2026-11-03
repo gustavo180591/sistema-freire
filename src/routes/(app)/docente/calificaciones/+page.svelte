@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import { resolve } from '$app/paths';
 	import type { ActionData, PageData } from './$types';
 
@@ -327,7 +328,7 @@
 									<tr class={studentGrades[student.enrollmentId] ? 'bg-indigo-500/5' : ''}>
 										<td class="px-5 py-4">
 											<p class="font-semibold">{student.lastName}, {student.firstName}</p>
-											<p class="mt-1 text-xs text-slate-500">DNI {student.dni}</p>
+											<p class="mt-1 text-xs text-slate-500">DNI {formatDni(student.dni)}</p>
 											<input
 												type="hidden"
 												name={`grades[${student.enrollmentId}].dirty`}

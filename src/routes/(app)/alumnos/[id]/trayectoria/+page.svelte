@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import { resolve } from '$app/paths';
 	import type { PageData } from './$types';
 	import QuickAcademicYearEditor from '$lib/components/academic-trajectory/QuickAcademicYearEditor.svelte';
@@ -87,7 +88,7 @@
 				</h1>
 
 				<div class="mt-3 flex flex-wrap gap-x-2 gap-y-1 text-sm text-slate-400">
-					<span>DNI: {student.dni}</span>
+					<span>DNI: {formatDni(student.dni)}</span>
 					<span aria-hidden="true">·</span>
 					<span>{student.career.name}</span>
 

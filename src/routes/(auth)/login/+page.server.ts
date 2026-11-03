@@ -4,6 +4,7 @@ import { prisma } from '$lib/server/db/prisma';
 import { getSessionEntryRoute, resolveActiveRole } from '$lib/server/auth/active-role';
 import { AuditAction } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { getDniLookupVariants, isValidDni } from '$lib/utils/dni';
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCK_DURATION_MINUTES = 30;
@@ -11,14 +12,6 @@ const LOCK_DURATION_MINUTES = 30;
 const userWithRoles = {
 	roles: { include: { role: true } }
 } as const;
-
-function normalizeDni(value: string) {
-	return value.replace(/\D/g, '');
-}
-
-function formatDni(value: string) {
-	return value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-}
 
 async function findUserByIdentifier(identifier: string) {
 	const normalizedIdentifier = identifier.trim();
@@ -35,13 +28,11 @@ async function findUserByIdentifier(identifier: string) {
 		});
 	}
 
-	const normalizedDni = normalizeDni(normalizedIdentifier);
-
-	if (!/^\d{7,9}$/.test(normalizedDni)) {
+	if (!isValidDni(normalizedIdentifier)) {
 		return null;
 	}
 
-	const dniVariants = [...new Set([normalizedIdentifier, normalizedDni, formatDni(normalizedDni)])];
+	const dniVariants = getDniLookupVariants(normalizedIdentifier);
 
 	const users = await prisma.user.findMany({
 		where: {

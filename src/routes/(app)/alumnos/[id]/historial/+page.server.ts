@@ -5,6 +5,7 @@ import { error, fail } from '@sveltejs/kit';
 import bcrypt from 'bcryptjs';
 import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
+import { formatDni } from '$lib/utils/dni';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	await requireStudentAccess(locals.user, params.id);
@@ -350,7 +351,7 @@ export const actions: Actions = {
 				action: AuditAction.UPDATE,
 				entityType: 'USER',
 				entityId: student.userId,
-				description: `Contraseña restablecida para alumno: ${student.firstName} ${student.lastName} (${student.dni})`
+				description: `Contraseña restablecida para alumno: ${student.firstName} ${student.lastName} (${formatDni(student.dni)})`
 			});
 
 			return { success: true, message: 'Contraseña restablecida a 12345678' };

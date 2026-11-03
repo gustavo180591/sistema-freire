@@ -1,12 +1,16 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
-import { AuditAction } from '@prisma/client';
+import { AuditAction, Prisma } from '@prisma/client';
 
 import { prisma } from '$lib/server/db/prisma';
 import { getUserAllowedLocationIds, requireRole } from '$lib/server/auth/authorization';
 import { auditLog } from '$lib/server/audit';
 import { updateAttendanceStatus } from '$lib/server/academic/plan-logic';
+import {
+	buildTeacherAttendanceDeduplicationKey,
+	getTeacherAttendanceContext
+} from '$lib/server/academic/teacher-attendance-scope-service';
 
 type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'JUSTIFIED';
 
@@ -82,108 +86,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
 
-	// Obtener TODAS las materias asignadas al docente mediante SubjectTeacher.
-	// Esto permite mostrarlas aunque todavía no tengan horario cargado.
-	const subjectAssignments = await prisma.subjectTeacher.findMany({
-		where: {
-			teacherId: teacher.id
-		},
-		include: {
-			subject: true
-		},
-		orderBy: {
-			subject: {
-				name: 'asc'
-			}
-		}
-	});
-
-	const assignedSubjectIds = subjectAssignments.map((assignment) => assignment.subjectId);
-
-	const enrollments = assignedSubjectIds.length
-		? await prisma.subjectEnrollment.findMany({
-				where: {
-					subjectId: {
-						in: assignedSubjectIds
-					},
-					status: 'ACTIVE',
-					student: {
-						status: 'ACTIVE'
-					},
-					commission: {
-						is: {
-							teacherId: teacher.id,
-							active: true,
-							OR: [
-								{
-									locationId: null
-								},
-								{
-									locationId: {
-										in: allowedLocationIds
-									}
-								}
-							]
-						}
-					}
-				},
-				include: {
-					student: {
-						include: {
-							career: true
-						}
-					}
-				},
-				orderBy: [
-					{
-						student: {
-							lastName: 'asc'
-						}
-					},
-					{
-						student: {
-							firstName: 'asc'
-						}
-					}
-				]
-			})
-		: [];
-
-	type AttendanceStudent = {
-		id: string;
-		enrollmentId: string;
-		dni: string;
-		firstName: string;
-		lastName: string;
-		career: string;
-		currentYear: number;
-	};
-
-	const studentsBySubject: Record<string, AttendanceStudent[]> = {};
-	const studentIdsBySubject = new Map<string, Set<string>>();
-
-	for (const enrollment of enrollments) {
-		studentsBySubject[enrollment.subjectId] ??= [];
-
-		const seenStudentIds = studentIdsBySubject.get(enrollment.subjectId) ?? new Set<string>();
-
-		if (seenStudentIds.has(enrollment.studentId)) {
-			continue;
-		}
-
-		studentsBySubject[enrollment.subjectId].push({
-			id: enrollment.student.id,
-			enrollmentId: enrollment.id,
-			dni: enrollment.student.dni,
-			firstName: enrollment.student.firstName,
-			lastName: enrollment.student.lastName,
-			career: enrollment.student.career.name,
-			currentYear: enrollment.student.currentYear
-		});
-
-		seenStudentIds.add(enrollment.studentId);
-		studentIdsBySubject.set(enrollment.subjectId, seenStudentIds);
-	}
+	const attendanceContext = await getTeacherAttendanceContext(teacher.id, allowedLocationIds);
 
 	const recentAttendance = await prisma.attendanceRecord.findMany({
 		where: {
@@ -193,6 +96,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			subject: true,
 			commission: true,
 			classSchedule: true,
+			location: true,
 			entries: {
 				include: {
 					student: true
@@ -207,12 +111,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		teacher,
-		subjects: subjectAssignments.map((assignment) => ({
-			id: assignment.subject.id,
-			code: assignment.subject.code,
-			name: assignment.subject.name
-		})),
-		studentsBySubject,
+		subjects: attendanceContext.subjects,
+		attendanceScopes: attendanceContext.scopes,
 		recentAttendance: recentAttendance.map((record) => {
 			const entries = record.entries.map((entry) => ({
 				studentId: entry.studentId,
@@ -227,6 +127,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 				date: record.classDate,
 				subject: record.subject.name,
 				commission: record.commission?.code ?? null,
+				location: record.location?.name ?? null,
 				startTime: record.classSchedule?.startTime ?? null,
 				endTime: record.classSchedule?.endTime ?? null,
 				totalStudents: entries.length,
@@ -253,12 +154,13 @@ export const actions: Actions = {
 		const formData = await request.formData();
 
 		const subjectId = formData.get('subjectId')?.toString();
+		const scopeKey = formData.get('scopeKey')?.toString();
 		const date = formData.get('date')?.toString();
 		const rawAttendance = formData.get('attendanceData')?.toString();
 
-		if (!subjectId || !date || !rawAttendance) {
+		if (!subjectId || !scopeKey || !date || !rawAttendance) {
 			return fail(400, {
-				error: 'Completá la materia y la fecha'
+				error: 'Completá la materia, el grupo y la fecha'
 			});
 		}
 
@@ -278,25 +180,27 @@ export const actions: Actions = {
 				});
 			}
 
-			const subjectAssignment = await prisma.subjectTeacher.findUnique({
-				where: {
-					subjectId_teacherId: {
-						subjectId,
-						teacherId: teacher.id
-					}
-				},
-				select: {
-					subject: {
-						select: {
-							name: true
-						}
-					}
-				}
-			});
+			const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
 
-			if (!subjectAssignment) {
+			const attendanceContext = await getTeacherAttendanceContext(teacher.id, allowedLocationIds);
+
+			const assignedSubject = attendanceContext.subjects.find(
+				(subject) => subject.id === subjectId
+			);
+
+			if (!assignedSubject) {
 				return fail(403, {
 					error: 'No tenés permiso para tomar asistencia en esta materia'
+				});
+			}
+
+			const scope = attendanceContext.scopes.find(
+				(candidate) => candidate.key === scopeKey && candidate.subjectId === subjectId
+			);
+
+			if (!scope) {
+				return fail(403, {
+					error: 'El grupo seleccionado no está habilitado para este docente'
 				});
 			}
 
@@ -306,15 +210,23 @@ export const actions: Actions = {
 				});
 			}
 
-			const attendance = JSON.parse(rawAttendance) as Array<{
+			let attendance: Array<{
 				studentId: string;
 				status: AttendanceStatus;
 				notes?: string;
 			}>;
 
+			try {
+				attendance = JSON.parse(rawAttendance);
+			} catch {
+				return fail(400, {
+					error: 'Los datos de asistencia son inválidos'
+				});
+			}
+
 			if (!Array.isArray(attendance) || attendance.length === 0) {
 				return fail(400, {
-					error: 'La materia no tiene alumnos activos para registrar'
+					error: 'El grupo no tiene alumnos activos para registrar'
 				});
 			}
 
@@ -324,39 +236,7 @@ export const actions: Actions = {
 				});
 			}
 
-			const allowedLocationIds = await getUserAllowedLocationIds(locals.user);
-
-			const activeEnrollments = await prisma.subjectEnrollment.findMany({
-				where: {
-					subjectId,
-					status: 'ACTIVE',
-					student: {
-						status: 'ACTIVE'
-					},
-					commission: {
-						is: {
-							teacherId: teacher.id,
-							active: true,
-							OR: [
-								{
-									locationId: null
-								},
-								{
-									locationId: {
-										in: allowedLocationIds
-									}
-								}
-							]
-						}
-					}
-				},
-				select: {
-					studentId: true
-				}
-			});
-
-			const validStudentIds = new Set(activeEnrollments.map((enrollment) => enrollment.studentId));
-
+			const validStudentIds = new Set(scope.students.map((student) => student.id));
 			const submittedStudentIds = new Set(attendance.map((entry) => entry.studentId));
 
 			if (
@@ -365,18 +245,30 @@ export const actions: Actions = {
 				attendance.some((entry) => !validStudentIds.has(entry.studentId))
 			) {
 				return fail(400, {
-					error: 'La nómina enviada no coincide con los alumnos que cursan actualmente la materia'
+					error: 'La nómina enviada no coincide con los alumnos habilitados para este grupo'
 				});
 			}
 
 			const classDate = parseClassDate(date);
 
+			/*
+			 * Compatibilidad con registros históricos sin deduplicationKey:
+			 * una comisión puede tener una asistencia por materia/fecha;
+			 * los grupos sin comisión se diferencian por localidad.
+			 */
 			const existingRecord = await prisma.attendanceRecord.findFirst({
-				where: {
-					subjectId,
-					classDate,
-					createdByUserId: locals.user.id
-				},
+				where: scope.commissionId
+					? {
+							subjectId,
+							classDate,
+							commissionId: scope.commissionId
+						}
+					: {
+							subjectId,
+							classDate,
+							commissionId: null,
+							OR: [{ locationId: scope.locationId }, { locationId: null }]
+						},
 				select: {
 					id: true
 				}
@@ -384,16 +276,26 @@ export const actions: Actions = {
 
 			if (existingRecord) {
 				return fail(400, {
-					error: 'Ya existe asistencia registrada para esta materia y fecha'
+					error: 'Ya existe asistencia registrada para este grupo y fecha'
 				});
 			}
+
+			const deduplicationKey = buildTeacherAttendanceDeduplicationKey({
+				subjectId,
+				commissionId: scope.commissionId,
+				locationId: scope.locationId,
+				date
+			});
 
 			const record = await prisma.$transaction(async (tx) => {
 				const attendanceRecord = await tx.attendanceRecord.create({
 					data: {
 						subjectId,
 						classDate,
-						createdByUserId: locals.user!.id
+						createdByUserId: locals.user!.id,
+						commissionId: scope.commissionId,
+						locationId: scope.locationId,
+						deduplicationKey
 					}
 				});
 
@@ -415,11 +317,8 @@ export const actions: Actions = {
 			}
 
 			const presentCount = attendance.filter((entry) => entry.status === 'PRESENT').length;
-
 			const lateCount = attendance.filter((entry) => entry.status === 'LATE').length;
-
 			const absentCount = attendance.filter((entry) => entry.status === 'ABSENT').length;
-
 			const justifiedCount = attendance.filter((entry) => entry.status === 'JUSTIFIED').length;
 
 			await auditLog({
@@ -428,7 +327,7 @@ export const actions: Actions = {
 				entityType: 'ATTENDANCE_RECORD',
 				entityId: record.id,
 				description:
-					`Asistencia ${subjectAssignment.subject.name}: ` +
+					`Asistencia ${assignedSubject.name} (${scope.label}): ` +
 					`${presentCount} presentes, ` +
 					`${lateCount} tarde, ` +
 					`${absentCount} ausentes, ` +
@@ -439,6 +338,12 @@ export const actions: Actions = {
 				success: 'Asistencia registrada correctamente'
 			};
 		} catch (error) {
+			if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+				return fail(400, {
+					error: 'Ya existe asistencia registrada para este grupo y fecha'
+				});
+			}
+
 			console.error('Error al registrar asistencia:', error);
 
 			return fail(500, {

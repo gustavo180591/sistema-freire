@@ -12,8 +12,10 @@
 
 	type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'JUSTIFIED';
 	type RecentAttendance = PageData['recentAttendance'][number];
+	type AttendanceStudent = PageData['attendanceScopes'][number]['students'][number];
 
 	let selectedSubject = $state('');
+	let selectedScopeKey = $state('');
 
 	let selectedDate = $state(
 		new Intl.DateTimeFormat('en-CA', {
@@ -35,11 +37,19 @@
 		JUSTIFIED: 'Justificada'
 	};
 
-	let currentStudents = $derived.by(() => {
+	let currentSubjectScopes = $derived.by(() => {
 		if (!selectedSubject) return [];
 
-		return data.studentsBySubject[selectedSubject as keyof typeof data.studentsBySubject] ?? [];
+		return data.attendanceScopes.filter((scope) => scope.subjectId === selectedSubject);
 	});
+
+	let currentScope = $derived.by(() => {
+		if (!selectedScopeKey) return null;
+
+		return data.attendanceScopes.find((scope) => scope.key === selectedScopeKey) ?? null;
+	});
+
+	let currentStudents = $derived.by(() => currentScope?.students ?? []);
 
 	let presentCount = $derived.by(
 		() =>
@@ -58,13 +68,23 @@
 		() => currentStudents.filter((student) => statuses[student.id] === 'JUSTIFIED').length
 	);
 
-	function changeSubject() {
-		const students =
-			data.studentsBySubject[selectedSubject as keyof typeof data.studentsBySubject] ?? [];
-
+	function initializeStudents(students: AttendanceStudent[]) {
 		statuses = Object.fromEntries(students.map((student) => [student.id, 'PRESENT']));
-
 		notes = Object.fromEntries(students.map((student) => [student.id, '']));
+	}
+
+	function changeSubject() {
+		const scopes = data.attendanceScopes.filter((scope) => scope.subjectId === selectedSubject);
+
+		selectedScopeKey = scopes.length === 1 ? scopes[0].key : '';
+
+		initializeStudents(scopes.length === 1 ? scopes[0].students : []);
+	}
+
+	function changeScope() {
+		const scope = data.attendanceScopes.find((candidate) => candidate.key === selectedScopeKey);
+
+		initializeStudents(scope?.students ?? []);
 	}
 
 	function setAll(status: AttendanceStatus) {
@@ -120,7 +140,9 @@
 	<header class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
 		<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Docente</p>
 		<h1 class="mt-2 text-3xl font-bold">Asistencia por materia</h1>
-		<p class="mt-2 text-slate-400">Seleccioná la materia y la fecha para tomar asistencia.</p>
+		<p class="mt-2 text-slate-400">
+			Seleccioná la materia, el grupo y la fecha para tomar asistencia.
+		</p>
 	</header>
 
 	{#if form?.error}
@@ -137,7 +159,7 @@
 
 	<section class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 		<form method="POST" class="space-y-6">
-			<div class="grid gap-5 md:grid-cols-2">
+			<div class="grid gap-5 md:grid-cols-3">
 				<div>
 					<label for="subjectId" class="mb-2 block text-sm font-medium text-slate-300">
 						Materia
@@ -162,6 +184,34 @@
 				</div>
 
 				<div>
+					<label for="scopeKey" class="mb-2 block text-sm font-medium text-slate-300">
+						Comisión / grupo
+					</label>
+
+					<select
+						id="scopeKey"
+						name="scopeKey"
+						bind:value={selectedScopeKey}
+						onchange={changeScope}
+						disabled={!selectedSubject || currentSubjectScopes.length === 0}
+						required
+						class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-indigo-500 disabled:opacity-50"
+					>
+						<option value="">
+							{currentSubjectScopes.length === 0
+								? 'Sin grupos disponibles'
+								: 'Seleccionar grupo...'}
+						</option>
+
+						{#each currentSubjectScopes as scope (scope.key)}
+							<option value={scope.key}>
+								{scope.label}
+							</option>
+						{/each}
+					</select>
+				</div>
+
+				<div>
 					<label for="date" class="mb-2 block text-sm font-medium text-slate-300"> Fecha </label>
 
 					<input
@@ -175,7 +225,7 @@
 				</div>
 			</div>
 
-			{#if selectedSubject && currentStudents.length > 0}
+			{#if selectedSubject && selectedScopeKey && currentStudents.length > 0}
 				<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 					<div class="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
 						<p class="text-sm text-emerald-300">Presentes</p>
@@ -226,7 +276,7 @@
 
 				<div class="overflow-hidden rounded-2xl border border-slate-800">
 					<div class="border-b border-slate-800 bg-slate-950 px-5 py-4">
-						<h2 class="font-semibold">Alumnos que cursan la materia</h2>
+						<h2 class="font-semibold">{currentScope?.label ?? 'Alumnos del grupo'}</h2>
 						<p class="mt-1 text-sm text-slate-400">
 							{currentStudents.length}
 							{currentStudents.length === 1 ? 'alumno activo' : 'alumnos activos'}
@@ -279,21 +329,29 @@
 						{/each}
 					</div>
 				</div>
-
 				<input type="hidden" name="attendanceData" value={attendanceData()} />
 
 				<div class="flex justify-end">
 					<button
 						type="submit"
-						disabled={!selectedSubject || currentStudents.length === 0}
+						disabled={!selectedSubject || !selectedScopeKey || currentStudents.length === 0}
 						class="rounded-2xl bg-white px-7 py-3 font-semibold text-slate-950 transition hover:scale-[1.02] disabled:opacity-40"
 					>
 						Guardar asistencia
 					</button>
 				</div>
-			{:else if selectedSubject}
+			{:else if selectedSubject && currentSubjectScopes.length === 0}
 				<div class="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-6 text-amber-200">
-					No hay alumnos con inscripción activa cursando esta materia.
+					Esta materia está asignada al docente, pero todavía no tiene una comisión asignada ni
+					alumnos activos sin comisión dentro de sus localidades habilitadas.
+				</div>
+			{:else if selectedSubject && !selectedScopeKey}
+				<div class="rounded-2xl border border-indigo-500/20 bg-indigo-500/10 p-6 text-indigo-200">
+					Seleccioná la comisión o grupo sobre el que querés tomar asistencia.
+				</div>
+			{:else if selectedSubject && selectedScopeKey}
+				<div class="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-6 text-amber-200">
+					No hay alumnos activos en este grupo.
 				</div>
 			{/if}
 		</form>
@@ -313,7 +371,11 @@
 							{record.subject}
 						</p>
 						<p class="mt-1 text-sm text-slate-400">
-							{record.commission ? `Comisión ${record.commission} · ` : ''}
+							{record.commission
+								? `Comisión ${record.commission} · `
+								: record.location
+									? `${record.location} · `
+									: ''}
 							{new Date(record.date).toLocaleDateString('es-AR')}
 							{record.startTime ? ` · ${record.startTime} - ${record.endTime}` : ''}
 						</p>

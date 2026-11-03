@@ -1,47 +1,19 @@
 import { json } from '@sveltejs/kit';
-import { prisma } from '$lib/server/db/prisma';
+
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = async ({ url }) => {
-	const careerId = url.searchParams.get('careerId');
-	const yearLevel = url.searchParams.get('yearLevel');
+import { getAvailableSubjectsForCareerSchedule } from '$lib/server/academic/schedule-service';
 
-	if (!careerId || !yearLevel) {
+export const GET: RequestHandler = async ({ url }) => {
+	const careerId = url.searchParams.get('careerId')?.trim() ?? '';
+	const rawYearLevel = url.searchParams.get('yearLevel')?.trim() ?? '';
+	const yearLevel = Number.parseInt(rawYearLevel, 10);
+
+	if (!careerId || !rawYearLevel || Number.isNaN(yearLevel) || yearLevel < 1) {
 		return json([], { status: 400 });
 	}
 
-	// Get the active/default study plan for the career
-	const studyPlan = await prisma.studyPlan.findFirst({
-		where: {
-			careerId,
-			active: true,
-			OR: [{ isDefault: true }, { active: true }]
-		}
-	});
-
-	if (!studyPlan) {
-		return json([]);
-	}
-
-	// Get subjects from the plan that match the year level
-	const planSubjects = await prisma.planSubject.findMany({
-		where: {
-			planId: studyPlan.id
-		},
-		include: {
-			subject: true
-		}
-	});
-
-	// Filter out subjects that don't match the year level
-	const subjects = planSubjects
-		.filter((ps) => ps.subject && ps.subject.yearLevel === parseInt(yearLevel) && ps.subject.active)
-		.map((ps) => ({
-			id: ps.subject.id,
-			name: ps.subject.name,
-			code: ps.subject.code,
-			yearLevel: ps.subject.yearLevel
-		}));
+	const subjects = await getAvailableSubjectsForCareerSchedule(careerId, yearLevel);
 
 	return json(subjects);
 };

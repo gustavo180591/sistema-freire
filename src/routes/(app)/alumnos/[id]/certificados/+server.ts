@@ -5,6 +5,7 @@ import type { RequestHandler } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { auditLog } from '$lib/server/audit';
 import { requireStudentAccess } from '$lib/server/auth/student-access';
+import { formatDni } from '$lib/utils/dni';
 
 export const GET: RequestHandler = async ({ params, locals }) => {
 	await requireStudentAccess(locals.user, params.id);
@@ -53,7 +54,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 	doc
 		.fontSize(11)
 		.text(
-			`Se certifica que ${student.firstName} ${student.lastName}, DNI ${student.dni}, ` +
+			`Se certifica que ${student.firstName} ${student.lastName}, DNI ${formatDni(student.dni)}, ` +
 				`se encuentra cursando activamente la carrera ${student.career.name}.`
 		);
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
@@ -289,7 +290,7 @@
 			{student.fullName}
 		</h1>
 		<p class="mt-3 text-sm text-slate-400">
-			DNI: {student.dni} · {student.career}
+			DNI: {formatDni(student.dni)} · {student.career}
 		</p>
 
 		{#if metrics.blocked}

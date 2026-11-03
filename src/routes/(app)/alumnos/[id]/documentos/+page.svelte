@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
@@ -110,7 +111,7 @@
 				<p class="text-sm tracking-[0.2em] text-slate-400 uppercase">Gestión Documental</p>
 				<h1 class="mt-2 text-2xl font-bold md:text-3xl">{data.student.fullName}</h1>
 				<p class="mt-1 text-sm text-slate-400">
-					DNI: {data.student.dni} · {data.student.career}
+					DNI: {formatDni(data.student.dni)} · {data.student.career}
 				</p>
 			</div>
 			{#if data.canUpload}

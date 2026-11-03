@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
@@ -33,7 +34,7 @@
 					{student.fullName}
 				</h1>
 				<p class="mt-3 text-sm text-slate-400">
-					DNI: {student.dni} · {student.career}
+					DNI: {formatDni(student.dni)} · {student.career}
 					{#if student.location}
 						· Sede: {student.location}
 					{/if}
@@ -380,7 +381,7 @@
 
 			<div class="mb-6 rounded-2xl bg-slate-800/50 p-4">
 				<p class="font-medium text-white">{student.fullName}</p>
-				<p class="text-sm text-slate-400">DNI: {student.dni}</p>
+				<p class="text-sm text-slate-400">DNI: {formatDni(student.dni)}</p>
 				<p class="mt-2 text-sm text-amber-400">La contraseña se restablecerá a: 12345678</p>
 			</div>
 

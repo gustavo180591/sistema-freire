@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni, normalizeDni } from '$lib/utils/dni';
 	type TeacherOption = {
 		id: string;
 		dni?: string | null;
@@ -45,18 +46,26 @@
 	}
 
 	const filteredTeachers = $derived.by(() => {
-		const normalizedSearch = normalize(search.trim());
+		const rawSearch = search.trim();
+		const normalizedSearch = normalize(rawSearch);
 
 		if (!normalizedSearch) {
 			return teachers;
 		}
 
-		return teachers.filter((teacher) => {
-			const searchableValue = normalize(
-				`${teacher.lastName} ${teacher.firstName} ${teacher.dni ?? ''}`
-			);
+		const isDniSearch = /^[\d.\s]+$/.test(rawSearch);
 
-			return searchableValue.includes(normalizedSearch);
+		const normalizedDniSearch = isDniSearch ? normalizeDni(rawSearch) : '';
+
+		return teachers.filter((teacher) => {
+			const searchableValue = normalize(`${teacher.lastName} ${teacher.firstName}`);
+
+			const matchesText = searchableValue.includes(normalizedSearch);
+
+			const matchesDni =
+				normalizedDniSearch.length > 0 && normalizeDni(teacher.dni).includes(normalizedDniSearch);
+
+			return matchesText || matchesDni;
 		});
 	});
 
@@ -146,7 +155,7 @@
 
 						{#if teacher.dni}
 							<p class="mt-0.5 text-[10px] text-slate-500">
-								DNI {teacher.dni}
+								DNI {formatDni(teacher.dni) || 'Sin DNI'}
 							</p>
 						{/if}
 					</button>

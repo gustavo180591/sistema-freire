@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	let { data, form } = $props();
 
 	const firstCall = $derived(
@@ -67,7 +68,7 @@
 				>
 					{#each data.teachers as teacher (teacher.id)}
 						<option value={teacher.id} selected={teacher.id === data.series.presidentTeacherId}>
-							{teacher.lastName}, {teacher.firstName} · DNI {teacher.dni}
+							{teacher.lastName}, {teacher.firstName} · DNI {formatDni(teacher.dni) || 'Sin DNI'}
 						</option>
 					{/each}
 				</select>
@@ -88,7 +89,7 @@
 
 					{#each data.teachers as teacher (teacher.id)}
 						<option value={teacher.id} selected={teacher.id === data.series.firstVocalTeacherId}>
-							{teacher.lastName}, {teacher.firstName} · DNI {teacher.dni}
+							{teacher.lastName}, {teacher.firstName} · DNI {formatDni(teacher.dni) || 'Sin DNI'}
 						</option>
 					{/each}
 				</select>
@@ -109,7 +110,7 @@
 
 					{#each data.teachers as teacher (teacher.id)}
 						<option value={teacher.id} selected={teacher.id === data.series.secondVocalTeacherId}>
-							{teacher.lastName}, {teacher.firstName} · DNI {teacher.dni}
+							{teacher.lastName}, {teacher.firstName} · DNI {formatDni(teacher.dni) || 'Sin DNI'}
 						</option>
 					{/each}
 				</select>

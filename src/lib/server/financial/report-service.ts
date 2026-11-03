@@ -1,4 +1,5 @@
 import { prisma } from '$lib/server/db/prisma';
+import { normalizeDni } from '$lib/utils/dni';
 import { Decimal } from '@prisma/client/runtime/library';
 
 /**
@@ -171,6 +172,12 @@ function serializeDate(date: Date | null | undefined): string {
 	return date.toISOString();
 }
 
+function getDniSearchTerm(value: string): string {
+	const trimmed = value.trim();
+
+	return /^[\d.\s]+$/.test(trimmed) ? normalizeDni(trimmed) : trimmed;
+}
+
 /**
  * Obtiene opciones de filtros para reportes
  */
@@ -231,7 +238,7 @@ export async function getPaymentsReport(
 			OR: [
 				{ firstName: { contains: filters.studentSearch, mode: 'insensitive' } },
 				{ lastName: { contains: filters.studentSearch, mode: 'insensitive' } },
-				{ dni: { contains: filters.studentSearch } }
+				{ dni: { contains: getDniSearchTerm(filters.studentSearch) } }
 			]
 		};
 	}
@@ -331,7 +338,7 @@ export async function getDebtReport(
 				OR: [
 					{ firstName: { contains: filters.studentSearch, mode: 'insensitive' } },
 					{ lastName: { contains: filters.studentSearch, mode: 'insensitive' } },
-					{ dni: { contains: filters.studentSearch } }
+					{ dni: { contains: getDniSearchTerm(filters.studentSearch) } }
 				]
 			}),
 			...(filters.careerId && { careerId: filters.careerId }),
@@ -519,13 +526,15 @@ export async function getMovementsReport(
 	let filteredMovements = movements;
 	if (filters.studentSearch) {
 		const searchLower = filters.studentSearch.toLowerCase();
+
+		const dniSearch = getDniSearchTerm(filters.studentSearch);
 		filteredMovements = movements.filter((m) => {
 			const student = studentMap.get(m.studentId);
 			if (!student) return false;
 			return (
 				student.firstName.toLowerCase().includes(searchLower) ||
 				student.lastName.toLowerCase().includes(searchLower) ||
-				student.dni.includes(searchLower)
+				student.dni.includes(dniSearch)
 			);
 		});
 	}
@@ -608,10 +617,12 @@ export async function getReceiptsReport(
 	let filteredReceipts = receipts;
 	if (filters.studentSearch) {
 		const searchLower = filters.studentSearch.toLowerCase();
+
+		const dniSearch = getDniSearchTerm(filters.studentSearch);
 		filteredReceipts = receipts.filter((r) => {
 			return (
 				r.studentName.toLowerCase().includes(searchLower) ||
-				(r.studentDni && r.studentDni.includes(searchLower))
+				(r.studentDni && r.studentDni.includes(dniSearch))
 			);
 		});
 	}
@@ -723,13 +734,15 @@ export async function getDiscountsReport(
 	let filteredMovements = movements;
 	if (filters.studentSearch) {
 		const searchLower = filters.studentSearch.toLowerCase();
+
+		const dniSearch = getDniSearchTerm(filters.studentSearch);
 		filteredMovements = movements.filter((m) => {
 			const student = studentMap.get(m.studentId);
 			if (!student) return false;
 			return (
 				student.firstName.toLowerCase().includes(searchLower) ||
 				student.lastName.toLowerCase().includes(searchLower) ||
-				student.dni.includes(searchLower)
+				student.dni.includes(dniSearch)
 			);
 		});
 	}
@@ -800,7 +813,7 @@ export async function getScholarshipsReport(
 			OR: [
 				{ firstName: { contains: filters.studentSearch, mode: 'insensitive' } },
 				{ lastName: { contains: filters.studentSearch, mode: 'insensitive' } },
-				{ dni: { contains: filters.studentSearch } }
+				{ dni: { contains: getDniSearchTerm(filters.studentSearch) } }
 			]
 		};
 	}

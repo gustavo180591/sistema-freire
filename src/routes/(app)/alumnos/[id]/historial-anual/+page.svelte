@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
@@ -85,7 +86,8 @@
 				</p>
 				<h1 class="mt-2 text-2xl font-bold md:text-3xl">{data.student.fullName}</h1>
 				<p class="mt-1 text-sm text-slate-400">
-					DNI: {data.student.dni} · {data.student.career} · Año actual: {data.student.currentYear}°
+					DNI: {formatDni(data.student.dni)} · {data.student.career} · Año actual: {data.student
+						.currentYear}°
 				</p>
 			</div>
 			{#if data.canCreate}

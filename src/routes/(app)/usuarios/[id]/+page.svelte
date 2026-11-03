@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
+	import { formatDni } from '$lib/utils/dni';
 
 	let { data, form }: { data: PageData; form?: any } = $props();
 
@@ -139,7 +140,7 @@
 				<div>
 					<p class="text-sm text-slate-400">DNI</p>
 					<p class="font-medium">
-						{data.user.dni || data.user.student?.dni || data.user.teacher?.dni || '-'}
+						{formatDni(data.user.dni ?? data.user.student?.dni ?? data.user.teacher?.dni) || '-'}
 					</p>
 				</div>
 				<div>
@@ -212,7 +213,9 @@
 							<div class="grid gap-4 sm:grid-cols-2">
 								<div>
 									<p class="text-xs text-slate-500">DNI</p>
-									<p class="mt-1 font-medium text-slate-200">{data.user.student.dni}</p>
+									<p class="mt-1 font-medium text-slate-200">
+										{formatDni(data.user.student.dni)}
+									</p>
 								</div>
 
 								<div>

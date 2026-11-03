@@ -35,7 +35,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			? new Date(url.searchParams.get('endDate') as string)
 			: undefined,
 		studentId: url.searchParams.get('studentId') || undefined,
-		studentSearch: url.searchParams.get('studentSearch') || undefined,
+		studentSearch: url.searchParams.get('studentSearch')?.trim() || undefined,
 		careerId: url.searchParams.get('careerId') || undefined,
 		locationId: url.searchParams.get('locationId') || undefined,
 		currentYear: url.searchParams.get('currentYear')

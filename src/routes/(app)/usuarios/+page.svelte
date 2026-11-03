@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { canManageUsers } from '$lib/client/permissions';
+	import { formatDni } from '$lib/utils/dni';
 	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
 
@@ -160,7 +161,9 @@
 						<td class="truncate px-4 py-3" title={user.fullName}>
 							<span class="font-medium">{user.fullName}</span>
 						</td>
-						<td class="truncate px-4 py-3 text-slate-300" title={user.dni}>{user.dni || '-'}</td>
+						<td class="truncate px-4 py-3 text-slate-300" title={formatDni(user.dni)}>
+							{formatDni(user.dni) || '-'}
+						</td>
 						<td class="truncate px-4 py-3 text-slate-300" title={user.email}>{user.email}</td>
 						<td class="px-4 py-3">
 							<span class="inline-flex rounded-full border border-slate-700 px-2 py-0.5 text-xs">
@@ -241,7 +244,9 @@
 				<div class="flex items-start justify-between gap-3">
 					<div class="min-w-0 flex-1">
 						<p class="truncate font-semibold text-white">{user.fullName}</p>
-						<p class="truncate text-sm text-slate-400">{user.dni || '-'}</p>
+						<p class="truncate text-sm text-slate-400">
+							{formatDni(user.dni) || '-'}
+						</p>
 						<p class="truncate text-sm text-slate-400">{user.email}</p>
 					</div>
 					<span

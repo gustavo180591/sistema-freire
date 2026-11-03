@@ -6,6 +6,7 @@ import { AuditAction } from '@prisma/client';
 import type { RoleCode } from '@prisma/client';
 import { requirePermission } from '$lib/server/auth/permissions-granular';
 import { requireRole } from '$lib/server/auth/authorization';
+import { getDniLookupVariants, isValidDni, normalizeDni } from '$lib/utils/dni';
 
 const USER_MANAGEMENT_ROLES: RoleCode[] = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO'];
 
@@ -280,6 +281,16 @@ export const actions: Actions = {
 					include: {
 						role: true
 					}
+				},
+				student: {
+					select: {
+						dni: true
+					}
+				},
+				teacher: {
+					select: {
+						dni: true
+					}
 				}
 			}
 		});
@@ -294,7 +305,31 @@ export const actions: Actions = {
 		const email = formData.get('email')?.toString();
 		const status = formData.get('status')?.toString();
 		const phone = formData.get('phone')?.toString();
-		const dni = formData.get('dni')?.toString()?.trim();
+
+		const rawDni = formData.get('dni')?.toString().trim() ?? '';
+
+		const currentDni = targetUser.dni ?? targetUser.student?.dni ?? targetUser.teacher?.dni ?? '';
+
+		const normalizedSubmittedDni = normalizeDni(rawDni);
+
+		const normalizedCurrentDni = normalizeDni(currentDni);
+
+		const isSameDni =
+			rawDni === currentDni ||
+			(normalizedSubmittedDni !== '' && normalizedSubmittedDni === normalizedCurrentDni);
+
+		if (rawDni && !isSameDni && !isValidDni(rawDni)) {
+			return fail(400, {
+				error: 'El DNI debe contener entre 7 y 9 dígitos. Podés ingresarlo con o sin puntos.'
+			});
+		}
+
+		const dni = rawDni
+			? isSameDni && !isValidDni(rawDni)
+				? currentDni
+				: normalizedSubmittedDni
+			: '';
+
 		const cuil = formData.get('cuil')?.toString()?.trim();
 
 		if (!firstName || !lastName || !email) {
@@ -337,39 +372,58 @@ export const actions: Actions = {
 			}
 		}
 
-		// Validar unicidad de DNI si se proporciona
-		if (dni) {
-			// Verificar si el DNI ya existe en User (excluyendo el usuario actual)
-			const existingUserDni = await prisma.user.findFirst({
-				where: {
-					dni,
-					id: { not: params.id }
-				}
-			});
-			if (existingUserDni) {
-				return fail(400, { error: 'El DNI ya está en uso por otro usuario' });
-			}
+		// Validar unicidad solamente si el documento cambia.
+		// Esto permite seguir editando registros legacy mientras
+		// no intentemos reemplazar su DNI por otro valor inválido.
+		if (dni && !isSameDni) {
+			const dniVariants = getDniLookupVariants(dni);
 
-			// Verificar si el DNI ya existe en Student (excluyendo el usuario actual)
-			const existingStudentDni = await prisma.student.findFirst({
-				where: {
-					dni,
-					userId: { not: params.id }
-				}
-			});
-			if (existingStudentDni) {
-				return fail(400, { error: 'El DNI ya está en uso por otro alumno' });
-			}
+			const [existingUserDni, existingStudentDni, existingTeacherDni] = await Promise.all([
+				prisma.user.findFirst({
+					where: {
+						dni: {
+							in: dniVariants
+						},
+						id: {
+							not: params.id
+						}
+					},
+					select: {
+						id: true
+					}
+				}),
+				prisma.student.findFirst({
+					where: {
+						dni: {
+							in: dniVariants
+						},
+						userId: {
+							not: params.id
+						}
+					},
+					select: {
+						id: true
+					}
+				}),
+				prisma.teacher.findFirst({
+					where: {
+						dni: {
+							in: dniVariants
+						},
+						userId: {
+							not: params.id
+						}
+					},
+					select: {
+						id: true
+					}
+				})
+			]);
 
-			// Verificar si el DNI ya existe en Teacher (excluyendo el usuario actual)
-			const existingTeacherDni = await prisma.teacher.findFirst({
-				where: {
-					dni,
-					userId: { not: params.id }
-				}
-			});
-			if (existingTeacherDni) {
-				return fail(400, { error: 'El DNI ya está en uso por otro docente' });
+			if (existingUserDni || existingStudentDni || existingTeacherDni) {
+				return fail(400, {
+					error: 'El DNI ya está registrado por otra persona'
+				});
 			}
 		}
 

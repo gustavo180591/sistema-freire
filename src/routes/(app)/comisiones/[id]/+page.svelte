@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -165,7 +166,7 @@
 											<p class="font-medium">{enrollment.student.fullName}</p>
 											<p class="text-sm text-slate-400">{enrollment.student.email}</p>
 										</td>
-										<td class="px-4 py-3 text-slate-400">{enrollment.student.dni}</td>
+										<td class="px-4 py-3 text-slate-400">{formatDni(enrollment.student.dni)}</td>
 										<td class="px-4 py-3">
 											<span class="rounded-full {status.color} px-2 py-1 text-xs">
 												{status.label}

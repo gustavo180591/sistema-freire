@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 
@@ -122,7 +123,7 @@
 									<p class="font-medium text-white">
 										{student.student.lastName}, {student.student.firstName}
 									</p>
-									<p class="text-sm text-slate-400">{student.student.dni}</p>
+									<p class="text-sm text-slate-400">{formatDni(student.student.dni)}</p>
 								</div>
 							</td>
 							<td class="px-6 py-4 text-center">

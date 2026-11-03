@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
 	import { canManageSecretaries } from '$lib/client/permissions';
@@ -377,7 +378,9 @@
 											>
 												{secretary.lastName}, {secretary.firstName}
 											</p>
-											<p class="text-xs text-slate-500">DNI: {secretary.dni}</p>
+											<p class="text-xs text-slate-500">
+												DNI: {formatDni(secretary.dni) || 'Sin DNI'}
+											</p>
 										</div>
 									</div>
 								</td>

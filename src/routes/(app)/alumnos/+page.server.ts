@@ -2,6 +2,7 @@ import { prisma } from '$lib/server/db/prisma';
 import { getUserAllowedLocationIds } from '$lib/server/auth/authorization';
 import type { Prisma } from '@prisma/client';
 import type { PageServerLoad } from './$types';
+import { normalizeDni } from '$lib/utils/dni';
 
 const PAGE_SIZE = 25;
 
@@ -19,68 +20,72 @@ function buildSearchFilters(searchQuery: string): Prisma.StudentWhereInput[] {
 		.map((term) => term.trim())
 		.filter(Boolean);
 
-	return terms.map((term) => ({
-		OR: [
-			{
-				dni: {
-					contains: term,
-					mode: 'insensitive'
-				}
-			},
-			{
-				firstName: {
-					contains: term,
-					mode: 'insensitive'
-				}
-			},
-			{
-				lastName: {
-					contains: term,
-					mode: 'insensitive'
-				}
-			},
-			{
-				user: {
-					is: {
-						firstName: {
-							contains: term,
-							mode: 'insensitive'
+	return terms.map((term) => {
+		const dniSearchTerm = /^[\d.]+$/.test(term) ? normalizeDni(term) : term;
+
+		return {
+			OR: [
+				{
+					dni: {
+						contains: dniSearchTerm,
+						mode: 'insensitive'
+					}
+				},
+				{
+					firstName: {
+						contains: term,
+						mode: 'insensitive'
+					}
+				},
+				{
+					lastName: {
+						contains: term,
+						mode: 'insensitive'
+					}
+				},
+				{
+					user: {
+						is: {
+							firstName: {
+								contains: term,
+								mode: 'insensitive'
+							}
+						}
+					}
+				},
+				{
+					user: {
+						is: {
+							lastName: {
+								contains: term,
+								mode: 'insensitive'
+							}
+						}
+					}
+				},
+				{
+					user: {
+						is: {
+							email: {
+								contains: term,
+								mode: 'insensitive'
+							}
+						}
+					}
+				},
+				{
+					location: {
+						is: {
+							name: {
+								contains: term,
+								mode: 'insensitive'
+							}
 						}
 					}
 				}
-			},
-			{
-				user: {
-					is: {
-						lastName: {
-							contains: term,
-							mode: 'insensitive'
-						}
-					}
-				}
-			},
-			{
-				user: {
-					is: {
-						email: {
-							contains: term,
-							mode: 'insensitive'
-						}
-					}
-				}
-			},
-			{
-				location: {
-					is: {
-						name: {
-							contains: term,
-							mode: 'insensitive'
-						}
-					}
-				}
-			}
-		]
-	}));
+			]
+		};
+	});
 }
 
 export const load: PageServerLoad = async ({ url, locals }) => {

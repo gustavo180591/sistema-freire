@@ -4,6 +4,7 @@ import { RoleCode, type Prisma } from '@prisma/client';
 import { prisma } from '$lib/server/db/prisma';
 import { requireRole } from '$lib/server/auth/authorization';
 import { requirePermission } from '$lib/server/auth/permissions-granular';
+import { normalizeDni } from '$lib/utils/dni';
 
 const PAGE_SIZE = 25;
 
@@ -34,6 +35,8 @@ function buildSearchFilters(searchQuery: string): Prisma.UserWhereInput[] {
 	return terms.map((term) => {
 		const normalizedRole = term.toUpperCase().replace(/\s+/g, '_');
 
+		const dniSearchTerm = /^[\d.]+$/.test(term) ? normalizeDni(term) : term;
+
 		const matchingRoleCodes = Object.values(RoleCode).filter((roleCode) =>
 			roleCode.includes(normalizedRole)
 		);
@@ -59,7 +62,7 @@ function buildSearchFilters(searchQuery: string): Prisma.UserWhereInput[] {
 			},
 			{
 				dni: {
-					contains: term,
+					contains: dniSearchTerm,
 					mode: 'insensitive'
 				}
 			},
@@ -67,7 +70,7 @@ function buildSearchFilters(searchQuery: string): Prisma.UserWhereInput[] {
 				student: {
 					is: {
 						dni: {
-							contains: term,
+							contains: dniSearchTerm,
 							mode: 'insensitive'
 						}
 					}
@@ -77,7 +80,7 @@ function buildSearchFilters(searchQuery: string): Prisma.UserWhereInput[] {
 				teacher: {
 					is: {
 						dni: {
-							contains: term,
+							contains: dniSearchTerm,
 							mode: 'insensitive'
 						}
 					}

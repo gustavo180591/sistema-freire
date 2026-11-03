@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -195,7 +196,7 @@
 
 					{#each students as student (student.id)}
 						<option value={student.id}>
-							{student.lastName}, {student.firstName} · DNI {student.dni}
+							{student.lastName}, {student.firstName} · DNI {formatDni(student.dni)}
 						</option>
 					{/each}
 				</select>
@@ -381,7 +382,7 @@
 								</div>
 
 								<p class="mt-1 text-sm text-slate-400">
-									DNI {event.student.dni}
+									DNI {formatDni(event.student.dni)}
 								</p>
 
 								<p class="mt-2 text-sm text-slate-300">

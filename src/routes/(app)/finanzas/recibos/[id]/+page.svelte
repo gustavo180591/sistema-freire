@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -89,7 +90,7 @@
 				</div>
 				<div>
 					<span class="text-gray-600">DNI:</span>
-					<span class="ml-2 font-medium">{receipt.studentDni || 'N/A'}</span>
+					<span class="ml-2 font-medium">{formatDni(receipt.studentDni) || 'N/A'}</span>
 				</div>
 				<div class="col-span-2">
 					<span class="text-gray-600">Dirección:</span>

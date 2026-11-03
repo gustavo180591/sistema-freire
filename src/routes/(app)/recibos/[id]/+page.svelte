@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -230,7 +231,7 @@
 					<div class="student-field">
 						<span class="student-field-label">DNI:</span>
 						<span class="student-field-value">
-							{receipt.studentDni || '-'}
+							{formatDni(receipt.studentDni) || '-'}
 						</span>
 					</div>
 
@@ -287,7 +288,7 @@
 										{item.periodLabel || ''}
 
 										{#if receipt.studentDni}
-											- {receipt.studentDni}
+											- {formatDni(receipt.studentDni)}
 										{/if}
 
 										{#if receipt.student?.currentYear}

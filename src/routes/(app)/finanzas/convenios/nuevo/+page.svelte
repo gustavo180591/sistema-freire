@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import { enhance } from '$app/forms';
 
 	interface StudentCharge {
@@ -116,7 +117,7 @@
 					{#each data.students as student}
 						<option value={student.id}>
 							{student.firstName}
-							{student.lastName} - {student.dni}
+							{student.lastName} - {formatDni(student.dni)}
 						</option>
 					{/each}
 				</select>

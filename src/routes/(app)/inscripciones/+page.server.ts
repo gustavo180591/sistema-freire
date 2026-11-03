@@ -4,6 +4,7 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { auditLog } from '$lib/server/audit';
 import { checkPermission } from '$lib/server/auth/permissions-granular';
 import { EnrollmentStatus } from '@prisma/client';
+import { normalizeDni } from '$lib/utils/dni';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const user = locals.user;
@@ -19,7 +20,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const statusFilter = url.searchParams.get('status') as EnrollmentStatus | null;
 	const careerFilter = url.searchParams.get('career');
 	const termFilter = url.searchParams.get('term');
-	const studentFilter = url.searchParams.get('student');
+	const studentFilter = url.searchParams.get('student')?.trim() || null;
 
 	// Construir where clause
 	const where: any = {};
@@ -27,11 +28,29 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	if (careerFilter) where.careerId = careerFilter;
 	if (termFilter) where.academicTermId = termFilter;
 	if (studentFilter) {
+		const dniSearch = /^[\d.\s]+$/.test(studentFilter)
+			? normalizeDni(studentFilter)
+			: studentFilter;
+
 		where.student = {
 			OR: [
-				{ firstName: { contains: studentFilter, mode: 'insensitive' } },
-				{ lastName: { contains: studentFilter, mode: 'insensitive' } },
-				{ dni: { contains: studentFilter } }
+				{
+					firstName: {
+						contains: studentFilter,
+						mode: 'insensitive'
+					}
+				},
+				{
+					lastName: {
+						contains: studentFilter,
+						mode: 'insensitive'
+					}
+				},
+				{
+					dni: {
+						contains: dniSearch
+					}
+				}
 			]
 		};
 	}

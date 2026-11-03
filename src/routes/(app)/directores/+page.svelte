@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
 	import { canManageDirectors } from '$lib/client/permissions';
@@ -377,7 +378,9 @@
 											>
 												{director.lastName}, {director.firstName}
 											</p>
-											<p class="text-xs text-slate-500">DNI: {director.dni || 'Sin DNI'}</p>
+											<p class="text-xs text-slate-500">
+												DNI: {formatDni(director.dni) || 'Sin DNI'}
+											</p>
 										</div>
 									</div>
 								</td>

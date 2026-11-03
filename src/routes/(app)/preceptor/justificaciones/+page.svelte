@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDni } from '$lib/utils/dni';
 	import type { ActionData, PageData } from './$types';
 	import { enhance } from '$app/forms';
 
@@ -114,7 +115,7 @@
 							</p>
 
 							<p class="text-sm text-slate-400">
-								DNI: {absence.studentDni ?? 'Sin DNI'}
+								DNI: {formatDni(absence.studentDni) || 'Sin DNI'}
 							</p>
 
 							<p class="text-sm text-slate-400">

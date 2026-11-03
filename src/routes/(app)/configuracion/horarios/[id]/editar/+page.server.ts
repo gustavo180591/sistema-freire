@@ -4,7 +4,10 @@ import { WeekDay } from '@prisma/client';
 import type { Actions, PageServerLoad } from './$types';
 
 import { prisma } from '$lib/server/db/prisma';
-import { updateSchedule } from '$lib/server/academic/schedule-service';
+import {
+	getAvailableSubjectsForCareerSchedule,
+	updateSchedule
+} from '$lib/server/academic/schedule-service';
 
 const allowedRoles = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA'];
 
@@ -109,40 +112,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		})
 	]);
 
-	const studyPlan = await prisma.studyPlan.findFirst({
-		where: {
-			careerId: schedule.careerId,
-			active: true
-		},
-		orderBy: {
-			isDefault: 'desc'
-		}
-	});
-
-	const subjects = studyPlan
-		? await prisma.planSubject.findMany({
-				where: {
-					planId: studyPlan.id,
-					subject: {
-						active: true,
-						yearLevel: schedule.yearLevel
-					}
-				},
-				include: {
-					subject: {
-						select: {
-							id: true,
-							name: true,
-							code: true,
-							yearLevel: true
-						}
-					}
-				},
-				orderBy: {
-					sortOrder: 'asc'
-				}
-			})
-		: [];
+	const subjects = await getAvailableSubjectsForCareerSchedule(
+		schedule.careerId,
+		schedule.yearLevel
+	);
 
 	const commissions = await prisma.subjectCommission.findMany({
 		where: {
@@ -183,7 +156,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		locations,
 		careers,
 		teachers,
-		subjects: subjects.map((item) => item.subject),
+		subjects,
 		commissions
 	};
 };

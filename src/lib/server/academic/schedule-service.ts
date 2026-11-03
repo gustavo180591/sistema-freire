@@ -11,7 +11,7 @@ export interface ScheduleFilters {
 export interface ScheduleInput {
 	locationId?: string;
 	careerId: string;
-	studyPlanId?: string;
+	studyPlanId?: string | null;
 	subjectId: string;
 	commissionId?: string;
 	teacherId?: string;
@@ -306,10 +306,82 @@ export async function validateScheduleConflicts(input: ScheduleInput): Promise<S
 	return conflicts;
 }
 
+export interface ScheduleSubjectOption {
+	id: string;
+	name: string;
+	code: string;
+	yearLevel: number;
+}
+
 /**
- * Validate that subject belongs to the active/default study plan of the career
+ * Devuelve todas las materias que pueden utilizarse para
+ * configurar horarios de una carrera y año.
+ *
+ * Se contemplan dos relaciones:
+ *
+ * - CareerSubject: relación directa carrera/materia/año.
+ * - PlanSubject: compatibilidad con materias históricas que
+ *   ya pertenecen a un plan de estudio activo.
+ *
+ * Esto permite que las materias creadas desde /materias/nueva
+ * aparezcan inmediatamente en horarios sin romper los planes
+ * académicos existentes.
  */
-export async function validateSubjectInCareerPlan(
+export async function getAvailableSubjectsForCareerSchedule(
+	careerId: string,
+	yearLevel: number
+): Promise<ScheduleSubjectOption[]> {
+	const subjects = await prisma.subject.findMany({
+		where: {
+			active: true,
+			OR: [
+				{
+					careerSubjects: {
+						some: {
+							careerId,
+							yearLevel
+						}
+					}
+				},
+				{
+					yearLevel,
+					planSubjects: {
+						some: {
+							plan: {
+								careerId,
+								active: true
+							}
+						}
+					}
+				}
+			]
+		},
+		select: {
+			id: true,
+			name: true,
+			code: true
+		},
+		orderBy: [{ name: 'asc' }, { code: 'asc' }]
+	});
+
+	return subjects.map((subject) => ({
+		...subject,
+		yearLevel
+	}));
+}
+
+/**
+ * Valida que una materia pueda utilizarse para configurar
+ * un horario de una carrera y año determinados.
+ *
+ * CareerSubject tiene prioridad cuando existe.
+ *
+ * Para preservar compatibilidad con datos existentes,
+ * una materia que todavía no tenga CareerSubject también
+ * puede ser válida si pertenece a un plan activo de la
+ * carrera y su año académico coincide.
+ */
+export async function validateSubjectForCareerSchedule(
 	careerId: string,
 	subjectId: string,
 	yearLevel: number
@@ -318,45 +390,94 @@ export async function validateSubjectInCareerPlan(
 	reason?: string;
 	studyPlanId?: string;
 }> {
-	// Get the active/default study plan for the career
-	const studyPlan = await prisma.studyPlan.findFirst({
+	const subject = await prisma.subject.findUnique({
 		where: {
-			careerId,
+			id: subjectId
+		},
+		select: {
 			active: true,
-			OR: [{ isDefault: true }, { active: true }]
+			yearLevel: true
 		}
 	});
 
+	if (!subject) {
+		return {
+			isValid: false,
+			reason: 'La materia no existe'
+		};
+	}
+
+	if (!subject.active) {
+		return {
+			isValid: false,
+			reason: 'La materia está inactiva'
+		};
+	}
+
+	const [careerSubject, studyPlan] = await Promise.all([
+		prisma.careerSubject.findUnique({
+			where: {
+				careerId_subjectId: {
+					careerId,
+					subjectId
+				}
+			},
+			select: {
+				yearLevel: true
+			}
+		}),
+
+		prisma.studyPlan.findFirst({
+			where: {
+				careerId,
+				active: true,
+				subjects: {
+					some: {
+						subjectId
+					}
+				}
+			},
+			orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+			select: {
+				id: true
+			}
+		})
+	]);
+
+	/*
+	 * Si existe CareerSubject, esa relación determina
+	 * explícitamente el año dentro de la carrera.
+	 */
+	if (careerSubject) {
+		if (careerSubject.yearLevel !== yearLevel) {
+			return {
+				isValid: false,
+				reason: `La materia corresponde a ${careerSubject.yearLevel}° año, no a ${yearLevel}° año`
+			};
+		}
+
+		return {
+			isValid: true,
+			studyPlanId: studyPlan?.id
+		};
+	}
+
+	/*
+	 * Compatibilidad histórica:
+	 * si no existe CareerSubject, todavía aceptamos la materia
+	 * cuando pertenece a un plan activo de la carrera.
+	 */
 	if (!studyPlan) {
 		return {
 			isValid: false,
-			reason: 'No hay un plan de estudio activo para esta carrera'
+			reason: 'La materia no está vinculada a esta carrera ni pertenece a un plan de estudio activo'
 		};
 	}
 
-	// Check if subject is in the plan
-	const planSubject = await prisma.planSubject.findFirst({
-		where: {
-			planId: studyPlan.id,
-			subjectId
-		},
-		include: {
-			subject: true
-		}
-	});
-
-	if (!planSubject) {
+	if (subject.yearLevel !== yearLevel) {
 		return {
 			isValid: false,
-			reason: 'La materia no pertenece al plan de estudio activo de esta carrera'
-		};
-	}
-
-	// Check if subject year level matches
-	if (planSubject.subject.yearLevel !== yearLevel) {
-		return {
-			isValid: false,
-			reason: `La materia es de año ${planSubject.subject.yearLevel}, no del año ${yearLevel}`
+			reason: `La materia corresponde a ${subject.yearLevel}° año, no a ${yearLevel}° año`
 		};
 	}
 
@@ -370,19 +491,23 @@ export async function validateSubjectInCareerPlan(
  * Create a new schedule
  */
 export async function createSchedule(input: ScheduleInput) {
-	// Validate subject in career plan
-	const planValidation = await validateSubjectInCareerPlan(
+	// Validar que la materia pertenezca a la carrera y al año.
+	const subjectValidation = await validateSubjectForCareerSchedule(
 		input.careerId,
 		input.subjectId,
 		input.yearLevel
 	);
 
-	if (!planValidation.isValid) {
-		throw new Error(planValidation.reason);
+	if (!subjectValidation.isValid) {
+		throw new Error(subjectValidation.reason);
 	}
 
-	// Set studyPlanId from validation
-	const studyPlanId = planValidation.studyPlanId || input.studyPlanId;
+	/*
+	 * Asociar el plan cuando exista.
+	 * Si la materia todavía no pertenece a un plan activo,
+	 * ClassSchedule puede conservar studyPlanId en null.
+	 */
+	const studyPlanId = subjectValidation.studyPlanId ?? undefined;
 
 	// Validate time range
 	if (input.startTime >= input.endTime) {
@@ -454,7 +579,7 @@ export async function createSchedule(input: ScheduleInput) {
  * Update an existing schedule
  */
 export async function updateSchedule(id: string, input: Partial<ScheduleInput>) {
-	// If career, subject, or yearLevel changed, validate subject in plan
+	// Si cambia carrera, materia o año, validar nuevamente la relación académica.
 	if (input.careerId || input.subjectId || input.yearLevel) {
 		const existing = await prisma.classSchedule.findUnique({
 			where: { id },
@@ -470,15 +595,23 @@ export async function updateSchedule(id: string, input: Partial<ScheduleInput>) 
 			const subjectId = input.subjectId || existing.subjectId;
 			const yearLevel = input.yearLevel !== undefined ? input.yearLevel : existing.yearLevel;
 
-			const planValidation = await validateSubjectInCareerPlan(careerId, subjectId, yearLevel);
+			const subjectValidation = await validateSubjectForCareerSchedule(
+				careerId,
+				subjectId,
+				yearLevel
+			);
 
-			if (!planValidation.isValid) {
-				throw new Error(planValidation.reason);
+			if (!subjectValidation.isValid) {
+				throw new Error(subjectValidation.reason);
 			}
 
-			if (planValidation.studyPlanId) {
-				input.studyPlanId = planValidation.studyPlanId;
-			}
+			/*
+			 * Si la nueva materia pertenece a un plan activo,
+			 * asociarlo. Si no pertenece a ninguno, limpiar una
+			 * posible asociación anterior para no dejar datos
+			 * inconsistentes.
+			 */
+			input.studyPlanId = subjectValidation.studyPlanId ?? null;
 		}
 	}
 
@@ -512,7 +645,7 @@ export async function updateSchedule(id: string, input: Partial<ScheduleInput>) 
 			const checkInput: ScheduleInput = {
 				careerId: input.careerId || existing.careerId,
 				subjectId: existing.subjectId,
-				studyPlanId: existing.studyPlanId || undefined,
+				studyPlanId: existing.studyPlanId,
 				commissionId: existing.commissionId || undefined,
 				teacherId:
 					input.teacherId !== undefined ? input.teacherId : existing.teacherId || undefined,

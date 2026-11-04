@@ -184,7 +184,12 @@
 	 * Estas franjas son independientes de los horarios existentes
 	 * en la base de datos y representan la grilla académica oficial.
 	 */
-	const academicSlots = [
+	type AcademicSlot = {
+		start: string;
+		end: string;
+	};
+
+	const STANDARD_ACADEMIC_SLOTS: AcademicSlot[] = [
 		{ start: '18:00', end: '18:45' },
 		{ start: '18:45', end: '19:30' },
 		{ start: '19:30', end: '20:15' },
@@ -196,8 +201,56 @@
 		{ start: '22:00', end: '22:45' }
 	];
 
-	const DEFAULT_START = 18 * 60;
-	const DEFAULT_END = 22 * 60 + 45;
+	/*
+	 * Grilla académica específica de Capioví.
+	 *
+	 * Receso: 20:45 a 21:00.
+	 * El último módulo finaliza 23:10 según la grilla
+	 * institucional informada.
+	 */
+	const CAPIOVI_ACADEMIC_SLOTS: AcademicSlot[] = [
+		{ start: '17:45', end: '18:30' },
+		{ start: '18:30', end: '19:15' },
+		{ start: '19:15', end: '20:00' },
+		{ start: '20:00', end: '20:45' },
+
+		// Receso Capioví: 20:45 a 21:00
+
+		{ start: '21:00', end: '21:45' },
+		{ start: '21:45', end: '22:30' },
+		{ start: '22:30', end: '23:10' }
+	];
+
+	function normalizeLocationName(value: string): string {
+		return value
+			.normalize('NFD')
+			.replace(/[\u0300-\u036f]/g, '')
+			.trim()
+			.toLowerCase();
+	}
+
+	function getAcademicSlots(): AcademicSlot[] {
+		const normalizedLocationName = normalizeLocationName(contextLocationName);
+
+		if (normalizedLocationName.includes('capiovi')) {
+			return CAPIOVI_ACADEMIC_SLOTS;
+		}
+
+		return STANDARD_ACADEMIC_SLOTS;
+	}
+
+	function getDefaultStartMinute(): number {
+		const firstSlot = getAcademicSlots()[0];
+
+		return timeToMinutes(firstSlot.start);
+	}
+
+	function getDefaultEndMinute(): number {
+		const slots = getAcademicSlots();
+		const lastSlot = slots[slots.length - 1];
+
+		return timeToMinutes(lastSlot.end);
+	}
 
 	function timeToMinutes(value: string): number {
 		const [hours, minutes] = value.split(':').map(Number);
@@ -211,26 +264,26 @@
 
 	function getStartMinute(): number {
 		if (schedules.length === 0) {
-			return DEFAULT_START;
+			return getDefaultStartMinute();
 		}
 
 		const minimumScheduleTime = Math.min(
 			...schedules.map((schedule) => timeToMinutes(schedule.startTime))
 		);
 
-		return Math.min(DEFAULT_START, Math.floor(minimumScheduleTime / 15) * 15);
+		return Math.min(getDefaultStartMinute(), Math.floor(minimumScheduleTime / 15) * 15);
 	}
 
 	function getEndMinute(): number {
 		if (schedules.length === 0) {
-			return DEFAULT_END;
+			return getDefaultEndMinute();
 		}
 
 		const maximumScheduleTime = Math.max(
 			...schedules.map((schedule) => timeToMinutes(schedule.endTime))
 		);
 
-		return Math.max(DEFAULT_END, Math.ceil(maximumScheduleTime / 15) * 15);
+		return Math.max(getDefaultEndMinute(), Math.ceil(maximumScheduleTime / 15) * 15);
 	}
 
 	function getGridHeight(): number {
@@ -263,7 +316,7 @@
 	function getTimeMarkers(): number[] {
 		const markers = new Set<number>();
 
-		for (const slot of academicSlots) {
+		for (const slot of getAcademicSlots()) {
 			markers.add(timeToMinutes(slot.start));
 			markers.add(timeToMinutes(slot.end));
 		}
@@ -276,11 +329,11 @@
 			const start = timeToMinutes(schedule.startTime);
 			const end = timeToMinutes(schedule.endTime);
 
-			if (start < DEFAULT_START || start > DEFAULT_END) {
+			if (start < getDefaultStartMinute() || start > getDefaultEndMinute()) {
 				markers.add(start);
 			}
 
-			if (end < DEFAULT_START || end > DEFAULT_END) {
+			if (end < getDefaultStartMinute() || end > getDefaultEndMinute()) {
 				markers.add(end);
 			}
 		}
@@ -559,7 +612,7 @@
 						class="relative border-r border-slate-700 bg-slate-900/70"
 						style={`height: ${getGridHeight()}px;`}
 					>
-						{#each academicSlots as slot}
+						{#each getAcademicSlots() as slot}
 							<div
 								class="absolute right-0 left-0 flex items-center justify-center border-t border-slate-700 px-2 text-center"
 								style={`
@@ -598,7 +651,7 @@
 
 							<!-- Casillas vacías clickeables -->
 							{#if editable}
-								{#each academicSlots as slot}
+								{#each getAcademicSlots() as slot}
 									<button
 										type="button"
 										onclick={() => void openEmptySlot(day.value, slot)}

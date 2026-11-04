@@ -30,6 +30,49 @@ export interface ScheduleConflict {
 	existingSchedule?: any;
 }
 
+interface SharedScheduleCandidate {
+	careerId: string;
+	subjectId: string;
+	teacherId: string | null;
+	locationId: string | null;
+	dayOfWeek: WeekDay;
+	startTime: string;
+	endTime: string;
+}
+
+/**
+ * Determina si dos registros representan la misma clase
+ * compartida por carreras diferentes.
+ *
+ * La excepción es deliberadamente estricta:
+ * - carreras distintas;
+ * - misma materia;
+ * - mismo docente;
+ * - misma localidad;
+ * - mismo día;
+ * - mismo horario exacto.
+ *
+ * No se permiten solapamientos parciales ni materias distintas.
+ */
+function isSharedCrossCareerSchedule(
+	existing: SharedScheduleCandidate,
+	input: ScheduleInput
+): boolean {
+	if (!existing.teacherId || !input.teacherId) {
+		return false;
+	}
+
+	return (
+		existing.careerId !== input.careerId &&
+		existing.subjectId === input.subjectId &&
+		existing.teacherId === input.teacherId &&
+		(existing.locationId ?? null) === (input.locationId ?? null) &&
+		existing.dayOfWeek === input.dayOfWeek &&
+		existing.startTime === input.startTime &&
+		existing.endTime === input.endTime
+	);
+}
+
 /**
  * Get schedules by career and year level
  */
@@ -242,9 +285,13 @@ export async function validateScheduleConflicts(input: ScheduleInput): Promise<S
 		});
 	}
 
-	// Check for teacher overlap if teacher is assigned
+	// Check for teacher overlap if teacher is assigned.
+	//
+	// Una misma clase puede ser compartida por carreras distintas
+	// cuando materia, docente, localidad, día y horario coinciden
+	// exactamente.
 	if (input.teacherId) {
-		const teacherOverlap = await prisma.classSchedule.findFirst({
+		const teacherOverlaps = await prisma.classSchedule.findMany({
 			where: {
 				teacherId: input.teacherId,
 				dayOfWeek: input.dayOfWeek,
@@ -260,8 +307,22 @@ export async function validateScheduleConflicts(input: ScheduleInput): Promise<S
 						AND: [{ startTime: { gte: input.startTime } }, { endTime: { lte: input.endTime } }]
 					}
 				]
+			},
+			select: {
+				id: true,
+				careerId: true,
+				subjectId: true,
+				teacherId: true,
+				locationId: true,
+				dayOfWeek: true,
+				startTime: true,
+				endTime: true
 			}
 		});
+
+		const teacherOverlap = teacherOverlaps.find(
+			(schedule) => !isSharedCrossCareerSchedule(schedule, input)
+		);
 
 		if (teacherOverlap) {
 			conflicts.push({
@@ -272,9 +333,13 @@ export async function validateScheduleConflicts(input: ScheduleInput): Promise<S
 		}
 	}
 
-	// Check for classroom overlap if classroom and location are assigned
+	// Check for classroom overlap if classroom and location are assigned.
+	//
+	// Una clase compartida entre carreras puede utilizar la misma aula,
+	// porque representa una única clase física registrada académicamente
+	// para más de una carrera.
 	if (input.classroom && input.locationId) {
-		const classroomOverlap = await prisma.classSchedule.findFirst({
+		const classroomOverlaps = await prisma.classSchedule.findMany({
 			where: {
 				locationId: input.locationId,
 				classroom: input.classroom,
@@ -291,8 +356,22 @@ export async function validateScheduleConflicts(input: ScheduleInput): Promise<S
 						AND: [{ startTime: { gte: input.startTime } }, { endTime: { lte: input.endTime } }]
 					}
 				]
+			},
+			select: {
+				id: true,
+				careerId: true,
+				subjectId: true,
+				teacherId: true,
+				locationId: true,
+				dayOfWeek: true,
+				startTime: true,
+				endTime: true
 			}
 		});
+
+		const classroomOverlap = classroomOverlaps.find(
+			(schedule) => !isSharedCrossCareerSchedule(schedule, input)
+		);
 
 		if (classroomOverlap) {
 			conflicts.push({
@@ -644,7 +723,7 @@ export async function updateSchedule(id: string, input: Partial<ScheduleInput>) 
 		if (existing) {
 			const checkInput: ScheduleInput = {
 				careerId: input.careerId || existing.careerId,
-				subjectId: existing.subjectId,
+				subjectId: input.subjectId || existing.subjectId,
 				studyPlanId: existing.studyPlanId,
 				commissionId: existing.commissionId || undefined,
 				teacherId:

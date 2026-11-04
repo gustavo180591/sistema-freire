@@ -16,11 +16,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(303, '/alumno');
 	}
 
-	// Redirigir docentes a su perfil específico (cuando exista)
-	if (user.roles.includes('DOCENTE')) {
-		throw redirect(303, '/docente');
-	}
-
 	// Cargar información completa del usuario
 	const userWithRoles = await prisma.user.findUnique({
 		where: { id: user.id },
@@ -44,13 +39,18 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw error(404, 'Usuario no encontrado');
 	}
 
-	// Obtener métricas del sistema
-	const [totalUsers, totalStudents, totalCareers, totalSubjects] = await Promise.all([
-		prisma.user.count(),
-		prisma.student.count(),
-		prisma.career.count({ where: { active: true } }),
-		prisma.subject.count({ where: { active: true } })
-	]);
+	const canViewAdministrativeShortcuts = !user.roles.some((role) =>
+		['DOCENTE', 'PRECEPTOR'].includes(role)
+	);
+
+	const metrics = canViewAdministrativeShortcuts
+		? await Promise.all([
+				prisma.user.count(),
+				prisma.student.count(),
+				prisma.career.count({ where: { active: true } }),
+				prisma.subject.count({ where: { active: true } })
+			])
+		: null;
 
 	return {
 		user: {
@@ -67,12 +67,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 			totpVerified: userWithRoles.totpVerified,
 			locationPermissions: userWithRoles.locationPermissions.map((lp) => lp.location)
 		},
-		metrics: {
-			totalUsers,
-			totalStudents,
-			totalCareers,
-			totalSubjects
-		}
+		canViewAdministrativeShortcuts,
+		metrics: metrics
+			? {
+					totalUsers: metrics[0],
+					totalStudents: metrics[1],
+					totalCareers: metrics[2],
+					totalSubjects: metrics[3]
+				}
+			: null
 	};
 };
 

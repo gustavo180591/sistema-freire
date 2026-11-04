@@ -93,16 +93,11 @@
 	const profileUrl = $derived(() => {
 		if (!user) return '/login';
 
-		switch (user.activeRole) {
-			case 'ALUMNO':
-				return '/alumno/perfil';
-			case 'DOCENTE':
-				return '/docente';
-			case 'PRECEPTOR':
-				return '/preceptor';
-			default:
-				return '/perfil';
+		if (user.activeRole === 'ALUMNO') {
+			return '/alumno/perfil';
 		}
+
+		return '/perfil';
 	});
 
 	// Obtener nombre de la sección actual

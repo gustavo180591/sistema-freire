@@ -19,6 +19,7 @@ const routePermissions: Record<string, RoleCode[]> = {
 	'/finanzas': [...FULL_ACCESS_ROLES, 'FINANZAS'],
 	'/recibos': [...FULL_ACCESS_ROLES, 'DOCENTE', 'FINANZAS', 'LIQUIDADOR'],
 	'/reportes': [...FULL_ACCESS_ROLES, 'FINANZAS'],
+	'/perfil': [...FULL_ACCESS_ROLES, 'FINANZAS', 'LIQUIDADOR', 'DOCENTE', 'PRECEPTOR'],
 	'/auditoria': ['SUPERADMIN', 'DIRECTOR'],
 	'/permisos': ['SUPERADMIN'],
 	'/impersonar': ['SUPERADMIN'],

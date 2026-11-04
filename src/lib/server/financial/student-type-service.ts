@@ -43,22 +43,31 @@ export class StudentTypeService {
 					? 'RECURSANTE'
 					: 'NORMAL';
 
-			// Si no hay cambio, no hacer nada
-			if (currentType === input.newType) {
-				return;
+			const typeChanged = currentType !== input.newType;
+
+			/*
+			 * Sólo modificar los flags y registrar seguimiento cuando
+			 * realmente existe un cambio de tipo.
+			 */
+			if (typeChanged) {
+				const updateData: Prisma.StudentUpdateInput = {
+					isBecado: input.newType === 'BECADO',
+					isRecursante: input.newType === 'RECURSANTE'
+				};
+
+				await tx.student.update({
+					where: { id: input.studentId },
+					data: updateData
+				});
 			}
 
-			// Actualizar flags del alumno
-			const updateData: Prisma.StudentUpdateInput = {
-				isBecado: input.newType === 'BECADO',
-				isRecursante: input.newType === 'RECURSANTE'
-			};
-
-			await tx.student.update({
-				where: { id: input.studentId },
-				data: updateData
-			});
-
+			/*
+			 * Las cuotas pendientes deben quedar sincronizadas incluso
+			 * cuando el usuario vuelve a confirmar el mismo tipo.
+			 *
+			 * Esto permite reparar cargos históricos o desincronizados
+			 * sin tocar cuotas ya pagadas.
+			 */
 			await recalculatePendingStudentChargesWithClient(tx, {
 				studentId: input.studentId,
 				userId: input.userId,
@@ -67,21 +76,22 @@ export class StudentTypeService {
 				reason: input.reason
 			});
 
-			// Registrar seguimiento de auditoría
-			await tx.studentFollowUp.create({
-				data: {
-					studentId: input.studentId,
-					type: 'WARNING',
-					title: 'Cambio de tipo de alumno',
-					description: `Cambio manual de tipo de alumno. Tipo anterior: ${currentType}, Tipo nuevo: ${input.newType}. Motivo: ${input.reason}. Responsable: ${input.userName}`,
-					date: new Date(),
-					createdBy: input.userId,
-					isAlert: true,
-					isResolved: true,
-					resolvedAt: new Date(),
-					resolvedBy: input.userId
-				}
-			});
+			if (typeChanged) {
+				await tx.studentFollowUp.create({
+					data: {
+						studentId: input.studentId,
+						type: 'WARNING',
+						title: 'Cambio de tipo de alumno',
+						description: `Cambio manual de tipo de alumno. Tipo anterior: ${currentType}, Tipo nuevo: ${input.newType}. Motivo: ${input.reason}. Responsable: ${input.userName}`,
+						date: new Date(),
+						createdBy: input.userId,
+						isAlert: true,
+						isResolved: true,
+						resolvedAt: new Date(),
+						resolvedBy: input.userId
+					}
+				});
+			}
 		});
 	}
 

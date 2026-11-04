@@ -674,7 +674,7 @@
 								</span>
 							{:else if charge.benefitType === 'RECURSANT'}
 								<span
-									class="inline-flex items-center rounded-full bg-amber-950/50 px-2 py-1 text-xs font-medium text-amber-400"
+									class="inline-flex items-center rounded-full border border-orange-700 bg-white px-2 py-1 text-xs font-medium text-orange-800"
 								>
 									Recursante
 								</span>

@@ -111,11 +111,25 @@
 	</section>
 
 	<section class="grid gap-4 md:grid-cols-2">
-		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<p class="text-sm text-slate-400">Recibos emitidos</p>
-			<h2 class="mt-3 text-4xl font-bold">{data?.metrics?.receiptsIssued ?? 0}</h2>
-			<p class="mt-2 text-sm text-slate-500">Comprobantes generados</p>
-		</div>
+		<a
+			href="/finanzas/recibos"
+			class="group rounded-3xl border border-slate-800 bg-slate-900/70 p-6 transition hover:border-emerald-700 hover:bg-slate-800/70 hover:shadow-lg"
+		>
+			<div class="flex items-start justify-between gap-4">
+				<div>
+					<p class="text-sm text-slate-400">Recibos emitidos</p>
+					<h2 class="mt-3 text-4xl font-bold">{data?.metrics?.receiptsIssued ?? 0}</h2>
+					<p class="mt-2 text-sm text-slate-500">Comprobantes generados</p>
+				</div>
+
+				<span
+					class="text-xl text-slate-600 transition group-hover:translate-x-1 group-hover:text-emerald-400"
+					aria-hidden="true"
+				>
+					→
+				</span>
+			</div>
+		</a>
 
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<p class="text-sm text-slate-400">Recibos cancelados</p>

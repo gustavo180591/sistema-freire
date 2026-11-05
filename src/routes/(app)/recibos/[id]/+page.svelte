@@ -55,6 +55,15 @@
 		return dateFormat.format(date);
 	}
 
+	function goBack() {
+		if (window.history.length > 1) {
+			window.history.back();
+			return;
+		}
+
+		window.location.href = '/finanzas/recibos';
+	}
+
 	function printReceipt() {
 		window.print();
 	}
@@ -73,6 +82,14 @@
 
 <div class="receipt-screen-wrapper mx-auto max-w-5xl space-y-5 p-4">
 	<div class="no-print flex flex-wrap items-center justify-end gap-3">
+		<button
+			type="button"
+			onclick={goBack}
+			class="mr-auto cursor-pointer rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white"
+		>
+			← Volver
+		</button>
+
 		<a
 			href="/configuracion/recibo"
 			class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-indigo-500"
@@ -99,97 +116,46 @@
 	<div class="receipt-print-root">
 		<div class="receipt-paper">
 			<!-- ===================================================
-			     ENCABEZADO
+			     ENCABEZADO INSTITUCIONAL
 			     =================================================== -->
 			<section class="receipt-header-section">
-				<!-- LETRA: PARTE SUPERIOR CENTRAL -->
-				<div class="receipt-letter-box">
-					{institutional.receiptLetter || 'C'}
+				<div class="receipt-letterhead-section">
+					<img
+						src="/membrete-freire.jpeg"
+						alt="Membrete institucional del Instituto Paulo Freire"
+						class="receipt-letterhead"
+					/>
 				</div>
 
-				<!-- INSTITUCIÓN -->
-				<div class="receipt-brand-section">
-					<div class="grid w-full grid-cols-[29mm_1fr] items-center gap-3">
-						<div class="flex items-center justify-center">
-							<img
-								src="/uploads/logo-recibo-freire.png"
-								alt="Logo Instituto Paulo Freire"
-								class="receipt-logo"
-							/>
+				<div class="receipt-document-meta">
+					<div class="receipt-document-identification">
+						<div class="flex items-center gap-3">
+							<p class="text-[20px] font-bold">RECIBO</p>
+
+							<span class="receipt-letter-inline">
+								{institutional.receiptLetter || 'C'}
+							</span>
 						</div>
-
-						<div class="text-center leading-tight">
-							<p class="text-[12px] font-semibold">
-								{institutional.name}
-							</p>
-
-							<p class="mt-1 text-[17px] font-bold">
-								"{institutional.code}" - Cod. {institutional.codeNumber}
-							</p>
-
-							{#if institutional.owner}
-								<p class="mt-2 text-[12px] font-semibold">
-									Entidad Propietaria: {institutional.owner}
-								</p>
-							{/if}
-
-							{#if receipt.locationName || receipt.location?.name}
-								<p class="mt-1 text-[12px] font-bold uppercase">
-									{receipt.locationName || receipt.location?.name}
-								</p>
-							{/if}
-
-							{#if institutional.email}
-								<p class="mt-2 text-[10px]">
-									Correo Electrónico: {institutional.email}
-								</p>
-							{/if}
-
-							{#if institutional.address}
-								<p class="mt-1 text-[10px]">
-									{institutional.address}
-								</p>
-							{/if}
-
-							{#if institutional.phone}
-								<p class="mt-1 text-[9px]">
-									Tel.: {institutional.phone}
-								</p>
-							{/if}
-
-							{#if institutional.website}
-								<p class="mt-1 text-[8px]">
-									{institutional.website}
-								</p>
-							{/if}
-
-							{#if institutional.receiptHeader}
-								<p class="mt-1 text-[8px] whitespace-pre-line">
-									{institutional.receiptHeader}
-								</p>
-							{/if}
-
-							<p class="mt-3 text-[15px] font-bold uppercase">
-								{institutional.taxStatus || 'IVA EXENTO'}
-							</p>
-						</div>
-					</div>
-				</div>
-
-				<!-- DATOS COMPROBANTE -->
-				<div class="receipt-fiscal-section">
-					<div class="pl-3">
-						<p class="text-[20px] font-bold">RECIBO</p>
 
 						<p class="mt-2 font-mono text-[15px] font-bold whitespace-nowrap">
 							Nº {institutional.pointOfSale || '0001'} -
 							{padReceiptNumber(receipt.receiptNumber)}
 						</p>
+
+						{#if receipt.locationName || receipt.location?.name}
+							<p class="mt-2 text-[10px] font-bold uppercase">
+								Sede: {receipt.locationName || receipt.location?.name}
+							</p>
+						{/if}
+
+						<p class="mt-1 text-[10px] font-semibold uppercase">
+							{institutional.taxStatus || 'IVA EXENTO'}
+						</p>
 					</div>
 
-					<div class="mt-6 space-y-[3mm] text-[10px]">
+					<div class="receipt-fiscal-data">
 						<div class="grid grid-cols-[32mm_1fr] items-end">
-							<span class="text-[14px] font-bold"> FECHA: </span>
+							<span class="text-[12px] font-bold">FECHA:</span>
 
 							<span class="border-b border-black pb-1 text-center">
 								{dateFormat.format(new Date(receipt.issuedAt))}
@@ -208,9 +174,7 @@
 
 						<div class="grid grid-cols-[32mm_1fr] gap-2">
 							<span>Inicio de Actividades:</span>
-							<span>
-								{formatActivityDate(institutional.activityStart)}
-							</span>
+							<span>{formatActivityDate(institutional.activityStart)}</span>
 						</div>
 					</div>
 				</div>
@@ -469,51 +433,58 @@
 	}
 
 	.receipt-header-section {
-		position: relative;
-		display: grid;
-		grid-template-columns: 50% 50%;
-		flex: 0 0 62mm;
+		flex: 0 0 auto;
 		border-bottom: 0.35mm solid #000;
+		background: #fff;
 	}
 
-	.receipt-brand-section {
+	.receipt-letterhead-section {
 		display: flex;
-		align-items: center;
-		padding: 4mm 12mm 4mm 5mm;
-	}
-
-	.receipt-fiscal-section {
-		border-left: 0.35mm solid #000;
-		padding: 4mm 5mm 3mm 13mm;
-	}
-
-	/*
-	 * La letra queda montada exactamente sobre la división
-	 * de las dos partes superiores.
-	 */
-	.receipt-letter-box {
-		position: absolute;
-		z-index: 5;
-		top: 4mm;
-		left: 50%;
-		transform: translateX(-50%);
-		display: flex;
-		width: 14mm;
-		height: 17mm;
 		align-items: center;
 		justify-content: center;
-		border: 0.45mm solid #000;
+		border-bottom: 0.3mm solid #000;
+		padding: 2.5mm 4mm 2mm;
+	}
+
+	.receipt-letterhead {
+		display: block;
+		width: 100%;
+		height: auto;
+		max-height: 47mm;
+		object-fit: contain;
+	}
+
+	.receipt-document-meta {
+		display: grid;
+		min-height: 29mm;
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.receipt-document-identification {
+		padding: 4mm 6mm;
+	}
+
+	.receipt-letter-inline {
+		display: inline-flex;
+		width: 10mm;
+		height: 10mm;
+		align-items: center;
+		justify-content: center;
+		border: 0.4mm solid #000;
 		background: #fff;
-		font-size: 10mm;
+		font-size: 6mm;
 		font-weight: 700;
 		line-height: 1;
 	}
 
-	.receipt-logo {
-		display: block;
-		width: 27mm;
-		height: 35mm;
-		object-fit: contain;
+	.receipt-fiscal-data {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		gap: 2.4mm;
+		border-left: 0.35mm solid #000;
+		padding: 3mm 5mm;
+		font-size: 9px;
 	}
 
 	.student-info-grid {

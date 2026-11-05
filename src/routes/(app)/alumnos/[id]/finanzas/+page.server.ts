@@ -30,6 +30,7 @@ import {
 import { checkPermission, requirePermission } from '$lib/server/auth/permissions-granular';
 import { generateMissingMonthlyCharges } from '$lib/server/financial/monthly-charge-generation-service';
 import { recalculatePendingStudentCharges } from '$lib/server/financial/pending-charge-recalculation-service';
+import { evaluateDebtFreeEligibility } from '$lib/server/financial/debt-free-eligibility';
 
 /**
  * Genera cuotas mensuales faltantes desde el inicio del ciclo lectivo hasta el mes actual
@@ -265,6 +266,15 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		student.id
 	);
 
+	const monthlyChargeCount = student.studentCharges.filter(
+		(charge) => charge.concept.code === 'CUOTA_MENSUAL'
+	).length;
+
+	const debtFreeEligibility = evaluateDebtFreeEligibility({
+		totalDebt: financialSummary.totalDebt,
+		monthlyChargeCount
+	});
+
 	// Obtener estado de bloqueo financiero
 	const blockingStatus = await shouldBlockStudent(student.id);
 
@@ -368,7 +378,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		},
 		scholarshipLifecycle,
 		canManageScholarship,
-		canSynchronizeFinancialState
+		canSynchronizeFinancialState,
+		debtFreeEligibility
 	};
 };
 

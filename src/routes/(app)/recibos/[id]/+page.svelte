@@ -55,6 +55,15 @@
 		return dateFormat.format(date);
 	}
 
+	function goBack() {
+		if (window.history.length > 1) {
+			window.history.back();
+			return;
+		}
+
+		window.location.href = '/finanzas/recibos';
+	}
+
 	function printReceipt() {
 		window.print();
 	}
@@ -73,6 +82,14 @@
 
 <div class="receipt-screen-wrapper mx-auto max-w-5xl space-y-5 p-4">
 	<div class="no-print flex flex-wrap items-center justify-end gap-3">
+		<button
+			type="button"
+			onclick={goBack}
+			class="mr-auto cursor-pointer rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white"
+		>
+			← Volver
+		</button>
+
 		<a
 			href="/configuracion/recibo"
 			class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-indigo-500"

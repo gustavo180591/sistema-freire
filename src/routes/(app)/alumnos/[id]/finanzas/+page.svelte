@@ -519,6 +519,24 @@
 			Generar certificado
 		</a>
 
+		{#if data.debtFreeEligibility.eligible}
+			<a
+				href={`/alumnos/${student.id}/finanzas/libre-deuda`}
+				class="rounded-2xl border border-emerald-700 bg-white px-5 py-3 text-sm font-semibold text-emerald-800 transition hover:border-emerald-800 hover:bg-emerald-50 hover:text-emerald-900 hover:shadow-md"
+			>
+				Generar libre de deuda
+			</a>
+		{:else}
+			<button
+				type="button"
+				disabled
+				title={data.debtFreeEligibility.reason ?? 'Libre de deuda no disponible'}
+				class="cursor-not-allowed rounded-2xl border border-slate-700 bg-slate-900 px-5 py-3 text-sm font-semibold text-slate-500 opacity-70"
+			>
+				Generar libre de deuda
+			</button>
+		{/if}
+
 		<button
 			onclick={() => {
 				selectedType = getCurrentType();
@@ -751,7 +769,23 @@
 								>
 									Editar
 								</button>
-								{#if charge.status !== 'PAID'}
+								{#if charge.status === 'PAID'}
+									{#if charge.receiptId}
+										<a
+											href={`/recibos/${charge.receiptId}`}
+											class="rounded-lg border border-emerald-700 bg-white px-2.5 py-1.5 text-xs font-semibold text-emerald-800 transition hover:border-emerald-800 hover:bg-emerald-50 hover:text-emerald-900"
+										>
+											Ver recibo
+										</a>
+									{:else}
+										<span
+											class="rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs font-medium text-slate-500"
+											title="Este pago no posee un recibo institucional asociado"
+										>
+											Sin recibo
+										</span>
+									{/if}
+								{:else}
 									<a
 										href={`/finanzas/pagos/nuevo?studentId=${student.id}`}
 										class="rounded-lg border border-emerald-700 px-2.5 py-1.5 text-xs font-semibold text-emerald-300 transition hover:border-emerald-500 hover:bg-emerald-950/30"

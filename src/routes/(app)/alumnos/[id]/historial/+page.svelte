@@ -21,7 +21,7 @@
 
 <svelte:head>
 	<title>Historial académico | {student.fullName}</title>
-	<meta name="description" content="Legajo académico y financiero del alumno" />
+	<meta name="description" content="Legajo digital académico del alumno" />
 </svelte:head>
 
 <div class="space-y-8">
@@ -64,7 +64,7 @@
 			</div>
 			<div class="flex flex-wrap gap-2">
 				<a
-					href="/alumnos/{student.id}/documentos"
+					href={resolve(`/alumnos/${student.id}/documentos`)}
 					class="inline-flex items-center gap-2 rounded-xl border-2 border-violet-500 bg-white px-4 py-2 text-sm font-medium text-violet-400 transition hover:bg-violet-50"
 				>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -78,7 +78,7 @@
 					Documentos
 				</a>
 				<a
-					href="/alumnos/{student.id}/seguimiento"
+					href={resolve(`/alumnos/${student.id}/seguimiento`)}
 					class="inline-flex items-center gap-2 rounded-xl border-2 border-pink-700 bg-white px-4 py-2 text-sm font-medium text-pink-700 transition hover:bg-pink-50"
 				>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,7 +92,7 @@
 					Seguimiento
 				</a>
 				<a
-					href="/alumnos"
+					href={resolve('/alumnos')}
 					class="inline-flex items-center gap-2 rounded-xl border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
 				>
 					← Volver a alumnos
@@ -102,7 +102,7 @@
 	</section>
 
 	<!-- KPIs -->
-	<section class="grid gap-4 md:grid-cols-4 lg:grid-cols-6">
+	<section class={`grid gap-4 md:grid-cols-4 ${financial ? 'lg:grid-cols-6' : 'lg:grid-cols-5'}`}>
 		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
 			<p class="text-sm text-slate-400">Progreso</p>
 			<h2 class="mt-3 text-4xl font-bold">{academic.progress}%</h2>
@@ -128,46 +128,61 @@
 			<h2 class="mt-3 text-4xl font-bold">{academic.averageAttendance}%</h2>
 		</div>
 
-		<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-			<p class="text-sm text-slate-400">{financial.financialLabel}</p>
-			<h2 class="mt-3 text-4xl font-bold">
-				{#if financial.hasCredit}
-					+
-				{/if}
-				{currency.format(financial.financialAmount)}
-			</h2>
-		</div>
+		{#if financial}
+			<div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+				<p class="text-sm text-slate-400">{financial.financialLabel}</p>
+				<h2 class="mt-3 text-4xl font-bold">
+					{#if financial.hasCredit}
+						+
+					{/if}
+					{currency.format(financial.financialAmount)}
+				</h2>
+			</div>
+		{/if}
 	</section>
 
 	<!-- CTA -->
 	<section class="flex flex-wrap gap-3">
-		<a
-			href={resolve(`/alumnos/${student.id}/trayectoria`)}
-			class="rounded-2xl border-2 border-emerald-700 bg-white px-5 py-3 text-sm font-semibold text-emerald-700 transition hover:scale-[1.02]"
-		>
-			Trayectoria Académica
-		</a>
+		{#if data.access.isFinanceRole}
+			<a
+				href={resolve(`/alumnos/${student.id}/finanzas`)}
+				class="rounded-2xl border-2 border-green-900 px-5 py-3 text-sm font-semibold transition hover:border-green-700"
+			>
+				Ver finanzas
+			</a>
+		{:else}
+			<a
+				href={resolve(`/alumnos/${student.id}/trayectoria`)}
+				class="rounded-2xl border-2 border-emerald-700 bg-white px-5 py-3 text-sm font-semibold text-emerald-700 transition hover:scale-[1.02]"
+			>
+				Trayectoria Académica
+			</a>
 
-		<a
-			href={`/alumnos/${student.id}/historial-anual`}
-			class="rounded-2xl border-2 border-violet-700 bg-white px-5 py-3 text-sm font-semibold text-violet-700 transition hover:scale-[1.02]"
-		>
-			Historial por Ciclo Lectivo
-		</a>
+			<a
+				href={resolve(`/alumnos/${student.id}/historial-anual`)}
+				class="rounded-2xl border-2 border-violet-700 bg-white px-5 py-3 text-sm font-semibold text-violet-700 transition hover:scale-[1.02]"
+			>
+				Historial por Ciclo Lectivo
+			</a>
 
-		<a
-			href={`/alumnos/${student.id}/certificados`}
-			class="rounded-2xl border-2 border-blue-900 bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.02]"
-		>
-			Generar certificado
-		</a>
+			{#if data.access.canGenerateCertificate}
+				<a
+					href={resolve(`/alumnos/${student.id}/certificados`)}
+					class="rounded-2xl border-2 border-blue-900 bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.02]"
+				>
+					Generar certificado
+				</a>
+			{/if}
 
-		<a
-			href={`/alumnos/${student.id}/finanzas`}
-			class="rounded-2xl border-2 border-green-900 px-5 py-3 text-sm font-semibold transition hover:border-green-700"
-		>
-			Ver finanzas
-		</a>
+			{#if data.access.canViewFinancial}
+				<a
+					href={resolve(`/alumnos/${student.id}/finanzas`)}
+					class="rounded-2xl border-2 border-green-900 px-5 py-3 text-sm font-semibold transition hover:border-green-700"
+				>
+					Ver finanzas
+				</a>
+			{/if}
+		{/if}
 	</section>
 
 	<!-- Materias disponibles para cursar -->
@@ -193,7 +208,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each academic.availableSubjects as subject}
+					{#each academic.availableSubjects as subject (subject.id)}
 						<tr class="border-b border-slate-800 last:border-none">
 							<td class="px-6 py-4 font-mono text-sm">{subject.code}</td>
 							<td class="px-6 py-4 font-medium">{subject.name}</td>
@@ -237,7 +252,7 @@
 							</td>
 							<td class="px-6 py-4">
 								{#if subject.state === 'AVAILABLE'}
-									{#if financial.totalDebt > 0}
+									{#if academic.hasFinancialBlock}
 										<button
 											disabled
 											class="cursor-not-allowed rounded-xl border border-slate-700 bg-slate-800 px-3 py-1 text-xs text-slate-500"
@@ -294,7 +309,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each academic.assignedSubjects as subject}
+					{#each academic.assignedSubjects as subject (subject.id)}
 						<tr class="border-b border-slate-800 last:border-none">
 							<td class="px-6 py-4 font-medium">{subject.subject}</td>
 							<td class="px-6 py-4">{subject.yearLevel}°</td>

@@ -6,9 +6,20 @@ import bcrypt from 'bcryptjs';
 import { auditLog } from '$lib/server/audit';
 import { AuditAction } from '@prisma/client';
 import { formatDni } from '$lib/utils/dni';
+import {
+	canGenerateStudentCertificate,
+	canViewStudentFinancialSummary,
+	isFinanceStudentContext
+} from '$lib/server/auth/student-history-access';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	await requireStudentAccess(locals.user, params.id);
+
+	const activeRole = locals.user?.activeRole ?? null;
+
+	const canViewFinancial = canViewStudentFinancialSummary(activeRole);
+	const canGenerateCertificate = canGenerateStudentCertificate(activeRole);
+	const isFinanceRole = isFinanceStudentContext(activeRole);
 
 	const student = await prisma.student.findUnique({
 		where: { id: params.id },
@@ -19,8 +30,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				include: {
 					subject: true
 				}
-			},
-			studentCharges: true
+			}
 		}
 	});
 
@@ -59,7 +69,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	// Agrupar asistencias por comisión (más preciso que por materia sola)
 	const attendanceByCommission = new Map<string, { present: number; total: number }>();
 	for (const entry of attendanceEntries) {
-		const key = entry.attendance.id; // Usar attendanceId como clave única por registro
 		// Para agrupar por comisión, necesitamos saber a qué comisión pertenece el registro
 		// Como AttendanceRecord está vinculado a Subject, y SubjectCommission está vinculado a Subject,
 		// agrupamos por subjectId + attendanceId para evitar mezclar comisiones diferentes
@@ -190,7 +199,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			const isFirstYear = student.currentYear === 1;
 
 			// Verificar correlatividades (solo para 2º año en adelante)
-			let blockedByCorrelatives: string[] = [];
+			const blockedByCorrelatives: string[] = [];
 			let allCorrelativesMet = true;
 
 			if (!isFirstYear && subject.correlatives.length > 0) {
@@ -254,25 +263,36 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const progress =
 		totalCareerSubjects > 0 ? Math.round((approvedCount / totalCareerSubjects) * 100) : 0;
 
-	// Calcular deuda financiera real (usar finalAmount según tipo de alumno)
-	const totalCharges = student.studentCharges.reduce(
-		(sum, charge) => sum + Number(charge.finalAmount),
-		0
-	);
-	const totalPayments = await prisma.payment.aggregate({
-		where: {
-			studentId: student.id
-		},
-		_sum: {
-			amount: true
-		}
-	});
-	const totalDebt = totalCharges - Number(totalPayments._sum.amount || 0);
+	/*
+	 * La deuda se calcula en servidor porque también interviene en reglas
+	 * académicas, pero el importe solamente se expone a roles financieros.
+	 */
+	const [totalCharges, totalPayments] = await Promise.all([
+		prisma.studentCharge.aggregate({
+			where: {
+				studentId: student.id
+			},
+			_sum: {
+				finalAmount: true
+			}
+		}),
+		prisma.payment.aggregate({
+			where: {
+				studentId: student.id
+			},
+			_sum: {
+				amount: true
+			}
+		})
+	]);
 
-	// Determinar si es saldo a favor o deuda pendiente
+	const totalDebt =
+		Number(totalCharges._sum.finalAmount || 0) - Number(totalPayments._sum.amount || 0);
+
 	const hasCredit = totalDebt < 0;
 	const financialLabel = hasCredit ? 'Saldo a favor' : 'Deuda pendiente';
 	const financialAmount = Math.abs(totalDebt);
+	const hasFinancialBlock = totalDebt > 0;
 
 	// Calcular métricas adicionales
 	const currentSubjects = assignedSubjects.filter((s) => s.status === 'ACTIVE').length;
@@ -309,19 +329,28 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			averageAttendance,
 			lowAttendanceSubjects,
 			assignedSubjects,
-			availableSubjects
+			availableSubjects,
+			hasFinancialBlock
 		},
-		financial: {
-			totalDebt,
-			hasCredit,
-			financialLabel,
-			financialAmount
+		financial: canViewFinancial
+			? {
+					totalDebt,
+					hasCredit,
+					financialLabel,
+					financialAmount
+				}
+			: null,
+		access: {
+			activeRole,
+			isFinanceRole,
+			canViewFinancial,
+			canGenerateCertificate
 		}
 	};
 };
 
 export const actions: Actions = {
-	resetPassword: async ({ params, locals, request }) => {
+	resetPassword: async ({ params, locals }) => {
 		await requireStudentAccess(locals.user, params.id);
 
 		if (!locals.user) {

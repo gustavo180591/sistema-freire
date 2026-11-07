@@ -1,6 +1,3 @@
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
-
 import PDFDocument from 'pdfkit';
 import { AuditAction } from '@prisma/client';
 import { error } from '@sveltejs/kit';
@@ -13,6 +10,7 @@ import { requireStudentFinancialReadAccess } from '$lib/server/auth/financial-ac
 import { formatDni } from '$lib/utils/dni';
 import { studentFinancialSummaryService } from '$lib/server/financial/student-financial-summary-service';
 import { evaluateDebtFreeEligibility } from '$lib/server/financial/debt-free-eligibility';
+import { addInstitutionalLetterhead } from '$lib/server/pdf/institutional-letterhead';
 import { INSTITUTIONAL_DATA } from '$lib/server/financial/receipt-service';
 
 const INSTITUTION_TIME_ZONE = 'America/Argentina/Cordoba';
@@ -98,15 +96,6 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
 	const institutionCode = locationConfig?.institutionCode ?? INSTITUTIONAL_DATA.code;
 
-	const institutionCodeNumber =
-		locationConfig?.institutionCodeNumber ?? INSTITUTIONAL_DATA.codeNumber;
-
-	const institutionAddress = locationConfig?.institutionAddress ?? INSTITUTIONAL_DATA.address;
-
-	const institutionEmail = locationConfig?.institutionEmail ?? INSTITUTIONAL_DATA.email;
-
-	const institutionPhone = locationConfig?.institutionPhone ?? INSTITUTIONAL_DATA.phone;
-
 	const issuedAt = new Date();
 
 	const doc = new PDFDocument({
@@ -129,31 +118,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
 	const pageWidth = doc.page.width;
 
-	/*
-	 * Membrete institucional oficial del Instituto Paulo Freire.
-	 * Forma parte del proyecto para que esté disponible también
-	 * en producción.
-	 */
-	const letterheadPath = resolve(process.cwd(), 'static', 'membrete-freire.jpeg');
-
-	if (!existsSync(letterheadPath)) {
-		throw error(500, 'No se encontró el membrete institucional para generar el libre de deuda');
-	}
-
-	/*
-	 * El membrete tiene formato horizontal aproximado 4:1.
-	 * Se mantiene su proporción y se aprovecha casi todo el ancho A4.
-	 */
-	const letterheadWidth = pageWidth - 50;
-	const letterheadHeight = letterheadWidth / 4;
-
-	doc.image(letterheadPath, 25, 22, {
-		fit: [letterheadWidth, letterheadHeight],
-		align: 'center',
-		valign: 'center'
-	});
-
-	doc.y = 22 + letterheadHeight + 28;
+	addInstitutionalLetterhead(doc);
 
 	doc
 		.font('Helvetica-Bold')

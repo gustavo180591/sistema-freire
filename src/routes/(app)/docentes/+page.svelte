@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatPersonName } from '$lib/utils/person-name';
 	import type { PageData, ActionData } from './$types';
 	import { canManageTeachers } from '$lib/client/permissions';
 	import { formatDni, normalizeDni } from '$lib/utils/dni';
@@ -325,9 +326,9 @@
 										<div class="min-w-0">
 											<p
 												class="truncate text-sm font-semibold text-white"
-												title={`${teacher.lastName}, ${teacher.firstName}`}
+												title={formatPersonName(teacher.firstName, teacher.lastName)}
 											>
-												{teacher.lastName}, {teacher.firstName}
+												{formatPersonName(teacher.firstName, teacher.lastName)}
 											</p>
 											<p class="text-xs text-slate-500">
 												DNI: {formatDni(teacher.dni) || 'Sin DNI'}

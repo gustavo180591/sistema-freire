@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatPersonName } from '$lib/utils/person-name';
 	import { formatDni } from '$lib/utils/dni';
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
@@ -374,9 +375,9 @@
 										<div class="min-w-0">
 											<p
 												class="truncate text-sm font-medium text-white"
-												title={`${preceptor.lastName}, ${preceptor.firstName}`}
+												title={formatPersonName(preceptor.firstName, preceptor.lastName)}
 											>
-												{preceptor.lastName}, {preceptor.firstName}
+												{formatPersonName(preceptor.firstName, preceptor.lastName)}
 											</p>
 											<p class="text-xs text-slate-500">
 												DNI: {formatDni(preceptor.dni) || 'Sin DNI'}
@@ -520,7 +521,7 @@
 
 				<div class="mb-6 rounded-xl border border-slate-800 bg-slate-800/50 p-4">
 					<p class="font-medium text-white">
-						{deletingPreceptor.lastName}, {deletingPreceptor.firstName}
+						{formatPersonName(deletingPreceptor.firstName, deletingPreceptor.lastName)}
 					</p>
 					<p class="text-sm text-slate-400">{deletingPreceptor.email}</p>
 				</div>

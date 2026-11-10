@@ -5,6 +5,7 @@ import { prisma } from '$lib/server/db/prisma';
 import { requireRole } from '$lib/server/auth/authorization';
 import { requirePermission } from '$lib/server/auth/permissions-granular';
 import { normalizeDni } from '$lib/utils/dni';
+import { formatPersonName } from '$lib/utils/person-name';
 
 const PAGE_SIZE = 25;
 
@@ -270,7 +271,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		id: user.id,
 		firstName: user.firstName,
 		lastName: user.lastName,
-		fullName: `${user.firstName} ${user.lastName}`.trim(),
+		fullName: formatPersonName(user.firstName, user.lastName),
 		email: user.email,
 		dni: user.dni || user.student?.dni || user.teacher?.dni || '',
 		phone: user.student?.phone || user.phone || '',

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatPersonName } from '$lib/utils/person-name';
 	import { formatDni } from '$lib/utils/dni';
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
@@ -374,9 +375,9 @@
 										<div class="min-w-0">
 											<p
 												class="truncate text-sm font-medium text-white"
-												title={`${director.lastName}, ${director.firstName}`}
+												title={formatPersonName(director.firstName, director.lastName)}
 											>
-												{director.lastName}, {director.firstName}
+												{formatPersonName(director.firstName, director.lastName)}
 											</p>
 											<p class="text-xs text-slate-500">
 												DNI: {formatDni(director.dni) || 'Sin DNI'}
@@ -520,7 +521,7 @@
 
 				<div class="mb-6 rounded-xl border border-slate-800 bg-slate-800/50 p-4">
 					<p class="font-medium text-white">
-						{deletingDirector.lastName}, {deletingDirector.firstName}
+						{formatPersonName(deletingDirector.firstName, deletingDirector.lastName)}
 					</p>
 					<p class="text-sm text-slate-400">{deletingDirector.email}</p>
 				</div>

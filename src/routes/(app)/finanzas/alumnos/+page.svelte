@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatPersonName } from '$lib/utils/person-name';
 	import { untrack } from 'svelte';
 	import { formatDni } from '$lib/utils/dni';
 
@@ -171,7 +172,7 @@
 					id="search"
 					type="text"
 					bind:value={search}
-					placeholder="Nombre, DNI, email..."
+					placeholder="Apellido, nombre, DNI, email..."
 					class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white transition outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/30"
 				/>
 			</div>
@@ -363,7 +364,7 @@
 					bind:value={sortBy}
 					class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white transition outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/30"
 				>
-					<option value="">Nombre (A-Z)</option>
+					<option value="">Apellido, Nombre (A-Z)</option>
 					<option value="debt_desc">Mayor deuda</option>
 					<option value="debt_asc">Menor deuda</option>
 					<option value="overdue_desc">Mayor deuda vencida</option>
@@ -438,8 +439,7 @@
 								class="border-b border-slate-800 transition last:border-none hover:bg-slate-800/35"
 							>
 								<td class="px-3 py-3 font-semibold text-slate-100">
-									{student.firstName}
-									{student.lastName}
+									{formatPersonName(student.firstName, student.lastName)}
 								</td>
 								<td class="px-3 py-3">
 									{formatDni(student.dni)}

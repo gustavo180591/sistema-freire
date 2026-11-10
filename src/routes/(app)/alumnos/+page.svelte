@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatPersonName } from '$lib/utils/person-name';
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
 	import { untrack } from 'svelte';
@@ -583,7 +584,7 @@
 								</td>
 								<td class="px-4 py-3 whitespace-nowrap">
 									<div class="text-sm font-medium text-white">
-										{student.lastName}, {student.firstName}
+										{formatPersonName(student.firstName, student.lastName)}
 									</div>
 								</td>
 								<td
@@ -1244,7 +1245,7 @@
 
 				<div class="mb-6 rounded-2xl bg-slate-800/50 p-4">
 					<p class="font-medium text-white">
-						{deletingStudent.lastName}, {deletingStudent.firstName}
+						{formatPersonName(deletingStudent.firstName, deletingStudent.lastName)}
 					</p>
 					<p class="text-sm text-slate-400">DNI: {formatDni(deletingStudent.dni)}</p>
 					<p class="text-sm text-slate-400">Email: {deletingStudent.email}</p>

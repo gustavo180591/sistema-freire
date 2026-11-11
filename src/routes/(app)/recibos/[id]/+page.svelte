@@ -11,6 +11,8 @@
 		receipt.payments.length === 1 ? (receipt.payments[0]?.paidAt ?? null) : null
 	);
 
+	let showEmailModal = $state(false);
+
 	const currency = new Intl.NumberFormat('es-AR', {
 		style: 'currency',
 		currency: 'ARS',
@@ -41,6 +43,7 @@
 	}));
 
 	const blankRowCount = $derived(Math.max(0, 4 - receipt.items.length));
+	const blankRowIndexes = $derived([...Array(blankRowCount).keys()]);
 	const compactTable = $derived(receipt.items.length > 4);
 
 	function padReceiptNumber(number: number) {
@@ -108,6 +111,16 @@
 			Nuevo pago
 		</a>
 
+		{#if data.gmailDraft.canPrepare}
+			<button
+				type="button"
+				onclick={() => (showEmailModal = true)}
+				class="cursor-pointer rounded-xl border border-indigo-500/70 bg-indigo-500/10 px-4 py-2 text-sm font-semibold text-indigo-200 transition hover:border-indigo-400 hover:bg-indigo-500/20 hover:text-white"
+			>
+				Preparar en Gmail
+			</button>
+		{/if}
+
 		<button
 			type="button"
 			onclick={printReceipt}
@@ -116,6 +129,140 @@
 			Imprimir / Guardar PDF
 		</button>
 	</div>
+
+	{#if showEmailModal}
+		<div
+			class="no-print fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+			role="presentation"
+		>
+			<div
+				class="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="prepare-receipt-gmail-title"
+			>
+				<div class="flex items-start justify-between gap-4">
+					<div>
+						<h2 id="prepare-receipt-gmail-title" class="text-xl font-bold text-white">
+							Preparar recibo en Gmail
+						</h2>
+
+						<p class="mt-1 text-sm text-slate-400">
+							Google permitirá elegir la cuenta remitente y Freire creará un borrador con el PDF
+							adjunto.
+						</p>
+					</div>
+
+					<button
+						type="button"
+						onclick={() => (showEmailModal = false)}
+						class="cursor-pointer rounded-lg px-2 py-1 text-xl text-slate-400 transition hover:bg-slate-800 hover:text-white"
+						aria-label="Cerrar"
+					>
+						×
+					</button>
+				</div>
+
+				<div class="mt-6 space-y-4">
+					<div class="rounded-xl border border-slate-700 bg-slate-950/60 p-4">
+						<p class="text-xs font-semibold tracking-wide text-slate-500 uppercase">Destinatario</p>
+
+						{#if data.gmailDraft.recipient}
+							<p class="mt-2 font-medium break-all text-white">
+								{data.gmailDraft.recipient}
+							</p>
+
+							<p class="mt-1 text-xs text-slate-500">Correo registrado en la cuenta del alumno.</p>
+						{:else}
+							<p class="mt-2 text-sm font-medium text-amber-300">
+								El alumno no tiene un correo electrónico registrado.
+							</p>
+
+							<p class="mt-1 text-xs text-slate-400">
+								Primero se debe actualizar el correo del alumno.
+							</p>
+						{/if}
+					</div>
+
+					<div
+						class="rounded-xl border border-indigo-800/60 bg-indigo-950/25 p-4 text-sm text-indigo-100"
+					>
+						<p class="font-semibold">Cuenta remitente</p>
+
+						<p class="mt-1 text-indigo-200/80">
+							Al continuar, Google mostrará el selector de cuentas. Freire no solicita ni almacena
+							la contraseña de Gmail y no conserva el token de acceso después de crear el borrador.
+						</p>
+					</div>
+
+					{#if !data.gmailDraft.configured}
+						<div
+							class="rounded-xl border border-amber-700/60 bg-amber-950/30 p-4 text-sm text-amber-200"
+						>
+							La integración con Gmail todavía no está configurada en este entorno.
+						</div>
+					{/if}
+
+					{#if receipt.status !== 'ISSUED'}
+						<div
+							class="rounded-xl border border-amber-700/60 bg-amber-950/30 p-4 text-sm text-amber-200"
+						>
+							Este recibo no está vigente y no puede prepararse para envío.
+						</div>
+					{/if}
+
+					<div
+						class="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-400"
+					>
+						<p>
+							<strong class="text-slate-200">Recibo:</strong>
+							{institutional.pointOfSale || '0001'}-{padReceiptNumber(receipt.receiptNumber)}
+						</p>
+
+						<p class="mt-1">
+							<strong class="text-slate-200">Alumno:</strong>
+							{receipt.studentName}
+						</p>
+
+						<p class="mt-1">
+							<strong class="text-slate-200">Importe:</strong>
+							{currency.format(receipt.totalAmount)}
+						</p>
+					</div>
+				</div>
+
+				<div class="mt-6 flex flex-wrap justify-end gap-3">
+					<button
+						type="button"
+						onclick={() => (showEmailModal = false)}
+						class="cursor-pointer rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-slate-500 hover:bg-slate-800"
+					>
+						Cerrar
+					</button>
+
+					{#if data.gmailDraft.recipient && data.gmailDraft.configured && data.gmailDraft.canPrepare && receipt.status === 'ISSUED'}
+						<a
+							href={resolve(`/recibos/${receipt.id}/gmail`)}
+							target="_blank"
+							rel="noopener noreferrer"
+							onclick={() => (showEmailModal = false)}
+							class="rounded-xl bg-indigo-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400"
+						>
+							Elegir cuenta y preparar en Gmail
+						</a>
+					{:else}
+						<button
+							type="button"
+							disabled
+							class="cursor-not-allowed rounded-xl bg-indigo-500 px-5 py-2 text-sm font-semibold text-white opacity-50"
+						>
+							Preparar en Gmail
+						</button>
+					{/if}
+				</div>
+			</div>
+		</div>
+	{/if}
 
 	<div class="receipt-print-root">
 		<div class="receipt-paper">

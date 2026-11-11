@@ -290,7 +290,12 @@ export async function getReceiptById(receiptId: string) {
 		},
 		include: {
 			career: true,
-			location: true
+			location: true,
+			user: {
+				select: {
+					email: true
+				}
+			}
 		}
 	});
 

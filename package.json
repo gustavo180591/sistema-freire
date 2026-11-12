@@ -18,7 +18,8 @@
 		"db:seed": "tsx prisma/seed.ts",
 		"db:seed:alumnos-tipos": "tsx prisma/seed-alumnos-tipos.ts",
 		"db:seed:recibos": "tsx prisma/seed-recibos.ts",
-		"financial:generate-monthly-charges": "tsx scripts/generate-monthly-charges.ts"
+		"financial:generate-monthly-charges": "tsx scripts/generate-monthly-charges.ts",
+		"financial:backfill-missing-receipts": "tsx scripts/backfill-missing-receipts.ts"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "^20.5.0",

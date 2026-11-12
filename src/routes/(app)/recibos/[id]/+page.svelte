@@ -43,7 +43,6 @@
 	}));
 
 	const blankRowCount = $derived(Math.max(0, 4 - receipt.items.length));
-	const blankRowIndexes = $derived([...Array(blankRowCount).keys()]);
 	const compactTable = $derived(receipt.items.length > 4);
 
 	function padReceiptNumber(number: number) {

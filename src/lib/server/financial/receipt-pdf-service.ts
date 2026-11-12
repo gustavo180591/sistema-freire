@@ -73,6 +73,8 @@ function drawCell(
 export async function generateFinancialReceiptPdf(context: ReceiptDocumentContext) {
 	const { receipt, institutional } = context;
 
+	const paymentDate = receipt.payments.length === 1 ? (receipt.payments[0]?.paidAt ?? null) : null;
+
 	const doc = new PDFDocument({
 		size: 'A4',
 		margin: 40,
@@ -91,7 +93,7 @@ export async function generateFinancialReceiptPdf(context: ReceiptDocumentContex
 		doc.on('end', () => resolve(Buffer.concat(chunks)));
 	});
 
-	addInstitutionalLetterhead(doc, {
+	await addInstitutionalLetterhead(doc, {
 		horizontalMargin: 30,
 		gapAfter: 14
 	});
@@ -130,7 +132,8 @@ export async function generateFinancialReceiptPdf(context: ReceiptDocumentContex
 		.fontSize(9)
 		.text(
 			[
-				`Fecha: ${formatDate(receipt.issuedAt)}`,
+				`Fecha emisión: ${formatDate(receipt.issuedAt)}`,
+				paymentDate ? `Fecha pago: ${formatDate(paymentDate)}` : null,
 				receipt.locationName ? `Sede: ${receipt.locationName}` : null,
 				institutional.cuit ? `CUIT: ${institutional.cuit}` : null,
 				institutional.taxStatus || null

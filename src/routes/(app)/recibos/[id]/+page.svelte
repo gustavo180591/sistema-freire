@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { formatDni } from '$lib/utils/dni';
 	import type { PageData } from './$types';
 
@@ -6,6 +7,9 @@
 
 	const receipt = $derived(data.receipt);
 	const institutional = $derived(data.institutional);
+	const paymentDate = $derived(
+		receipt.payments.length === 1 ? (receipt.payments[0]?.paidAt ?? null) : null
+	);
 
 	const currency = new Intl.NumberFormat('es-AR', {
 		style: 'currency',
@@ -91,14 +95,14 @@
 		</button>
 
 		<a
-			href="/configuracion/recibo"
+			href={resolve('/configuracion/recibo')}
 			class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-indigo-500"
 		>
 			Configurar recibo
 		</a>
 
 		<a
-			href="/finanzas/pagos/nuevo"
+			href={resolve('/finanzas/pagos/nuevo')}
 			class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-slate-500"
 		>
 			Nuevo pago
@@ -155,12 +159,22 @@
 
 					<div class="receipt-fiscal-data">
 						<div class="grid grid-cols-[32mm_1fr] items-end">
-							<span class="text-[12px] font-bold">FECHA:</span>
+							<span class="text-[10px] font-bold">FECHA EMISIÓN:</span>
 
 							<span class="border-b border-black pb-1 text-center">
 								{dateFormat.format(new Date(receipt.issuedAt))}
 							</span>
 						</div>
+
+						{#if paymentDate}
+							<div class="grid grid-cols-[32mm_1fr] items-end">
+								<span class="text-[10px] font-bold">FECHA PAGO:</span>
+
+								<span class="border-b border-black pb-1 text-center">
+									{dateFormat.format(new Date(paymentDate))}
+								</span>
+							</div>
+						{/if}
 
 						<div class="grid grid-cols-[32mm_1fr] gap-2">
 							<span>CUIT:</span>
@@ -241,7 +255,7 @@
 					</thead>
 
 					<tbody>
-						{#each receipt.items as item}
+						{#each receipt.items as item (item.id)}
 							<tr class="align-top">
 								<td class="px-3 py-2">
 									<p class="font-medium">
@@ -283,7 +297,7 @@
 							</tr>
 						{/each}
 
-						{#each Array.from({ length: blankRowCount }) as _}
+						{#each Array.from(Array(blankRowCount).keys()) as rowIndex (rowIndex)}
 							<tr>
 								<td></td>
 								<td></td>

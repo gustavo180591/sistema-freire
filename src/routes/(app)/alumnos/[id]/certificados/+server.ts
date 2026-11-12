@@ -4,12 +4,13 @@ import { error } from '@sveltejs/kit';
 
 import type { RequestHandler } from './$types';
 
-import { prisma } from '$lib/server/db/prisma';
 import { auditLog } from '$lib/server/audit';
 import { requireStudentAccess } from '$lib/server/auth/student-access';
 import { canGenerateStudentCertificate } from '$lib/server/auth/student-history-access';
+import { prisma } from '$lib/server/db/prisma';
 import { addInstitutionalLetterhead } from '$lib/server/pdf/institutional-letterhead';
 import { formatDni } from '$lib/utils/dni';
+import { formatPersonName } from '$lib/utils/person-name';
 
 const INSTITUTION_TIME_ZONE = 'America/Argentina/Cordoba';
 
@@ -20,6 +21,39 @@ function getInstitutionDate(date: Date): string {
 		year: 'numeric',
 		timeZone: INSTITUTION_TIME_ZONE
 	}).format(date);
+}
+
+function getInstitutionCity(input: {
+	locationName: string | null | undefined;
+	locationCity: string | null | undefined;
+	locality: string | null | undefined;
+}): string {
+	const raw =
+		input.locationCity?.trim() || input.locationName?.trim() || input.locality?.trim() || 'Capioví';
+
+	const normalized = raw
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.toLocaleLowerCase('es-AR');
+
+	if (normalized.includes('alem')) {
+		return 'Leandro N. Alem';
+	}
+
+	if (normalized.includes('capiovi')) {
+		return 'Capioví';
+	}
+
+	return raw;
+}
+
+function safeFileNamePart(value: string): string {
+	return value
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.replace(/[^a-zA-Z0-9_-]+/g, '-')
+		.replace(/^-+|-+$/g, '')
+		.toLowerCase();
 }
 
 export const GET: RequestHandler = async ({ params, locals }) => {
@@ -37,8 +71,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 		},
 		include: {
 			career: true,
-			location: true,
-			subjectStatuses: true
+			location: true
 		}
 	});
 
@@ -46,21 +79,23 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 		throw error(404, 'Alumno no encontrado');
 	}
 
-	const regularSubjects = student.subjectStatuses.filter(
-		(subjectStatus) => subjectStatus.regularityStatus === 'REGULAR'
-	).length;
+	const fullName = formatPersonName(student.firstName, student.lastName, 'FIRST_LAST');
 
-	const totalSubjects = student.subjectStatuses.length;
-	const fullName = `${student.firstName} ${student.lastName}`;
 	const issuedAt = new Date();
+
+	const institutionCity = getInstitutionCity({
+		locationName: student.location?.name,
+		locationCity: student.location?.city,
+		locality: student.locality
+	});
 
 	const doc = new PDFDocument({
 		margin: 50,
 		size: 'A4',
 		info: {
-			Title: 'Certificado de Alumno Regular',
+			Title: 'Constancia de Alumno Regular',
 			Author: 'Instituto Superior de Formación Docente Paulo Freire 1117',
-			Subject: `Certificado de alumno regular de ${fullName}`
+			Subject: `Constancia de alumno regular de ${fullName}`
 		}
 	});
 
@@ -72,61 +107,54 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 		doc.on('end', () => resolveBuffer(Buffer.concat(chunks)));
 	});
 
-	addInstitutionalLetterhead(doc);
+	await addInstitutionalLetterhead(doc, {
+		gapAfter: 22
+	});
+
+	doc
+		.font('Helvetica')
+		.fontSize(11)
+		.fillColor('#111827')
+		.text(`${institutionCity}, Mnes. ${getInstitutionDate(issuedAt)}`, {
+			align: 'right'
+		});
+
+	doc.moveDown(2);
 
 	doc
 		.font('Helvetica-Bold')
-		.fontSize(19)
+		.fontSize(18)
 		.fillColor('#111827')
-		.text('CERTIFICADO DE ALUMNO REGULAR', {
+		.text('CONSTANCIA DE ALUMNO REGULAR', {
 			align: 'center'
 		});
 
 	doc.moveDown(2);
 
-	doc.font('Helvetica').fontSize(11).fillColor('#111827').text('A quien corresponda:', {
-		align: 'left'
+	doc
+		.font('Helvetica')
+		.fontSize(11.5)
+		.fillColor('#111827')
+		.text(
+			`Con la presente se deja constancia que ${fullName}, DNI ${formatDni(student.dni)}, ` +
+				`es alumno/a de ${student.currentYear}° Año del ${student.career.name} ` +
+				`del Instituto Superior de Formación Docente “Paulo Freire” 1117.`,
+			{
+				align: 'justify',
+				lineGap: 6
+			}
+		);
+
+	doc.moveDown(1.8);
+
+	doc.text('Se extiende la misma para ser presentada ante autoridad que lo requiera.', {
+		align: 'justify',
+		lineGap: 6
 	});
 
-	doc.moveDown();
+	doc.moveDown(5);
 
-	doc.text(
-		`Por medio de la presente se deja constancia de que el/la alumno/a ${fullName}, ` +
-			`DNI ${formatDni(student.dni)}, se encuentra registrado/a como alumno/a de ` +
-			`${student.career.name}` +
-			`${student.location?.name ? `, sede ${student.location.name}` : ''}.`,
-		{
-			align: 'justify',
-			lineGap: 5
-		}
-	);
-
-	doc.moveDown(1.2);
-
-	doc.text(
-		`De acuerdo con los registros académicos disponibles en el sistema, ` +
-			`posee ${regularSubjects} materia${regularSubjects === 1 ? '' : 's'} con condición regular ` +
-			`sobre ${totalSubjects} materia${totalSubjects === 1 ? '' : 's'} registradas.`,
-		{
-			align: 'justify',
-			lineGap: 5
-		}
-	);
-
-	doc.moveDown(1.2);
-
-	doc.text(
-		`Se expide la presente constancia a solicitud del interesado/a, ` +
-			`en fecha ${getInstitutionDate(issuedAt)}, para ser presentada ante quien corresponda.`,
-		{
-			align: 'justify',
-			lineGap: 5
-		}
-	);
-
-	doc.moveDown(4);
-
-	const signatureY = doc.y + 15;
+	const signatureY = doc.y + 10;
 	const pageWidth = doc.page.width;
 
 	doc
@@ -154,20 +182,24 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 			action: AuditAction.EXPORT,
 			entityType: 'StudentCertificate',
 			entityId: student.id,
-			description: `Certificado de alumno regular generado para ${fullName}`,
+			description: `Constancia de alumno regular generada para ${fullName}`,
 			userId: locals.user?.id
 		});
 	} catch {
 		// La generación del documento no debe fallar por un problema de auditoría.
 	}
 
-	const fileName = `certificado-alumno-regular-${student.lastName}-${student.firstName}.pdf`;
+	const fileName =
+		`constancia-alumno-regular-` +
+		`${safeFileNamePart(student.lastName)}-` +
+		`${safeFileNamePart(student.firstName)}.pdf`;
 
 	return new Response(new Uint8Array(buffer), {
 		headers: {
 			'Content-Type': 'application/pdf',
-			'Content-Disposition': `attachment; filename="${fileName}"`,
-			'Cache-Control': 'private, no-store'
+			'Content-Disposition': `inline; filename="${fileName}"`,
+			'Cache-Control': 'private, no-store',
+			'X-Content-Type-Options': 'nosniff'
 		}
 	});
 };

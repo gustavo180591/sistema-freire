@@ -125,7 +125,7 @@
 			<section class="receipt-header-section">
 				<div class="receipt-letterhead-section">
 					<img
-						src="/membrete-freire.jpeg"
+						src="/api/institution/letterhead"
 						alt="Membrete institucional del Instituto Paulo Freire"
 						class="receipt-letterhead"
 					/>

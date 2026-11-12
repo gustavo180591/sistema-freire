@@ -118,7 +118,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
 	const pageWidth = doc.page.width;
 
-	addInstitutionalLetterhead(doc);
+	await addInstitutionalLetterhead(doc);
 
 	doc
 		.font('Helvetica-Bold')

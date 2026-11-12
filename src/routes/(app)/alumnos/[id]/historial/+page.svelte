@@ -167,10 +167,21 @@
 
 			{#if data.access.canGenerateCertificate}
 				<a
+					href={resolve(`/alumnos/${student.id}/formulario-inscripcion`)}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="rounded-2xl border-2 border-amber-700 bg-white px-5 py-3 text-sm font-semibold text-amber-800 transition hover:scale-[1.02]"
+				>
+					Formulario de Inscripción
+				</a>
+
+				<a
 					href={resolve(`/alumnos/${student.id}/certificados`)}
+					target="_blank"
+					rel="noopener noreferrer"
 					class="rounded-2xl border-2 border-blue-900 bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.02]"
 				>
-					Generar certificado
+					Constancia de alumno regular
 				</a>
 			{/if}
 

@@ -5,6 +5,7 @@ import {
 	createAcademicDeletionTicket
 } from '$lib/server/support/support-ticket-service';
 import { requireStudentAccess } from '$lib/server/auth/student-access';
+import { canViewStudentAcademicDetails } from '$lib/server/auth/student-history-access';
 import { requireRole } from '$lib/server/auth/authorization';
 import { requirePermission } from '$lib/server/auth/permissions-granular';
 import { getStudentAcademicTrajectory } from '$lib/server/academic/academic-trajectory-service';
@@ -47,6 +48,7 @@ function parseChanges(raw: string): ManualAcademicStatusChange[] | null {
 		'RETAKING',
 		'REGULAR',
 		'FREE',
+		'PROMOTED',
 		'APPROVED'
 	]);
 
@@ -89,6 +91,14 @@ async function requireTrajectoryManagement(user: App.Locals['user'], studentId: 
 	}
 
 	await requireStudentAccess(user, studentId);
+
+	if (user.activeRole !== 'PRECEPTOR') {
+		throw new AcademicAccreditationError(
+			403,
+			'El rol activo no tiene permiso para modificar la trayectoria académica'
+		);
+	}
+
 	requireRole(user, ['PRECEPTOR']);
 	await requirePermission(user, 'STUDENT', 'update');
 
@@ -97,6 +107,10 @@ async function requireTrajectoryManagement(user: App.Locals['user'], studentId: 
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	await requireStudentAccess(locals.user, params.id);
+
+	if (!canViewStudentAcademicDetails(locals.user?.activeRole)) {
+		throw error(403, 'No tenés permiso para ver la trayectoria académica');
+	}
 
 	const trajectory = await getStudentAcademicTrajectory(params.id);
 

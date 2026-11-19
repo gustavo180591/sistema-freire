@@ -35,13 +35,17 @@
 		visibleSubjectsByYear.map((group) => ({
 			yearLevel: group.yearLevel,
 			total: group.subjects.length,
-			approved: group.subjects.filter((subject) => subject.state === 'APPROVED').length,
+			approved: group.subjects.filter(
+				(subject) => subject.state === 'APPROVED' || subject.state === 'PROMOTED'
+			).length,
 			regular: group.subjects.filter((subject) => subject.state === 'REGULAR').length,
 			taking: group.subjects.filter(
 				(subject) => subject.state === 'TAKING' || subject.state === 'RETAKING'
 			).length,
 			pending: group.subjects.filter((subject) => subject.state === 'NOT_STARTED').length,
-			approvable: group.subjects.filter((subject) => subject.state !== 'APPROVED').length
+			approvable: group.subjects.filter(
+				(subject) => subject.state !== 'APPROVED' && subject.state !== 'PROMOTED'
+			).length
 		}))
 	);
 

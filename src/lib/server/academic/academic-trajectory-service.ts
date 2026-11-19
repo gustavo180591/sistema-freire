@@ -541,7 +541,9 @@ export async function getStudentAcademicTrajectory(studentId: string) {
 
 	const metrics = {
 		totalSubjects: subjectsWithProgression.length,
-		approved: subjectsWithProgression.filter((subject) => subject.state === 'APPROVED').length,
+		approved: subjectsWithProgression.filter(
+			(subject) => subject.state === 'APPROVED' || subject.state === 'PROMOTED'
+		).length,
 		taking: subjectsWithProgression.filter((subject) => subject.state === 'TAKING').length,
 		retaking: subjectsWithProgression.filter((subject) => subject.state === 'RETAKING').length,
 		pendingFinals: subjectsWithProgression.filter((subject) => subject.state === 'REGULAR').length,

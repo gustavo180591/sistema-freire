@@ -11,7 +11,8 @@
 	} = $props();
 
 	const completedCount = $derived(
-		subjects.filter((subject) => subject.state === 'APPROVED').length
+		subjects.filter((subject) => subject.state === 'APPROVED' || subject.state === 'PROMOTED')
+			.length
 	);
 </script>
 

@@ -4,7 +4,7 @@
 	import TrajectoryStatusBadge from './TrajectoryStatusBadge.svelte';
 	import TrajectorySubjectActions from './TrajectorySubjectActions.svelte';
 
-	type QuickStatus = 'TAKING' | 'RETAKING' | 'REGULAR' | 'FREE' | 'APPROVED';
+	type QuickStatus = 'TAKING' | 'RETAKING' | 'REGULAR' | 'FREE' | 'PROMOTED' | 'APPROVED';
 
 	let {
 		yearLevel,
@@ -43,6 +43,8 @@
 		switch (subject.state) {
 			case 'APPROVED':
 				return 'Aprobada';
+			case 'PROMOTED':
+				return 'Promoción';
 			case 'TAKING':
 				return 'Cursando';
 			case 'RETAKING':
@@ -188,6 +190,8 @@
 							<option value="REGULAR"> Regular </option>
 
 							<option value="FREE"> Libre </option>
+
+							<option value="PROMOTED"> Promoción </option>
 
 							<option value="APPROVED"> Aprobada </option>
 						</select>

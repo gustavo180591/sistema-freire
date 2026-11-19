@@ -119,7 +119,7 @@ export function applyCurrentYearProgression<
 	const previousYearSubjects = subjects.filter((subject) => subject.yearLevel < currentYear);
 
 	const previousYearsFullyApproved = previousYearSubjects.every(
-		(subject) => subject.state === 'APPROVED'
+		(subject) => subject.state === 'APPROVED' || subject.state === 'PROMOTED'
 	);
 
 	if (!previousYearsFullyApproved) {

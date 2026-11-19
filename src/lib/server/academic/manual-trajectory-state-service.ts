@@ -11,7 +11,13 @@ import { prisma } from '$lib/server/db/prisma';
 import { auditLog } from '$lib/server/audit';
 import { getStudentAcademicTrajectory } from './academic-trajectory-service';
 
-export type ManualQuickAcademicStatus = 'TAKING' | 'RETAKING' | 'REGULAR' | 'FREE' | 'APPROVED';
+export type ManualQuickAcademicStatus =
+	| 'TAKING'
+	| 'RETAKING'
+	| 'REGULAR'
+	| 'FREE'
+	| 'PROMOTED'
+	| 'APPROVED';
 
 export interface ManualAcademicStatusChange {
 	subjectId: string;
@@ -40,18 +46,22 @@ const manualStateMap: Record<ManualQuickAcademicStatus, AcademicTrajectoryManual
 	RETAKING: AcademicTrajectoryManualState.RETAKING,
 	REGULAR: AcademicTrajectoryManualState.REGULAR,
 	FREE: AcademicTrajectoryManualState.FREE,
+	PROMOTED: AcademicTrajectoryManualState.PROMOTED,
 	APPROVED: AcademicTrajectoryManualState.APPROVED
 };
 
-function snapshotFields(status: ManualQuickAcademicStatus) {
+function snapshotFields(status: ManualQuickAcademicStatus, changedAt: Date) {
 	switch (status) {
 		case 'TAKING':
 		case 'RETAKING':
 			return {
 				approved: false,
 				promoted: false,
+				regularityStatus: RegularityStatus.LIBRE,
 				academicStatus: AcademicStatus.EN_COURSE,
-				courseStatus: CourseStatus.IN_PROGRESS
+				courseStatus: CourseStatus.IN_PROGRESS,
+				promotionDate: null,
+				finalApprovalDate: null
 			};
 
 		case 'REGULAR':
@@ -60,7 +70,9 @@ function snapshotFields(status: ManualQuickAcademicStatus) {
 				promoted: false,
 				regularityStatus: RegularityStatus.REGULAR,
 				academicStatus: AcademicStatus.REGULAR,
-				courseStatus: CourseStatus.PASSED_COURSE
+				courseStatus: CourseStatus.PASSED_COURSE,
+				promotionDate: null,
+				finalApprovalDate: null
 			};
 
 		case 'FREE':
@@ -69,7 +81,20 @@ function snapshotFields(status: ManualQuickAcademicStatus) {
 				promoted: false,
 				regularityStatus: RegularityStatus.LIBRE,
 				academicStatus: AcademicStatus.LIBRE,
-				courseStatus: CourseStatus.FAILED_COURSE
+				courseStatus: CourseStatus.FAILED_COURSE,
+				promotionDate: null,
+				finalApprovalDate: null
+			};
+
+		case 'PROMOTED':
+			return {
+				approved: true,
+				promoted: true,
+				regularityStatus: RegularityStatus.REGULAR,
+				academicStatus: AcademicStatus.PROMOCIONADO,
+				courseStatus: CourseStatus.PROMOTED,
+				promotionDate: changedAt,
+				finalApprovalDate: changedAt
 			};
 
 		case 'APPROVED':
@@ -78,7 +103,9 @@ function snapshotFields(status: ManualQuickAcademicStatus) {
 				promoted: false,
 				regularityStatus: RegularityStatus.REGULAR,
 				academicStatus: AcademicStatus.APROBADO,
-				courseStatus: CourseStatus.PASSED_COURSE
+				courseStatus: CourseStatus.PASSED_COURSE,
+				promotionDate: null,
+				finalApprovalDate: null
 			};
 	}
 }
@@ -137,7 +164,67 @@ export async function saveManualTrajectoryStates(input: SaveManualTrajectoryStat
 				continue;
 			}
 
-			const snapshot = snapshotFields(status);
+			const accreditation = await tx.subjectAccreditation.findUnique({
+				where: {
+					studentId_subjectId: {
+						studentId: input.studentId,
+						subjectId
+					}
+				},
+				select: {
+					id: true,
+					type: true,
+					source: true,
+					grade: true,
+					evaluationId: true,
+					subjectEnrollmentId: true
+				}
+			});
+
+			const isQuickManagedAccreditation =
+				accreditation !== null &&
+				accreditation.source === AcademicRecordSource.MANUAL &&
+				accreditation.grade === null &&
+				accreditation.evaluationId === null &&
+				accreditation.subjectEnrollmentId === null &&
+				(accreditation.type === SubjectAccreditationType.UNSPECIFIED ||
+					accreditation.type === SubjectAccreditationType.PROMOTION);
+
+			const movesToNonApprovedState =
+				status === 'TAKING' || status === 'RETAKING' || status === 'REGULAR' || status === 'FREE';
+
+			if (movesToNonApprovedState && accreditation !== null && !isQuickManagedAccreditation) {
+				throw new ManualTrajectoryStateError(
+					409,
+					`${subject.name} posee una acreditación académica que no puede eliminarse desde la carga rápida`
+				);
+			}
+
+			if (
+				status === 'PROMOTED' &&
+				accreditation !== null &&
+				!isQuickManagedAccreditation &&
+				accreditation.type !== SubjectAccreditationType.PROMOTION
+			) {
+				throw new ManualTrajectoryStateError(
+					409,
+					`${subject.name} posee una acreditación incompatible con Promoción`
+				);
+			}
+
+			if (
+				status === 'APPROVED' &&
+				accreditation !== null &&
+				accreditation.type === SubjectAccreditationType.PROMOTION &&
+				!isQuickManagedAccreditation
+			) {
+				throw new ManualTrajectoryStateError(
+					409,
+					`${subject.name} posee una promoción académica que no puede reclasificarse desde la carga rápida`
+				);
+			}
+
+			const snapshot = snapshotFields(status, changedAt);
 
 			await tx.studentSubjectStatus.upsert({
 				where: {
@@ -160,24 +247,37 @@ export async function saveManualTrajectoryStates(input: SaveManualTrajectoryStat
 				}
 			});
 
-			/*
-			 * Aprobada necesita además una acreditación real.
-			 * Si ya existe una acreditación histórica, NO la
-			 * reemplazamos ni eliminamos.
-			 */
-			if (status === 'APPROVED') {
-				const accreditation = await tx.subjectAccreditation.findUnique({
-					where: {
-						studentId_subjectId: {
+			if (status === 'PROMOTED') {
+				if (!accreditation) {
+					await tx.subjectAccreditation.create({
+						data: {
 							studentId: input.studentId,
-							subjectId
+							subjectId,
+							type: SubjectAccreditationType.PROMOTION,
+							source: AcademicRecordSource.MANUAL,
+							accreditedAt: changedAt,
+							academicYear: changedAt.getFullYear(),
+							grade: null,
+							observations: null,
+							createdByUserId: input.userId
 						}
-					},
-					select: {
-						id: true
-					}
-				});
-
+					});
+				} else if (
+					isQuickManagedAccreditation &&
+					accreditation.type !== SubjectAccreditationType.PROMOTION
+				) {
+					await tx.subjectAccreditation.update({
+						where: {
+							id: accreditation.id
+						},
+						data: {
+							type: SubjectAccreditationType.PROMOTION,
+							accreditedAt: changedAt,
+							academicYear: changedAt.getFullYear()
+						}
+					});
+				}
+			} else if (status === 'APPROVED') {
 				if (!accreditation) {
 					await tx.subjectAccreditation.create({
 						data: {
@@ -192,7 +292,27 @@ export async function saveManualTrajectoryStates(input: SaveManualTrajectoryStat
 							createdByUserId: input.userId
 						}
 					});
+				} else if (
+					isQuickManagedAccreditation &&
+					accreditation.type === SubjectAccreditationType.PROMOTION
+				) {
+					await tx.subjectAccreditation.update({
+						where: {
+							id: accreditation.id
+						},
+						data: {
+							type: SubjectAccreditationType.UNSPECIFIED,
+							accreditedAt: null,
+							academicYear: null
+						}
+					});
 				}
+			} else if (movesToNonApprovedState && accreditation !== null && isQuickManagedAccreditation) {
+				await tx.subjectAccreditation.delete({
+					where: {
+						id: accreditation.id
+					}
+				});
 			}
 
 			appliedChanges.push({

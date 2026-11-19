@@ -1,6 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { prisma } from '$lib/server/db/prisma';
 import { requireStudentAccess } from '$lib/server/auth/student-access';
+import { canViewStudentAcademicDetails } from '$lib/server/auth/student-history-access';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { auditLog } from '$lib/server/audit';
 import { checkPermission } from '$lib/server/auth/permissions-granular';
@@ -24,11 +25,26 @@ const ACADEMIC_YEAR_STATUS_COLORS: Record<string, string> = {
 	GRADUATED: 'bg-purple-950/50 text-purple-400 border-purple-800'
 };
 
+async function requireAcademicHistoryAccess(
+	user: App.Locals['user'],
+	studentId: string
+): Promise<void> {
+	if (!user) {
+		throw error(401, 'No autenticado');
+	}
+
+	await requireStudentAccess(user, studentId);
+
+	if (!canViewStudentAcademicDetails(user.activeRole)) {
+		throw error(403, 'No tenés permiso para ver el historial académico por ciclo lectivo');
+	}
+}
+
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const user = locals.user;
 	if (!user) throw redirect(303, '/login');
 
-	await requireStudentAccess(user, params.id);
+	await requireAcademicHistoryAccess(user, params.id);
 
 	// Verificar permiso de lectura
 	const canRead = await checkPermission(user, 'STUDENT', 'read');
@@ -86,7 +102,7 @@ export const actions: Actions = {
 		const user = locals.user;
 		if (!user) return fail(401, { error: 'No autenticado' });
 
-		await requireStudentAccess(user, params.id);
+		await requireAcademicHistoryAccess(user, params.id);
 
 		const canUpdate = await checkPermission(user, 'STUDENT', 'update');
 		if (!canUpdate) {
@@ -179,7 +195,7 @@ export const actions: Actions = {
 		const user = locals.user;
 		if (!user) return fail(401, { error: 'No autenticado' });
 
-		await requireStudentAccess(user, params.id);
+		await requireAcademicHistoryAccess(user, params.id);
 
 		const canUpdate = await checkPermission(user, 'STUDENT', 'update');
 		if (!canUpdate) {
@@ -252,7 +268,7 @@ export const actions: Actions = {
 		const user = locals.user;
 		if (!user) return fail(401, { error: 'No autenticado' });
 
-		await requireStudentAccess(user, params.id);
+		await requireAcademicHistoryAccess(user, params.id);
 
 		const canDelete = await checkPermission(user, 'STUDENT', 'delete');
 		if (!canDelete) {

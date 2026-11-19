@@ -1,5 +1,6 @@
 export type AcademicTrajectorySubjectState =
 	| 'APPROVED'
+	| 'PROMOTED'
 	| 'TAKING'
 	| 'RETAKING'
 	| 'REGULAR'

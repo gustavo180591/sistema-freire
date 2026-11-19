@@ -80,7 +80,7 @@ export async function saveManualAcademicYearStatuses(input: SaveManualAcademicYe
 		const isBulkApprovalOverExistingEvidence =
 			change.status === 'APPROVED' && input.allowApprovalOverExistingEvidence === true;
 
-		if (subject.state === 'APPROVED') {
+		if (subject.state === 'APPROVED' || subject.state === 'PROMOTED') {
 			throw new AcademicAccreditationError(409, `${subject.name} ya se encuentra aprobada`);
 		}
 
@@ -268,7 +268,9 @@ export async function approveManualAcademicYear(input: ApproveManualAcademicYear
 		);
 	}
 
-	const subjectsToApprove = yearSubjects.filter((subject) => subject.state !== 'APPROVED');
+	const subjectsToApprove = yearSubjects.filter(
+		(subject) => subject.state !== 'APPROVED' && subject.state !== 'PROMOTED'
+	);
 
 	if (subjectsToApprove.length === 0) {
 		return {

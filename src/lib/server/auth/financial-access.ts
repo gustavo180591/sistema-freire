@@ -1,8 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { prisma } from '$lib/server/db/prisma';
 import { requirePermission } from '$lib/server/auth/permissions-granular';
-
-const GLOBAL_FINANCIAL_ROLES = ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'FINANZAS', 'APODERADO'];
+import { canViewStudentFinancialSummary } from '$lib/server/auth/student-history-access';
 
 /**
  * Autoriza el acceso de lectura al estado financiero de un alumno.
@@ -28,11 +27,11 @@ export async function requireStudentFinancialReadAccess(
 	await requirePermission(user, 'STUDENT_CHARGE', 'read');
 
 	// El alcance financiero se evalúa únicamente con el rol activo de la sesión.
-	if (user.roles.some((role) => GLOBAL_FINANCIAL_ROLES.includes(role))) {
+	if (canViewStudentFinancialSummary(user.activeRole)) {
 		return;
 	}
 
-	if (user.roles.includes('ALUMNO')) {
+	if (user.activeRole === 'ALUMNO') {
 		const student = await prisma.student.findUnique({
 			where: { id: studentId },
 			select: { userId: true }

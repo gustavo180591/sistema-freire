@@ -151,19 +151,21 @@
 				Ver finanzas
 			</a>
 		{:else}
-			<a
-				href={resolve(`/alumnos/${student.id}/trayectoria`)}
-				class="rounded-2xl border-2 border-emerald-700 bg-white px-5 py-3 text-sm font-semibold text-emerald-700 transition hover:scale-[1.02]"
-			>
-				Trayectoria Académica
-			</a>
+			{#if data.access.canViewAcademicDetails}
+				<a
+					href={resolve(`/alumnos/${student.id}/trayectoria`)}
+					class="rounded-2xl border-2 border-emerald-700 bg-white px-5 py-3 text-sm font-semibold text-emerald-700 transition hover:scale-[1.02]"
+				>
+					Trayectoria Académica
+				</a>
 
-			<a
-				href={resolve(`/alumnos/${student.id}/historial-anual`)}
-				class="rounded-2xl border-2 border-violet-700 bg-white px-5 py-3 text-sm font-semibold text-violet-700 transition hover:scale-[1.02]"
-			>
-				Historial por Ciclo Lectivo
-			</a>
+				<a
+					href={resolve(`/alumnos/${student.id}/historial-anual`)}
+					class="rounded-2xl border-2 border-violet-700 bg-white px-5 py-3 text-sm font-semibold text-violet-700 transition hover:scale-[1.02]"
+				>
+					Historial por Ciclo Lectivo
+				</a>
+			{/if}
 
 			{#if data.access.canGenerateCertificate}
 				<a

@@ -9,6 +9,7 @@ import { formatDni } from '$lib/utils/dni';
 import {
 	canGenerateStudentCertificate,
 	canViewStudentFinancialSummary,
+	canViewStudentAcademicDetails,
 	isFinanceStudentContext
 } from '$lib/server/auth/student-history-access';
 
@@ -18,6 +19,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const activeRole = locals.user?.activeRole ?? null;
 
 	const canViewFinancial = canViewStudentFinancialSummary(activeRole);
+	const canViewAcademicDetails = canViewStudentAcademicDetails(activeRole);
 	const canGenerateCertificate = canGenerateStudentCertificate(activeRole);
 	const isFinanceRole = isFinanceStudentContext(activeRole);
 
@@ -344,6 +346,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			activeRole,
 			isFinanceRole,
 			canViewFinancial,
+			canViewAcademicDetails,
 			canGenerateCertificate
 		}
 	};

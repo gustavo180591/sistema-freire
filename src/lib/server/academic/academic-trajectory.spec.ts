@@ -181,7 +181,7 @@ describe('applyCurrentYearProgression', () => {
 			[
 				{ yearLevel: 1, state: 'APPROVED' as const },
 				{ yearLevel: 1, state: 'APPROVED' as const },
-				{ yearLevel: 2, state: 'APPROVED' as const },
+				{ yearLevel: 2, state: 'PROMOTED' as const },
 				{ yearLevel: 3, state: 'APPROVED' as const },
 				{ yearLevel: 4, state: 'NOT_STARTED' as const },
 				{ yearLevel: 4, state: 'NOT_STARTED' as const }

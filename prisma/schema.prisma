@@ -188,11 +188,15 @@ model Student {
   createdAt               DateTime                  @default(now())
   updatedAt               DateTime                  @updatedAt
   careerId                String
+  studyPlanId             String?
   currentYear             Int                       @default(1)
   isBecado                Boolean                   @default(false)
   isRecursante            Boolean                   @default(false)
   financialBlocked        Boolean                   @default(false)
   birthDate               DateTime?
+  birthPlace              String?
+  entryCertificateTitle   String?
+  entryCertificateIssuer  String?
   bloodType               String?
   phone                   String?
   familyContactName       String?
@@ -224,12 +228,14 @@ model Student {
   subjectStatuses         StudentSubjectStatus[]
   subjectAccreditations   SubjectAccreditation[]
   career                  Career                    @relation(fields: [careerId], references: [id])
+  studyPlan               StudyPlan?                @relation(fields: [studyPlanId], references: [id], onDelete: Restrict)
   user                    User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   location                Location?                 @relation(fields: [locationId], references: [id], onDelete: Restrict)
   enrollments             SubjectEnrollment[]
 
   @@index([lastName, firstName])
   @@index([locationId])
+  @@index([studyPlanId])
   @@map("students")
 }
 
@@ -497,6 +503,7 @@ model StudyPlan {
   careerId       String
   name           String
   version        String
+  resolution     String?
   isDefault      Boolean             @default(false)
   active         Boolean             @default(true)
   createdAt      DateTime            @default(now())
@@ -504,6 +511,7 @@ model StudyPlan {
   durationYears  Int                 @default(4)
   subjects       PlanSubject[]
   career         Career              @relation(fields: [careerId], references: [id])
+  students       Student[]
   commissions    SubjectCommission[]
   enrollments    SubjectEnrollment[]
   classSchedules ClassSchedule[]
@@ -1407,6 +1415,9 @@ model SubjectAccreditation {
   academicYear        Int?
   grade               Decimal?                 @db.Decimal(5, 2)
   observations        String?
+  folio               String?
+  establishment       String?
+  officialReference   String?
   createdByUserId     String?
   createdAt           DateTime                 @default(now())
   updatedAt           DateTime                 @updatedAt

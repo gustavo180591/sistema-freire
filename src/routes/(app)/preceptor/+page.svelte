@@ -79,8 +79,8 @@
 			class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700"
 		>
 			<div class="flex items-center gap-3">
-				<div class="rounded-xl bg-blue-950/50 p-3">
-					<svg class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<div class="rounded-xl border border-blue-700 bg-white p-3">
+					<svg class="h-6 w-6 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"
@@ -102,9 +102,9 @@
 			class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700"
 		>
 			<div class="flex items-center gap-3">
-				<div class="rounded-xl bg-emerald-950/50 p-3">
+				<div class="rounded-xl border border-emerald-700 bg-white p-3">
 					<svg
-						class="h-6 w-6 text-emerald-400"
+						class="h-6 w-6 text-emerald-700"
 						fill="none"
 						viewBox="0 0 24 24"
 						stroke="currentColor"
@@ -130,9 +130,9 @@
 			class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700"
 		>
 			<div class="flex items-center gap-3">
-				<div class="rounded-xl bg-purple-950/50 p-3">
+				<div class="rounded-xl border border-purple-700 bg-white p-3">
 					<svg
-						class="h-6 w-6 text-purple-400"
+						class="h-6 w-6 text-purple-700"
 						fill="none"
 						viewBox="0 0 24 24"
 						stroke="currentColor"
@@ -158,9 +158,9 @@
 			class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700"
 		>
 			<div class="flex items-center gap-3">
-				<div class="rounded-xl bg-orange-950/50 p-3">
+				<div class="rounded-xl border border-orange-700 bg-white p-3">
 					<svg
-						class="h-6 w-6 text-orange-400"
+						class="h-6 w-6 text-orange-700"
 						fill="none"
 						viewBox="0 0 24 24"
 						stroke="currentColor"
@@ -186,8 +186,8 @@
 			class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700"
 		>
 			<div class="flex items-center gap-3">
-				<div class="rounded-xl bg-amber-950/50 p-3">
-					<svg class="h-6 w-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<div class="rounded-xl border border-amber-700 bg-white p-3">
+					<svg class="h-6 w-6 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"
@@ -209,8 +209,8 @@
 			class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700"
 		>
 			<div class="flex items-center gap-3">
-				<div class="rounded-xl bg-red-950/50 p-3">
-					<svg class="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<div class="rounded-xl border border-red-700 bg-white p-3">
+					<svg class="h-6 w-6 text-red-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"
@@ -232,8 +232,8 @@
 			class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700"
 		>
 			<div class="flex items-center gap-3">
-				<div class="rounded-xl bg-cyan-950/50 p-3">
-					<svg class="h-6 w-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<div class="rounded-xl border border-cyan-700 bg-white p-3">
+					<svg class="h-6 w-6 text-cyan-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"
@@ -255,9 +255,9 @@
 			class="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700"
 		>
 			<div class="flex items-center gap-3">
-				<div class="rounded-xl bg-indigo-950/50 p-3">
+				<div class="rounded-xl border border-indigo-700 bg-white p-3">
 					<svg
-						class="h-6 w-6 text-indigo-400"
+						class="h-6 w-6 text-indigo-700"
 						fill="none"
 						viewBox="0 0 24 24"
 						stroke="currentColor"
@@ -305,9 +305,9 @@
 							<td class="px-4 py-3 text-sm">{student.currentYear}°</td>
 							<td class="px-4 py-3">
 								<span
-									class="inline-flex items-center gap-1 rounded-full bg-emerald-950/50 px-2 py-1 text-xs text-emerald-400"
+									class="inline-flex items-center gap-1 rounded-full border border-emerald-700 bg-white px-2 py-1 text-xs font-medium text-emerald-700"
 								>
-									{student.status}
+									{student.status === 'ACTIVE' ? 'Activo' : student.status}
 								</span>
 							</td>
 							<td class="px-4 py-3">

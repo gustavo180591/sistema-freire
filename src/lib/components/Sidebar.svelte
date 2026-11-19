@@ -228,6 +228,12 @@
 					roles: ['SUPERADMIN', 'DIRECTOR', 'SECRETARIA', 'APODERADO', 'FINANZAS', 'PRECEPTOR']
 				},
 				{
+					label: 'Libro Matriz',
+					href: '/preceptor/libro-matriz',
+					icon: 'book-open',
+					roles: ['PRECEPTOR']
+				},
+				{
 					label: 'Docentes',
 					href: '/docentes',
 					icon: 'chalkboard-teacher',

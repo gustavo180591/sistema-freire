@@ -119,6 +119,12 @@
 					exact: true
 				},
 				{
+					label: 'Cohorte',
+					href: '/preceptor/cohortes',
+					icon: 'graduation-cap',
+					roles: ['PRECEPTOR']
+				},
+				{
 					label: 'Asistencia',
 					href: '/preceptor/asistencia',
 					icon: 'clipboard-user',

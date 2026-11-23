@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { formatDni } from '$lib/utils/dni';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import type { PageData } from './$types';
 	import QuickAcademicYearEditor from '$lib/components/academic-trajectory/QuickAcademicYearEditor.svelte';
 	import TrajectoryYearSection from '$lib/components/academic-trajectory/TrajectoryYearSection.svelte';
@@ -11,6 +13,38 @@
 	const trajectory = $derived(data.trajectory);
 	const student = $derived(trajectory.student);
 	const metrics = $derived(trajectory.metrics);
+
+	const cohortContext = $derived.by(() => {
+		if (!data.canManageTrajectory) {
+			return null;
+		}
+
+		const rawYear = page.url.searchParams.get('cohorte');
+
+		if (!rawYear || !/^\d{4}$/.test(rawYear)) {
+			return null;
+		}
+
+		const year = Number(rawYear);
+
+		if (!Number.isInteger(year) || year < 1900 || year > 2200) {
+			return null;
+		}
+
+		const params = new SvelteURLSearchParams();
+		const careerId = page.url.searchParams.get('careerId')?.trim();
+
+		if (careerId) {
+			params.set('careerId', careerId);
+		}
+
+		const query = params.toString();
+
+		return {
+			year,
+			query: query ? `?${query}` : ''
+		};
+	});
 
 	const visibleSubjectsByYear = $derived(
 		trajectory.subjectsByYear.filter(
@@ -116,6 +150,15 @@
 			</div>
 
 			<div class="flex flex-wrap gap-2">
+				{#if cohortContext}
+					<a
+						href="{resolve(`/preceptor/cohortes/${cohortContext.year}`)}{cohortContext.query}"
+						class="rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-300 transition hover:bg-indigo-500/20"
+					>
+						← Volver a Cohorte {cohortContext.year}
+					</a>
+				{/if}
+
 				<a
 					href={resolve(`/alumnos/${student.id}/historial`)}
 					class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800"

@@ -47,6 +47,7 @@ export async function listMatrixBookStudents(filters: MatrixBookStudentFilters) 
 				select: {
 					id: true,
 					name: true,
+					code: true,
 					version: true,
 					resolution: true
 				}
@@ -84,6 +85,7 @@ export async function getMatrixBook(studentId: string) {
 			studyPlan: {
 				select: {
 					id: true,
+					code: true,
 					name: true,
 					version: true,
 					resolution: true,
@@ -111,6 +113,7 @@ export async function getMatrixBook(studentId: string) {
 			},
 			select: {
 				id: true,
+				code: true,
 				name: true,
 				version: true,
 				resolution: true,
@@ -254,13 +257,14 @@ export async function getMatrixBook(studentId: string) {
 		};
 	});
 
-	const years = Array.from(new Set(rows.map((row) => row.yearLevel)))
-		.sort((a, b) => a - b)
-		.map((yearLevel) => ({
-			yearLevel,
-			rows: rows.filter((row) => row.yearLevel === yearLevel)
-		}));
+	const durationYears = student.studyPlan?.durationYears ?? student.career.durationYears;
 
+	const years = Array.from({ length: durationYears }, (_, index) => index + 1).map((yearLevel) => ({
+		yearLevel,
+		rows: rows
+			.filter((row) => row.yearLevel === yearLevel)
+			.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'es'))
+	}));
 	const suggestedStudyPlanId =
 		student.studyPlanId ??
 		(plans.filter((plan) => plan.isDefault).length === 1

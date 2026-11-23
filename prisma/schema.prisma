@@ -502,6 +502,7 @@ model StudyPlan {
   id             String              @id @default(cuid())
   careerId       String
   name           String
+  code           String?
   version        String
   resolution     String?
   isDefault      Boolean             @default(false)
@@ -517,6 +518,7 @@ model StudyPlan {
   classSchedules ClassSchedule[]
 
   @@unique([careerId, version])
+  @@index([code])
   @@map("study_plans")
 }
 

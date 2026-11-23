@@ -234,6 +234,12 @@
 					roles: ['PRECEPTOR']
 				},
 				{
+					label: 'Planes de estudio',
+					href: '/configuracion/planes-estudio',
+					icon: 'book-open',
+					roles: ['SUPERADMIN']
+				},
+				{
 					label: 'Docentes',
 					href: '/docentes',
 					icon: 'chalkboard-teacher',
